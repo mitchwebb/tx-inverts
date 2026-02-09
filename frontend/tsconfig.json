@@ -1,0 +1,21 @@
+{
+    "extends": "@tsconfig/svelte/tsconfig.json",
+    "compilerOptions": {
+        "stripInternal": true,
+        "strict": true,
+        "pretty": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true
+    },
+    "include": [
+        "**/*.ts",
+        "../frontend-core/**/*.ts",
+        "../shared/**/*.ts",
+        "src",
+        "src/vite-env.d.ts",
+        "static",
+        "svelte.config.js",
+        "svelte.config.js"
+    ]
+}

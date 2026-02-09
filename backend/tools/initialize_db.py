@@ -1,0 +1,49 @@
+from psycopg import Connection
+from psycopg.errors import Error as PsycopgError
+from backend.db_schema import ALL_TABLES
+from backend.db_schema.base import DBTable
+
+# Check if table already exists (for readable erroring)
+async def table_exists(conn: Connection, table_name: str) -> bool:
+    async with conn.cursor() as cur:
+        await cur.execute('''
+                SELECT EXISTS (
+                        SELECT 1
+                        FROM information_schema.tables
+                        WHERE table_schema = 'public' AND table_name = %s
+                )
+        ''', (table_name,))
+        row = await cur.fetchone()
+        return row[0] if row else False
+    
+async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: bool = True):
+    try:
+        if await table_exists(conn, table.name):
+            if verbose:
+                print(f"Table '{table.name}' already exists. Skipping.")
+            return
+            
+        create_sql = table.create_table_query()
+        async with conn.cursor() as cur:
+            await cur.execute(create_sql)
+        if verbose:
+            print(f'Created table: {table.name}')
+                
+    except PsycopgError as e:
+        error_msg = getattr(e, "pgerror", str(e))
+        print(f"Failed to create table '{table.name}': {error_msg}")
+        if strict:
+            raise
+    except Exception as e:
+        print(
+            f"Unexpected error initializing '{table.name}': {str(e)}")
+        if strict:
+            raise
+    
+    finally:
+        await conn.commit()
+
+# Initialize all tables provided to ALL_TABLES constant
+async def initialize_all_tables(conn: Connection, *, verbose: bool = False, strict: bool = True):
+    for table in ALL_TABLES:
+        initialize_table(conn, table, verbose, strict)

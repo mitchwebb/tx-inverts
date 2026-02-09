@@ -1,0 +1,19 @@
+.filters-section {
+    background-color: var(--container-highlight);
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    position: relative;
+}
+.filters-section.active {
+    border-left: 3px solid goldenrod;
+}
+.filters-section-header {
+    text-align: left;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: baseline;
+}
+.filters-secton-content {
+    margin: 0 2rem;
+}

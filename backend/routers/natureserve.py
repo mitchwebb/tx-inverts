@@ -1,0 +1,126 @@
+from fastapi import APIRouter, Request, Response
+from fastapi.responses import JSONResponse
+from backend.data_util.execute_psql_query import execute_psql_query
+from backend.routers.occurrence import ObservationsRequest
+from backend.routers.occurrence import ObservationsRequest
+from backend.data_util.natureserve import calculate_values
+import json
+import psycopg
+import time
+from backend.routers.taxa import get_taxon_rank
+from psycopg import sql
+from backend.core.sql import create_occurrence_clause
+from backend.models.sql import OccurrenceFilter
+
+
+router = APIRouter()
+
+
+@router.post('/get_ns_values', response_class=Response)
+async def get_ns_values(data: ObservationsRequest, request: Request):
+
+    filters = OccurrenceFilter(
+        taxon_id=data.taxon_id,
+        include_inat=data.include_inat,
+        date_start=data.date_start,
+        date_end=data.date_end,
+        data_providers=data.data_providers
+    )
+
+    rank_col = 'ns_rank_state' if filters.include_inat else 'ns_rank_state_no_inat'
+
+    pool = request.app.state.db_pool
+
+    async with pool.connection() as conn:
+        taxon_rank = await get_taxon_rank(conn, filters.taxon_id)
+        start = time.time()
+        ns_result = await calculate_values(conn, filters, taxon_rank)
+        end = time.time()
+        print(end - start)
+        if not ns_result:
+            return JSONResponse(content={'result': None}, status_code=200)
+
+        rank_query = psycopg.sql.SQL("""
+            SELECT {rank_col}
+                FROM tx_taxa
+            WHERE taxon_id = {taxon_id}
+        """).format(
+            taxon_id=psycopg.sql.Literal(filters.taxon_id),
+            include_inate=psycopg.sql.Literal(filters.include_inat),
+            rank_col=psycopg.sql.Identifier(rank_col)
+        )
+
+        async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+            await cur.execute(rank_query, ())
+            rank_result = await cur.fetchone()
+
+        print('natureserve DONE')
+        return JSONResponse(content={
+            'result': {
+                'number_of_occurrences': ns_result['number_of_occurrences'],
+                'range_extent_km2': ns_result['range_extent_km2'],
+                'observation_count': ns_result['observation_count'],
+                'area_of_occupancy_4km2_bins': ns_result['area_of_occupancy_4km2_bins'],
+                'ns_rank_state': rank_result[rank_col]
+            }
+        })
+    return
+
+
+@router.post('/get_range_extent_geom', response_class=Response)
+async def get_range_extent_geom(data: ObservationsRequest, request: Request):
+    filters = OccurrenceFilter(
+        taxon_id=data.taxon_id,
+        include_inat=data.include_inat,
+        date_end=data.date_end,
+        date_start=data.date_start,
+        data_providers=data.data_providers
+    )
+
+    occurrence_clause = create_occurrence_clause(filters)
+
+    pool = request.app.state.db_pool
+
+    async with pool.connection() as conn:
+        taxon_rank = await get_taxon_rank(conn, filters.taxon_id)
+
+        rank_col = f'{taxon_rank}_id'
+
+        query = sql.SQL('''
+            WITH region AS (
+                SELECT geometry
+                FROM geometries
+                WHERE geometry_name = 'Texas'
+            ),
+            hull AS (
+                SELECT ST_ConvexHull(ST_Collect(
+                    ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326)
+                )) AS geom
+                {occurrence_clause}
+            )
+            SELECT ST_AsGeoJSON(
+                ST_Transform(
+                    ST_Intersection(hull.geom, region.geometry),
+                    4326
+                )
+            ) AS range_extent_geom
+            FROM hull, region;
+        ''').format(
+            rank_col=sql.Identifier(rank_col),
+            taxon_id=sql.Literal(filters.taxon_id),
+            include_inat=sql.Literal(filters.include_inat),
+            occurrence_clause=occurrence_clause
+        )
+
+        async with execute_psql_query(
+            conn, query, (), fetch='one', dict_cursor=True
+        ) as result:
+            if not result:
+                return JSONResponse(content={'result': None}, status_code=200)
+
+            geom_json = result['range_extent_geom']
+            return JSONResponse(content={
+                'result': {
+                    'range_extent_geom': json.loads(geom_json) if geom_json else None
+                }
+            })

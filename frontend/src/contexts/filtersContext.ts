@@ -1,0 +1,36 @@
+import { getContext, setContext } from 'svelte';
+import type { NSRank } from '../types/api';
+import type { Provider } from '../constants/mapLegendKeys';
+import type { TaxonomicRank } from '../types/taxa';
+
+export const filtersStateKey = 'filters';
+
+export type FiltersStateType = {
+    filteredTaxonID: number | null;
+    filteredCanonicalName: string | null;
+    taxonRank: TaxonomicRank | null;
+    includeINat: boolean;
+    dataProviders: Provider[] | null;
+    nSRanks: NSRank[] | null;
+    dateStart: string | null;
+    dateEnd: string | null;
+};
+
+export const initialFiltersState: FiltersStateType = {
+    filteredTaxonID: null,
+    filteredCanonicalName: null,
+    taxonRank: null,
+    includeINat: true,
+    dataProviders: null,
+    nSRanks: null,
+    dateStart: null,
+    dateEnd: null,
+};
+
+export function setFiltersContext(taxonState: FiltersStateType) {
+    setContext(filtersStateKey, taxonState);
+}
+
+export function getFiltersContext(): FiltersStateType {
+    return getContext(filtersStateKey) as FiltersStateType;
+}

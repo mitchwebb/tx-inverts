@@ -1,0 +1,377 @@
+from backend.config.data import DATA_OUT_PATH
+from backend.data_util.db import get_single_db_connection
+from backend.data_util.download_large_file import download_large_file
+from backend.data_util.extract_zip import extract_zip_files
+import backend.data_util.natureserve as ns
+from backend.data_util.taxa import build_lineages_numpy
+from backend.db_schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
+from backend.db_schema.tx_taxa import TX_TAXA_TABLE
+from backend.db_schema.us_invasives_checklist import US_INVASIVES_TABLE
+from backend.models.update_status import UpdateStatus
+from backend.tools.initialize_db import initialize_table
+from backend.tools.refresh_materialized_views import refresh_materialized_view
+import csv
+import io
+import os
+import pandas as pd
+import psycopg
+from psycopg import sql, AsyncConnection
+from typing import List, Optional
+
+# TODO: This might as well be included in taxonomic updates, given that if
+# the backbone is updated, the taxonIDs for these species will be as well
+
+# Flag invasive species in backbone using US_INVASIVES table
+
+
+async def flag_invasives(
+    conn: AsyncConnection,
+    df: pd.DataFrame,
+):
+    '''
+        Given a dataframe (in DarwinCore format), create a column called us_invasive and,
+        using the our invasives table, flag invasive taxa as True.
+
+        conn (psycopg.AsyncConnection): Connection to database
+        df (Dataframe): Dataframe in DarwinCore format containing taxa you want checked
+
+        Returns:
+            df (Dataframe): Dataframe with added/populated 'us_invasive' column
+
+    '''
+
+    query = sql.SQL('''
+            SELECT 
+                COALESCE(b.accepted_name_usage_id, b.taxon_id) as accepted_id
+            FROM {invasives_table} i
+            JOIN {backbone} b
+                ON i.taxon_id = b.taxon_id
+        ''').format(
+        invasives_table=sql.Identifier(US_INVASIVES_TABLE.name),
+        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
+    )
+
+    async with conn.cursor() as cur:
+        await cur.execute(query)
+        rows = await cur.fetchall()
+        columns = [desc.name for desc in cur.description]
+
+    invasives_df = pd.DataFrame(rows, columns=columns)
+    invasives_df['accepted_id'] = invasives_df['accepted_id'].fillna(
+        0).astype('int64')
+
+    df['us_invasive'] = (
+        df['accepted_name_usage_id'].isin(invasives_df['accepted_id']) |
+        df['taxon_id'].isin(invasives_df['accepted_id'])
+    )
+
+    return df
+
+
+# Perform a full update of the gbif_backbone in local database
+
+# TODO: This script is used to update the backbone taxonomy in the database.
+# TODO: This will need to update indexes, materialized views, and I need to
+# TODO: Consider whether and updated backbone will require a full update of
+# TODO: the GBIF observations table. Perhaps this is a reason to use last_interpreted?
+
+# TODO: Takes about 10 minutes with the GBIF backbone
+async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
+    """
+    Updates the gbif_inverts_backbone table if there are changes in the GBIF backbone.
+
+    Returns:
+        True if the backbone was updated (and ns_rank_state should be recalculated),
+        False if no changes were detected.
+    """
+
+    # If no filepath provided, download and extract
+    if fp == None:
+        print('Downloading backbone from gbif...')
+        zip_path = download_large_file(
+            'https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip',
+            output_fp=os.path.join(DATA_OUT_PATH, 'backbone_test.zip')
+        )
+        extract_dir = DATA_OUT_PATH
+
+        # Extract Taxon.tsv from backbone
+        extract_zip_files(zip_path, extract_dir, target_files=[
+            'Taxon.tsv'], delete_zip=True)
+
+        fp = os.path.join(extract_dir, 'Taxon.tsv')
+
+    print('Reading backbone...')
+    df = pd.read_csv(
+        fp,
+        delimiter='\t',
+        # no quoting expected (this was causing our parsing errors)
+        quoting=csv.QUOTE_NONE,
+        on_bad_lines='warn',
+        low_memory=False
+    )
+
+    # List of exceptional chordate invertebrates
+    chordate_inverts = ['Thaliacea', 'Ascidiacea',
+                        'Appendicularia', 'Leptocardii']
+
+    # Create filter mask
+    mask = (
+        (df['kingdom'] == 'Animalia') &
+        (
+            (df['phylum'] != 'Chordata') |
+            (df['class'].isin(chordate_inverts))
+        )
+    )
+
+    print('Filtering to inverts...')
+    # Apply mask
+    df = df[mask].copy()
+
+    # Add empty ns_rank_state column
+    df['ns_rank_state'] = pd.NA
+
+    # Fit dataframe to table definition
+    print('Formatting table...')
+    df = df.rename(
+        columns={'specificEpithet': 'species',
+                 'infraspecificEpithet': 'subspecies'}
+    )
+
+    df = GBIF_INVERTS_BACKBONE.coerce_dataframe(df)
+
+    conn = await get_single_db_connection()
+
+    print('Flagging invasives...')
+    df = await flag_invasives(conn, df)
+
+    # Build taxonomic lineages and insert rank ids into dataframe
+    print('Building taxonomic lineages to fill rank id columns...')
+    df = build_lineages_numpy(df)
+
+    print('Verifying format...')
+    GBIF_INVERTS_BACKBONE.validate_columns(df)
+
+    temp_table_name = "temp_" + GBIF_INVERTS_BACKBONE.name
+
+    async with conn.cursor() as cur:
+        # Make sure table exists
+        await initialize_table(conn, GBIF_INVERTS_BACKBONE, verbose=True)
+
+        print('Creating temp table for insertion...')
+        # Create temp table without indexes/constraints for faster COPY
+        await cur.execute(
+            sql.SQL('CREATE TEMP TABLE {} (LIKE {} INCLUDING DEFAULTS)').format(
+                sql.Identifier(temp_table_name),
+                sql.Identifier(GBIF_INVERTS_BACKBONE.name)
+            )
+        )
+
+        print('Writing DataFrame to in-memory CSV buffer...')
+        buffer = io.StringIO()
+        df.to_csv(buffer, index=False, header=False)
+        buffer.seek(0)  # Reset to the start
+
+        print('Copying to temp table...')
+        copy_sql = sql.SQL('COPY {} FROM STDIN WITH (FORMAT csv)').format(
+            sql.Identifier(temp_table_name)
+        )
+
+        async with cur.copy(copy_sql) as copy:
+            while chunk := buffer.read(1024*1024):  # 1 MB chunks
+                await copy.write(chunk)
+
+        buffer.close()
+
+        # If force_refresh, skip comparison and replace directly
+        # Flag UpdateStatus as ALL
+        if force_refresh:
+            print('force_refresh is TRUE. Overwriting previous table...')
+            await cur.execute(sql.SQL("TRUNCATE TABLE {}").format(sql.Identifier(GBIF_INVERTS_BACKBONE.name)))
+            await cur.execute(
+                sql.SQL('INSERT INTO {} SELECT * FROM {}')
+                .format(sql.Identifier(GBIF_INVERTS_BACKBONE.name), sql.Identifier(temp_table_name))
+            )
+
+            # TODO: We should have a step that checks on/initializes all relevant indexes before this next step
+
+            await refresh_materialized_view(conn, 'tx_taxa')
+
+            await conn.commit()
+
+            return UpdateStatus.ALL
+
+        # Check if temp differs from main table (EXCEPT)
+        print('Comparing new and old backbones...')
+        await cur.execute(
+            sql.SQL('''
+                SELECT EXISTS (
+                    SELECT 1 FROM (
+                        SELECT * FROM {main_table}
+                        EXCEPT
+                        SELECT * FROM {temp_table}
+                        UNION
+                        SELECT * FROM {temp_table}
+                        EXCEPT
+                        SELECT * FROM {main_table}
+                    ) AS diffs
+                )
+            ''').format(
+                main_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                temp_table=sql.Identifier(temp_table_name),
+            )
+        )
+        (changed,) = await cur.fetchone()
+
+        if not changed:
+            print('No changes found, update skipped.')
+            # No changes, skip update
+            return UpdateStatus.NONE
+
+        # Else if changes found, replace table
+        else:
+            print('Changes found in backbone, replacing backbone...')
+            await cur.execute(sql.SQL('TRUNCATE TABLE {}').format(sql.Identifier(GBIF_INVERTS_BACKBONE.name)))
+            await cur.execute(
+                sql.SQL('INSERT INTO {} SELECT * FROM {}')
+                .format(sql.Identifier(GBIF_INVERTS_BACKBONE.name), sql.Identifier(temp_table_name))
+            )
+
+            # Refresh materialized view
+            await refresh_materialized_view(conn, 'tx_taxa')
+            await conn.commit()
+
+            return UpdateStatus.ALL
+
+
+async def update_normalized_names(conn: AsyncConnection):
+    async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+        await cur.execute(""" 
+            ALTER TABLE gbif_inverts_backbone
+            ADD COLUMN IF NOT EXISTS normalized_name text;
+
+            UPDATE gbif_inverts_backbone
+            SET normalized_name = LOWER(canonical_name)
+            WHERE canonical_name IS NOT NULL
+                AND (normalized_name IS NULL OR normalized_name = '');
+        """)
+
+
+# TODO: This needs to be updated to only work on taxa that are shared between tables
+async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]] = None) -> None:
+    """
+    Update NatureServe ranks for selected (or all) taxa
+
+    conn (AsyncConnection): Active async DB connection
+    taxon_keys (int[]): List of taxon_keys to update (if None, updates all)
+    """
+
+    columns_to_check = ['ns_rank_state', 'ns_rank_state_no_inat']
+
+    # Check for both relevant columns and add them if they don't exist
+    async with conn.cursor() as cur:
+        for col_name in columns_to_check:
+            # Check if the column exists
+            await cur.execute(sql.SQL('''
+				SELECT 1
+				FROM information_schema.columns
+				WHERE table_name = {backbone} AND column_name = {col_name}
+			''').format(
+                backbone=sql.Literal(GBIF_INVERTS_BACKBONE.name),
+                col_name=sql.Literal(col_name)
+            ))
+
+            if await cur.fetchone() is None:
+                # Add the missing column
+                await cur.execute(sql.SQL(
+                    'ALTER TABLE {} ADD COLUMN {} TEXT'
+                ).format(
+                    sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                    sql.Identifier(col_name)
+                ))
+                print(
+                    f'Added blank {col_name} column to {GBIF_INVERTS_BACKBONE.name}')
+
+    # Refreshing tx_taxa materialized view to make sure we're getting full list of taxa
+    await refresh_materialized_view(conn, 'tx_taxa')
+    await conn.commit()
+
+    # If taxon_keys are provided, selected only those for update (from tx_taxa table)
+    if taxon_keys:
+        query = sql.SQL("""
+			SELECT taxon_id 
+			FROM {tx_taxa} 
+			WHERE taxon_id = ANY({taxon_keys}) AND taxon_rank = 'species'
+		""").format(
+            tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
+            taxon_keys=sql.Literal(taxon_keys)
+        )
+
+    # Else, select all taxon_ids (from tx_taxa table)
+    else:
+        query = sql.SQL("""
+			SELECT taxon_id
+			FROM {tx_taxa} 
+			WHERE taxon_rank = 'species'
+		""").format(
+            tx_taxa=sql.Identifier(TX_TAXA_TABLE.name)
+        )
+
+    # Get taxon_ids
+    async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+        await cur.execute(query)
+        rows = await cur.fetchall()
+        taxa_to_update: List[int] = [row['taxon_id'] for row in rows]
+
+    if not taxa_to_update:
+        print("No taxa to update for NatureServe ranks.")
+        return
+
+    total = len(taxa_to_update)
+
+    print(f"Updating NatureServe ranks for {total} taxa...")
+
+    # Get list of taxon_ids and ranks for batch update
+    rank_assignments: List[tuple[int, str, str]] = []
+
+    # Calcuate ranks for all taxa (with and without inat)
+    for index, taxon_id in enumerate(taxa_to_update):
+        print(index + 1, f'of {total}')
+
+        ranks = []
+        # Calculate values for taxa with inat observations and without
+        for include_inat in [True, False]:
+            values = await ns.calculate_values(conn, taxon_id, include_inat)
+            # If there are no occurrences, rank uncertain
+            rank = (
+                ns.calculate_rank(
+                    values['number_of_occurrences'],
+                    values['range_extent_km2'],
+                    values['area_of_occupancy_4km2_bins']
+                ) if values else 'U'
+            )
+            ranks.append(rank)
+
+        # Append tuple: (taxon_id, rank_with, rank_without)
+        rank_assignments.append((taxon_id, ranks[0], ranks[1]))
+
+    # Bulk update all ranks
+    async with conn.cursor() as cur:
+        # Avoid setting rank if the taxon is not for a species
+        await cur.executemany(
+            sql.SQL("""
+				UPDATE {}
+				SET ns_rank_state = %s,
+					ns_rank_state_no_inat = %s
+				WHERE taxon_id = %s AND taxon_rank = 'species'
+			""").format(sql.Identifier(GBIF_INVERTS_BACKBONE.name)),
+            [(rank_with, rank_without, taxon_id)
+             for taxon_id, rank_with, rank_without in rank_assignments]
+        )
+
+    await conn.commit()
+
+    # Refreshing tx_taxa materialized view to add ranks from backbone_table
+    await refresh_materialized_view(conn, 'tx_taxa')
+    await conn.commit()
+
+    print("NatureServe rank updates complete.")
