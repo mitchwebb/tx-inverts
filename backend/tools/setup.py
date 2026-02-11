@@ -3,12 +3,14 @@
 import asyncio
 import sys
 from backend.data_util.db import get_single_db_connection
+from backend.data_util.invasives import get_invasives_dataset
 from backend.tools.initialize_db import initialize_all_tables
 from backend.constants.map import TEXAS_GEOJSON
 from backend.tools.jobs.database import update_backbone
 from backend.tools.jobs.occurrence import update_observations
 import geopandas as gpd
 from backend.tools.jobs.database import update_indexes
+from backend.tools.jobs.taxa import create_invasives_table
 
 
 # Initial script to create and populate database for Texas Inverts
@@ -37,6 +39,9 @@ async def main():
             )
             print('Updating geometries table...')
             await conn.commit()
+
+        # Create invasives table
+        await create_invasives_table()
 
         # Taxonomy table initialization
         await update_backbone()
