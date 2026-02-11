@@ -1,0 +1,22 @@
+name: tpwd
+channels:
+  - conda-forge
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+  - https://repo.anaconda.com/pkgs/msys2
+dependencies:
+  - python
+  - numpy
+  - fastapi
+  - nodejs
+  - pandas
+  - jupyter
+  - pygbif
+  - aiohttp
+  - geopandas
+  - geodatasets
+  - pydantic-settings
+  - chardet
+  - psycopg
+  - psycopg-pool
+prefix: C:\Users\mdw2685\AppData\Local\miniconda3\envs\tpwd

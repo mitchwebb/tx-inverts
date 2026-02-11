@@ -2,6 +2,7 @@ from backend.config.data import DATA_OUT_PATH
 from backend.data_util.db import get_single_db_connection
 from backend.data_util.download_large_file import download_large_file
 from backend.data_util.extract_zip import extract_zip_files
+from backend.data_util.invasives import get_invasives_dataset, prep_invasives_dataset
 import backend.data_util.natureserve as ns
 from backend.data_util.taxa import build_lineages_numpy
 from backend.db_schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
@@ -10,6 +11,7 @@ from backend.db_schema.us_invasives_checklist import US_INVASIVES_TABLE
 from backend.models.update_status import UpdateStatus
 from backend.tools.initialize_db import initialize_table
 from backend.tools.refresh_materialized_views import refresh_materialized_view
+from backend.core.logging import db_logger
 import csv
 import io
 import os
@@ -18,12 +20,22 @@ import psycopg
 from psycopg import sql, AsyncConnection
 from typing import List, Optional
 
+
 # TODO: This might as well be included in taxonomic updates, given that if
 # the backbone is updated, the taxonIDs for these species will be as well
+async def create_invasives_table():
+    fp = await get_invasives_dataset()
+
+    df = await prep_invasives_dataset(fp)
+
+    df = US_INVASIVES_TABLE.coerce_dataframe(df)
+    US_INVASIVES_TABLE.validate_columns(df)
+
+    conn = await get_single_db_connection()
+    await US_INVASIVES_TABLE.copy_from_df(conn, df, create_if_not_exists=True)
+
 
 # Flag invasive species in backbone using US_INVASIVES table
-
-
 async def flag_invasives(
     conn: AsyncConnection,
     df: pd.DataFrame,
@@ -41,7 +53,7 @@ async def flag_invasives(
     '''
 
     query = sql.SQL('''
-            SELECT 
+            SELECT
                 COALESCE(b.accepted_name_usage_id, b.taxon_id) as accepted_id
             FROM {invasives_table} i
             JOIN {backbone} b
@@ -151,6 +163,9 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
     print('Verifying format...')
     GBIF_INVERTS_BACKBONE.validate_columns(df)
 
+    df.to_csv(os.path.join(
+        DATA_OUT_PATH, 'taxa_cleaned.csv'), sep="\t", index=False)
+
     temp_table_name = "temp_" + GBIF_INVERTS_BACKBONE.name
 
     async with conn.cursor() as cur:
@@ -245,7 +260,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
 async def update_normalized_names(conn: AsyncConnection):
     async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-        await cur.execute(""" 
+        await cur.execute("""
             ALTER TABLE gbif_inverts_backbone
             ADD COLUMN IF NOT EXISTS normalized_name text;
 
@@ -298,8 +313,8 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
     # If taxon_keys are provided, selected only those for update (from tx_taxa table)
     if taxon_keys:
         query = sql.SQL("""
-			SELECT taxon_id 
-			FROM {tx_taxa} 
+			SELECT taxon_id
+			FROM {tx_taxa}
 			WHERE taxon_id = ANY({taxon_keys}) AND taxon_rank = 'species'
 		""").format(
             tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
@@ -310,7 +325,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
     else:
         query = sql.SQL("""
 			SELECT taxon_id
-			FROM {tx_taxa} 
+			FROM {tx_taxa}
 			WHERE taxon_rank = 'species'
 		""").format(
             tx_taxa=sql.Identifier(TX_TAXA_TABLE.name)
