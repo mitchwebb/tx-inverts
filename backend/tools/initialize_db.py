@@ -2,6 +2,7 @@ from psycopg import Connection
 from psycopg.errors import Error as PsycopgError
 from backend.db_schema import ALL_TABLES
 from backend.db_schema.base import DBTable
+from backend.tools.jobs.database import update_indexes
 
 # Check if table already exists (for readable erroring)
 async def table_exists(conn: Connection, table_name: str) -> bool:
@@ -46,4 +47,6 @@ async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: 
 # Initialize all tables provided to ALL_TABLES constant
 async def initialize_all_tables(conn: Connection, *, verbose: bool = False, strict: bool = True):
     for table in ALL_TABLES:
-        initialize_table(conn, table, verbose, strict)
+        await initialize_table(conn, table, verbose, strict)
+
+    await update_indexes(conn)

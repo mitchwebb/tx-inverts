@@ -6,11 +6,13 @@ from backend.data_util.db import get_single_db_connection
 from backend.data_util.invasives import get_invasives_dataset
 from backend.tools.initialize_db import initialize_all_tables
 from backend.constants.map import TEXAS_GEOJSON
-from backend.tools.jobs.database import update_backbone
+from backend.tools.jobs.taxa import update_backbone
 from backend.tools.jobs.occurrence import update_observations
 import geopandas as gpd
 from backend.tools.jobs.database import update_indexes
 from backend.tools.jobs.taxa import create_invasives_table
+from backend.config.data import DATA_OUT_PATH
+import os
 
 
 # Initial script to create and populate database for Texas Inverts
@@ -18,6 +20,7 @@ async def main():
     conn = await get_single_db_connection()
 
     try:
+        # Initialize all tables and associated indexes
         await initialize_all_tables(conn, verbose=True, strict=True)
         await conn.commit()
 
@@ -47,9 +50,7 @@ async def main():
         await update_backbone()
 
         # Observations table initialization
-        await update_observations()
-
-        await update_indexes()
+        await update_observations(chunk_size=100000)
 
         # This step could be easier if provided local files
     except Exception as e:

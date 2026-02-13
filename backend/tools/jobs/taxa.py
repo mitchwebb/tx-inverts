@@ -23,6 +23,7 @@ from typing import List, Optional
 
 # TODO: This might as well be included in taxonomic updates, given that if
 # the backbone is updated, the taxonIDs for these species will be as well
+# TODO: Needs logging
 async def create_invasives_table():
     fp = await get_invasives_dataset()
 
@@ -119,7 +120,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
         # no quoting expected (this was causing our parsing errors)
         quoting=csv.QUOTE_NONE,
         on_bad_lines='warn',
-        low_memory=False
+        low_memory=True
     )
 
     # List of exceptional chordate invertebrates
@@ -137,7 +138,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
     print('Filtering to inverts...')
     # Apply mask
-    df = df[mask].copy()
+    df = df[mask]
 
     # Add empty ns_rank_state column
     df['ns_rank_state'] = pd.NA
@@ -165,6 +166,11 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
     df.to_csv(os.path.join(
         DATA_OUT_PATH, 'taxa_cleaned.csv'), sep="\t", index=False)
+    
+    # Clear memory immediately
+    del df
+    import gc
+    gc.collect()
 
     temp_table_name = "temp_" + GBIF_INVERTS_BACKBONE.name
 
@@ -181,21 +187,21 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
             )
         )
 
-        print('Writing DataFrame to in-memory CSV buffer...')
-        buffer = io.StringIO()
-        df.to_csv(buffer, index=False, header=False)
-        buffer.seek(0)  # Reset to the start
-
-        print('Copying to temp table...')
-        copy_sql = sql.SQL('COPY {} FROM STDIN WITH (FORMAT csv)').format(
-            sql.Identifier(temp_table_name)
+        copy_sql = sql.SQL('''
+            COPY {} FROM STDIN 
+            WITH (
+                FORMAT csv, 
+                DELIMITER E'\t', 
+                HEADER true, 
+                NULL '')
+        ''').format(sql.Identifier(temp_table_name)
         )
 
-        async with cur.copy(copy_sql) as copy:
-            while chunk := buffer.read(1024*1024):  # 1 MB chunks
-                await copy.write(chunk)
-
-        buffer.close()
+        # Copying to temp table
+        with open(os.path.join(DATA_OUT_PATH, 'taxa_cleaned.csv'), "r", encoding="utf8") as f:
+            async with cur.copy(copy_sql) as copy:
+                while chunk := f.read(1024*1024):
+                    await copy.write(chunk)
 
         # If force_refresh, skip comparison and replace directly
         # Flag UpdateStatus as ALL

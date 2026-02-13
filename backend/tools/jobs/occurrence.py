@@ -125,12 +125,14 @@ async def update_observations(
                     GBIF_OBSERVATIONS_TABLE.name)
             ))
 
+            print('Adding batch_id columns...')
             # Add batch_id column for batch processing these chunks
             await cur.execute(sql.SQL('''
                 ALTER TABLE {temp_table}
                 ADD COLUMN IF NOT EXISTS batch_id bigint;
             ''').format(temp_table=sql.Identifier(temp_table_name)))
 
+            print('Creating index on batch_id')
             # Create index on batch_id
             await cur.execute(sql.SQL('''
                 CREATE INDEX IF NOT EXISTS idx_temp_batch
@@ -145,14 +147,14 @@ async def update_observations(
             save_cleaned=save_cleaned_data
         ):
 
-            # If species column exists, drop it
-            chunk = chunk.drop('species', axis=1)
+            # # If species column exists, drop it
+            # chunk = chunk.drop('species', axis=1)
 
-            # Rename epithet columns to something sensible
-            chunk = chunk.rename(
-                columns={'specificEpithet': 'species',
-                         'infraspecificEpithet': 'subspecies'}
-            )
+            # # Rename epithet columns to something sensible
+            # chunk = chunk.rename(
+            #     columns={'specificEpithet': 'species',
+            #              'infraspecificEpithet': 'subspecies'}
+            # )
 
             chunk = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(chunk)
             GBIF_OBSERVATIONS_TABLE.validate_columns(chunk)
@@ -235,55 +237,66 @@ async def update_observations(
                         batch_id=sql.Literal(batch_id)
                     ))
 
-                print('Updating lineage columns in temp table...')
-                await cur.execute(sql.SQL('''
-                    WITH resolved_keys AS (
-                        -- Step 1: resolve the true accepted taxon key for each observation
-                        SELECT
-                            obs.gbif_id,
-                            COALESCE(b.accepted_name_usage_id, b.taxon_id) AS resolved_taxon_key
-                        FROM {temp_table} AS obs
-                        JOIN {backbone} AS b
-                            ON obs.accepted_taxon_key = b.taxon_id
-                            OR obs.accepted_taxon_key = b.accepted_name_usage_id
-                        WHERE obs.batch_id = {batch_id}
-                    ),
-                    accepted_lineage AS (
-                        -- Step 2: fetch lineage for the resolved/accepted taxon key
-                        SELECT
-                            r.gbif_id,
-                            r.resolved_taxon_key AS new_taxon_key,
-                            b.kingdom_id, b.phylum_id, b.class_id, b.order_id,
-                            b.family_id, b.genus_id, b.species_id, b.subspecies_id
-                        FROM resolved_keys r
-                        JOIN {backbone} b
-                            ON b.taxon_id = r.resolved_taxon_key
-                    )
-                    UPDATE {temp_table} AS obs
-                    SET
-                        accepted_taxon_key = a.new_taxon_key,
-                        kingdom_id         = a.kingdom_id,
-                        phylum_id          = a.phylum_id,
-                        class_id           = a.class_id,
-                        order_id           = a.order_id,
-                        family_id         = a.family_id,
-                        genus_id           = a.genus_id,
-                        species_id         = a.species_id,
-                        subspecies_id      = a.subspecies_id
-                    FROM accepted_lineage a
-                    WHERE obs.gbif_id = a.gbif_id
-                    AND obs.batch_id = {batch_id};
-                ''').format(
-                    temp_table=sql.Identifier(temp_table_name),
-                    backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-                    batch_id=sql.Literal(batch_id)
-                ))
-
+        print('Updating lineage columns in temp table...')
         async with conn.cursor() as cur:
+
+            print('Creating necessary indexes on temp table...')
+            await cur.execute(sql.SQL('''
+                CREATE INDEX ON {temp} (gbif_id);
+                CREATE INDEX ON {temp} (accepted_taxon_key);
+                CREATE INDEX ON {temp} (taxon_key);
+            ''').format(temp=sql.Identifier(temp_table_name)))
+
             # Drop batch_id from temp table so INSERT matches target
             await cur.execute(sql.SQL('''
                 ALTER TABLE {temp_table} DROP COLUMN IF EXISTS batch_id
             ''').format(temp_table=sql.Identifier(temp_table_name)))
+
+            print('Creating temp table for lineage...')
+            # Create temp table of resolved lineage keys 
+            await cur.execute(sql.SQL('''
+                CREATE TEMP TABLE resolved_keys AS
+                    -- Step 1: resolve the true accepted taxon key for each observation
+                    SELECT
+                        obs.gbif_id,
+                        COALESCE(b1.accepted_name_usage_id, b1.taxon_id, b2.accepted_name_usage_id, b2.taxon_id) AS resolved_taxon_key
+                    FROM {temp_table} AS obs
+                    LEFT JOIN {backbone} AS b1
+                        ON obs.accepted_taxon_key = b1.taxon_id
+                    LEFT JOIN {backbone} AS b2
+                        ON obs.accepted_taxon_key = b2.accepted_name_usage_id
+                ;''').format(
+                temp_table=sql.Identifier(temp_table_name),
+                backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+            ))
+
+            print('Creating index on gbif_id...')
+            # Index on gbif_id for insert
+            await cur.execute(sql.SQL('''
+                CREATE INDEX idx_resolved_gbif ON resolved_keys(gbif_id);'''
+            ))
+
+            print('Writing lineages to temp_table...')
+            # Apply lineages to temp table
+            await cur.execute(sql.SQL('''
+                UPDATE {temp_table} t
+                SET 
+                    accepted_taxon_key = r.resolved_taxon_key,
+                    kingdom_id = b.kingdom_id,
+                    phylum_id = b.phylum_id,
+                    class_id = b.class_id,
+                    order_id = b.order_id,
+                    family_id = b.family_id,
+                    genus_id = b.genus_id,
+                    species_id = b.species_id,
+                    subspecies_id = b.subspecies_id
+                FROM resolved_keys r
+                JOIN {backbone} b ON b.taxon_id = r.resolved_taxon_key
+                WHERE t.gbif_id = r.gbif_id;
+            ''').format(
+                temp_table=sql.Identifier(temp_table_name),
+                backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+            ))
 
         # If full_replace is true, add all observations
         if full_replace:
@@ -305,12 +318,6 @@ async def update_observations(
             # Compare accepted_taxon_key values to see if backbone needs to be updated
             print('Comparing accepted_taxon_keys for changes...')
             async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-                print('Creating necessary indexes on temp table...')
-                await cur.execute(sql.SQL('''
-                    CREATE INDEX ON {temp} (gbif_id);
-                    CREATE INDEX ON {temp} (accepted_taxon_key);
-                    CREATE INDEX ON {temp} (taxon_key);
-                ''').format(temp=sql.Identifier(temp_table_name)))
                 await cur.execute(sql.SQL('''
                     SELECT COUNT(*) AS changed_taxa
                     FROM {observations_table} old
@@ -334,8 +341,14 @@ async def update_observations(
                 else:
                     backboneUpdateRequired = False
 
+                await cur.execute(sql.SQL('''
+                    SELECT COUNT(*) AS new_row_count FROM {temp_table}
+                ''').format(temp_table=sql.Identifier(temp_table_name)))
+                new_row_count = (await cur.fetchone())['new_row_count']
+
                 # Now update main table
-                print(f'Rows to copy: {len(chunk)}')
+                print(f'Rows to copy: {new_row_count}')
+
                 # Populate observations table with new rows from temp table
                 # Replace rows with matching gbif_ids
 

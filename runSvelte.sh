@@ -1,2 +1,2 @@
-cd ./frontend
+cd frontend
 npm run dev
