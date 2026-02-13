@@ -99,7 +99,7 @@ def build_observations_request(
                             {
                                 "type": "greaterThanOrEquals",
                                 "key": min_date_type.upper(),
-                                "value": min_date.date().isoformat()
+                                "value": min_date.isoformat()
                             },
                             {
                                 "type": "isNull",

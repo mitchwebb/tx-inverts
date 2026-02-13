@@ -17,6 +17,7 @@ import json
 import os
 import pandas as pd
 import psycopg
+import time
 from psycopg import sql
 from typing import List, Optional, Tuple
 
@@ -70,8 +71,9 @@ async def update_observations(
                 print('Getting minimum modified date...')
                 min_date = await get_latest_record_date.get_latest_record_date(conn, 'modified')
                 kwargs['min_date'] = min_date
+                print(min_date)
                 print(
-                    f'Using min modified date for GBIF request: {min_date.isoformat()}')
+                    f'Using min modified date for GBIF request: {min_date}')
 
             # Request a GBIF download
             request_body = observations_request.build_observations_request(
@@ -96,112 +98,155 @@ async def update_observations(
         )
         observations_fp = os.path.join(output_dir, 'occurrence.txt')
 
-    # Transform data
-    clean_df = process_observations.process_dwc_observations(
-        observations_fp,
-        chunk_size,
-        save_cleaned=save_cleaned_data
-    )
-
-    # If species column exists, drop it
-    clean_df = clean_df.drop('species', axis=1)
-
-    # Rename epithet columns to something sensible
-    clean_df = clean_df.rename(
-        columns={'specificEpithet': 'species',
-                 'infraspecificEpithet': 'subspecies'}
-    )
-
-    clean_df = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(clean_df)
-    GBIF_OBSERVATIONS_TABLE.validate_columns(clean_df)
-
-    # Set geometry to None for the copy operation as it doesn't cooperate with the COPY FROM method
-    clean_df['geometry'] = None
-
-    print('Converting valid dates to ISO format...')
-    for col in ['collection_start_date', 'collection_end_date']:
-        # Convert valid dates to ISO strings, leave missing as None
-        clean_df[col] = pd.to_datetime(clean_df[col], errors='coerce').dt.date
-
-    # Get a list of taxon ids that will be affected by this update
-    new_row_keys = clean_df['accepted_taxon_key'].unique().tolist()
-
-    # Create temp table to perform data update/merge
-    temp_table_name = 'temp_' + GBIF_OBSERVATIONS_TABLE.name
+    if full_replace:
+        print('Full replace requested. Truncating observations table...')
+        async with conn.cursor() as cur:
+            await cur.execute(sql.SQL('TRUNCATE {}').format(
+                sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
+            ))
+        backboneUpdateRequired = True  # Probably true in this case, doesn't cost a lot
 
     try:
-        # Make sure gbif_observations_table exists
-        await initialize_table(conn, GBIF_OBSERVATIONS_TABLE, verbose=True)
-
         async with conn.cursor() as cur:
+            # Create temp table to perform data update/merge
+            temp_table_name = 'temp_' + GBIF_OBSERVATIONS_TABLE.name
+
+            # Make sure gbif_observations_table exists
+            await initialize_table(conn, GBIF_OBSERVATIONS_TABLE, verbose=True)
+
             print('Creating temp table for insertion...')
             # Create temp table without indexes/constraints for faster COPY
-            await cur.execute(
-                sql.SQL('CREATE TEMP TABLE {} (LIKE {} INCLUDING DEFAULTS)').format(
-                    sql.Identifier(temp_table_name),
-                    sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
-                )
+            await cur.execute(sql.SQL('''
+                CREATE TEMP TABLE {temp_table}
+                (LIKE {observations_table} INCLUDING DEFAULTS)
+            ''').format(
+                temp_table=sql.Identifier(temp_table_name),
+                observations_table=sql.Identifier(
+                    GBIF_OBSERVATIONS_TABLE.name)
+            ))
+
+            # Add batch_id column for batch processing these chunks
+            await cur.execute(sql.SQL('''
+                ALTER TABLE {temp_table}
+                ADD COLUMN IF NOT EXISTS batch_id bigint;
+            ''').format(temp_table=sql.Identifier(temp_table_name)))
+
+            # Create index on batch_id
+            await cur.execute(sql.SQL('''
+                CREATE INDEX IF NOT EXISTS idx_temp_batch
+                ON {temp_table} (batch_id);
+            ''').format(temp_table=sql.Identifier(temp_table_name)))
+
+        # TODO: This should return chunks, and the rest of the process should operate in chunks
+        # Transform data
+        for chunk in process_observations.process_dwc_observations(
+            observations_fp,
+            chunk_size,
+            save_cleaned=save_cleaned_data
+        ):
+
+            # If species column exists, drop it
+            chunk = chunk.drop('species', axis=1)
+
+            # Rename epithet columns to something sensible
+            chunk = chunk.rename(
+                columns={'specificEpithet': 'species',
+                         'infraspecificEpithet': 'subspecies'}
             )
 
-            # Write filtered_df to CSV in-memory buffer
-            print('Copying to temp table...')
+            chunk = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(chunk)
+            GBIF_OBSERVATIONS_TABLE.validate_columns(chunk)
 
-            buffer = io.BytesIO()
-            clean_df.to_csv(buffer, index=False, header=False, encoding='utf-8')
-            buffer.seek(0)
+            # Set geometry to None for the copy operation as it doesn't cooperate with the COPY FROM method
+            chunk['geometry'] = None
 
-            copy_sql = sql.SQL("COPY {} ({}) FROM STDIN WITH (FORMAT CSV)").format(
-                sql.Identifier(temp_table_name),
-                sql.SQL(", ").join(
-                    map(sql.Identifier, GBIF_OBSERVATIONS_TABLE.column_order()))
-            )
+            print('Converting valid dates to ISO format...')
+            for col in ['collection_start_date', 'collection_end_date']:
+                # Convert valid dates to ISO strings, leave missing as None
+                chunk[col] = pd.to_datetime(chunk[col], errors='coerce').dt.date
 
-            async with cur.copy(copy_sql) as copy:
-                while chunk := buffer.read(1024 * 1024):
-                    await copy.write(chunk)
+            # Get a list of taxon ids that will be affected by this update
+            new_row_keys = chunk['accepted_taxon_key'].unique().tolist()
 
-            buffer.close()
+            async with conn.cursor() as cur:
+                batch_id = time.time_ns()
 
-        # TODO: This takes about 5 min for 2.5 million rows
-        # Insert backbone rank id values into temp table
-        # This will also correct unlinked taxa in the observations table by
-        # using their corresponding backbone accepted_name_usage_ids
-        async with conn.cursor() as cur:
-            # Populate geometry in temp table
-            print('Updating geometry column...')
-            await cur.execute(
-                sql.SQL('''
-                    UPDATE {} 
-                    SET geometry = ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326)
-                    WHERE decimal_latitude IS NOT NULL 
-                        AND decimal_longitude IS NOT NULL
-                ''').format(sql.Identifier(temp_table_name)))
-
-            print('Filter by Texas Shapefile...')
-            await cur.execute(
-                sql.SQL('''
-                    DELETE FROM {temp}
-                    WHERE NOT ST_Within(
-                        geometry, 
-                        (SELECT geometry FROM geometries WHERE geometry_name = 'Texas')
-                    );
+                # Use current batch_id in next copy
+                await cur.execute(sql.SQL('''
+                    ALTER TABLE {temp_table}
+                    ALTER COLUMN batch_id SET DEFAULT {batch_id};
                 ''').format(
-                    temp=sql.Identifier(temp_table_name)
-                )
-            )
+                    batch_id=sql.Literal(batch_id),
+                    temp_table=sql.Identifier(temp_table_name)
+                ))
 
-            print('Updating lineage columns in temp table...')
-            await cur.execute(
-                sql.SQL('''
+                # Write filtered_df to CSV in-memory buffer
+                print('Copying to temp table...')
+
+                buffer = io.BytesIO()
+                chunk.to_csv(buffer, index=False, sep='\t', na_rep='\\N',
+                             header=False, encoding='utf-8')
+                buffer.seek(0)
+
+                copy_sql = sql.SQL('''
+                    COPY {temp_table} ({column_order})
+                    FROM STDIN WITH (FORMAT CSV, DELIMITER E'\t', NULL '\\N')
+                ''').format(
+                    temp_table=sql.Identifier(temp_table_name),
+                    column_order=sql.SQL(", ").join(
+                        map(sql.Identifier, GBIF_OBSERVATIONS_TABLE.column_order()))
+                )
+
+                async with cur.copy(copy_sql) as copy:
+                    while chunk_data := buffer.read(1024 * 1024):
+                        await copy.write(chunk_data)
+
+                buffer.close()
+
+                # TODO: This takes about 5 min for 2.5 million rows
+                # Insert backbone rank id values into temp table
+                # This will also correct unlinked taxa in the observations table by
+                # using their corresponding backbone accepted_name_usage_ids
+                # Populate geometry in temp table
+                print('Updating geometry column...')
+                await cur.execute(
+                    sql.SQL('''
+                        UPDATE {temp_table}
+                        SET geometry = ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326)
+                        WHERE batch_id = {batch_id}
+                            AND decimal_latitude IS NOT NULL
+                            AND decimal_longitude IS NOT NULL
+                    ''').format(
+                        temp_table=sql.Identifier(temp_table_name),
+                        batch_id=sql.Literal(batch_id)
+                    ))
+
+                print('Filter by Texas Shapefile...')
+                await cur.execute(
+                    sql.SQL('''
+                        DELETE FROM {temp_table}
+                        WHERE batch_id={batch_id}
+                            AND NOT ST_Within(
+                                geometry,
+                                (SELECT geometry FROM geometries WHERE geometry_name = 'Texas')
+                            );
+                    ''').format(
+                        temp_table=sql.Identifier(temp_table_name),
+                        batch_id=sql.Literal(batch_id)
+                    ))
+
+                print('Updating lineage columns in temp table...')
+                await cur.execute(sql.SQL('''
                     WITH resolved_keys AS (
                         -- Step 1: resolve the true accepted taxon key for each observation
                         SELECT
                             obs.gbif_id,
                             COALESCE(b.accepted_name_usage_id, b.taxon_id) AS resolved_taxon_key
-                        FROM {temp} AS obs
+                        FROM {temp_table} AS obs
                         JOIN {backbone} AS b
                             ON obs.accepted_taxon_key = b.taxon_id
                             OR obs.accepted_taxon_key = b.accepted_name_usage_id
+                        WHERE obs.batch_id = {batch_id}
                     ),
                     accepted_lineage AS (
                         -- Step 2: fetch lineage for the resolved/accepted taxon key
@@ -214,7 +259,7 @@ async def update_observations(
                         JOIN {backbone} b
                             ON b.taxon_id = r.resolved_taxon_key
                     )
-                    UPDATE {temp} AS obs
+                    UPDATE {temp_table} AS obs
                     SET
                         accepted_taxon_key = a.new_taxon_key,
                         kingdom_id         = a.kingdom_id,
@@ -226,31 +271,38 @@ async def update_observations(
                         species_id         = a.species_id,
                         subspecies_id      = a.subspecies_id
                     FROM accepted_lineage a
-                    WHERE obs.gbif_id = a.gbif_id;
+                    WHERE obs.gbif_id = a.gbif_id
+                    AND obs.batch_id = {batch_id};
                 ''').format(
-                    temp=sql.Identifier(temp_table_name),
-                    backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
-                )
-            )
-
-        # If full_replace is true, truncate observations_table and replace
-        if full_replace:
-            print('Performing FULL replace of observations table...')
-            async with conn.cursor() as cur:
-                await cur.execute(sql.SQL('TRUNCATE {}').format(
-                    sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
+                    temp_table=sql.Identifier(temp_table_name),
+                    backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                    batch_id=sql.Literal(batch_id)
                 ))
-                await cur.execute(sql.SQL(
-                    'INSERT INTO {observations_table} SELECT * FROM {temp_table}'
-                ).format(
+
+        async with conn.cursor() as cur:
+            # Drop batch_id from temp table so INSERT matches target
+            await cur.execute(sql.SQL('''
+                ALTER TABLE {temp_table} DROP COLUMN IF EXISTS batch_id
+            ''').format(temp_table=sql.Identifier(temp_table_name)))
+
+        # If full_replace is true, add all observations
+        if full_replace:
+            print('Adding all accepted observations to observations table...')
+            async with conn.cursor() as cur:
+                await cur.execute(sql.SQL('''
+                    INSERT INTO {observations_table}
+                    SELECT * FROM {temp_table}
+                ''').format(
                     observations_table=sql.Identifier(
                         GBIF_OBSERVATIONS_TABLE.name),
-                    temp_table=sql.Identifier(temp_table_name)
+                    temp_table=sql.Identifier(temp_table_name),
+                    cols=sql.SQL(', ').join(
+                        map(sql.Identifier, GBIF_OBSERVATIONS_TABLE.column_order()))
                 ))
-            backboneUpdateRequired = True  # Probably true, doesn't cost a lot
 
+        # Else, compare old and new rows, replacing only those with altered information
         else:
-            # Compare accepted_taxon_key values
+            # Compare accepted_taxon_key values to see if backbone needs to be updated
             print('Comparing accepted_taxon_keys for changes...')
             async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 print('Creating necessary indexes on temp table...')
@@ -264,7 +316,7 @@ async def update_observations(
                     FROM {observations_table} old
                     JOIN {temp_table} new ON old.gbif_id = new.gbif_id
                     WHERE old.accepted_taxon_key IS DISTINCT FROM new.accepted_taxon_key
-                        AND old.taxon_key = new.taxon_key
+                    AND old.taxon_key = new.taxon_key
                 ''').format(
                     observations_table=sql.Identifier(
                         GBIF_OBSERVATIONS_TABLE.name),
@@ -282,11 +334,11 @@ async def update_observations(
                 else:
                     backboneUpdateRequired = False
 
-            # Now update main table
-            print(f'Rows to copy: {len(clean_df)}')
-            # Populate observations table with new rows from temp table
-            # Replace rows with matching gbif_ids
-            async with conn.cursor() as cur:
+                # Now update main table
+                print(f'Rows to copy: {len(chunk)}')
+                # Populate observations table with new rows from temp table
+                # Replace rows with matching gbif_ids
+
                 # Delete matching rows
                 await cur.execute(sql.SQL('''
                     DELETE FROM {observations_table} o
@@ -301,12 +353,14 @@ async def update_observations(
                 print('Inserting new rows...')
                 # Insert all rows from temp table
                 await cur.execute(sql.SQL('''
-                    INSERT INTO {observations_table} 
-                    SELECT * FROM {temp_table};
+                    INSERT INTO {observations_table}
+                    SELECT * FROM {temp_table}
                 ''').format(
                     observations_table=sql.Identifier(
                         GBIF_OBSERVATIONS_TABLE.name),
-                    temp_table=sql.Identifier(temp_table_name)
+                    temp_table=sql.Identifier(temp_table_name),
+                    cols=sql.SQL(', ').join(
+                        map(sql.Identifier, GBIF_OBSERVATIONS_TABLE.column_order()))
                 ))
 
         # Refresh materialized views
@@ -336,9 +390,9 @@ async def update_observations(
                         This means the backbone is out of date and needs to be resynced! ⚠
                 ''')
 
-        await conn.commit()
+            await conn.commit()
 
-        return (backboneUpdateRequired, new_row_keys or None)
+            return (backboneUpdateRequired, new_row_keys or None)
 
     except Exception:
         await conn.rollback()
@@ -352,7 +406,7 @@ async def sync_observations_to_backbone():
     '''
         Resync observations table to current backbone
 
-        This will take the current gbif_inverts_backbone table and, 
+        This will take the current gbif_inverts_backbone table and,
         using the taxon_id -> accepted_name_usage_id relationship, alter taxon_key
         values in gbif_observations to reflect the current relationships
     '''
@@ -364,19 +418,19 @@ async def sync_observations_to_backbone():
     print('Syncing observations to current backbone...')
     try:
         async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-
             # Create temp table of accepted_taxon_keys that need changing
             print('Checking for affected observations...')
             await cur.execute(sql.SQL('''
                 CREATE TEMP TABLE tmp_update AS
                 SELECT o.gbif_id, b.accepted_name_usage_id
                 FROM {gbif_observations} o
-                JOIN {backbone} b 
+                JOIN {backbone} b
                     ON o.taxon_key = b.taxon_id
                 WHERE NOT (o.accepted_taxon_key = b.taxon_id
                         OR o.accepted_taxon_key = b.accepted_name_usage_id)
             ''').format(
-                gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+                gbif_observations=sql.Identifier(
+                    GBIF_OBSERVATIONS_TABLE.name),
                 backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
             ))
 
@@ -394,9 +448,8 @@ async def sync_observations_to_backbone():
                 SET accepted_taxon_key = t.accepted_name_usage_id
                 FROM tmp_update t
                 WHERE o.gbif_id = t.gbif_id;
-            ''').format(
-                gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
-            ))
+            ''').format(gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
+                        ))
 
             updated_count = cur.rowcount
             print(f'Updated {updated_count} rows in gbif_observations')
@@ -410,7 +463,8 @@ async def sync_observations_to_backbone():
                     ON o.taxon_key = b.taxon_id
                 WHERE b.taxon_id is NULL
             ''').format(
-                gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+                gbif_observations=sql.Identifier(
+                    GBIF_OBSERVATIONS_TABLE.name),
                 backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
             ))
 
@@ -421,7 +475,7 @@ async def sync_observations_to_backbone():
                 print(
                     f'ORPHAN TAXA FOUND IN OBSERVATIONS! EXAMPLES: {orphaned_keys[:10]}')
 
-        await conn.commit()
+            await conn.commit()
 
     except Exception as e:
         # Rollback on error

@@ -1,5 +1,6 @@
 from psycopg import AsyncConnection, sql
 from typing import Literal
+from dateutil import parser
 
 
 async def get_latest_record_date(conn: AsyncConnection, param: Literal['last_interpreted', 'modified']):
@@ -23,5 +24,8 @@ async def get_latest_record_date(conn: AsyncConnection, param: Literal['last_int
         result = await cur.fetchone()
 
         if result and result[0]:
-            return result[0]
+            # DB column is text; parse ISO string into a date
+            dt = parser.isoparse(result[0])
+            return dt.date()
+
         return None

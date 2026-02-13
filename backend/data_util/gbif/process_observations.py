@@ -266,7 +266,7 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000, save_cle
         pd.DataFrame: Processed DataFrame ready for database insertion.
     '''
 
-    filtered_chunks = []
+    # filtered_chunks = []
 
     observation_count = 0
 
@@ -307,29 +307,29 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000, save_cle
             print(
                 f'Removed {bad_date_count} records found with invalid collection dates')
 
-        # Add newly filtered chunk to filtered_chunks
-        filtered_chunks.append(df)
+        # # Add newly filtered chunk to filtered_chunks
+        # filtered_chunks.append(df)
 
         observation_count += len(chunk)
 
         print(
             f'Processed chunk with {len(df)} valid records of {len(chunk)} total records')
 
-    if not filtered_chunks:
-        raise ValueError(
-            "No valid data to process — all chunks were filtered out")
+    # if not filtered_chunks:
+    #     raise ValueError(
+    #         "No valid data to process — all chunks were filtered out")
 
-    # Combine all filtered chunks
-    combined_df = pd.concat(filtered_chunks, ignore_index=True)
-    # Saved combined df, if needed
-    if save_cleaned:
-        # Create cleaned directory if it doesn't exist
-        cleaned_dir = os.path.join(DATA_OUT_PATH, 'cleaned')
-        os.makedirs(cleaned_dir, exist_ok=True)
-        combined_df.to_csv(os.path.join(
-            cleaned_dir, 'observations_cleaned.csv'), sep="\t", index=False)
+    # # Combine all filtered chunks
+    # combined_df = pd.concat(filtered_chunks, ignore_index=True)
+    # # Saved combined df, if needed
+    # if save_cleaned:
+    #     # Create cleaned directory if it doesn't exist
+    #     cleaned_dir = os.path.join(DATA_OUT_PATH, 'cleaned')
+    #     os.makedirs(cleaned_dir, exist_ok=True)
+    #     combined_df.to_csv(os.path.join(
+    #         cleaned_dir, 'observations_cleaned.csv'), sep="\t", index=False)
 
-    print(
-        f'Processed {len(combined_df)} valid observations out of {observation_count} total observations')
+    # print(
+    #     f'Processed {len(combined_df)} valid observations out of {observation_count} total observations')
 
-    return combined_df
+        yield chunk

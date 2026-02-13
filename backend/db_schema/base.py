@@ -107,7 +107,8 @@ class DBTable:
         columns = self.column_order()
         df_to_copy = df[columns]
         buffer = io.StringIO()
-        df_to_copy.to_csv(buffer, index=False, header=False, na_rep='\\N')
+        df_to_copy.to_csv(buffer, index=False, sep='\t',
+                          encoding='utf-8', header=False, na_rep='\\N')
 
         # Quotes to help with reserved words
         columns_sql = sql.SQL(', ').join(sql.Identifier(col) for col in columns)
