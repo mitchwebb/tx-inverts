@@ -83,6 +83,20 @@ INDEX_DEFINITIONS = {
 			CREATE INDEX idx_tx_taxa_us_invasive
 			ON tx_taxa (us_invasive)
     	'''
+    },
+    'idx_inverts_backbone_us_invasive': {
+        'table': 'gbif_inverts_backbone',
+        'create_sql': '''
+			CREATE INDEX idx_inverts_backbone_us_invasive
+			ON gbif_inverts_backbone (us_invasive);
+    	'''
+    },
+    'idx_invasives_taxon_id': {
+        'table': 'us_invasives_checklist',
+        'create_sql': '''
+            CREATE INDEX idx_invasives_taxon_id
+            ON us_invasives_checklist (taxon_id);
+        '''
     }
     # 'idx_taxon_tile_cache_tile_coords': {
     # 	'table': 'taxon_tile_cache',

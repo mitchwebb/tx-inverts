@@ -4,7 +4,7 @@ from typing import Dict
 import pandas as pd
 import uuid
 from psycopg import AsyncConnection, sql
-from backend.tools.case import to_snake_case
+from backend.data_util.case import to_snake_case
 
 
 class DBTable:
