@@ -52,7 +52,7 @@ async def get_provider_counts(data: ObservationsRequest, request: Request):
             date_end=date_end
         )
 
-        taxon_filter = create_taxon_filter(filter_payload)
+        taxon_filter = create_taxon_filter(filter_payload.taxon_id)
         occurrence_clause = create_occurrence_clause(filter_payload)
 
         query = sql.SQL('''

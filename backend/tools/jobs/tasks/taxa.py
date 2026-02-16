@@ -9,8 +9,8 @@ from backend.db_schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db_schema.tx_taxa import TX_TAXA_TABLE
 from backend.db_schema.us_invasives_checklist import US_INVASIVES_TABLE
 from backend.models.update_status import UpdateStatus
-from backend.tools.initialize_db import initialize_table
-from backend.tools.refresh_materialized_views import refresh_materialized_view
+from backend.tools.jobs.tasks.initialize_db import initialize_table
+from backend.tools.jobs.tasks.refresh_materialized_views import refresh_materialized_view
 from backend.core.logging import db_logger
 import csv
 import io
@@ -19,6 +19,7 @@ import pandas as pd
 import psycopg
 from psycopg import sql, AsyncConnection
 from typing import List, Optional
+from backend.models.sql import OccurrenceFilter
 
 
 # TODO: This might as well be included in taxonomic updates, given that if
@@ -359,9 +360,16 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         print(index + 1, f'of {total}')
 
         ranks = []
+
         # Calculate values for taxa with inat observations and without
         for include_inat in [True, False]:
-            values = await ns.calculate_values(conn, taxon_id, include_inat)
+
+            filters = OccurrenceFilter(
+                taxon_id=taxon_id,
+                include_inat=include_inat,
+            )
+
+            values = await ns.calculate_values(conn, filters)
             # If there are no occurrences, rank uncertain
             rank = (
                 ns.calculate_rank(

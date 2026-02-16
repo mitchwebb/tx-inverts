@@ -2,7 +2,7 @@ from psycopg import Connection
 from psycopg.errors import Error as PsycopgError
 from backend.db_schema import ALL_TABLES
 from backend.db_schema.base import DBTable
-from backend.tools.jobs.database import update_indexes
+from backend.tools.jobs.tasks.database import update_indexes
 
 # Check if table already exists (for readable erroring)
 async def table_exists(conn: Connection, table_name: str) -> bool:

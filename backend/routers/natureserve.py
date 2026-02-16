@@ -69,6 +69,7 @@ async def get_ns_values(data: ObservationsRequest, request: Request):
 
 @router.post('/get_range_extent_geom', response_class=Response)
 async def get_range_extent_geom(data: ObservationsRequest, request: Request):
+   
     filters = OccurrenceFilter(
         taxon_id=data.taxon_id,
         include_inat=data.include_inat,

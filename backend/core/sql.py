@@ -7,7 +7,7 @@ from psycopg import sql
 
 def create_occurrence_clause(filter: OccurrenceFilter):
 
-    taxon_filter = create_taxon_filter(filter)
+    taxon_filter = create_taxon_filter(filter.taxon_id)
     observations_table = GBIF_OBSERVATIONS_TABLE
 
     # If no individual data providers are selected
@@ -59,7 +59,7 @@ def create_occurrence_clause(filter: OccurrenceFilter):
 
 # Get list of providers and their specimen count for a certain taxon
 # Keep provider name with 0 count if they have the taxon, but it is filtered out
-def create_taxon_filter(filters: OccurrenceFilter):
+def create_taxon_filter(taxon_id: int):
 
     taxa_table = TX_TAXA_TABLE
     observations_table = GBIF_OBSERVATIONS_TABLE
@@ -78,7 +78,7 @@ def create_taxon_filter(filters: OccurrenceFilter):
         OR {observations_table}.subspecies_id      = {taxon_id}
         )
     ''').format(
-        taxon_id=sql.Literal(filters.taxon_id),
+        taxon_id=sql.Literal(taxon_id),
         observations_table=sql.Identifier(observations_table.name)
     )
 
@@ -92,7 +92,7 @@ def create_taxon_filter(filters: OccurrenceFilter):
         OR {taxon_id} = {observations_table}.accepted_taxon_key
     )''').format(
         taxa_table=sql.Identifier(taxa_table.name),
-        taxon_id=sql.Literal(filters.taxon_id),
+        taxon_id=sql.Literal(taxon_id),
         observations_table=sql.Identifier(observations_table.name)
     )
 

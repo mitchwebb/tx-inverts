@@ -10,8 +10,8 @@ from backend.data_util.gbif import (
 from backend.db_schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.models.update_status import UpdateStatus
-from backend.tools.initialize_db import initialize_table
-from backend.tools.refresh_materialized_views import refresh_materialized_views
+from backend.tools.jobs.tasks.initialize_db import initialize_table
+from backend.tools.jobs.tasks.refresh_materialized_views import refresh_materialized_views
 import io
 import json
 import os
@@ -71,7 +71,6 @@ async def update_observations(
                 print('Getting minimum modified date...')
                 min_date = await get_latest_record_date.get_latest_record_date(conn, 'modified')
                 kwargs['min_date'] = min_date
-                print(min_date)
                 print(
                     f'Using min modified date for GBIF request: {min_date}')
 

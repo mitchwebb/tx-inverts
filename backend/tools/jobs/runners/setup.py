@@ -4,13 +4,13 @@ import asyncio
 import sys
 from backend.data_util.db import get_single_db_connection
 from backend.data_util.invasives import get_invasives_dataset
-from backend.tools.initialize_db import initialize_all_tables
+from backend.tools.jobs.tasks.initialize_db import initialize_all_tables
 from backend.constants.map import TEXAS_GEOJSON
-from backend.tools.jobs.taxa import update_backbone
-from backend.tools.jobs.occurrence import update_observations
+from backend.tools.jobs.tasks.taxa import update_backbone
+from backend.tools.jobs.tasks.occurrence import update_observations
 import geopandas as gpd
-from backend.tools.jobs.database import update_indexes
-from backend.tools.jobs.taxa import create_invasives_table
+from backend.tools.jobs.tasks.database import update_indexes
+from backend.tools.jobs.tasks.taxa import create_invasives_table
 from backend.config.data import DATA_OUT_PATH
 import os
 
