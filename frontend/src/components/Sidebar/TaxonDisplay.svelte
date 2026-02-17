@@ -57,10 +57,10 @@
                 <div class="loading-icon icon">
                     <LoadingIcon />
                 </div>
-            {:else}
+            <!-- {:else}
                 <button class="x-icon icon" onclick={clearTaxon}>
                     <XIcon />
-                </button>
+                </button> -->
             {/if}
         </div>
         {#if taxonInfo.commonNames && taxonInfo.commonNames?.length > 0}
