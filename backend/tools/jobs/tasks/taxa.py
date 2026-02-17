@@ -86,8 +86,6 @@ async def create_invasives_table():
 
 async def update_invasives(conn):
     async with conn.cursor() as cur:
-        await update_indexes(conn)
-
         # Mark invasive species
         await cur.execute(sql.SQL('''
             UPDATE {backbone} b
@@ -113,8 +111,6 @@ async def update_invasives(conn):
             backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name), 
             invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
         ))
-
-        await refresh_materialized_view(conn, 'tx_taxa')
 
 
 # Perform a full update of the gbif_backbone in local database
@@ -190,9 +186,6 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
     conn = await get_single_db_connection()
 
-    print('Flagging invasives...')
-    df = await flag_invasives(conn, df)
-
     # Build taxonomic lineages and insert rank ids into dataframe
     print('Building taxonomic lineages to fill rank id columns...')
     df = build_lineages_numpy(df)
@@ -249,6 +242,9 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
                 .format(sql.Identifier(GBIF_INVERTS_BACKBONE.name), sql.Identifier(temp_table_name))
             )
 
+            # Update invasives column in backbone
+            await update_invasives(conn)
+            
             # TODO: We should have a step that checks on/initializes all relevant indexes before this next step
 
             await refresh_materialized_view(conn, 'tx_taxa')
@@ -292,6 +288,9 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
                 sql.SQL('INSERT INTO {} SELECT * FROM {}')
                 .format(sql.Identifier(GBIF_INVERTS_BACKBONE.name), sql.Identifier(temp_table_name))
             )
+
+            # Update invasives column
+            await update_invasives(conn)
 
             # Refresh materialized view
             await refresh_materialized_view(conn, 'tx_taxa')
