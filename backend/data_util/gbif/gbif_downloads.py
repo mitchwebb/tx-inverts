@@ -25,7 +25,7 @@ def gbif_download_request(request_body: str, pwd: None, username: None, test=Fal
         test (bool, optional): Determines use of GBIF test API for testing
 
     Returns:
-        GBIF Download Key (str)
+        GBIF download key (str)
     """
 
     headers = {
@@ -83,7 +83,7 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, 
         verbose (bool): Controls GBIF retry/ping output messages
 
     Returns:
-        :output_filepath: (str): Location of resultant file
+        output_filepath (str): Location of resultant file
     """
 
     # How long to wait between attempts

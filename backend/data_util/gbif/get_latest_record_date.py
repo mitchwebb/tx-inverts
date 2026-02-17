@@ -5,14 +5,14 @@ from dateutil import parser
 
 async def get_latest_record_date(conn: AsyncConnection, param: Literal['last_interpreted', 'modified']):
     """
-        Get the most recent 'last_interpreted' or 'modified' datetime from gbif_observations
+    Get the most recent 'last_interpreted' or 'modified' datetime from gbif_observations
 
-        Args:
-            conn (AsyncConnection): psycopg connection
-            param (Literal['last_interpreted', 'modified']): column to check
+    Args:
+        conn (AsyncConnection): psycopg connection
+        param (Literal['last_interpreted', 'modified']): column to check
 
-        Returns:
-            datetime | None: the latest date, or None if no data
+    Returns:
+        datetime | None: the latest date, or None if no data
     """
 
     async with conn.cursor() as cur:

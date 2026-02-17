@@ -22,6 +22,7 @@ def build_observations_request(
     Returns:
         GBIF Download Request Body (dict)
     """
+
     format: GBIFFormat = GBIFFormat.dwca
     settings: BaseAppSettings = get_settings()
 

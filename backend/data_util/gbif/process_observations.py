@@ -1,5 +1,6 @@
-# Logic for processing GBIF observations download
+# Logic for processing/filtering GBIF observations downloads
 
+from typing import Generator
 import pandas as pd
 from pandas import DataFrame
 from geopandas.geodataframe import GeoDataFrame
@@ -7,6 +8,8 @@ import csv
 from pathlib import Path
 import re
 
+
+### Constants for date processing ###
 
 # Year is required, day cannot exist without month
 # No trailing digits allowed
@@ -68,11 +71,15 @@ EVENT_REMARKS_DATE_REGEX = re.compile(EVENT_REMARKS_DATE_PATTERN, re.IGNORECASE)
 
 
 def _parse_ambiguous_match(match: re.Match[str]) -> dict[str, int | None] | None:
-    '''
-        Args:
-            match
-        Return: Unambiguous date dict or None
-    '''
+    """
+    Parse ambiguous date match with 'year', 'month', and 'day' groups
+
+    Args:
+        match (re.Match[str]): 
+
+    Returns:
+        Parts dict (dict[str, int | None] | None): Dict of unambiguous date parts (or None)
+    """
 
     # If no year is provided, date is useless
     if not match.group('year'):
@@ -107,12 +114,16 @@ def _parse_ambiguous_match(match: re.Match[str]) -> dict[str, int | None] | None
 
 
 def parse_date_range_string(range_string: str):
-    '''
+    """
     Expecting a string in yyyy-MM-dd/yyyy-MM-dd type format, 
     parse into start_date and end_date
 
-    Return [None, None] if invalid
-    '''
+    Args:
+        range_string (str): String in yyyy-MM-dd/yyyy-MM-dd format
+
+    Returns:
+        [start_date, end_date], [None, None] if invalid
+    """
 
     start_date = None
     end_date = None
@@ -140,18 +151,25 @@ def parse_date_range_string(range_string: str):
     return [start_date, end_date]
 
 
-# Some basic date parsing for eventDates
+# Some basic date parsing for GBIF eventDates
 def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
-    '''
+    """
     Take a pandas dataframe/geodataframe and, assuming it's a gbif table,
-    parse out a startDate and endDate, if applicable
+    parse out a startDate and endDate, if possible
 
-    If event_date has '/', then it can be assumed to be a range.
+    yyyy-MM-dd/yyyy-MM-dd event_dates are assumed to be a range.
     HOWEVER, not all eventDates are formatted this way.
     UTIC, for example: 
         eventDate: '2001-06-25'
         eventRemarks: '; ended 2001-06-27'
-    '''
+
+    Args:
+        df (DataFrame): Pandas dataframe of DWC dataset
+
+    Returns:
+        df (DataFrame | GeoDataFrame): Input df with updated 
+            collection_start_date and collection_end_date columns
+    """
 
     df = df.copy()  # don't mutate input
 
@@ -246,19 +264,19 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     return df
 
 
-def process_dwc_observations(filepath: Path, chunk_size: int = 1000000, save_cleaned: bool = False) -> GeoDataFrame:
-    '''
-    Take an unclean dwc observations file and process it into a format
-    suitable for database insertion.
+def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Generator[DataFrame]:
+    """
+    Take an unclean dwc observations file and process it in chunks
+    into a format suitable for txinverts database insertion.
+    This includes date parsing via parse_gbif_dates.
 
     Args:
         filepath (str): Path to the dwc observations file.
         chunk_size (int): Chunk size for reading csv
-        save_cleaned (bool): Option to save prepped 
 
     Returns:
-        pd.DataFrame: Processed DataFrame ready for database insertion.
-    '''
+        Generator[Dataframe]: Processed DataFrame chunk ready for database insertion.
+    """
 
     # filtered_chunks = []
 
@@ -308,22 +326,5 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000, save_cle
 
         print(
             f'Processed chunk with {len(df)} valid records of {len(chunk)} total records')
-
-    # if not filtered_chunks:
-    #     raise ValueError(
-    #         "No valid data to process — all chunks were filtered out")
-
-    # # Combine all filtered chunks
-    # combined_df = pd.concat(filtered_chunks, ignore_index=True)
-    # # Saved combined df, if needed
-    # if save_cleaned:
-    #     # Create cleaned directory if it doesn't exist
-    #     cleaned_dir = os.path.join(DATA_OUT_PATH, 'cleaned')
-    #     os.makedirs(cleaned_dir, exist_ok=True)
-    #     combined_df.to_csv(os.path.join(
-    #         cleaned_dir, 'observations_cleaned.csv'), sep="\t", index=False)
-
-    # print(
-    #     f'Processed {len(combined_df)} valid observations out of {observation_count} total observations')
 
         yield chunk
