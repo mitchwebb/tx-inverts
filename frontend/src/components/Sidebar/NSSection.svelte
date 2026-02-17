@@ -159,9 +159,8 @@
                     <div id="range-extent-text">
                         <span> Range Extent: </span>
                         <span class="thin">
-                            {toLocaleRounded(adjusted_range_extent, 2)} km<sup
-                                >2</sup
-                            >
+                            {toLocaleRounded(adjusted_range_extent, 2)} 
+                            km<sup>2</sup>
                         </span>
                     </div>
                     {#if isMapPage}
@@ -183,13 +182,13 @@
             <div id="area-of-occupancy-section" class="ns-metric-row">
                 {#if nSValues.areaOfOccupancy4Km2Bins != null}
                     {@const aooDisplay = toLocaleRounded(
-                        nSValues.areaOfOccupancy4Km2Bins * 4,
+                        nSValues.areaOfOccupancy4Km2Bins,
                         2
                     )}
                     <div id="area-of-occupancy-text">
                         <span>Area of Occupancy:</span>
                         <span class="thin">
-                            {aooDisplay} km<sup>2</sup>
+                            {aooDisplay} Grid Cells (4km<sup>2</sup>)
                         </span>
                     </div>
                 {/if}

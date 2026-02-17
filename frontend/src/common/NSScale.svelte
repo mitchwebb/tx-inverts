@@ -15,7 +15,7 @@
 
     let { level, rank }: NSScaleProps = $props();
 
-    const fullRanking = `${level}${rank}`;
+    const fullRanking = $derived(`${level}${rank}`);
 </script>
 
 <div class="nature-serve-scale">

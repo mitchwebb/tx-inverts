@@ -135,5 +135,7 @@ export function calculateNSRank(
         zeroRangeRank = '5';
     }
 
+    console.warn(rangeExtent, areaOfOccupancy, occurrences);
+
     return zeroRangeRank;
 }

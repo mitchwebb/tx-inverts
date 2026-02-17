@@ -16,6 +16,7 @@
     import DatasetFilterSection from './DatasetFilterSection.svelte';
     import DateFilterSection from './DateFilterSection.svelte';
     import INatFilterSection from './INatFilterSection.svelte';
+    import RankFilterSection from './RankFilterSection.svelte';
     import TaxonFilterSection from './TaxonFilterSection.svelte';
     import './filtersSection.css';
 
@@ -53,6 +54,7 @@
         {/if}
         {#if pageID === '/rankings'}
             <TaxonFilterSection />
+            <RankFilterSection />
         {/if}
     </div>
     <div class="apply-filters-section">

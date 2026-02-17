@@ -22,7 +22,7 @@ async def main():
         await initialize_all_tables(conn, verbose=True, strict=True)
         await conn.commit()
 
-        # Populate geometries
+        # Populate geometries (just Texas shapefile for now)
         texas_gdf = gpd.read_file(TEXAS_GEOJSON)
         # in case it's a MultiPolygon collection
         texas_geom = texas_gdf.geometry.union_all()

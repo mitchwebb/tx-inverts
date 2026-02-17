@@ -1,17 +1,11 @@
 # Logic for processing GBIF observations download
 
 import pandas as pd
-from shapely.geometry import Point
-import geopandas as gpd
 from pandas import DataFrame
 from geopandas.geodataframe import GeoDataFrame
-from backend.constants.map import TEXAS_GEOJSON
 import csv
 from pathlib import Path
 import re
-from backend.config.data import DATA_OUT_PATH
-import os
-from backend.core.logging import data_logger
 
 
 # Year is required, day cannot exist without month
