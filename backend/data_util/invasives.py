@@ -48,7 +48,6 @@ async def get_invasives_dataset():
     }
 
     key = gbif_downloads.gbif_download_request(
-        endpoint='occurrence/download/request',
         request_body=json.dumps(request_body),
         pwd=settings.gbif.password,
         username=settings.gbif.user

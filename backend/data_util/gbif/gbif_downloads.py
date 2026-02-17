@@ -5,12 +5,11 @@ import time
 import os
 import asyncio
 import aiohttp
-import logging
 from backend.data_util.extract_zip import extract_zip_files
 from backend.core.logging import data_logger
 
 
-def gbif_download_request(endpoint: str, request_body: str, pwd: None, username: None, test=False):
+def gbif_download_request(request_body: str, pwd: None, username: None, test=False):
     """
     Creates a download request using GBIF's API
 
@@ -22,9 +21,6 @@ def gbif_download_request(endpoint: str, request_body: str, pwd: None, username:
     get_GBIF_download function.
 
     Args:
-        endpoint (str): GBIF API endpoint (ex: 'occurrence/download/request')
-        TODO: Should this be more restricted (to 'occurrence', 'taxon', etc?)
-        TODO: Or is there a reference to documentation that can be provided?
         request_body (str): GBIF request body (refer to GBIF documentation)
         test (bool, optional): Determines use of GBIF test API for testing
 
@@ -37,14 +33,12 @@ def gbif_download_request(endpoint: str, request_body: str, pwd: None, username:
     }
 
     if test:
-        GBIF_url = "http://api.gbif-uat.org/v1/"
+        GBIF_url = "http://api.gbif-uat.org/v1/occurrence/download/request"
     else:
-        GBIF_url = "http://api.gbif.org/v1/"
-
-    full_url = GBIF_url + endpoint
+        GBIF_url = "http://api.gbif.org/v1/occurrence/download/request"
 
     try:
-        response = requests.post(full_url, data=request_body, auth=(
+        response = requests.post(GBIF_url, data=request_body, auth=(
             username, pwd), headers=headers)
         if response.status_code == 201:
             data_logger.info('Download request submitted successfully.')
@@ -118,9 +112,11 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, 
                         downloaded = 0
                         zip_fp = os.path.join(output_fp, f'{key}.zip')
                         # Get content length if available
-                        total_size = int(response.headers.get("Content-Length", 0))
+                        total_size = int(
+                            response.headers.get("Content-Length", 0))
                         if total_size:
-                            data_logger.info(f"Starting download of {total_size / (1024*1024):.2f} MB")
+                            data_logger.info(
+                                f"Starting download of {total_size / (1024*1024):.2f} MB")
                         else:
                             data_logger.info("Starting download (size unknown)")
                         with open(zip_fp, "wb") as f:
@@ -130,7 +126,8 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, 
                         data_logger.info(f'Download complete: {zip_fp}')
                         output_fp = extract_zip_files(zip_fp, os.path.join(
                             output_fp, key), target_files, delete_zip=True)
-                        data_logger.info(f"Finished downloading {downloaded / (1024*1024):.2f} MB")
+                        data_logger.info(
+                            f"Finished downloading {downloaded / (1024*1024):.2f} MB")
                         return output_fp
                     # This is what GBIF returns when the download is still being processed
                     elif response.status == 404:
