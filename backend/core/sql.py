@@ -1,4 +1,5 @@
-from os import name
+# Shared sql query builders used across the txinverts API
+
 from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db_schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.sql import OccurrenceFilter
@@ -6,6 +7,16 @@ from psycopg import sql
 
 
 def create_occurrence_clause(filter: OccurrenceFilter):
+    """
+    Takes OccurrenceFilter parameters and generates sql formatted
+    clause for retrieving occurrence data
+
+    Args:
+        filter (OccurrenceFilter): Collection of parameters for filtering occurrence data
+
+    Returns:
+        occurrences_clause (str): sql.SQL() formatted clause
+    """
 
     taxon_filter = create_taxon_filter(filter.taxon_id)
     observations_table = GBIF_OBSERVATIONS_TABLE
@@ -34,9 +45,9 @@ def create_occurrence_clause(filter: OccurrenceFilter):
 
     # Checking each column is slightly safer than just referring to the accepted_taxon_key, as
     # GBIF doesn't ALWAYS resolve synonyms cleanly
-    occurrences_clause = sql.SQL('''
+    occurrence_clause = sql.SQL('''
         FROM gbif_observations
-        WHERE 
+        WHERE
             {taxon_filter}
             AND ({include_inat} OR {observations_table}.institution_code != 'iNaturalist')
             {data_provider_clause}
@@ -54,19 +65,30 @@ def create_occurrence_clause(filter: OccurrenceFilter):
         observations_table=sql.Identifier(observations_table.name)
     )
 
-    return occurrences_clause
+    return occurrence_clause
 
 
-# Get list of providers and their specimen count for a certain taxon
-# Keep provider name with 0 count if they have the taxon, but it is filtered out
 def create_taxon_filter(taxon_id: int):
+    """
+    Takes taxon_id and generates sql formatted clause to find occurrences with
+    matching ids in occurrences table. This matches to taxa in any rank as long
+    as they match the taxon_id somewhere in their lineage.
+    This filter does not pick up invasive taxa unless the taxon_id requested
+    is, itself, an invasive taxon.
+
+    Args:
+        taxon_id (int): Taxon ID of desired taxon
+
+    Returns:
+        taxon_clause (str): sql.SQL() formatted clause
+    """
 
     taxa_table = TX_TAXA_TABLE
     observations_table = GBIF_OBSERVATIONS_TABLE
 
     # Construct main taxon clause to search for taxon_id in each rank_id column
     # This make sure we get oddly re-classified taxa
-    taxon_clause = sql.SQL('''( 
+    lineage_clause = sql.SQL('''( 
            {observations_table}.accepted_taxon_key = {taxon_id}
         OR {observations_table}.kingdom_id         = {taxon_id}
         OR {observations_table}.phylum_id          = {taxon_id}
@@ -96,9 +118,9 @@ def create_taxon_filter(taxon_id: int):
         observations_table=sql.Identifier(observations_table.name)
     )
 
-    total_clause = sql.SQL("{taxon_clause} AND {invasive_clause}").format(
-        taxon_clause=taxon_clause,
+    taxon_clause = sql.SQL("{lineage_clause} AND {invasive_clause}").format(
+        lineage_clause=lineage_clause,
         invasive_clause=invasive_clause
     )
 
-    return total_clause
+    return taxon_clause
