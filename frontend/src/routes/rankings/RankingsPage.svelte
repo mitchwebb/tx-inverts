@@ -21,6 +21,7 @@
     const tableHeaders = $derived([
         {
             label: 'Rank',
+            info: 'The rankings in this column are precalculated using a 4km2 grid cell. Aside from toggling iNaturalist data, they will not respond to filtering.',
             sortKey: filtersContext.includeINat
                 ? 'ns_rank_state'
                 : 'ns_rank_state_no_inat',

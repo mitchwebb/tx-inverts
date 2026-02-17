@@ -6,12 +6,14 @@
     import { onMount, tick, type Snippet } from 'svelte';
     import ArrowDown from '../assets/ArrowDown.svelte';
     import ArrowUp from '../assets/ArrowUp.svelte';
+    import InfoButton from './InfoButton.svelte';
 
     type VirtualizedTableProps = {
         items: Record<any, any>[];
         rowHeight: number;
         headers: {
             label: string;
+            info?: string;
             sortKey?: string | null;
         }[];
         row: Snippet<[item: any, index: number]>;
@@ -139,7 +141,7 @@
             let startWidth = target.parentElement!.offsetWidth;
             function resizeColumn(e: MouseEvent) {
                 const dx = e.clientX - startX;
-                const newWidth = startWidth + dx;
+                const newWidth = Math.max(startWidth + dx, 10);
                 columnWidths[Number(targetIndex)] = `${newWidth}px`;
             }
             function stopResize() {
@@ -269,11 +271,24 @@
                     >
                         <button
                             class="column-header"
+                            class:active={currSortKey === header.sortKey}
                             style:cursor={header.sortKey ? 'pointer' : 'auto'}
                             data-sort-key={header.sortKey || null}
                             onclick={handleSort}
                         >
-                            <div class="header-label">{header.label}</div>
+                            <div class="header-label-wrapper">
+                                <div class="header-label">
+                                    {header.label}
+                                </div>
+                                {#if header.info}
+                                    <div class="header-info">
+                                        <InfoButton 
+                                            type='tooltip' 
+                                            hover={true} 
+                                            htmlContent={header.info} />
+                                    </div>
+                                {/if}
+                            </div>
                             {#if currSortKey === header.sortKey}
                                 <div class="sort-arrow icon">
                                     {#if sortAscending}
@@ -321,6 +336,15 @@
 </div>
 
 <style>
+    .column-header.active {
+        background-color: var(--container-fore);
+    }
+    .header-info {
+        height: 1.5rem;
+        margin-left: .2rem;
+        flex-shrink: 0;
+        pointer-events: auto;
+    }
     .resize-handle {
         position: absolute;
         width: 10px;
@@ -345,6 +369,13 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        user-select: none;
+    }
+    .header-label-wrapper {
+        overflow: hidden;
+        white-space: nowrap;
+        display: flex;
+        pointer-events: none;
     }
     .sort-arrow {
         margin-left: 0.5rem;
@@ -392,6 +423,7 @@
         width: 100%;
         box-sizing: border-box;
         border-right: 1px solid var(--container-shadow);
+        overflow: hidden;
     }
     .column-header {
         display: flex;
@@ -427,6 +459,7 @@
         padding: 0 0.5rem;
         overflow: hidden;
         text-overflow: ellipsis;
+        background-color: var(--container-back);
     }
     .spacer {
         position: relative;

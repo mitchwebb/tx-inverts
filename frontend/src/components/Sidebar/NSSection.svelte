@@ -250,7 +250,7 @@
     #rank-text {
         margin-bottom: 0.5rem;
         display: flex;
-        gap: 0.5rem;
+        gap: 0.25rem;
         justify-content: center;
     }
     .rank-scale {

@@ -3,22 +3,22 @@
 import os
 from backend.config import get_settings
 
-
+# Get settings for backend_root value
 settings = get_settings()
 
 # Path to Texas shapefile (currently lives with repo)
 TEXAS_GEOJSON = os.path.join(
     settings.backend_root, 'static', 'shapefiles', 'tx.geojson')
 
-# Tile size in pixels
+# Base tile size in pixels at each zoom level
 WEB_MERCATOR_TILE_SIZE = 156543.03
+
+# Base size of observations square in pixels at each zoom level
+PIXELS_PER_GRID = 4
 
 # Zoom levels on which to show/store bin tiles
 # Can be used when calculating caches
 BIN_ZOOM_LEVELS = [2, 3, 4, 5, 6, 7, 8, 9]
-
-# Size of observations square in pixels
-PIXELS_PER_GRID = 4
 
 # Web mercator value that needs to be added to x-values for calculations with x, y, z
 HALF_WORLD = 20037508.342789244

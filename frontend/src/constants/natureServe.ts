@@ -9,7 +9,7 @@ export const nSRankKey = [
     { rank: '3', color: '#cd9a00', description: 'Vulnerable' },
     { rank: '4', color: '#006666', description: 'Apparently Secure' },
     { rank: '5', color: '#006666', description: 'Secure' },
-    { rank: 'U', color: '#d3d3d3', description: 'Unrankable' },
+    { rank: 'U', color: '#b3b3b3', description: 'Unrankable' },
 ] as const;
 
 export const nSRanks = nSRankKey.map((rankItem) => rankItem.rank);

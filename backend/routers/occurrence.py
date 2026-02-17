@@ -182,7 +182,7 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
 
     occurrence_clause = create_occurrence_clause(filter_payload)
 
-    # Map parameters for calculating grids
+    # Map parameters for calculating base grids at a given zoom level
     meters_per_pixel = map.meters_per_pixel(z)
     grid_size = meters_per_pixel * map.PIXELS_PER_GRID
 

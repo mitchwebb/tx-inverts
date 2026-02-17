@@ -1,6 +1,5 @@
 <script lang="ts">
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
-    import XIcon from '../../assets/XIcon.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
     import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
@@ -14,10 +13,6 @@
     const isLoading = $derived(taxonContext.taxonLoading);
 
     const taxonNotAccepted = $derived(taxonInfo.taxonomicStatus !== 'accepted');
-
-    function clearTaxon() {
-        taxonContext.taxonID = null;
-    }
 </script>
 
 <div id="sidebar-main-header" class="sidebar-section sidebar-header">

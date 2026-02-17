@@ -80,10 +80,10 @@
         cursor: pointer;
         position: relative;
         z-index: 9999;
-        height: 1rem;
+        height: .9rem;
         padding: 0;
         background-color: transparent;
         border: none;
-        color: var(--fill-color);
+        color: var(--text-default);
     }
 </style>
