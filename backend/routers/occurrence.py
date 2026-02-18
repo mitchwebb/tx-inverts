@@ -1,14 +1,11 @@
 import time
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db_schema.tx_taxa import TX_TAXA_TABLE
 from fastapi import APIRouter, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
-from psycopg import sql, AsyncConnection
+from psycopg import sql
 import backend.constants.map as map
 from backend.models.api_types import TaxonRequest, ObservationsRequest
 from backend.core.sql import create_occurrence_clause, create_taxon_filter
 from backend.models.sql import OccurrenceFilter
-from backend.core.logging import api_logger
 
 
 router = APIRouter()

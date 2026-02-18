@@ -65,11 +65,6 @@ app.include_router(maps_router, prefix='/maps')
 app.include_router(taxa_router, prefix='/taxa')
 app.include_router(natureserve_router, prefix='/natureserve')
 
-# Print routes (for debugging)
-print("Routes:")
-for route in app.routes:
-    print(f"  {route.path} - {','.join(route.methods)}")
-
 # Register exception handler
 app.add_exception_handler(Exception, global_exception_handler)
 
@@ -77,3 +72,8 @@ app.add_exception_handler(Exception, global_exception_handler)
 setup_logging()
 
 api_logger.info("Started API logger...")
+
+# Print routes (for debugging)
+api_logger.debug("Routes:")
+for route in app.routes:
+    api_logger.debug(f"  {route.path} - {','.join(route.methods)}")

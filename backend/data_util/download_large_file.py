@@ -2,12 +2,14 @@ import requests
 import os
 import tempfile
 from contextlib import contextmanager
+from backend.core.logging import data_logger
+
 
 @contextmanager
-def download_large_temp_file(url, output_fp=None, chunk_size=1024*1024):
+def download_large_temp_file(url, chunk_size=1024*1024):
     """
     Downloads a large file in chunks.
-    Returns output filepath to be used in context.
+    Returns temp output filepath to be used in context.
     File is deleted after context is ended.
 
     Args:
@@ -17,15 +19,15 @@ def download_large_temp_file(url, output_fp=None, chunk_size=1024*1024):
     Returns:
         output_fp (str): Path to the downloaded file.
     """
-    
+
     # Use temporary directory and path
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = os.path.join(tmp_dir, 'downloaded_file')
         _download_file(url, tmp_path, chunk_size)
         yield tmp_path
-		# Automatic cleanup after context exits
-        
-        
+        # Automatic cleanup after context exits
+
+
 def download_large_file(url, output_fp=None, chunk_size=1024*1024):
     """
     Downloads a large file in chunks.
@@ -33,23 +35,23 @@ def download_large_file(url, output_fp=None, chunk_size=1024*1024):
 
     Args:
         url (str): File URL.
-        output_fp (str, optional): Output file path. Required if temporary=False.
+        output_fp (str, optional): Output file path.
         chunk_size (int): Chunk size in bytes. Default is 1MB.
 
     Returns:
         output_fp (str): Path to the downloaded file.
     """
-    
+
     if not output_fp:
-        raise ValueError('Must provide output_fp if temporary is False')
-    
+        raise ValueError('Must provide output_fp')
+
     _download_file(url, output_fp, chunk_size)
     return output_fp
-    
-    
+
+
 def _download_file(url, output_fp, chunk_size):
     """
-    Internal helper to stream and save a file
+    Helper to handle streaming and saving of a file
     """
     try:
         with requests.get(url, stream=True) as response:
@@ -64,16 +66,17 @@ def _download_file(url, output_fp, chunk_size):
                         downloaded += len(chunk)
                         if total:
                             percent = (downloaded / total) * 100
-                            print(f"\rDownloaded {downloaded / 1024 / 1024:.2f} MB "
-                                f"of {total / 1024 / 1024:.2f} MB "
-                                f"({percent:.2f}%)", end='')
+                            data_logger.debug(f"""\rDownloaded {downloaded / 1024 / 1024:.2f} MB
+                                              of {total / 1024 / 1024:.2f} MB
+                                              ({percent:.2f}%)", end=''""")
                         else:
-                            print(f"\rDownloaded {downloaded / 1024 / 1024:.2f} MB", end='')
-                            
-        print("\nDownload complete.")
-    
+                            data_logger.info(
+                                f"Downloaded {downloaded / 1024 / 1024:.2f} MB", end='')
+
+        data_logger.info("Download complete.")
+
     except Exception as e:
-        print(f'Download failed: {e}')
+        data_logger.exception(f'Download failed: {e}')
         # If download fails, we need to delete the temp file
         if os.path.exists(output_fp):
             os.remove(output_fp)

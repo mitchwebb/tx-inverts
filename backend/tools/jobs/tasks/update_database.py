@@ -4,8 +4,8 @@ from backend.tools.jobs.tasks.taxa import update_backbone, update_ns_ranks
 from backend.tools.jobs.tasks.occurrence import update_observations
 from backend.tools.jobs.tasks.refresh_materialized_views import refresh_materialized_views
 
-import os
 from backend.config.data import DATA_OUT_PATH
+from backend.core.logging import data_logger
 
 
 # Automatically update observations table from GBIF
@@ -31,8 +31,6 @@ async def update_database():
         await update_indexes(conn)
 
         await conn.commit()
-    
+
     finally:
         await conn.close()
-
-    print('Update finished.')

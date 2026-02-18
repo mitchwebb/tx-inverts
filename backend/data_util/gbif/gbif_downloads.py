@@ -123,6 +123,8 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, 
                             async for chunk in response.content.iter_chunked(chunk_size):
                                 f.write(chunk)
                                 downloaded += len(chunk)
+                                data_logger.debug(
+                                    f"\rDownloaded {downloaded / (1024 * 1024):.2f} MB")
                         data_logger.info(f'Download complete: {zip_fp}')
                         output_fp = extract_zip_files(zip_fp, os.path.join(
                             output_fp, key), target_files, delete_zip=True)
@@ -132,7 +134,7 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, 
                     # This is what GBIF returns when the download is still being processed
                     elif response.status == 404:
                         if (verbose):
-                            data_logger.error(
+                            data_logger.warning(
                                 f"No response for that key. Download is likely still being processed in GBIF's system. Trying again in {waiting_interval} seconds.")
                     elif response.status == 410:
                         data_logger.error(

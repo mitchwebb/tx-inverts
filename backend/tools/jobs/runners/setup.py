@@ -10,11 +10,13 @@ from backend.tools.jobs.tasks.occurrence import update_observations
 import geopandas as gpd
 from backend.tools.jobs.tasks.taxa import create_invasives_table
 from backend.config.data import DATA_OUT_PATH
-import os
+from backend.core.logging import setup_logging, tasks_logger, db_logger
 
 
 # Initial script to create and populate database for Texas Inverts
 async def main():
+    setup_logging()
+
     conn = await get_single_db_connection()
 
     try:
@@ -22,7 +24,8 @@ async def main():
         await initialize_all_tables(conn, verbose=True, strict=True)
         await conn.commit()
 
-        # Populate geometries (just Texas shapefile for now)
+        # TODO: This whole process should be moved to a function
+        # Populate geometries (just the Texas shapefile for now)
         texas_gdf = gpd.read_file(TEXAS_GEOJSON)
         # in case it's a MultiPolygon collection
         texas_geom = texas_gdf.geometry.union_all()
@@ -38,7 +41,7 @@ async def main():
                 ''',
                 ('Texas', texas_wkt_geom)
             )
-            print('Updating geometries table...')
+            db_logger.info('Updating geometries table...')
             await conn.commit()
 
         # Create invasives table

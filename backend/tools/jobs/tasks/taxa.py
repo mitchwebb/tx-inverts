@@ -11,10 +11,8 @@ from backend.db_schema.us_invasives_checklist import US_INVASIVES_TABLE
 from backend.models.update_status import UpdateStatus
 from backend.tools.jobs.tasks.initialize_db import initialize_table
 from backend.tools.jobs.tasks.refresh_materialized_views import refresh_materialized_view
-from backend.core.logging import db_logger
-from backend.tools.jobs.tasks.database import update_indexes
+from backend.core.logging import data_logger, db_logger
 import csv
-import io
 import os
 import pandas as pd
 import psycopg
@@ -39,7 +37,7 @@ async def create_invasives_table():
 
 
 # # Flag invasive species in backbone using US_INVASIVES table
-# # This version runs while important new backbone information (defunct)
+# # This version runs while importing new backbone information (defunct)
 # async def flag_invasives(
 #     conn: AsyncConnection,
 #     df: pd.DataFrame,
@@ -92,11 +90,11 @@ async def update_invasives(conn):
             SET us_invasive = TRUE
             FROM {invasives_table} i
             WHERE i.taxon_id = COALESCE(b.accepted_name_usage_id, b.taxon_id);
-        ''').format(            
-            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name), 
+        ''').format(
+            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
             invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
         ))
-        
+
         # Unmark species marked TRUE that should not be
         await cur.execute(sql.SQL('''
             UPDATE {backbone} b
@@ -108,7 +106,7 @@ async def update_invasives(conn):
                 WHERE i.taxon_id = COALESCE(b.accepted_name_usage_id, b.taxon_id)
             );
         ''').format(
-            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name), 
+            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
             invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
         ))
 
@@ -132,7 +130,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
     # If no filepath provided, download and extract
     if fp == None:
-        print('Downloading backbone from gbif...')
+        data_logger.info('Downloading backbone from gbif...')
         zip_path = download_large_file(
             'https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip',
             output_fp=os.path.join(DATA_OUT_PATH, 'backbone_test.zip')
@@ -145,7 +143,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
         fp = os.path.join(extract_dir, 'Taxon.tsv')
 
-    print('Reading backbone...')
+    data_logger.info('Reading backbone...')
     df = pd.read_csv(
         fp,
         delimiter='\t',
@@ -168,7 +166,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
         )
     )
 
-    print('Filtering to inverts...')
+    data_logger.info('Filtering to inverts...')
     # Apply mask
     df = df[mask]
 
@@ -176,7 +174,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
     df['ns_rank_state'] = pd.NA
 
     # Fit dataframe to table definition
-    print('Formatting table...')
+    data_logger.info('Formatting table...')
     df = df.rename(
         columns={'specificEpithet': 'species',
                  'infraspecificEpithet': 'subspecies'}
@@ -187,15 +185,15 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
     conn = await get_single_db_connection()
 
     # Build taxonomic lineages and insert rank ids into dataframe
-    print('Building taxonomic lineages to fill rank id columns...')
+    data_logger.info('Building taxonomic lineages to fill rank id columns...')
     df = build_lineages_numpy(df)
 
-    print('Verifying format...')
+    data_logger.info('Verifying format...')
     GBIF_INVERTS_BACKBONE.validate_columns(df)
 
     df.to_csv(os.path.join(
         DATA_OUT_PATH, 'taxa_cleaned.csv'), sep="\t", index=False)
-    
+
     # Clear memory immediately
     del df
     import gc
@@ -207,7 +205,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
         # Make sure table exists
         await initialize_table(conn, GBIF_INVERTS_BACKBONE, verbose=True)
 
-        print('Creating temp table for insertion...')
+        db_logger.info('Creating temp table for insertion...')
         # Create temp table without indexes/constraints for faster COPY
         await cur.execute(
             sql.SQL('CREATE TEMP TABLE {} (LIKE {} INCLUDING DEFAULTS)').format(
@@ -224,7 +222,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
                 HEADER true, 
                 NULL '')
         ''').format(sql.Identifier(temp_table_name)
-        )
+                    )
 
         # Copying to temp table
         with open(os.path.join(DATA_OUT_PATH, 'taxa_cleaned.csv'), "r", encoding="utf8") as f:
@@ -235,7 +233,8 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
         # If force_refresh, skip comparison and replace directly
         # Flag UpdateStatus as ALL
         if force_refresh:
-            print('force_refresh is TRUE. Overwriting previous table...')
+            db_logger.info(
+                'force_refresh is TRUE. Overwriting previous table...')
             await cur.execute(sql.SQL("TRUNCATE TABLE {}").format(sql.Identifier(GBIF_INVERTS_BACKBONE.name)))
             await cur.execute(
                 sql.SQL('INSERT INTO {} SELECT * FROM {}')
@@ -244,7 +243,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
             # Update invasives column in backbone
             await update_invasives(conn)
-            
+
             # TODO: We should have a step that checks on/initializes all relevant indexes before this next step
 
             await refresh_materialized_view(conn, 'tx_taxa')
@@ -254,7 +253,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
             return UpdateStatus.ALL
 
         # Check if temp differs from main table (EXCEPT)
-        print('Comparing new and old backbones...')
+        db_logger.info('Comparing new and old backbones...')
         await cur.execute(
             sql.SQL('''
                 SELECT EXISTS (
@@ -276,13 +275,13 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
         (changed,) = await cur.fetchone()
 
         if not changed:
-            print('No changes found, update skipped.')
+            db_logger.info('No changes found, update skipped.')
             # No changes, skip update
             return UpdateStatus.NONE
 
         # Else if changes found, replace table
         else:
-            print('Changes found in backbone, replacing backbone...')
+            db_logger.info('Changes found in backbone, replacing backbone...')
             await cur.execute(sql.SQL('TRUNCATE TABLE {}').format(sql.Identifier(GBIF_INVERTS_BACKBONE.name)))
             await cur.execute(
                 sql.SQL('INSERT INTO {} SELECT * FROM {}')
@@ -344,7 +343,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
                     sql.Identifier(GBIF_INVERTS_BACKBONE.name),
                     sql.Identifier(col_name)
                 ))
-                print(
+                db_logger.info(
                     f'Added blank {col_name} column to {GBIF_INVERTS_BACKBONE.name}')
 
     # Refreshing tx_taxa materialized view to make sure we're getting full list of taxa
@@ -379,19 +378,19 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         taxa_to_update: List[int] = [row['taxon_id'] for row in rows]
 
     if not taxa_to_update:
-        print("No taxa to update for NatureServe ranks.")
+        data_logger.info("No taxa to update for NatureServe ranks.")
         return
 
     total = len(taxa_to_update)
 
-    print(f"Updating NatureServe ranks for {total} taxa...")
+    data_logger.info(f"Updating NatureServe ranks for {total} taxa...")
 
     # Get list of taxon_ids and ranks for batch update
     rank_assignments: List[tuple[int, str, str]] = []
 
     # Calcuate ranks for all taxa (with and without inat)
     for index, taxon_id in enumerate(taxa_to_update):
-        print(index + 1, f'of {total}')
+        data_logger.debug(index + 1, f'of {total}')
 
         ranks = []
 
@@ -437,4 +436,4 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
     await refresh_materialized_view(conn, 'tx_taxa')
     await conn.commit()
 
-    print("NatureServe rank updates complete.")
+    data_logger.info("NatureServe rank updates complete.")

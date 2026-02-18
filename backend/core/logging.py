@@ -11,10 +11,12 @@ LOGGING_CONFIG = {
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "level": "DEBUG",
             "formatter": "default",
         },
         "file": {
             "class": "logging.FileHandler",
+            "level": "INFO",
             "filename": "backend.log",
             "formatter": "default",
         }
@@ -22,12 +24,14 @@ LOGGING_CONFIG = {
 
     "loggers": {
         "api": {
-            "handlers": ["console"],
-            "level": "INFO",
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propogate": False,
         },
         "data": {
-            "handlers": ["file"],
-            "level": "INFO",
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
         },
         "tasks": {
             "handlers": ["file"],

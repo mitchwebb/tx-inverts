@@ -4,6 +4,7 @@ from collections import deque, defaultdict
 import pandas as pd
 from typing import List
 from psycopg import Connection, sql
+from backend.core.logging import data_logger
 
 
 # async def get_all_descendant_ids(conn: Connection, taxon_id: int):
@@ -44,12 +45,13 @@ async def get_observation_count(conn: Connection, taxon_ids: int | List[int]):
         return result[0]
 
 
+# Pandas version of lineage building for backbone
 def build_lineages(df: pd.DataFrame) -> pd.DataFrame:
     # parent -> [children] map
     children_map = defaultdict(list)
     roots = []
 
-    print('Collecting root taxa...')
+    data_logger.info('Collecting root taxa...')
     # Collect roots and build lineage maps
     for taxon_id, parent in zip(df["taxon_id"].values, df["parent_name_usage_id"].values):
         if pd.notna(parent):
@@ -61,7 +63,7 @@ def build_lineages(df: pd.DataFrame) -> pd.DataFrame:
     queue = deque(roots)
     df = df.set_index("taxon_id")
 
-    print('Building lineage map...')
+    data_logger.info('Building lineage map...')
     while queue:
         taxon_id = queue.popleft()
         row = df.loc[taxon_id]
@@ -84,8 +86,7 @@ def build_lineages(df: pd.DataFrame) -> pd.DataFrame:
     return df.reset_index(drop=False)
 
 
-# TODO: Could we do this --JUST-- for tx_taxa?
-# TODO: We could DOWNLOAD it and run it, and then insert values, but...
+# Numpy version of lineage building for backbone
 def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy().reset_index(drop=True)
 
