@@ -1,11 +1,13 @@
 import time
+import backend.constants.map as map
+
 from fastapi import APIRouter, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
-import backend.constants.map as map
 from backend.models.api_types import TaxonRequest, ObservationsRequest
 from backend.core.sql import create_occurrence_clause, create_taxon_filter
 from backend.models.sql import OccurrenceFilter
+from backend.core.logging import api_logger
 
 
 router = APIRouter()
@@ -81,7 +83,6 @@ async def get_provider_counts(data: ObservationsRequest, request: Request):
             conn, query, (), fetch='all', dict_cursor=True
         ) as result:
             if result:
-                print(result)
                 institution_counts = {
                     item['institution_code']: item['count'] for item in result}
                 return institution_counts
@@ -175,8 +176,6 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
         date_end=date_end,
     )
 
-    print(filter_payload, 'HELLO')
-
     occurrence_clause = create_occurrence_clause(filter_payload)
 
     # Map parameters for calculating base grids at a given zoom level
@@ -187,7 +186,7 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
 
         # async with execute_psql_query(conn, exists_query, {'species_ids': descendant_ids, 'z': z}, fetch='one', dict_cursor=True) as result:
         # if result['exists']:
-        #     print('Getting cached tiles...')
+        #     api_logger.info('Getting cached tiles...')
         #     params = {
         #         'include_inat': include_inat,
         #         'taxon_id': taxon_id,
@@ -236,11 +235,9 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
         # else:
         # Return binned results
 
-        # TODO: START HERE: So we really want to do this comparison below on all of the columns listed in the select statement, which isn't how IN works.
-        # I think that would really fix the problem. This has been made more difficult by the fact that IDs can end up getting patched across different ranks (a species becomes a subspecies of another species)...
         start = time.time()
         if z < 10:
-            print('Cache not found! Generating raw tiles (slow).')
+            api_logger.debug('Cache not found! Generating raw tiles (slow).')
             # Calculate meters-per-pixel for binning
             meters_per_pixel = map.meters_per_pixel(z)
             grid_size = meters_per_pixel * map.PIXELS_PER_GRID
@@ -330,6 +327,6 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
         async with request.app.state.db_pool.connection() as conn:
             async with execute_psql_query(conn, query, fetch='one', dict_cursor=False) as result:
                 end = time.time()
-                print('IT TOOK', (end-start), 'SECONDS')
+                api_logger.debug(f'Tile generation took {end-start} seconds')
                 tile = result[0] if result else None
             return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')

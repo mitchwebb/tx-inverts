@@ -402,7 +402,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
                 include_inat=include_inat,
             )
 
-            values = await ns.calculate_values(conn, filters)
+            values = await ns.calculate_ns_values(conn, filters)
             # If there are no occurrences, rank uncertain
             rank = (
                 ns.calculate_rank(

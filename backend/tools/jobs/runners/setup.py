@@ -58,7 +58,7 @@ async def main():
 
         # This step could be easier if provided local files
     except Exception as e:
-        print(f'Database initialization failed. Exiting. {e}')
+        db_logger.exception(f'Database initialization failed. Exiting. {e}')
         await conn.rollback()
     finally:
         await conn.close()

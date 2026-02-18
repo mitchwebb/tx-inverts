@@ -4,9 +4,9 @@ from fastapi import Request, APIRouter, HTTPException
 from pydantic import BaseModel
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.models.api_types import TaxonRequest, TextData
+from backend.core.logging import api_logger
 from typing import Literal
 from psycopg import sql
-import time
 
 router = APIRouter()
 
@@ -60,23 +60,21 @@ async def search(data: TextData, request: Request):
             COALESCE(a.canonical_name, t.canonical_name)
         LIMIT 10;
     '''
-    start = time.time()
+    # start = time.time()
     try:
         async with request.app.state.db_pool.connection() as conn:
             async with execute_psql_query(conn, query, ('\\m' + search_term.lower(), ), 'all', dict_cursor=True) as results:
-                end = time.time()
-                print(end - start)
+                # end = time.time()
+                # api_logger.debug(f'Search suggest took {end-start} seconds)
                 results = [dict(row) for row in results]
                 return {'results': results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# TODO: Let's get some timing going, this isn't acceptable
 @router.post("/get_taxon_info")
 async def search(data: TaxonRequest, request: Request):
     taxon_id = data.taxon_id
-    print(taxon_id)
 
     taxon_query = '''
         SELECT
@@ -99,17 +97,16 @@ async def search(data: TaxonRequest, request: Request):
         FROM tx_taxa
         WHERE taxon_id = %s
     '''
-    start = time.time()
+    # start = time.time()
     try:
         # Get taxon info
         async with request.app.state.db_pool.connection() as conn:
             async with execute_psql_query(conn, taxon_query, (taxon_id,), 'one', dict_cursor=True) as taxon_result:
-                end = time.time()
-                print(end - start)
+                # end = time.time()
+                # api_logger.debug(Taxon info request took {end-start} seconds)
                 if not taxon_result:
                     raise HTTPException(
                         status_code=404, detail="Taxon not found")
-            print('taxoninfo DONE')
             return {
                 "result": {
                     **taxon_result,
@@ -180,11 +177,11 @@ async def get_backbone(request: Request):
         WHERE taxonomic_status IN ('accepted', 'doubtful')
                 ORDER BY taxon_rank, canonical_name
     '''
-    start = time.perf_counter()
+    # start = time.time()
     async with request.app.state.db_pool.connection() as conn:
         async with execute_psql_query(conn, query, fetch='all', dict_cursor=True) as result:
-            end = time.perf_counter()
-            print(f"Query time: {end - start:.4f}s")
+            # end = time.time()
+            # api_logger.debug(f"Query time: {end-start:.4f}s")
             if not result:
                 raise HTTPException(
                     status_code=404, detail='Backbone not retrieved')

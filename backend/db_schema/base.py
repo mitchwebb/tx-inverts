@@ -1,10 +1,11 @@
-import re
 import io
-from typing import Dict
 import pandas as pd
 import uuid
+
+from typing import Dict
 from psycopg import AsyncConnection, sql
 from backend.data_util.case import to_snake_case
+from backend.core.logging import db_logger, data_logger
 
 
 class DBTable:
@@ -89,7 +90,7 @@ class DBTable:
                 async with conn.cursor() as cur:
                     await cur.execute(self.drop_table_query())
                     await conn.commit()
-                    print(f"Dropped '{self.name}'")
+                    db_logger.info(f"Dropped '{self.name}'")
             except Exception as e:
                 raise RuntimeError(
                     f"Failed to drop table '{self.name}': {e}") from e
@@ -99,7 +100,7 @@ class DBTable:
                 async with conn.cursor() as cur:
                     await cur.execute(self.create_table_query())
                     await conn.commit()
-                    print(f"Created '{self.name}'")
+                    db_logger.info(f"Created '{self.name}'")
             except Exception as e:
                 raise RuntimeError(
                     f"Failed to create table '{self.name}': {e}") from e
@@ -131,7 +132,7 @@ class DBTable:
             # Check if table has primary_key. If not, ignore overwrite
             pkey = self.primary_key
             if not pkey and overwrite_rows:
-                print(
+                db_logger.warning(
                     f"Warning: overwrite_rows=True ignored because no primary key is defined for table '{self.name}'"
                 )
                 overwrite_rows = False
@@ -191,7 +192,7 @@ class DBTable:
                                       chunk_size)
 
                 await conn.commit()
-                print(f"Copied into '{self.name}'")
+                db_logger.info(f"Copied into '{self.name}'")
             except Exception as e:
                 await conn.rollback()
                 raise RuntimeError(
@@ -211,11 +212,11 @@ class DBTable:
         missing = allowed_cols - actual_cols
 
         if extra:
-            print(f'Dropping unexpected columns: {extra}')
+            data_logger.info(f'Dropping unexpected columns from df: {extra}')
             df = df[[col for col in df.columns if col in allowed_cols]]
 
         if missing:
-            print(f'Adding empty missing columns: {missing}')
+            data_logger.info(f'Adding empty missing columns to df: {missing}')
             for col in missing:
                 df[col] = None
 

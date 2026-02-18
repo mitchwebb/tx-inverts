@@ -1,11 +1,12 @@
 # Logic for processing/filtering GBIF observations downloads
-
 from typing import Generator
-import pandas as pd
+from backend.core.logging import data_logger
 from pandas import DataFrame
 from geopandas.geodataframe import GeoDataFrame
-import csv
 from pathlib import Path
+
+import pandas as pd
+import csv
 import re
 
 
@@ -221,10 +222,8 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
                         if match.group('day'):
                             matched_date += f"-{match.group('day').zfill(2)}"
                 if keyword == 'dated' or keyword == 'started':
-                    # print(f'Searched for start_date in eventRemarks, found {matched_date}')
                     start_date = matched_date
                 elif keyword == 'ended':
-                    # print(f'Searched for end_date in eventRemarks, found {matched_date}')
                     end_date = matched_date
 
         # Next we'll check for date strings in verbatimEventDate
@@ -306,7 +305,7 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
         ]
         bad_location_count = len(chunk) - len(df)
         if bad_location_count:
-            print(
+            data_logger.info(
                 f'Removed {bad_location_count} records found outside of Texas')
 
         # STEP 2: FILTER/PARSE DATES
@@ -316,7 +315,7 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
         df = df.dropna(subset=['collection_start_date', 'collection_end_date'])
         bad_date_count = (len(chunk) - bad_location_count) - len(df)
         if bad_date_count:
-            print(
+            data_logger.info(
                 f'Removed {bad_date_count} records found with invalid collection dates')
 
         # # Add newly filtered chunk to filtered_chunks
@@ -324,7 +323,7 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
 
         observation_count += len(chunk)
 
-        print(
+        data_logger.info(
             f'Processed chunk with {len(df)} valid records of {len(chunk)} total records')
 
         yield chunk

@@ -1,4 +1,5 @@
 from backend.db_schema.index_definitions import INDEX_DEFINITIONS
+from backend.core.logging import db_logger
 import psycopg
 from psycopg import sql
 
@@ -29,18 +30,18 @@ async def update_index(
         # If index exists and reindex == True, reindex
         if exists:
             if reindex:
-                print(f'{index_name} already exists, reindexing...')
+                db_logger.info(f'{index_name} already exists, reindexing...')
                 await cur.execute(
                     sql.SQL('REINDEX INDEX {}').format(
                         sql.Identifier(index_name))
                 )
             # If index exists and reindex == False, skip
             else:
-                print(f'{index_name} already exists, skipping...')
+                db_logger.info(f'{index_name} already exists, skipping...')
                 return
         # Else run create_index_query (if provided)
         else:
-            print(f'{index_name} does not yet exist, creating index...')
+            db_logger.info(f'{index_name} does not yet exist, creating index...')
             await cur.execute(create_sql)
 
     return

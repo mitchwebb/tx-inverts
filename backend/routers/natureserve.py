@@ -3,14 +3,15 @@ from fastapi.responses import JSONResponse
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.routers.occurrence import ObservationsRequest
 from backend.routers.occurrence import ObservationsRequest
-from backend.data_util.natureserve import calculate_values
-import json
-import psycopg
-import time
+from backend.data_util.natureserve import calculate_ns_values
 from backend.routers.taxa import get_taxon_rank
 from psycopg import sql
 from backend.core.sql import create_occurrence_clause
 from backend.models.sql import OccurrenceFilter
+from backend.core.logging import api_logger
+
+import json
+import psycopg
 
 
 router = APIRouter()
@@ -18,7 +19,17 @@ router = APIRouter()
 
 @router.post('/get_ns_values', response_class=Response)
 async def get_ns_values(data: ObservationsRequest, request: Request):
+    """
+    Get NatureServe values (occurrences, range extent, and area of occupancy) 
+    for a given taxon_id with filters
 
+    Args:
+        data (ObservationsRequest): Collection of filters to filter occurrence records
+        request (Request)
+
+    Returns:
+        TODO: Sort out typing and finish this docstring
+    """
     filters = OccurrenceFilter(
         taxon_id=data.taxon_id,
         include_inat=data.include_inat,
@@ -33,10 +44,7 @@ async def get_ns_values(data: ObservationsRequest, request: Request):
 
     async with pool.connection() as conn:
         taxon_rank = await get_taxon_rank(conn, filters.taxon_id)
-        start = time.time()
-        ns_result = await calculate_values(conn, filters, taxon_rank)
-        end = time.time()
-        print(end - start)
+        ns_result = await calculate_ns_values(conn, filters, taxon_rank)
         if not ns_result:
             return JSONResponse(content={'result': None}, status_code=200)
 
@@ -54,7 +62,7 @@ async def get_ns_values(data: ObservationsRequest, request: Request):
             await cur.execute(rank_query, ())
             rank_result = await cur.fetchone()
 
-        print('natureserve DONE')
+        api_logger.info('Retrieved NS values ')
         return JSONResponse(content={
             'result': {
                 'number_of_occurrences': ns_result['number_of_occurrences'],
