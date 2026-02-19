@@ -12,7 +12,7 @@
         items: Record<any, any>[];
         rowHeight: number;
         headers: {
-            label: string;
+            label: string | Snippet;
             info?: string;
             sortKey?: string | null;
         }[];
@@ -278,7 +278,7 @@
                         >
                             <div class="header-label-wrapper">
                                 <div class="header-label">
-                                    {header.label}
+                                    {@html header.label}
                                 </div>
                                 {#if header.info}
                                     <div class="header-info">
@@ -378,6 +378,8 @@
         pointer-events: none;
     }
     .sort-arrow {
+        height: 1rem;
+        width: 1rem;
         margin-left: 0.5rem;
         flex-shrink: 0;
         user-select: none;
@@ -430,6 +432,7 @@
         text-align: left;
         font-weight: 600;
         justify-content: space-between;
+        align-items: center;
         width: 100%;
         height: 100%;
         padding: 1rem 0.5rem 0.5rem 0.5rem;

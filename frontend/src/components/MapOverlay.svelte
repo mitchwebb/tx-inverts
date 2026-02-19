@@ -4,7 +4,6 @@
     - Includes map toolbar and sidebar
 -->
 <script lang="ts">
-    import { getMapHoverContext } from '../contexts/mapHoverContext';
     import Sidebar from './Sidebar/Sidebar.svelte';
     import { getActiveTaxonContext } from '../contexts/activeTaxonContext';
     import { getSidebarContext } from '../contexts/sidebarContext';

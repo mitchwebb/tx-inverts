@@ -23,7 +23,7 @@ export type HoveredLegendInfo = {
 };
 
 // TODO: Anything in here with key values should be taken from somewhere more global
-export type MapStateType = {
+export type MapState = {
     map: mapboxgl.Map | null;
     center: mapboxgl.LngLat | null;
     zoom: number | null;
@@ -41,7 +41,7 @@ export type MapStateType = {
     loading: boolean;
 };
 
-export const initialMapState: MapStateType = {
+export const initialMapState: MapState = {
     activeLayers: [
         'observations-circles',
         'observations-fill',
@@ -72,10 +72,10 @@ export const initialMapState: MapStateType = {
     hoveredLegendInfo: null,
 };
 
-export function setMapContext(mapState: MapStateType) {
+export function setMapContext(mapState: MapState) {
     setContext(mapStateKey, mapState);
 }
 
-export function getMapContext(): MapStateType {
-    return getContext(mapStateKey) as MapStateType;
+export function getMapContext(): MapState {
+    return getContext(mapStateKey) as MapState;
 }

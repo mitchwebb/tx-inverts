@@ -10,7 +10,7 @@
     } from '../../constants/sidebarFilters';
     import {
         getFiltersContext,
-        type FiltersStateType,
+        type FiltersState,
     } from '../../contexts/filtersContext';
     import { getRouterContext } from '../../contexts/routerContext';
     import DatasetFilterSection from './DatasetFilterSection.svelte';
@@ -36,11 +36,11 @@
     // This is fairly safe within SIDEBAR_FILTER_META, but ts doesn't like the union
     // Still, I don't like manually ignoring the error.
     function handleClearFilters() {
-        for (const filterKey of FILTER_KEYS as (keyof FiltersStateType)[]) {
+        for (const filterKey of FILTER_KEYS as (keyof FiltersState)[]) {
             const meta = SIDEBAR_FILTER_META[filterKey];
             // @ts-expect-error: type mismatch on default values
             filtersContext[filterKey] =
-                meta.default as FiltersStateType[typeof filterKey];
+                meta.default as FiltersState[typeof filterKey];
         }
     }
 </script>

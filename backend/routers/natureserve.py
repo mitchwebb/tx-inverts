@@ -62,13 +62,14 @@ async def get_ns_values(data: ObservationsRequest, request: Request):
             await cur.execute(rank_query, ())
             rank_result = await cur.fetchone()
 
-        api_logger.info('Retrieved NS values ')
+        api_logger.info(f'Retrieved NS values {ns_result}')
         return JSONResponse(content={
             'result': {
                 'number_of_occurrences': ns_result['number_of_occurrences'],
                 'range_extent_km2': ns_result['range_extent_km2'],
                 'observation_count': ns_result['observation_count'],
                 'area_of_occupancy_4km2_bins': ns_result['area_of_occupancy_4km2_bins'],
+                'area_of_occupancy_1km2_bins': ns_result['area_of_occupancy_1km2_bins'],
                 'ns_rank_state': rank_result[rank_col]
             }
         })
@@ -77,7 +78,7 @@ async def get_ns_values(data: ObservationsRequest, request: Request):
 
 @router.post('/get_range_extent_geom', response_class=Response)
 async def get_range_extent_geom(data: ObservationsRequest, request: Request):
-   
+
     filters = OccurrenceFilter(
         taxon_id=data.taxon_id,
         include_inat=data.include_inat,

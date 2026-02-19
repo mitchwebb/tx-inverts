@@ -1,6 +1,6 @@
 import {
     initialFiltersState,
-    type FiltersStateType,
+    type FiltersState,
 } from '../contexts/filtersContext';
 
 // FilterPath notes which page a filter belongs to (they can belong ot multiple)
@@ -65,9 +65,9 @@ export const SIDEBAR_FILTER_META = {
         count: false,
     },
 } satisfies {
-    [K in keyof FiltersStateType]: {
+    [K in keyof FiltersState]: {
         path: FilterPath;
-        default: FiltersStateType[K];
+        default: FiltersState[K];
         domain: FilterDomain;
         count: boolean;
     };
@@ -75,4 +75,4 @@ export const SIDEBAR_FILTER_META = {
 
 export const FILTER_KEYS = Object.keys(
     SIDEBAR_FILTER_META
-) as (keyof FiltersStateType)[];
+) as (keyof FiltersState)[];

@@ -35,6 +35,7 @@
 - [ ] Apply filters to ranking (re-run ranking)
 - [ ] Mobile
 - [ ] Improve date input functionality (min-max unclear in native components)
+- [ ] Variable AOO Bin Sizes (Requires server interaction to get values)
 
 ### Documentation
 

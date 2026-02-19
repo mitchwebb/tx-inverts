@@ -20,8 +20,8 @@
     // Define headers/sort-keys for virtualized rankings table
     const tableHeaders = $derived([
         {
-            label: 'Rank',
-            info: 'The rankings in this column are precalculated using a 4km2 grid cell. Aside from toggling iNaturalist data, they will not respond to filtering.',
+            label: `${filtersContext.includeINat ? 'Rank' : 'Rank (no iNat)'}`,
+            info: 'The rankings in this column are precalculated using a 4km2 grid cell. Aside from toggling iNaturalist data, they will not respond to further filtering.',
             sortKey: filtersContext.includeINat
                 ? 'ns_rank_state'
                 : 'ns_rank_state_no_inat',

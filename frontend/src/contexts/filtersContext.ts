@@ -5,7 +5,7 @@ import type { TaxonomicRank } from '../types/taxa';
 
 export const filtersStateKey = 'filters';
 
-export type FiltersStateType = {
+export type FiltersState = {
     filteredTaxonID: number | null;
     filteredCanonicalName: string | null;
     taxonRank: TaxonomicRank | null;
@@ -16,7 +16,7 @@ export type FiltersStateType = {
     dateEnd: string | null;
 };
 
-export const initialFiltersState: FiltersStateType = {
+export const initialFiltersState: FiltersState = {
     filteredTaxonID: null,
     filteredCanonicalName: null,
     taxonRank: null,
@@ -27,10 +27,10 @@ export const initialFiltersState: FiltersStateType = {
     dateEnd: null,
 };
 
-export function setFiltersContext(taxonState: FiltersStateType) {
+export function setFiltersContext(taxonState: FiltersState) {
     setContext(filtersStateKey, taxonState);
 }
 
-export function getFiltersContext(): FiltersStateType {
-    return getContext(filtersStateKey) as FiltersStateType;
+export function getFiltersContext(): FiltersState {
+    return getContext(filtersStateKey) as FiltersState;
 }

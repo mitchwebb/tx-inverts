@@ -4,7 +4,7 @@ import type { Provider } from '../constants/mapLegendKeys';
 
 export const activeTaxonStateKey = 'taxa';
 
-export type ActiveTaxonStateType = {
+export type ActiveTaxonState = {
     taxonLoading: boolean;
     taxonError: boolean;
     observationMetricsLoading: boolean;
@@ -39,10 +39,9 @@ export const EMPTY_TAXON_INFO: TaxonInfo = {
     commonNames: null,
     nSRankDB: null,
     nSRankDBNoINat: null,
-    nSRankLocal: null,
 };
 
-export const initialTaxonState: ActiveTaxonStateType = {
+export const initialTaxonState: ActiveTaxonState = {
     taxonLoading: false,
     taxonError: true,
     observationMetricsLoading: false,
@@ -53,6 +52,7 @@ export const initialTaxonState: ActiveTaxonStateType = {
     nSValues: {
         numberOfOccurrences: null,
         areaOfOccupancy4Km2Bins: null,
+        areaOfOccupancy1Km2Bins: null,
         rangeExtentKm2: null,
         observationCount: null,
     }, // Values retrieved get_ns_values call
@@ -61,10 +61,10 @@ export const initialTaxonState: ActiveTaxonStateType = {
     dateMax: null, // Max obs date in db
 };
 
-export function setActiveTaxonContext(activeTaxonState: ActiveTaxonStateType) {
+export function setActiveTaxonContext(activeTaxonState: ActiveTaxonState) {
     setContext(activeTaxonStateKey, activeTaxonState);
 }
 
-export function getActiveTaxonContext(): ActiveTaxonStateType {
-    return getContext(activeTaxonStateKey) as ActiveTaxonStateType;
+export function getActiveTaxonContext(): ActiveTaxonState {
+    return getContext(activeTaxonStateKey) as ActiveTaxonState;
 }

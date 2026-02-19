@@ -2,24 +2,24 @@ import { getContext, setContext, type Snippet } from 'svelte';
 
 export const tooltipStateKey = 'tooltip';
 
-export type TooltipStateType = {
+export type TooltipState = {
     visible: boolean;
-    content: string | Snippet | null;
+    content: string | null;
     target: HTMLElement | null;
     backgroundColor: string | null;
 };
 
-export const initialTooltipState: TooltipStateType = {
+export const initialTooltipState: TooltipState = {
     visible: false,
     content: null,
     target: null,
     backgroundColor: null,
 };
 
-export function setTooltipContext(tooltipState: TooltipStateType) {
+export function setTooltipContext(tooltipState: TooltipState) {
     setContext(tooltipStateKey, tooltipState);
 }
 
-export function getTooltipContext(): TooltipStateType {
-    return getContext(tooltipStateKey) as TooltipStateType;
+export function getTooltipContext(): TooltipState {
+    return getContext(tooltipStateKey) as TooltipState;
 }

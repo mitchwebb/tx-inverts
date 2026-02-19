@@ -3,7 +3,7 @@ from backend.routers.taxa import TaxonomicRank
 import psycopg
 from backend.core.sql import create_occurrence_clause
 from backend.models.sql import OccurrenceFilter
-from backend.core.logging import data_logger
+from backend.core.logging import data_logger, api_logger
 
 
 def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy):
@@ -106,6 +106,7 @@ def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy):
     return (zero_range_rank)
 
 
+# TODO: Try except!
 # TODO: Minimum convex polygon vs a-hull (https://help.natureserve.org/biotics/Content/Record_Management/Element_Files/Element_Ranking/ERANK_Definitions_of_Extent_of_Occurrence_and_Area_of_Occupancy.htm)
 # TODO: Round up Range Extent to match AOO minimum
 # Separated from router to allow command line or other direct access
@@ -127,69 +128,79 @@ async def calculate_ns_values(
             dict with keys 'range_extent_km2', 
                            'number_of_occurrences', 
                            'observation_count', 
-                           'area_of_occupancy_4km2_bins'
+                           'area_of_occupancy_4km2_bins',
+                           'area_of_occupancy_1km2_bins'
             or None if no data found
     """
 
+    try:
+        occurrence_clause = create_occurrence_clause(filters)
 
-    occurrence_clause = create_occurrence_clause(filters)
+        rank_col = f'{taxon_rank}_id'
 
-    rank_col = f'{taxon_rank}_id'
+        query = sql.SQL("""
+            WITH region AS (
+                SELECT geometry
+                FROM geometries
+                WHERE geometry_name = 'Texas'
+            ),
+            obs_points AS (
+                SELECT
+                    ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326) AS geom,
+                    accepted_taxon_key,
+                    taxon_key,
+                    {rank_col}
+                {occurrence_clause}
+            ),
+            filtered_obs AS (
+                SELECT p.geom, p.accepted_taxon_key
+                FROM obs_points p, region r
+                WHERE (p.{rank_col} = {taxon_id})
+                    AND p.geom && r.geometry
+                    AND ST_Intersects(p.geom, r.geometry)
+            ),
+            hull AS (
+                SELECT
+                    ST_ConvexHull(ST_Collect(f.geom)) AS geom,
+                    COUNT(*) AS observation_count,
+                    COUNT(DISTINCT ROW(f.geom, f.accepted_taxon_key)) AS number_of_occurrences
+                FROM filtered_obs f
+            ),
+            a4 AS (
+                SELECT COUNT(DISTINCT ST_SnapToGrid(ST_Transform(f.geom, 5070), 2000, 2000)) AS num_cells
+                FROM filtered_obs f
+            ),
+            a1 AS (
+                SELECT COUNT(DISTINCT ST_SnapToGrid(ST_Transform(f.geom, 5070), 1000, 1000)) AS num_cells
+                FROM filtered_obs f
+            )
+            SELECT
+                COALESCE(
+                    ST_Area(
+                        ST_Transform(
+                            ST_Intersection(h.geom, r.geometry),
+                            5070
+                        )
+                    ) / 1e6,
+                    0
+                ) AS range_extent_km2,
+                h.observation_count,
+                h.number_of_occurrences,
+                a4.num_cells AS area_of_occupancy_4km2_bins,
+                a1.num_cells AS area_of_occupancy_1km2_bins
 
-    query = sql.SQL("""
-		WITH region AS (
-			SELECT geometry
-			FROM geometries
-			WHERE geometry_name = 'Texas'
-		),
-		obs_points AS (
-			SELECT
-				ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326) AS geom,
-				accepted_taxon_key,
-                taxon_key,
-                {rank_col}
-			{occurrence_clause}
-		),
-        filtered_obs AS (
-            SELECT p.geom, p.accepted_taxon_key
-            FROM obs_points p, region r
-            WHERE (p.{rank_col} = {taxon_id})
-                AND p.geom && r.geometry
-                AND ST_Intersects(p.geom, r.geometry)
-        ),
-		hull AS (
-			SELECT
-				ST_ConvexHull(ST_Collect(f.geom)) AS geom,
-				COUNT(*) AS observation_count,
-				COUNT(DISTINCT ROW(f.geom, f.accepted_taxon_key)) AS number_of_occurrences
-			FROM filtered_obs f
-		),
-		aoo AS (
-			SELECT COUNT(DISTINCT ST_SnapToGrid(ST_Transform(f.geom, 5070), 2000, 2000)) AS num_cells
-			FROM filtered_obs f
-		)
-		SELECT
-			COALESCE(
-				ST_Area(
-					ST_Transform(
-						ST_Intersection(h.geom, r.geometry),
-						5070
-					)
-				) / 1e6,
-				0
-			) AS range_extent_km2,
-			h.observation_count,
-			h.number_of_occurrences,
-			a.num_cells AS area_of_occupancy_4km2_bins
-		FROM hull h, region r, aoo a;
-	""").format(
-        taxon_id=sql.Literal(filters.taxon_id),
-        rank_col=sql.Identifier(rank_col),
-        include_inat=sql.Literal(filters.include_inat),
-        occurrence_clause=occurrence_clause
-    )
+            FROM hull h, region r, a4, a1
+        """).format(
+            taxon_id=sql.Literal(filters.taxon_id),
+            rank_col=sql.Identifier(rank_col),
+            include_inat=sql.Literal(filters.include_inat),
+            occurrence_clause=occurrence_clause
+        )
 
-    async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-        await cur.execute(query, ())
-        result = await cur.fetchone()
-        return result
+        async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+            await cur.execute(query, ())
+            result = await cur.fetchone()
+            print(result)
+            return result
+    except Exception as e:
+        api_logger.exception(e)

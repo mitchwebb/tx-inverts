@@ -5,7 +5,6 @@
 -->
 <script lang="ts">
     import type { Snippet } from 'svelte';
-    import { slide } from 'svelte/transition';
     import {
         layerGroups,
         type LayerGroupID,
@@ -78,7 +77,6 @@
         <div
             id="foldout-content-{layerID}"
             class="map-key-foldout-content"
-            transition:slide
         >
             {@render children?.()}
         </div>

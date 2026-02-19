@@ -2,7 +2,7 @@
     import {
         initialMapState,
         setMapContext,
-        type MapStateType,
+        type MapState,
     } from '../contexts/mapContext';
     import HeaderBar from '../components/HeaderBar.svelte';
     import {
@@ -10,20 +10,20 @@
         getActiveTaxonContext,
         initialTaxonState,
         setActiveTaxonContext,
-        type ActiveTaxonStateType,
+        type ActiveTaxonState,
     } from '../contexts/activeTaxonContext';
     import Router from './Router.svelte';
     import {
         getRouterContext,
         initialRouterState,
         setRouterContext,
-        type RouterStateType,
+        type RouterState,
     } from '../contexts/routerContext';
     import { getCommonNames, getNSValues, getTaxonInfo } from '../lib/taxa';
     import {
         initialModalState,
         setModalContext,
-        type ModalStateType,
+        type ModalState,
     } from '../contexts/modalContext';
     import Modal from './Modal.svelte';
     import { getObservationDates, getProviderCounts } from '../lib/occurrence';
@@ -31,7 +31,7 @@
         getFiltersContext,
         initialFiltersState,
         setFiltersContext,
-        type FiltersStateType,
+        type FiltersState,
     } from '../contexts/filtersContext';
     import {
         normalizeAPIResponse,
@@ -44,32 +44,39 @@
     import {
         initialSidebarState,
         setSidebarContext,
-        type SidebarStateType,
+        type SidebarState,
     } from '../contexts/sidebarContext';
     import { onMount } from 'svelte';
-    import { calculateNSRank } from '../lib/natureServe';
+    import {
+        initialMetricsState,
+        setMetricsContext,
+        type MetricsParams,
+    } from '../contexts/metricsParamsContext';
 
     // Intialize contexts
-    const taxonState: ActiveTaxonStateType = $state(initialTaxonState);
+    const taxonState: ActiveTaxonState = $state(initialTaxonState);
     setActiveTaxonContext(taxonState);
     const taxonContext = getActiveTaxonContext();
 
-    const filtersState: FiltersStateType = $state(initialFiltersState);
+    const filtersState: FiltersState = $state(initialFiltersState);
     setFiltersContext(filtersState);
     const filtersContext = getFiltersContext();
 
-    const mapState: MapStateType = $state(initialMapState);
+    const mapState: MapState = $state(initialMapState);
     setMapContext(mapState);
 
-    const routerState: RouterStateType = $state(initialRouterState);
+    const routerState: RouterState = $state(initialRouterState);
     setRouterContext(routerState);
     const routerContext = getRouterContext();
 
-    const modalState: ModalStateType = $state(initialModalState);
+    const modalState: ModalState = $state(initialModalState);
     setModalContext(modalState);
 
-    const sidebarState: SidebarStateType = $state(initialSidebarState);
+    const sidebarState: SidebarState = $state(initialSidebarState);
     setSidebarContext(sidebarState);
+
+    const metricsParamsState: MetricsParams = $state(initialMetricsState);
+    setMetricsContext(metricsParamsState);
 
     onMount(() => {
         const url = new URL(window.location.href);
@@ -117,7 +124,7 @@
         }
     });
 
-    // Get NatureServe values on new taxon or filters change
+    // Get NatureServe values from server on new taxon or filters change
     $effect(() => {
         const activeTaxonID = taxonContext.taxonID;
         const includeINat = filtersContext.includeINat !== false;
@@ -189,36 +196,6 @@
             taxonContext.dateMin = null;
             taxonContext.dateMax = null;
             taxonContext.providerCounts = null;
-        }
-    });
-
-    // Update nSRankLocal on nSValue changes
-    $effect(() => {
-        if (
-            taxonContext.taxonInfo.taxonRank &&
-            ['species', 'subspecies'].includes(taxonContext.taxonInfo.taxonRank)
-        ) {
-            const {
-                areaOfOccupancy4Km2Bins,
-                numberOfOccurrences,
-                rangeExtentKm2,
-            } = taxonContext.nSValues;
-            if (
-                areaOfOccupancy4Km2Bins !== null &&
-                numberOfOccurrences !== null &&
-                rangeExtentKm2 !== null
-            ) {
-                const localRank = calculateNSRank(
-                    numberOfOccurrences,
-                    rangeExtentKm2,
-                    areaOfOccupancy4Km2Bins
-                );
-                taxonContext.taxonInfo.nSRankLocal = localRank;
-            } else {
-                taxonContext.taxonInfo.nSRankLocal = null;
-            }
-        } else {
-            taxonContext.taxonInfo.nSRankLocal = null;
         }
     });
 

@@ -31,6 +31,7 @@ export type RawNSValues = {
 export type NSValues = {
     numberOfOccurrences: number | null;
     areaOfOccupancy4Km2Bins: number | null;
+    areaOfOccupancy1Km2Bins: number | null;
     rangeExtentKm2: number | null;
     observationCount: number | null;
 };
@@ -38,6 +39,7 @@ export type NSValues = {
 export const NS_VALUES_MAP = {
     number_of_occurrences: 'numberOfOccurrences',
     area_of_occupancy_4km2_bins: 'areaOfOccupancy4Km2Bins',
+    area_of_occupancy_1km2_bins: 'areaOfOccupancy1Km2Bins',
     range_extent_km2: 'rangeExtentKm2',
     observation_count: 'observationCount',
 } as const;
@@ -83,8 +85,8 @@ export type TaxonInfo = {
     nSRankDB: NSRank | null; // NS Rank from Database
     nSRankDBNoINat: NSRank | null; // NS Rank from Database without iNat
 
-    // Locally calculated rank (derived from nSValues)
-    nSRankLocal: NSRank | null;
+    // // Locally calculated rank (derived from nSValues)
+    // nSRankLocal: NSRank | null;
 
     // Merged from separate API call
     commonNames: string[] | null;

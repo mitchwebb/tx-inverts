@@ -1,24 +1,21 @@
 import { getContext, setContext } from 'svelte';
-import type { SidebarFilter } from '../constants/sidebarFilters';
 
 export const sidebarStateKey = 'sidebar';
 
-export type SidebarStateType = {
-    visibleFilters: SidebarFilter[];
+export type SidebarState = {
     width: number;
     visible: boolean;
 };
 
-export const initialSidebarState: SidebarStateType = {
-    visibleFilters: [],
+export const initialSidebarState: SidebarState = {
     width: 350,
     visible: false,
 };
 
-export function setSidebarContext(sidebarState: SidebarStateType) {
+export function setSidebarContext(sidebarState: SidebarState) {
     setContext(sidebarStateKey, sidebarState);
 }
 
-export function getSidebarContext(): SidebarStateType {
-    return getContext(sidebarStateKey) as SidebarStateType;
+export function getSidebarContext(): SidebarState {
+    return getContext(sidebarStateKey) as SidebarState;
 }

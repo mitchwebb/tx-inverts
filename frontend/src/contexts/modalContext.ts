@@ -2,20 +2,20 @@ import { getContext, setContext, type Component, type Snippet } from 'svelte';
 
 export const ModalStateKey = 'modal';
 
-export type ModalStateType = {
+export type ModalState = {
     visible: boolean;
     content: string | Component | null;
 };
 
-export const initialModalState: ModalStateType = {
+export const initialModalState: ModalState = {
     visible: false,
     content: null,
 };
 
-export function setModalContext(ModalState: ModalStateType) {
+export function setModalContext(ModalState: ModalState) {
     setContext(ModalStateKey, ModalState);
 }
 
-export function getModalContext(): ModalStateType {
-    return getContext(ModalStateKey) as ModalStateType;
+export function getModalContext(): ModalState {
+    return getContext(ModalStateKey) as ModalState;
 }

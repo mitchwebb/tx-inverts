@@ -4,8 +4,7 @@
 -->
 <script lang="ts">
     import type { Component, Snippet } from 'svelte';
-    import { slide } from 'svelte/transition';
-
+    
     type ToolbarFoldoutProps = {
         id: string;
         ButtonLabel: string | Component;
@@ -32,7 +31,7 @@
         {/if}
     </button>
     {#if expanded}
-        <div class="foldout-content rounded" transition:slide>
+        <div class="foldout-content rounded">
             {@render children?.()}
         </div>
     {/if}

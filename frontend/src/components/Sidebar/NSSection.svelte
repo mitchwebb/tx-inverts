@@ -22,6 +22,8 @@
     } from '../../lib/map/mapLayers';
     import InfoButton from '../../common/InfoButton.svelte';
     import { countActiveFilters } from '../../lib/filters.svelte';
+    import { calculateNSRank } from '../../lib/natureServe';
+    import { getMetricsContext } from '../../contexts/metricsParamsContext';
 
     const mapContext = getMapContext();
 
@@ -31,6 +33,7 @@
 
     const filtersContext = getFiltersContext();
     const routerContext = getRouterContext();
+    const metricsContext = getMetricsContext();
 
     // Determine if there are any active observations filters affecting the ranking
     const filtersActive = $derived.by(() => {
@@ -40,10 +43,48 @@
 
     const isMapPage: boolean = $derived(routerContext.url.pathname === '/map');
 
+    let aOOGridSize = $derived(metricsContext.aOOResolution);
+
+    let aOOValue = $derived(
+        metricsContext.aOOResolution == '4km2'
+            ? nSValues.areaOfOccupancy4Km2Bins
+            : nSValues.areaOfOccupancy1Km2Bins
+    );
+
+    // Update nSRankLocal on nSValue changes
+    const localRank = $derived(deriveLocalRank());
+
+    // As long as we're not using it anywhere else, the local nSRank can live
+    // in this component
+    function deriveLocalRank() {
+        console.log('hellooooo', aOOValue);
+        if (
+            taxonContext.taxonInfo.taxonRank &&
+            ['species', 'subspecies'].includes(taxonContext.taxonInfo.taxonRank)
+        ) {
+            if (
+                aOOValue !== null &&
+                nSValues.numberOfOccurrences !== null &&
+                nSValues.rangeExtentKm2 !== null
+            ) {
+                const localRank = calculateNSRank(
+                    nSValues.numberOfOccurrences,
+                    nSValues.rangeExtentKm2,
+                    aOOValue
+                );
+                return localRank;
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+
     // Determine conservation rank of current taxonID
     // Default to locally calculated rank, then to rank stored on database
     const rank = $derived(
-        taxonInfo.nSRankLocal ||
+        localRank ||
             (filtersContext.includeINat
                 ? taxonInfo.nSRankDB
                 : taxonInfo.nSRankDBNoINat)
@@ -63,6 +104,12 @@
         }
     });
 
+    function aOOGridHandler(e: Event) {
+        const target = e.target as HTMLSelectElement;
+        const gridSize = target.value as '1km2' | '4km2';
+        metricsContext.aOOResolution = gridSize;
+    }
+
     function layerToggleHandler(payload: CheckboxPayload) {
         const layerID = payload.value as MapLayerID | LayerGroupID;
         const layerVisible = payload.checked as boolean;
@@ -81,7 +128,7 @@
     customClass="ns-section-wrapper"
 >
     {#snippet closedDisplay()}
-        {#if taxonInfo.nSRankLocal && !taxonInfo.usInvasive}
+        {#if rank && !taxonInfo.usInvasive}
             <NSCircle active={true} level="S" rank={rank ? rank : 'U'} />
         {/if}
     {/snippet}
@@ -89,7 +136,7 @@
         <div id="filter-warning">Filters Applied to Data</div>
     {/if}
     <div class="ns-section">
-        {#if taxonInfo.nSRankLocal && !taxonInfo.usInvasive}
+        {#if rank && !taxonInfo.usInvasive}
             <div id="rank-text" class="centered-text subheader">
                 <span
                     >{nSRankKey.find((item) => item.rank === rank)
@@ -159,7 +206,7 @@
                     <div id="range-extent-text">
                         <span> Range Extent: </span>
                         <span class="thin">
-                            {toLocaleRounded(adjusted_range_extent, 2)} 
+                            {toLocaleRounded(adjusted_range_extent, 2)}
                             km<sup>2</sup>
                         </span>
                     </div>
@@ -179,16 +226,34 @@
                     {/if}
                 {/if}
             </div>
-            <div id="area-of-occupancy-section" class="ns-metric-row">
+            <div id="aoo-section" class="ns-metric-row">
                 {#if nSValues.areaOfOccupancy4Km2Bins != null}
-                    {@const aooDisplay = toLocaleRounded(
-                        nSValues.areaOfOccupancy4Km2Bins,
-                        2
-                    )}
-                    <div id="area-of-occupancy-text">
-                        <span>Area of Occupancy:</span>
-                        <span class="thin">
-                            {aooDisplay} Grid Cells (4km<sup>2</sup>)
+                    <div id="aoo-text">
+                        <span>
+                            <span>Area of Occupancy:</span>
+                            <span class="thin">
+                                {aOOValue}
+                            </span>
+                        </span>
+                        <span id="aoo-grid-select-wrapper">
+                            <select
+                                id="aoo-grid-select"
+                                onchange={aOOGridHandler}
+                            >
+                                <option
+                                    value="1km2"
+                                    selected={aOOGridSize == '1km2'}
+                                >
+                                    1km2
+                                </option>
+                                <option
+                                    value="4km2"
+                                    selected={aOOGridSize == '4km2'}
+                                >
+                                    4km2
+                                </option>
+                            </select>
+                            Grid Cells
                         </span>
                     </div>
                 {/if}
@@ -209,6 +274,20 @@
 </SidebarFoldout>
 
 <style>
+    #aoo-text {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        line-break: unset;
+        flex-wrap: wrap;
+        column-gap: 0.5rem;
+    }
+    #aoo-grid-select-wrapper {
+        white-space: nowrap;
+    }
+    #aoo-grid-select {
+        color: var(--text-default);
+    }
     :global(.ns-section-wrapper > .sidebar-foldout-content) {
         padding: 0;
     }
