@@ -52,7 +52,7 @@
                 <div class="loading-icon icon">
                     <LoadingIcon />
                 </div>
-            <!-- {:else}
+                <!-- {:else}
                 <button class="x-icon icon" onclick={clearTaxon}>
                     <XIcon />
                 </button> -->

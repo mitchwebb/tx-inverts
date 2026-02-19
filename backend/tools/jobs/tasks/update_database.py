@@ -26,7 +26,7 @@ async def update_database():
             await update_ns_ranks(conn, new_row_keys)
 
         # Refresh the materialized views
-        await refresh_materialized_views(conn)
+        await refresh_views(conn)
 
         await update_indexes(conn)
 

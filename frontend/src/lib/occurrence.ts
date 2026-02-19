@@ -1,13 +1,13 @@
 import { dataProviders } from '../contexts/DataProviders';
-import type { ActiveTaxonStateType } from '../contexts/activeTaxonContext';
-import type { FiltersStateType } from '../contexts/filtersContext';
+import type { ActiveTaxonState } from '../contexts/activeTaxonContext';
+import type { FiltersState } from '../contexts/filtersContext';
 import type { RawDateRange } from '../types/api';
 
 export async function getProviderCounts(
-    activeTaxonID: ActiveTaxonStateType['taxonID'],
-    includeINat: FiltersStateType['includeINat'],
-    dateStart: FiltersStateType['dateStart'],
-    dateEnd: FiltersStateType['dateEnd']
+    activeTaxonID: ActiveTaxonState['taxonID'],
+    includeINat: FiltersState['includeINat'],
+    dateStart: FiltersState['dateStart'],
+    dateEnd: FiltersState['dateEnd']
 ) {
     try {
         const response = await fetch('/server/occurrence/get_provider_counts', {
@@ -24,7 +24,7 @@ export async function getProviderCounts(
             throw new Error(`Response status: ${response.status}`);
         }
         const json = await response.json();
-        const result: ActiveTaxonStateType['providerCounts'] = json;
+        const result: ActiveTaxonState['providerCounts'] = json;
         return result;
     } catch (error) {
         console.error(error);
@@ -73,8 +73,8 @@ export async function loadDataProviders() {
 
 // Fetches observation date ranges based on current taxon and inat inclusion
 export async function getObservationDates(
-    activeTaxonID: ActiveTaxonStateType['taxonID'],
-    includeINat: FiltersStateType['includeINat']
+    activeTaxonID: ActiveTaxonState['taxonID'],
+    includeINat: FiltersState['includeINat']
 ) {
     try {
         const response = await fetch(

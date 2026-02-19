@@ -23,7 +23,7 @@ export function normalizeString(text: string): string {
  */
 export function capitalizeWords(words: string | string[]): string | string[] {
     function capitalize(str: string) {
-        return str.replace(/\b\w/g, (char) => char.toUpperCase());
+        return str.replace(/(^|\s)\w/g, (char) => char.toUpperCase());
     }
 
     if (Array.isArray(words)) {

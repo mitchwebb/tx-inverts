@@ -1,11 +1,11 @@
-import { getMapContext, type MapStateType } from '../contexts/mapContext';
+import { getMapContext, type MapState } from '../contexts/mapContext';
 import {
     getActiveTaxonContext,
-    type ActiveTaxonStateType,
+    type ActiveTaxonState,
 } from '../contexts/activeTaxonContext';
 import {
     getFiltersContext,
-    type FiltersStateType,
+    type FiltersState,
 } from '../contexts/filtersContext';
 import type { NSRank } from '../types/api';
 import type { Provider } from './mapLegendKeys';
@@ -30,7 +30,7 @@ export function makeSyncedKeys<
 export const routerSyncedKeys = {
     filters: {
         getContext: getFiltersContext,
-        keys: makeSyncedKeys<FiltersStateType>({
+        keys: makeSyncedKeys<FiltersState>({
             includeINat: { param: 'inat', codec: booleanCodec(true) },
             dataProviders: {
                 param: 'source',
@@ -55,13 +55,13 @@ export const routerSyncedKeys = {
 
     taxon: {
         getContext: getActiveTaxonContext,
-        keys: makeSyncedKeys<ActiveTaxonStateType>({
+        keys: makeSyncedKeys<ActiveTaxonState>({
             taxonID: { param: 'taxon', codec: numberCodec(null) },
         }),
     },
 
     map: {
         getContext: getMapContext,
-        keys: makeSyncedKeys<MapStateType>({}),
+        keys: makeSyncedKeys<MapState>({}),
     },
 } as const;

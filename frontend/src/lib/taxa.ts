@@ -1,10 +1,10 @@
 import { taxaTree } from '../contexts/TaxaTree';
-import type { ActiveTaxonStateType } from '../contexts/activeTaxonContext';
-import type { FiltersStateType } from '../contexts/filtersContext';
+import type { ActiveTaxonState } from '../contexts/activeTaxonContext';
+import type { FiltersState } from '../contexts/filtersContext';
 import type { RawNSValues, RawTaxonInfo, TaxonNodeType } from '../types/api';
 import { deduplicateStringArray } from '../util/deduplicate';
 
-export async function getCommonNames(taxonID: ActiveTaxonStateType['taxonID']) {
+export async function getCommonNames(taxonID: ActiveTaxonState['taxonID']) {
     const commonNamesURL = `https://api.gbif.org/v1/species/${taxonID}/vernacularNames?limit=100`;
     try {
         const response = await fetch(commonNamesURL, {
@@ -40,7 +40,7 @@ export async function getCommonNames(taxonID: ActiveTaxonStateType['taxonID']) {
 }
 
 // Get taxon info (triggered by change in taxonContext.activeTaxonID)
-export async function getTaxonInfo(taxonID: ActiveTaxonStateType['taxonID']) {
+export async function getTaxonInfo(taxonID: ActiveTaxonState['taxonID']) {
     const url = '/server/taxa/get_taxon_info';
     const response = await fetch(url, {
         method: 'POST',
@@ -63,11 +63,11 @@ let abortController = new AbortController();
 
 // Get rangeExtent of activeSpecies (plus observationCount since it's convenient)
 export async function getNSValues(
-    taxonID: ActiveTaxonStateType['taxonID'],
-    includeINat: FiltersStateType['includeINat'],
-    dateStart: FiltersStateType['dateStart'],
-    dateEnd: FiltersStateType['dateEnd'],
-    dataProviders: FiltersStateType['dataProviders']
+    taxonID: ActiveTaxonState['taxonID'],
+    includeINat: FiltersState['includeINat'],
+    dateStart: FiltersState['dateStart'],
+    dateEnd: FiltersState['dateEnd'],
+    dataProviders: FiltersState['dataProviders']
 ) {
     // Cancel previous request if necessary
     if (abortController) abortController.abort();

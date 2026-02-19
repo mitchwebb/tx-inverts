@@ -1,4 +1,4 @@
-import { type MapStateType } from '../contexts/mapContext';
+import { type MapState } from '../contexts/mapContext';
 import {
     layerGroups,
     performanceSensitiveLayers,
@@ -10,7 +10,7 @@ import type { LayerTogglePayload } from '../types/map';
 // Safely handle mapContext.activeLayer list changes and pass to
 // setLayerVisiblity function
 export function toggleLayer(
-    context: MapStateType,
+    context: MapState,
     layerOrGroupID: MapLayerID | LayerGroupID,
     visible: boolean,
     opacityOnly: boolean
@@ -40,7 +40,7 @@ export function toggleLayer(
 
 // Handler for input toggles to show/hide map layers (separate logic for easier testing)
 export function handleLayerToggle(
-    context: MapStateType,
+    context: MapState,
     payload: LayerTogglePayload
 ) {
     if (payload.layerVisible === undefined) {

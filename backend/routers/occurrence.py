@@ -330,3 +330,22 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
                 api_logger.debug(f'Tile generation took {end-start} seconds')
                 tile = result[0] if result else None
             return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
+
+
+@router.post('/export_occurrence_data')
+async def export_occurrence_data(data: ObservationsRequest, request: Request):
+    taxon_id = data.taxon_id
+    include_inat = data.include_inat
+    date_start = data.date_start
+    date_end = data.date_end
+
+    pool = request.app.state.db_pool
+
+    async with pool.connection() as conn:
+
+        filter_payload = OccurrenceFilter(
+            taxon_id=taxon_id,
+            include_inat=include_inat,
+            date_start=date_start,
+            date_end=date_end
+        )

@@ -65,12 +65,12 @@ class GBIFObservationsTable(DBTable):
         'issue': 'TEXT',
         'taxon_key': 'BIGINT',
         'accepted_taxon_key': 'BIGINT',
-        'species': 'TEXT',
         'accepted_scientific_name': 'TEXT',
         'verbatim_scientific_name': 'TEXT',
         'geometry': 'GEOMETRY(Point, 4326)',
         'collection_start_date': 'DATE',
         'collection_end_date': 'DATE'
     }
-    
+
+
 GBIF_OBSERVATIONS_TABLE = GBIFObservationsTable()
