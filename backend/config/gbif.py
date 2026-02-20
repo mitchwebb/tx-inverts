@@ -1,6 +1,7 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+
 # GBIF
 class GBIFSettings(BaseSettings):
     user: str

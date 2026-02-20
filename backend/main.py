@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from backend.core.exception_handler import global_exception_handler
 from backend.core.logging import setup_logging
 from fastapi import FastAPI
-import logging
 from backend.core.logging import api_logger
 from backend.routers.occurrence import router as occurrence_router
 from backend.routers.maps import router as maps_router

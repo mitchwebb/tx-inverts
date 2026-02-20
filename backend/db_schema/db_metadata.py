@@ -1,5 +1,4 @@
 # Model for db_metadata table
-
 from .base import DBTable
 
 
@@ -11,5 +10,6 @@ class DBMetadata(DBTable):
         'table_name': 'TEXT NOT NULL',
         'description': 'TEXT'
     }
-    
+
+
 DB_METADATA_TABLE = DBMetadata()

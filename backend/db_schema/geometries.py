@@ -9,4 +9,5 @@ class GeometriesTable(DBTable):
         'geometry': 'GEOMETRY(MultiPolygon, 4326)'
     }
 
+
 GEOMETRIES_TABLE = GeometriesTable()

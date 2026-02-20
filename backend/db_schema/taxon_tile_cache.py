@@ -12,5 +12,6 @@ class TaxonTileCache(DBTable):
         'observation_count': 'INT NOT NULL',
         'institution_code': 'TEXT NOT NULL',
     }
-    
+
+
 TAXON_TILE_CACHE = TaxonTileCache()

@@ -1,35 +1,10 @@
 import numpy as np
-from backend.routers.taxa import RANK_ORDER, TaxonomicRank, RANK_COLS, get_taxon_rank
+from backend.routers.taxa import RANK_ORDER, TaxonomicRank, RANK_COLS
 from collections import deque, defaultdict
 import pandas as pd
 from typing import List
-from psycopg import Connection, sql
+from psycopg import Connection
 from backend.core.logging import data_logger
-
-
-# async def get_all_descendant_ids(conn: Connection, taxon_id: int):
-#     rank = await get_taxon_rank(conn, taxon_id)
-
-#     rank_col = f'{rank}_id'
-
-#     query = sql.SQL('''
-#         SELECT COALESCE(accepted_name_usage_id, taxon_id)
-#         FROM tx_taxa
-#         WHERE {rank_col} IN (
-#             SELECT taxon_id
-#             FROM tx_taxa
-#             WHERE accepted_name_usage_id = {taxon_id}
-#         )
-#     ''').format(
-#         rank_col=sql.Identifier(rank_col),
-#         taxon_id=sql.Literal(taxon_id)
-#     )
-
-#     async with conn.cursor() as cur:
-#         await cur.execute(query)
-#         result = await cur.fetchall()
-#         result = [r[0] for r in result]
-#         return result
 
 
 async def get_observation_count(conn: Connection, taxon_ids: int | List[int]):

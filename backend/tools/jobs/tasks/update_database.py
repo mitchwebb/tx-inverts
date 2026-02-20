@@ -2,10 +2,7 @@ from backend.data_util.db import get_single_db_connection
 from backend.tools.jobs.tasks.database import update_indexes
 from backend.tools.jobs.tasks.taxa import update_backbone, update_ns_ranks
 from backend.tools.jobs.tasks.occurrence import update_observations
-from backend.tools.jobs.tasks.refresh_materialized_views import refresh_materialized_views
-
-from backend.config.data import DATA_OUT_PATH
-from backend.core.logging import data_logger
+from backend.tools.jobs.tasks.views import refresh_materialized_views
 
 
 # Automatically update observations table from GBIF
@@ -26,7 +23,7 @@ async def update_database():
             await update_ns_ranks(conn, new_row_keys)
 
         # Refresh the materialized views
-        await refresh_views(conn)
+        await refresh_materialized_views(conn)
 
         await update_indexes(conn)
 

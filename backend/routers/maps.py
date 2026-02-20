@@ -1,9 +1,10 @@
 import json
 from fastapi import APIRouter, Request
-from backend.models.gbif import GBIFFormat
 from backend.data_util.execute_psql_query import execute_psql_query
 
+
 router = APIRouter()
+
 
 # Get parks shapefile as GeoJSON
 @router.get("/parks.geojson")
@@ -19,7 +20,8 @@ async def get_parks_geojson(request: Request):
             features = []
             for row in rows:
                 row_dict = dict(zip(columns, row))
-                geom_json = json.loads(row_dict.pop('geometry'))  # already GeoJSON string
+                # already GeoJSON string
+                geom_json = json.loads(row_dict.pop('geometry'))
                 features.append({
                     "type": "Feature",
                     "geometry": geom_json,

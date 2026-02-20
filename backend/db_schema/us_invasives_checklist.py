@@ -1,5 +1,6 @@
 from .base import DBTable
 
+
 class USInvasivesChecklist(DBTable):
     name = 'us_invasives_checklist'
     primary_key = 'taxon_key'
@@ -25,5 +26,6 @@ class USInvasivesChecklist(DBTable):
         'dataset_name': 'TEXT',
         'taxon_id_link': 'TEXT'
     }
+
 
 US_INVASIVES_TABLE = USInvasivesChecklist()

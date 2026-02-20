@@ -1,10 +1,10 @@
 from backend.config.cors import CORSSettings
-from dotenv import load_dotenv
 from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from .database import PostgresSettings
 from .gbif import GBIFSettings
+
 
 # Calculate backend root
 DEFAULT_BACKEND_ROOT = Path(__file__).resolve().parent.parent

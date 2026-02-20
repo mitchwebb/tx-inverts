@@ -1,10 +1,6 @@
 # Model for gbif_observations table
-
 from .base import DBTable
 
-
-# TODO: Start here! We're sorting out species/subspecies name conventions!
-# Then we're gonna add IDs for each rank!
 
 class GBIFObservationsTable(DBTable):
     name = 'gbif_observations'

@@ -9,5 +9,6 @@ class TaxonDescendantCache(DBTable):
         'descendant_scientific_name': 'TEXT',
         'descendant_key': 'BIGINT NOT NULL'
     }
-    
+
+
 TAXON_DESCENDANT_CACHE = TaxonDescendantCache()

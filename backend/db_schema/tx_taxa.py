@@ -40,5 +40,6 @@ class TXTaxaTable(DBTable):
         'ns_rank_state_no_inat': 'TEXT',
         'us_invasives': 'BOOLEAN'
     }
-    
+
+
 TX_TAXA_TABLE = TXTaxaTable()

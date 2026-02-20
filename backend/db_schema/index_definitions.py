@@ -1,4 +1,3 @@
-import backend.constants.map as map
 from backend.routers.taxa import RANK_COLS
 from psycopg import sql
 

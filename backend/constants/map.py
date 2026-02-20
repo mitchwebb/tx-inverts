@@ -1,7 +1,7 @@
 # Constants and mapping values
-
 import os
 from backend.config import get_settings
+
 
 # Get settings for backend_root value
 settings = get_settings()

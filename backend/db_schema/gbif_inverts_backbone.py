@@ -1,5 +1,4 @@
 # Model for gbif_observations table
-
 from .base import DBTable
 
 
@@ -40,39 +39,6 @@ class GBIFInvertsBackbone(DBTable):
         'ns_rank_state_no_inat': 'TEXT',
         'us_invasive': 'BOOLEAN'
     }
-    # raw_column_map = {
-    #     'taxonID': 'taxon_id',
-    #     'datasetID': 'dataset_id',
-    #     'parentNameUsageID': 'parent_name_usage_id',
-    #     'acceptedNameUsageID': 'accepted_name_usage_id',
-    #     'originalNameUsageID': 'original_name_usage_id',
-    #     'scientificName': 'scientific_name',
-    #     'scientificNameAuthorship': 'scientific_name_authorship',
-    #     'canonicalName': 'canonical_name',
-    #     'genericName': 'generic_name',
-    #     'taxonRank': 'taxon_rank',
-    #     'taxonomicStatus': 'taxonomic_status',
-    #     'taxonRemarks': 'taxon_remarks',
-    #     'kingdom': 'kingdom',
-    #     'kingdom': 'kingdom_id',
-    #     '': 'phylum',
-    #     '': 'phylum_id',
-    #     '': 'class',
-    #     '': 'class_id',
-    #     '': 'order',
-    #     '': 'order_id',
-    #     '': 'family',
-    #     '': 'family_id',
-    #     '': 'genus',
-    #     '': 'genus_id',
-    #     '': 'species',
-    #     '': 'species_id',
-    #     '': 'subspecies',
-    #     '': 'subspecies_id',
-    #     '': 'ns_rank_state',
-    #     '': 'ns_rank_state_no_inat',
-    #     '': 'us_invasive'
-    # }
 
 
 GBIF_INVERTS_BACKBONE = GBIFInvertsBackbone()

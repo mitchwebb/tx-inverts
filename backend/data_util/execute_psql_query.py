@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from fastapi import Request
 from psycopg.rows import dict_row, tuple_row
 from psycopg import AsyncConnection
 from typing import Literal

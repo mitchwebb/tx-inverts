@@ -3,7 +3,7 @@ from backend.routers.taxa import TaxonomicRank
 import psycopg
 from backend.core.sql import create_occurrence_clause
 from backend.models.sql import OccurrenceFilter
-from backend.core.logging import data_logger, api_logger
+from backend.core.logging import api_logger
 
 
 def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy):

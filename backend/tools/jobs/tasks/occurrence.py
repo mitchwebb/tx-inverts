@@ -1,3 +1,10 @@
+import io
+import json
+import os
+import pandas as pd
+import psycopg
+import time
+
 from backend.config import get_settings
 from backend.config.data import DATA_OUT_PATH
 from backend.core.logging import db_logger, data_logger
@@ -13,12 +20,6 @@ from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.models.update_status import UpdateStatus
 from backend.tools.jobs.tasks.initialize_db import initialize_table
 from backend.tools.jobs.tasks.views import refresh_materialized_views
-import io
-import json
-import os
-import pandas as pd
-import psycopg
-import time
 from psycopg import sql
 from typing import List, Optional, Tuple
 

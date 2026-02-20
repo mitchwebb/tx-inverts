@@ -1,12 +1,11 @@
-import time
 from backend.core.exception_handler import InvalidTaxonRankError, TaxonNotFoundError
 from fastapi import Request, APIRouter, HTTPException
 from pydantic import BaseModel
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.models.api_types import TaxonRequest, TextData
-from backend.core.logging import api_logger
 from typing import Literal
 from psycopg import sql
+
 
 router = APIRouter()
 

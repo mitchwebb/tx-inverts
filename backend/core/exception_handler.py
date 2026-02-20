@@ -2,6 +2,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 import logging
 
+
 logger = logging.getLogger("api_logger")
 
 

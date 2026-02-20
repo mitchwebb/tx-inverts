@@ -7,7 +7,7 @@ import pandas as pd
 from backend.config.data import DATA_OUT_PATH, settings
 from backend.data_util.gbif import gbif_downloads
 from backend.db_schema.us_invasives_checklist import US_INVASIVES_TABLE
-from backend.core.logging import api_logger
+from backend.core.logging import data_logger
 
 
 def get_invasive_status(taxon_key, test=False):
@@ -25,7 +25,7 @@ def get_invasive_status(taxon_key, test=False):
         is_invasive = response.json()
         return False if is_invasive == 0 else True
     else:
-        data_logger.info(
+        data_logger.error(
             f"Request failed with status code: {response.status_code}")
 
 

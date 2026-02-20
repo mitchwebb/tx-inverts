@@ -41,7 +41,8 @@ async def update_index(
                 return
         # Else run create_index_query (if provided)
         else:
-            db_logger.info(f'{index_name} does not yet exist, creating index...')
+            db_logger.info(
+                f'{index_name} does not yet exist, creating index...')
             await cur.execute(create_sql)
 
     return

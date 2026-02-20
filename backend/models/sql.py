@@ -1,6 +1,4 @@
 from typing import Optional, List
-from dataclasses import dataclass
-
 from pydantic import field_validator, BaseModel
 
 

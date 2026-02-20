@@ -10,7 +10,7 @@ from backend.db_schema.tx_taxa import TX_TAXA_TABLE
 from backend.db_schema.us_invasives_checklist import US_INVASIVES_TABLE
 from backend.models.update_status import UpdateStatus
 from backend.tools.jobs.tasks.initialize_db import initialize_table
-from backend.tools.jobs.tasks.refresh_materialized_views import refresh_materialized_view
+from backend.tools.jobs.tasks.views import refresh_materialized_view
 from backend.core.logging import data_logger, db_logger
 import csv
 import os
@@ -35,52 +35,6 @@ async def create_invasives_table():
     conn = await get_single_db_connection()
     await US_INVASIVES_TABLE.copy_from_df(conn, df, create_if_not_exists=True)
 
-
-# # Flag invasive species in backbone using US_INVASIVES table
-# # This version runs while importing new backbone information (defunct)
-# async def flag_invasives(
-#     conn: AsyncConnection,
-#     df: pd.DataFrame,
-# ):
-#     '''
-#         Given a dataframe (in DarwinCore format), create a column called us_invasive and,
-#         using the our invasives table, flag invasive taxa as True.
-
-#         conn (psycopg.AsyncConnection): Connection to database
-#         df (Dataframe): Dataframe in DarwinCore format containing taxa you want checked
-
-#         Returns:
-#             df (Dataframe): Dataframe with added/populated 'us_invasive' column
-
-#     '''
-
-#     query = sql.SQL('''
-#             SELECT
-#                 COALESCE(b.accepted_name_usage_id, b.taxon_id) as accepted_id
-#             FROM {invasives_table} i
-#             JOIN {backbone} b
-#                 ON i.taxon_id = b.taxon_id
-#                 OR i.taxon_id = b.accepted_name_usage_id
-#         ''').format(
-#         invasives_table=sql.Identifier(US_INVASIVES_TABLE.name),
-#         backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
-#     )
-
-#     async with conn.cursor() as cur:
-#         await cur.execute(query)
-#         rows = await cur.fetchall()
-#         columns = [desc.name for desc in cur.description]
-
-#     invasives_df = pd.DataFrame(rows, columns=columns)
-#     invasives_df['accepted_id'] = invasives_df['accepted_id'].fillna(
-#         0).astype('int64')
-
-#     df['us_invasive'] = (
-#         df['accepted_name_usage_id'].isin(invasives_df['accepted_id']) |
-#         df['taxon_id'].isin(invasives_df['accepted_id'])
-#     )
-
-#     return df
 
 async def update_invasives(conn):
     async with conn.cursor() as cur:
