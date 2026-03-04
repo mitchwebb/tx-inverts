@@ -1,0 +1,15 @@
+Major z-index heirarchy notes:
+
+Map: 0
+MapPopupContent: 1
+MapOverlay: 2
+Sidebar: 2
+MapToolbar: 50
+ToolbarFoldoutButton: 100
+Header Bar: 100
+InfoButton: 150
+SidebarResizeHandle: 750
+FiltersPopup: 800
+FilterBorderCoverup: 800
+Modal: 1000
+Tooltip: 1000

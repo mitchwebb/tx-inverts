@@ -395,7 +395,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            taxon_id: taxonID,
+                            taxon_ids: taxonID,
                             include_inat: includeINat,
                             date_start: dateStart,
                             date_end: dateEnd,

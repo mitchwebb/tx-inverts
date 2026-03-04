@@ -1,26 +1,30 @@
+from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.models.api_types import NSRank
 from psycopg import Connection, sql
 from backend.routers.taxa import TaxonomicRank
 import psycopg
-from backend.core.sql import create_occurrence_clause
+from backend.core.sql import create_occurrence_filter
 from backend.models.sql import OccurrenceFilter
 from backend.core.logging import api_logger
 
 
-def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy):
+def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy) -> NSRank:
     """
-        Given the minimum key three values, calculate NatureServe rank of a species
+        Given the minimum key three values, calculate NatureServe-type rank of a species
 
         args:
             number_of_occurrences (int): Count of occurrences of a species
             range_extent (int): Range extent of a given species in km2
             area_of_occupancy (int): Area of occupancy of a given species
+        returns:
+            ns_rank (NSRank): NatureServe-type rank of species
     """
     points = 0
 
     # If all values are 0, species is data deficient
     # NatureServe doesn't actually have this ranking. This would be presumed extinct
     if (number_of_occurrences == 0 and range_extent == 0 and area_of_occupancy == 0):
-        return "U"
+        return "u"
 
     # According to IUCN, range_extent should be AT LEAST equal to area_of_occupancy
     if (range_extent < area_of_occupancy):
@@ -28,7 +32,7 @@ def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy):
 
     # If one of these values exists, all of them must at this point
     if (number_of_occurrences == 0 or range_extent == 0 or area_of_occupancy == 0):
-        return "U"
+        return "u"
 
     if number_of_occurrences == 0:  # NatureServe Z Value
         points += 0.00
@@ -134,7 +138,7 @@ async def calculate_ns_values(
     """
 
     try:
-        occurrence_clause = create_occurrence_clause(filters)
+        occurrence_filter = create_occurrence_filter(filters)
 
         rank_col = f'{taxon_rank}_id'
 
@@ -150,7 +154,9 @@ async def calculate_ns_values(
                     accepted_taxon_key,
                     taxon_key,
                     {rank_col}
-                {occurrence_clause}
+                FROM {occurrence_table}
+                WHERE
+                    {occurrence_filter}
             ),
             filtered_obs AS (
                 SELECT p.geom, p.accepted_taxon_key
@@ -194,13 +200,13 @@ async def calculate_ns_values(
             taxon_id=sql.Literal(filters.taxon_id),
             rank_col=sql.Identifier(rank_col),
             include_inat=sql.Literal(filters.include_inat),
-            occurrence_clause=occurrence_clause
+            occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+            occurrence_filter=occurrence_filter
         )
 
         async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
             await cur.execute(query, ())
             result = await cur.fetchone()
-            print(result)
             return result
     except Exception as e:
         api_logger.exception(e)

@@ -15,6 +15,11 @@
     import FiltersButton from '../FiltersButton.svelte';
     import Filters from '../FiltersSection/Filters.svelte';
     import TaxonDisplay from './TaxonDisplay.svelte';
+    import {
+        getRouterContext,
+        type RouterPath,
+    } from '../../contexts/routerContext';
+    import { getModalContext } from '../../contexts/modalContext';
 
     type SidebarProps = {
         showTaxonDisplay?: boolean;
@@ -28,8 +33,16 @@
     const taxonContext = getActiveTaxonContext();
     const sidebarContext = getSidebarContext();
     const filtersContext = getFiltersContext();
+    const routerContext = getRouterContext();
+    const modalContext = getModalContext();
 
-    const filtersCount = $derived<number>(countActiveFilters(filtersContext));
+    // Casting here is a quick fix, but doesn't guard for the future
+    // Adding new routes in the future COULD cause issues
+    const currPath = $derived(routerContext.url.pathname as RouterPath);
+
+    let filtersCount = $derived<number>(
+        countActiveFilters(filtersContext, null, currPath)
+    );
 
     // Keep track of elements
     let filtersElement: HTMLElement | null = $state(null);
@@ -188,6 +201,7 @@
         background-color: var(--container-back);
         gap: 0.5rem;
         z-index: 100;
+        height: 2.5rem;
     }
     :global(.date-range-filter) {
         margin: auto;
@@ -203,7 +217,7 @@
         position: absolute;
         left: -0.5rem;
         top: 0;
-        z-index: 1000;
+        z-index: 750;
         pointer-events: all;
         box-sizing: border-box;
         background-color: unset;

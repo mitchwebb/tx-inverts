@@ -18,6 +18,15 @@ export type ActiveTaxonState = {
     dateMax: string | null;
 };
 
+// Default state for nSValues
+export const EMPTY_NS_VALUES: NSValues = {
+    numberOfOccurrences: null,
+    rangeExtentKm2: null,
+    areaOfOccupancy1Km2Bins: null,
+    areaOfOccupancy4Km2Bins: null,
+    observationCount: null,
+};
+
 // Default state for taxon_info (used for resetting)
 export const EMPTY_TAXON_INFO: TaxonInfo = {
     acceptedTaxonID: null,
@@ -55,7 +64,7 @@ export const initialTaxonState: ActiveTaxonState = {
         areaOfOccupancy1Km2Bins: null,
         rangeExtentKm2: null,
         observationCount: null,
-    }, // Values retrieved get_ns_values call
+    }, // Values retrieved get_ns_metrics call
     providerCounts: null,
     dateMin: null, // Minimum obs date in db
     dateMax: null, // Max obs date in db

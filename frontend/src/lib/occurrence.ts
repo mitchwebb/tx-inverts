@@ -14,7 +14,7 @@ export async function getProviderCounts(
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                taxon_id: activeTaxonID,
+                taxon_ids: activeTaxonID,
                 include_inat: includeINat,
                 date_start: dateStart,
                 date_end: dateEnd,
@@ -83,7 +83,7 @@ export async function getObservationDates(
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    taxon_id: activeTaxonID,
+                    taxon_ids: activeTaxonID,
                     include_inat: includeINat,
                 }),
             }
@@ -101,3 +101,10 @@ export async function getObservationDates(
         return null;
     }
 }
+
+// export async function downloadDWCOccurrences(
+//     activeTaxonID: ActiveTaxonState['taxonID'],
+//     includeINat: FiltersState['includeINat'],
+//     dateStart: FiltersState['dateStart'],
+//     dateEnd: FiltersState['dateEnd']
+// );

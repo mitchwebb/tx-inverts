@@ -127,7 +127,7 @@
     }
     #tooltip-wrapper {
         position: fixed;
-        z-index: 10000;
+        z-index: 1000;
         max-width: 200px;
         user-select: none;
         padding: 0.25rem;

@@ -120,7 +120,7 @@
         margin: 0;
     }
     #header-bar {
-        height: 55px;
+        height: 60px;
         background-color: var(--container-fore);
         display: flex;
         align-items: center;

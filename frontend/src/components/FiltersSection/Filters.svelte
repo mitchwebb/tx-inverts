@@ -79,7 +79,7 @@
         position: absolute;
         right: 0;
         top: calc(100% - 1px);
-        z-index: 10000;
+        z-index: 800;
         background-color: var(--container-back);
     }
     .filters-content-wrapper {

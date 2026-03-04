@@ -69,6 +69,10 @@ INDEX_DEFINITIONS = {
         'table': 'tx_taxa',
         'create_sql': 'CREATE INDEX idx_tx_taxa_ns_rank_state ON tx_taxa(ns_rank_state)'
     },
+    'idx_tx_taxa_ns_rank_state_no_inat': {
+        'table': 'tx_taxa',
+        'create_sql': 'CREATE INDEX idx_tx_taxa_ns_rank_state_no_inat ON tx_taxa(ns_rank_state_no_inat)'
+    },
     'idx_tx_taxa_parent_rank_status_name': {
         'table': 'tx_taxa',
         'create_sql': '''
@@ -150,65 +154,6 @@ for rank in RANK_COLS:
             ON gbif_observations ({rank})
         '''
     }
-
-VIEWS = {
-    'dwc_observations': {
-        'create_sql': sql.SQL('''
-            CREATE VIEW dwc_observations AS
-            SELECT
-                gbif_id AS gbifID,
-                access_rights AS accessRights,
-                license,
-                modified,
-                publisher,
-                "references",
-                rights_holder AS rightsHolder,
-                recorded_by AS recordedBy,
-                dataset_id AS datasetID,
-                institution_code AS institutionCode,
-                dataset_name AS datasetName,
-                information_withheld AS informationWithheld,
-                occurrence_id AS occurrenceID,
-                individual_count AS individualCount,
-                event_date AS eventDate,
-                event_time AS eventTime,
-                year,
-                month,
-                day,
-                verbatim_event_date AS verbatimEventDate,
-                field_notes AS fieldNotes,
-                event_remarks AS eventRemarks,
-                country_code AS countryCode,
-                state_province AS stateProvince,
-                county,
-                locality,
-                verbatim_locality AS verbatimLocality,
-                decimal_latitude AS decimalLatitude,
-                decimal_longitude AS decimalLongitude,
-                coordinate_uncertainty_in_meters AS coordinateUncertaintyInMeters,
-                coordinate_precision AS coordinatePrecision,
-                scientific_name AS scientificName,
-                kingdom,
-                phylum,
-                class,
-                "order",
-                family,
-                genus,
-                species,
-                subspecies,
-                taxon_rank AS taxonRank,
-                taxonomic_status AS taxonomicStatus,
-                dataset_key AS datasetKey,
-                last_interpreted AS lastInterpreted,
-                issue,
-                taxon_key,
-                accepted_taxon_key AS acceptedTaxonKey,
-                accepted_scientific_name AS acceptedScientificName,
-                verbatim_scientific_name AS verbatimScientificName
-            FROM gbif_observations
-        ''')
-    }
-}
 
 # View definitions (the order of these matters)
 MATERIALIZED_VIEWS = {

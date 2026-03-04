@@ -9,7 +9,7 @@
     import ToolbarFoldoutButton from '../../common/ToolbarFoldoutButton.svelte';
     import { TexasParksColorStops } from '../../constants/mapLegendKeys';
     import { getMapContext } from '../../contexts/mapContext';
-    import type { LayerGroupID, MapLayerID } from '../../lib/mapLayers';
+    import type { LayerGroupID, MapLayerID } from '../../lib/map/mapLayers';
     import { handleLayerToggle } from '../../util/handleMapLayerToggle';
     import EcoregionLegend from './EcoregionLegend.svelte';
     import MapLegendDisplay from './MapLegendDisplay.svelte';
@@ -75,11 +75,11 @@
         align-items: center;
     }
     #map-toolbar-wrapper > * {
-        z-index: 1000;
+        z-index: 50;
         pointer-events: all;
     }
     #map-loading-icon {
-        z-index: 1000;
+        z-index: 50;
         color: goldenrod;
     }
 </style>

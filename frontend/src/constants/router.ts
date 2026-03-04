@@ -12,6 +12,7 @@ import type { Provider } from './mapLegendKeys';
 import type { ParamCodec, SyncedKeys } from '../types/router';
 import {
     booleanCodec,
+    numberArrayCodec,
     numberCodec,
     stringArrayCodec,
     stringCodec,
@@ -40,10 +41,11 @@ export const routerSyncedKeys = {
                 param: 'status',
                 codec: stringArrayCodec() as ParamCodec<NSRank[] | null>,
             },
-            filteredTaxonID: {
-                param: 'filter_taxon',
-                codec: numberCodec(null),
-            },
+            // TODO: Filtered taxa has been made more complex than this URL key can handle
+            // filteredTaxa: {
+            //     param: 'filter_taxon',
+            //     codec: numberArrayCodec() as ParamCodec<number[] | null>,
+            // },
             taxonRank: {
                 param: 'rank',
                 codec: stringCodec() as ParamCodec<TaxonomicRank | null>,

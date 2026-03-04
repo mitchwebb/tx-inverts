@@ -1,4 +1,4 @@
-from backend.db_schema.index_definitions import MATERIALIZED_VIEWS, VIEWS
+from backend.db_schema.index_definitions import MATERIALIZED_VIEWS
 from backend.core.logging import db_logger
 from psycopg import sql, AsyncConnection
 
@@ -19,7 +19,7 @@ async def refresh_materialized_view(
     view_name
 ):
 
-    view_def = VIEWS.get(view_name)
+    view_def = MATERIALIZED_VIEWS.get(view_name)
     if not view_def:
         raise ValueError(f'Definition for "{view_name}" not found.')
 
@@ -53,13 +53,13 @@ async def refresh_materialized_views(conn):
     db_logger.info('Refresh complete.')
 
 
-async def create_view(conn, view_name: str):
-    async with conn.cursor() as cur:
-        view_def = VIEWS.get(view_name)
-        if not view_def:
-            raise ValueError(f'Definition for "{view_name}" not found.')
-        db_logger.info(
-            f'{view_name} not yet created, creating now...')
-        await cur.execute(view_def['create_sql'])
+# async def create_view(conn, view_name: str):
+#     async with conn.cursor() as cur:
+#         view_def = VIEWS.get(view_name)
+#         if not view_def:
+#             raise ValueError(f'Definition for "{view_name}" not found.')
+#         db_logger.info(
+#             f'{view_name} not yet created, creating now...')
+#         await cur.execute(view_def['create_sql'])
 
-    db_logger.info(f'{view_name} created')
+#     db_logger.info(f'{view_name} created')

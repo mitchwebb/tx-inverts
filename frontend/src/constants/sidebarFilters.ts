@@ -2,9 +2,7 @@ import {
     initialFiltersState,
     type FiltersState,
 } from '../contexts/filtersContext';
-
-// FilterPath notes which page a filter belongs to (they can belong ot multiple)
-export type FilterPath = ('taxa' | 'rankings' | 'map')[];
+import type { RouterPath } from '../contexts/routerContext';
 
 // The scope of a given filter--whether it targets taxa or observation data
 // This is used to trigger certain warnings
@@ -13,60 +11,64 @@ export type FilterDomain = 'observations' | 'taxa';
 // Grab defaults from initial state object
 const FILTER_DEFAULTS = initialFiltersState;
 
+type SidebarFilterMetaItem = {
+    path: RouterPath[]; // Notes which page a filter belongs to (they can belong ot multiple)
+    default: unknown;
+    domain: FilterDomain;
+    count: boolean;
+};
+
 // Collection of sidebar filters and their defaults, as well as whether or not they
 // should be counted with tallying applied filters
-export const SIDEBAR_FILTER_META = {
+export const SIDEBAR_FILTER_META: Record<
+    keyof FiltersState,
+    SidebarFilterMetaItem
+> = {
     nSRanks: {
-        path: ['rankings'],
+        path: ['/rankings'],
         default: FILTER_DEFAULTS.nSRanks,
         domain: 'taxa',
         count: true,
     },
     dataProviders: {
-        path: ['map'],
+        path: ['/map'],
         default: FILTER_DEFAULTS.dataProviders,
         domain: 'observations',
         count: true,
     },
     dateEnd: {
-        path: ['map'],
+        path: ['/map'],
         default: FILTER_DEFAULTS.dateEnd,
         domain: 'observations',
         count: true,
     },
     dateStart: {
-        path: ['map'],
+        path: ['/map'],
         default: FILTER_DEFAULTS.dateStart,
         domain: 'observations',
         count: true,
     },
     includeINat: {
-        path: ['map', 'rankings', 'taxa'],
+        path: ['/map', '/rankings', '/taxa'],
         default: FILTER_DEFAULTS.includeINat,
         domain: 'observations',
         count: true,
     },
     taxonRank: {
-        path: ['rankings'],
+        path: ['/rankings'],
         default: FILTER_DEFAULTS.taxonRank,
         domain: 'taxa',
         count: true,
     },
-    filteredTaxonID: {
-        path: ['rankings'],
-        default: FILTER_DEFAULTS.filteredTaxonID,
+    filteredTaxa: {
+        path: ['/rankings'],
+        default: FILTER_DEFAULTS.filteredTaxa,
         domain: 'taxa',
         count: true,
     },
-    filteredCanonicalName: {
-        path: ['rankings'],
-        default: FILTER_DEFAULTS.filteredCanonicalName,
-        domain: 'taxa',
-        count: false,
-    },
 } satisfies {
     [K in keyof FiltersState]: {
-        path: FilterPath;
+        path: RouterPath[];
         default: FiltersState[K];
         domain: FilterDomain;
         count: boolean;
@@ -76,3 +78,11 @@ export const SIDEBAR_FILTER_META = {
 export const FILTER_KEYS = Object.keys(
     SIDEBAR_FILTER_META
 ) as (keyof FiltersState)[];
+
+export const TAXA_FILTER_KEYS = (
+    Object.keys(SIDEBAR_FILTER_META) as (keyof FiltersState)[]
+).filter((key) => SIDEBAR_FILTER_META[key].domain == 'taxa');
+
+export const OCCURRENCE_FILTER_KEYS = (
+    Object.keys(SIDEBAR_FILTER_META) as (keyof FiltersState)[]
+).filter((key) => SIDEBAR_FILTER_META[key].domain == 'observations');

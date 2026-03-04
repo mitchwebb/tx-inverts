@@ -2,9 +2,10 @@ from backend.core.exception_handler import InvalidTaxonRankError, TaxonNotFoundE
 from fastapi import Request, APIRouter, HTTPException
 from pydantic import BaseModel
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.models.api_types import TaxonRequest, TextData
+from backend.models.api_types import TaxaRequestParams, TextData
 from typing import Literal
 from psycopg import sql
+from backend.core.logging import api_logger
 
 
 router = APIRouter()
@@ -44,6 +45,7 @@ async def search(data: TextData, request: Request):
     query = '''
         SELECT DISTINCT ON (COALESCE(a.taxon_id, t.taxon_id))
             COALESCE(a.scientific_name, t.scientific_name) AS scientific_name,
+            COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
             COALESCE(a.taxon_id, t.taxon_id) AS taxon_id,
             COALESCE(a.taxon_rank, t.taxon_rank) AS taxon_rank,
             COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
@@ -72,37 +74,35 @@ async def search(data: TextData, request: Request):
 
 
 @router.post("/get_taxon_info")
-async def search(data: TaxonRequest, request: Request):
-    taxon_id = data.taxon_id
+async def get_taxon_info(params: TaxaRequestParams, request: Request):
+    taxon_id = params.taxon_ids
 
-    taxon_query = '''
-        SELECT
-            canonical_name,
-            scientific_name_authorship,
-            accepted_name_usage_id,
-            kingdom,
-            phylum,
-            class,
-            "order",
-            family,
-            genus,
-            species,
-            subspecies,
-            taxon_rank,
-            us_invasive,
-            taxonomic_status,
-            ns_rank_state,
-            ns_rank_state_no_inat
-        FROM tx_taxa
-        WHERE taxon_id = %s
-    '''
-    # start = time.time()
     try:
+        taxon_query = sql.SQL('''
+            SELECT
+                canonical_name,
+                scientific_name_authorship,
+                accepted_name_usage_id,
+                kingdom,
+                phylum,
+                class,
+                "order",
+                family,
+                genus,
+                species,
+                subspecies,
+                taxon_rank,
+                us_invasive,
+                taxonomic_status,
+                ns_rank_state,
+                ns_rank_state_no_inat
+            FROM tx_taxa
+            WHERE taxon_id = {taxon_id}
+        ''').format(taxon_id=sql.Literal(taxon_id))
+
         # Get taxon info
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, taxon_query, (taxon_id,), 'one', dict_cursor=True) as taxon_result:
-                # end = time.time()
-                # api_logger.debug(Taxon info request took {end-start} seconds)
+            async with execute_psql_query(conn, taxon_query, (), 'one', dict_cursor=True) as taxon_result:
                 if not taxon_result:
                     raise HTTPException(
                         status_code=404, detail="Taxon not found")
@@ -113,6 +113,7 @@ async def search(data: TaxonRequest, request: Request):
             }
 
     except Exception as e:
+        api_logger.exception('Issue getting taxon info:', e)
         raise HTTPException(status_code=500, detail=str(e))
 
 RANK_ORDER = [

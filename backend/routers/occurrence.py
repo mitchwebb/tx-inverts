@@ -1,11 +1,12 @@
 import time
 import backend.constants.map as map
 
+from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
-from backend.models.api_types import TaxonRequest, ObservationsRequest
-from backend.core.sql import create_occurrence_clause, create_taxon_filter
+from backend.models.api_types import ObservationsRequestParams, TaxaRequestParams
+from backend.core.sql import create_occurrence_filter, create_occurrence_taxon_filter
 from backend.models.sql import OccurrenceFilter
 from backend.core.logging import api_logger
 
@@ -34,11 +35,11 @@ async def get_data_providers(request: Request):
 
 
 @router.post('/get_provider_counts')
-async def get_provider_counts(data: ObservationsRequest, request: Request):
-    taxon_id = data.taxon_id
-    include_inat = data.include_inat
-    date_start = data.date_start
-    date_end = data.date_end
+async def get_provider_counts(params: ObservationsRequestParams, request: Request):
+    taxon_id = params.taxon_ids
+    include_inat = params.include_inat
+    date_start = params.date_start
+    date_end = params.date_end
 
     pool = request.app.state.db_pool
 
@@ -51,8 +52,8 @@ async def get_provider_counts(data: ObservationsRequest, request: Request):
             date_end=date_end
         )
 
-        taxon_filter = create_taxon_filter(filter_payload.taxon_id)
-        occurrence_clause = create_occurrence_clause(filter_payload)
+        taxon_filter = create_occurrence_taxon_filter(filter_payload.taxon_id)
+        occurrence_filter = create_occurrence_filter(filter_payload)
 
         query = sql.SQL('''
             WITH providers_with_taxon AS (
@@ -64,7 +65,9 @@ async def get_provider_counts(data: ObservationsRequest, request: Request):
                 SELECT
                     institution_code,
                     COUNT(*) as COUNT
-                {occurrence_clause}
+                FROM {occurrence_table}
+                WHERE
+                    {occurrence_filter}
                 GROUP BY institution_code
             )
             SELECT
@@ -75,7 +78,8 @@ async def get_provider_counts(data: ObservationsRequest, request: Request):
                 ON counts.institution_code = p.institution_code
             ORDER BY count DESC;
         ''').format(
-            occurrence_clause=occurrence_clause,
+            occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+            occurrence_filter=occurrence_filter,
             taxon_filter=taxon_filter
         )
 
@@ -91,9 +95,9 @@ async def get_provider_counts(data: ObservationsRequest, request: Request):
 
 
 @router.post('/get_observation_dates')
-async def get_observation_dates(data: ObservationsRequest, request: Request):
-    taxon_id = data.taxon_id
-    include_inat = data.include_inat
+async def get_observation_dates(params: ObservationsRequestParams, request: Request):
+    taxon_id = params.taxon_ids
+    include_inat = params.include_inat
 
     pool = request.app.state.db_pool
 
@@ -104,13 +108,16 @@ async def get_observation_dates(data: ObservationsRequest, request: Request):
             include_inat=include_inat
         )
 
-        occurrence_clause = create_occurrence_clause(filter_payload)
+        occurrence_filter = create_occurrence_filter(filter_payload)
 
         query = sql.SQL('''
             SELECT MIN(collection_start_date) as min_date, MAX(collection_end_Date) as max_date
-            {occurrence_clause}
+            FROM {occurrence_table}
+            WHERE
+                {occurrence_filter}
         ''').format(
-            occurrence_clause=occurrence_clause
+            occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+            occurrence_filter=occurrence_filter
         )
 
         async with execute_psql_query(
@@ -123,8 +130,8 @@ async def get_observation_dates(data: ObservationsRequest, request: Request):
 
 
 @router.post('/get_observations')
-async def get_observations(data: TaxonRequest, request: Request):
-    taxon_id = data.taxon_id
+async def get_observations(params: TaxaRequestParams, request: Request):
+    taxon_id = params.taxon_id
 
     query = '''
         WITH bounds AS (
@@ -176,7 +183,7 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
         date_end=date_end,
     )
 
-    occurrence_clause = create_occurrence_clause(filter_payload)
+    occurrence_filter = create_occurrence_filter(filter_payload)
 
     # Map parameters for calculating base grids at a given zoom level
     meters_per_pixel = map.meters_per_pixel(z)
@@ -248,7 +255,9 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
                     ),
                     obs AS (
                         SELECT ST_Transform(geometry, 3857) AS geom
-                        {occurrence_clause}
+                        FROM {occurrence_table}
+                        WHERE
+                            {occurrence_filter}
                     ),
                     bins AS (
                         SELECT
@@ -285,7 +294,8 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
                 y=sql.Literal(y),
                 z=sql.Literal(z),
                 grid_size=sql.Literal(grid_size),
-                occurrence_clause=occurrence_clause
+                occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+                occurrence_filter=occurrence_filter
             )
         # Return point observations if zoomed in
         else:
@@ -307,7 +317,8 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
                             collection_start_date,
                             collection_end_date,
                             ST_Transform(geometry, 3857) AS geom
-                        {occurrence_clause}
+                        FROM {occurrence_table}
+                        {occurrence_filter}
                     ),
                     mvt_geom AS (
                         SELECT ST_AsMVTGeom(obs.geom, bbox.geom, 4096, 64, true) AS geom,
@@ -322,7 +333,8 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
                 x=sql.Literal(x),
                 y=sql.Literal(y),
                 z=sql.Literal(z),
-                occurrence_clause=occurrence_clause
+                occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+                occurrence_filter=occurrence_filter
             )
         async with request.app.state.db_pool.connection() as conn:
             async with execute_psql_query(conn, query, fetch='one', dict_cursor=False) as result:
@@ -330,22 +342,3 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
                 api_logger.debug(f'Tile generation took {end-start} seconds')
                 tile = result[0] if result else None
             return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
-
-
-@router.post('/export_occurrence_data')
-async def export_occurrence_data(data: ObservationsRequest, request: Request):
-    taxon_id = data.taxon_id
-    include_inat = data.include_inat
-    date_start = data.date_start
-    date_end = data.date_end
-
-    pool = request.app.state.db_pool
-
-    async with pool.connection() as conn:
-
-        filter_payload = OccurrenceFilter(
-            taxon_id=taxon_id,
-            include_inat=include_inat,
-            date_start=date_start,
-            date_end=date_end
-        )

@@ -6,6 +6,7 @@
     } from '../contexts/mapContext';
     import HeaderBar from '../components/HeaderBar.svelte';
     import {
+    EMPTY_NS_VALUES,
         EMPTY_TAXON_INFO,
         getActiveTaxonContext,
         initialTaxonState,
@@ -19,7 +20,7 @@
         setRouterContext,
         type RouterState,
     } from '../contexts/routerContext';
-    import { getCommonNames, getNSValues, getTaxonInfo } from '../lib/taxa';
+    import { getCommonNames, getNSMetrics, getTaxonInfo } from '../lib/taxa';
     import {
         initialModalState,
         setModalContext,
@@ -89,6 +90,8 @@
         if (activeTaxonID && activeTaxonID !== taxonContext.lastLoadedID) {
             taxonContext.taxonLoading = true;
             taxonContext.taxonError = false;
+            taxonContext.taxonInfo = EMPTY_TAXON_INFO;
+            taxonContext.nSValues = EMPTY_NS_VALUES;
 
             // Wrap in async IIFE
             (async () => {
@@ -137,7 +140,7 @@
         if (activeTaxonID) {
             (async () => {
                 try {
-                    const rawNSResult = await getNSValues(
+                    const rawNSResult = await getNSMetrics(
                         activeTaxonID,
                         includeINat,
                         dateStart,

@@ -10,6 +10,7 @@ from backend.tools.jobs.tasks.occurrence import update_observations
 import geopandas as gpd
 from backend.tools.jobs.tasks.taxa import create_invasives_table
 from backend.core.logging import setup_logging, db_logger
+from backend.tools.jobs.tasks.views import create_view
 
 
 # Initial script to create and populate database for Texas Inverts

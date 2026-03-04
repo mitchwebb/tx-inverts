@@ -147,17 +147,17 @@ async def update_observations(
         for chunk in process_observations.process_dwc_observations(
             observations_fp,
             chunk_size,
-            save_cleaned=save_cleaned_data
         ):
 
-            # If species column exists, drop it
-            chunk = chunk.drop('species', axis=1)
+            # Overwrite species/subspecies with epithet columns if they exist
+            for target, source in [('species', 'specificEpithet'), ('subspecies', 'infraspecificEpithet')]:
+                if source in chunk.columns:
+                    # If target column exists, overwrite with source; else create it
+                    chunk[target] = chunk[source]
 
-            # Rename epithet columns to something sensible
-            chunk = chunk.rename(
-                columns={'specificEpithet': 'species',
-                         'infraspecificEpithet': 'subspecies'}
-            )
+            # Get rid of lingering 'specific' columns
+            chunk = chunk.drop(columns=[c for c in [
+                               'specificEpithet', 'infraspecificEpithet'] if c in chunk.columns])
 
             chunk = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(chunk)
             GBIF_OBSERVATIONS_TABLE.validate_columns(chunk)

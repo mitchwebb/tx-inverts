@@ -7,6 +7,7 @@ from backend.routers.occurrence import router as occurrence_router
 from backend.routers.maps import router as maps_router
 from backend.routers.taxa import router as taxa_router
 from backend.routers.natureserve import router as natureserve_router
+from backend.routers.downloads import router as downloads_router
 from backend.config import get_settings
 from psycopg_pool import AsyncConnectionPool
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,6 +64,7 @@ app.include_router(occurrence_router, prefix='/occurrence')
 app.include_router(maps_router, prefix='/maps')
 app.include_router(taxa_router, prefix='/taxa')
 app.include_router(natureserve_router, prefix='/natureserve')
+app.include_router(downloads_router, prefix='/downloads')
 
 # Register exception handler
 app.add_exception_handler(Exception, global_exception_handler)

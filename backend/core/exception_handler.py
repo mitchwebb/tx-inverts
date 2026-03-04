@@ -1,3 +1,4 @@
+from fastapi.exceptions import RequestValidationError
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 import logging

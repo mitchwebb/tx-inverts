@@ -10,6 +10,10 @@ class OccurrenceFilter(BaseModel):
     date_start: Optional[str] = None
     date_end: Optional[str] = None
 
+    # For now, we are only allowing one taxon_id for OccurrenceFilters
+    # Even if we allow multiple active species in the future, each species
+    # will need its own request
+
     # These validators are really only necessary with our tile request, as nulls are passed as 'null'
     @field_validator('data_providers', mode='before')
     def normalize_providers(cls, v):

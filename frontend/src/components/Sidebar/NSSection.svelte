@@ -57,7 +57,6 @@
     // As long as we're not using it anywhere else, the local nSRank can live
     // in this component
     function deriveLocalRank() {
-        console.log('hellooooo', aOOValue);
         if (
             taxonContext.taxonInfo.taxonRank &&
             ['species', 'subspecies'].includes(taxonContext.taxonInfo.taxonRank)

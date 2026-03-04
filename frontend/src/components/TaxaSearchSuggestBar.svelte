@@ -85,6 +85,7 @@
             suggestions = json.results.map((result: RawSearchSuggestion) => {
                 return {
                     scientificName: result.scientific_name,
+                    canonicalName: result.canonical_name,
                     taxonID: result.taxon_id,
                     taxonRank: result.taxon_rank,
                     usInvasive: result.us_invasive,
@@ -330,7 +331,9 @@
         color: var(--text-default);
         background-color: var(--container-back);
         margin: 0;
-        height: 2.25rem;
+        height: 100%;
+        min-height: 1.75rem;
+        max-height: 2.5rem;
         position: relative;
         flex-grow: 1;
         max-width: 350px;

@@ -9,6 +9,8 @@ import pandas as pd
 import csv
 import re
 
+from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+
 
 ### Constants for date processing ###
 
@@ -76,7 +78,7 @@ def _parse_ambiguous_match(match: re.Match[str]) -> dict[str, int | None] | None
     Parse ambiguous date match with 'year', 'month', and 'day' groups
 
     Args:
-        match (re.Match[str]): 
+        match (re.Match[str]):
 
     Returns:
         Parts dict (dict[str, int | None] | None): Dict of unambiguous date parts (or None)
@@ -116,7 +118,7 @@ def _parse_ambiguous_match(match: re.Match[str]) -> dict[str, int | None] | None
 
 def parse_date_range_string(range_string: str):
     """
-    Expecting a string in yyyy-MM-dd/yyyy-MM-dd type format, 
+    Expecting a string in yyyy-MM-dd/yyyy-MM-dd type format,
     parse into start_date and end_date
 
     Args:
@@ -160,7 +162,7 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
 
     yyyy-MM-dd/yyyy-MM-dd event_dates are assumed to be a range.
     HOWEVER, not all eventDates are formatted this way.
-    UTIC, for example: 
+    UTIC, for example:
         eventDate: '2001-06-25'
         eventRemarks: '; ended 2001-06-27'
 
@@ -168,8 +170,8 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         df (DataFrame): Pandas dataframe of DWC dataset
 
     Returns:
-        df (DataFrame | GeoDataFrame): Input df with updated 
-            collection_start_date and collection_end_date columns
+        df (DataFrame | GeoDataFrame): Input df with updated
+            collectionStartDate and collectionEndDate columns
     """
 
     df = df.copy()  # don't mutate input
@@ -182,8 +184,8 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     for col in ['year', 'month', 'day']:
         df[col] = pd.to_numeric(df[col], errors="coerce")  # convert to numeric
 
-    df['collection_start_date'] = ''
-    df['collection_end_date'] = ''
+    df['collectionStartDate'] = ''
+    df['collectionEndDate'] = ''
 
     for row in df.itertuples(index=True):
         idx = row.Index
@@ -195,8 +197,8 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         if row.eventDate:
             [start_date, end_date] = parse_date_range_string(row.eventDate)
             if start_date and end_date:
-                df.at[idx, 'collection_start_date'] = start_date
-                df.at[idx, 'collection_end_date'] = end_date
+                df.at[idx, 'collectionStartDate'] = start_date
+                df.at[idx, 'collectionEndDate'] = end_date
                 continue
 
         # If no match, we'll initially assign start date to GBIF YMD columns
@@ -210,7 +212,7 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         end_date = start_date
 
         # eventRemarks will often store event endDates as '; ended <date>' string
-        if row.eventRemarks:
+        if row.eventRemarks and not start_date:
             match = EVENT_REMARKS_DATE_REGEX.search(row.eventRemarks)
             if match and match.group('keyword'):
                 keyword = match.group('keyword')
@@ -253,12 +255,12 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         if start_date and not end_date:
             end_date = start_date
 
-        df.at[idx, 'collection_start_date'] = start_date
-        df.at[idx, 'collection_end_date'] = end_date
+        df.at[idx, 'collectionStartDate'] = start_date
+        df.at[idx, 'collectionEndDate'] = end_date
 
     # Convert empty strings to None for SQL/NULL compatibility
-    df['collection_start_date'] = df['collection_start_date'].replace('', None)
-    df['collection_end_date'] = df['collection_end_date'].replace('', None)
+    df['collectionStartDate'] = df['collectionStartDate'].replace('', None)
+    df['collectionEndDate'] = df['collectionEndDate'].replace('', None)
 
     return df
 
@@ -293,7 +295,6 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
         low_memory=False,
         chunksize=chunk_size
     ):
-
         # STEP 1: FILTER GEOMETRIES
         # Drop missing coordinates
         chunk = chunk.dropna(subset=['decimalLongitude', 'decimalLatitude'])
@@ -312,18 +313,13 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
         df = parse_gbif_dates(df)
 
         # Filter out observations with missing dates
-        df = df.dropna(subset=['collection_start_date', 'collection_end_date'])
+        df = df.dropna(subset=['collectionStartDate', 'collectionEndDate'])
         bad_date_count = (len(chunk) - bad_location_count) - len(df)
         if bad_date_count:
             data_logger.info(
                 f'Removed {bad_date_count} records found with invalid collection dates')
 
-        # # Add newly filtered chunk to filtered_chunks
-        # filtered_chunks.append(df)
-
-        observation_count += len(chunk)
-
         data_logger.info(
             f'Processed chunk with {len(df)} valid records of {len(chunk)} total records')
 
-        yield chunk
+        yield df

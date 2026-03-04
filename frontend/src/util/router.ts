@@ -29,11 +29,24 @@ export const booleanCodec = (defaultValue: boolean): ParamCodec<boolean> => ({
 });
 
 export const stringArrayCodec = (): ParamCodec<string[]> => ({
-    toURL(value) {
-        return value === null || value.length === 0 ? null : value.map(String);
+    toURL(values) {
+        return values === null || values.length === 0
+            ? null
+            : values.map(String);
     },
     fromURL(values) {
         return values;
+    },
+});
+
+export const numberArrayCodec = (): ParamCodec<number[]> => ({
+    toURL(values) {
+        return values === null || values.length === 0
+            ? null
+            : values.map(String);
+    },
+    fromURL(values) {
+        return values.map(Number);
     },
 });
 

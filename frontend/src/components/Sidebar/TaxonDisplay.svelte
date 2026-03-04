@@ -1,16 +1,26 @@
 <script lang="ts">
+    import DownloadIcon from '../../assets/DownloadIcon.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
     import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
+    import { getModalContext } from '../../contexts/modalContext';
     import { isItalicizedRank } from '../../util/taxa';
     import { capitalizeWords } from '../../util/textHelpers';
+    import DownloadOccurrenceForm from '../DownloadOccurrenceForm.svelte';
 
     const taxonContext = getActiveTaxonContext();
     const taxonInfo = $derived(taxonContext.taxonInfo);
 
+    const modalContext = getModalContext();
+
     // Tie loading visuals to taxonContext.taxonLoading
     const isLoading = $derived(taxonContext.taxonLoading);
+
+    function handleOccDownloadButton() {
+        modalContext.visible = true;
+        modalContext.content = DownloadOccurrenceForm;
+    }
 
     const taxonNotAccepted = $derived(taxonInfo.taxonomicStatus !== 'accepted');
 </script>
@@ -39,7 +49,7 @@
                 <span class="authorship subheader thin">
                     {taxonInfo.scientificNameAuthorship}
                 </span>
-                {#if taxonContext.taxonID}
+                {#if taxonInfo.canonicalName}
                     <span class="gbif-link-button">
                         <LinkButton
                             href={`https://www.gbif.org/species/${taxonContext.taxonID}`}
@@ -52,10 +62,6 @@
                 <div class="loading-icon icon">
                     <LoadingIcon />
                 </div>
-                <!-- {:else}
-                <button class="x-icon icon" onclick={clearTaxon}>
-                    <XIcon />
-                </button> -->
             {/if}
         </div>
         {#if taxonInfo.commonNames && taxonInfo.commonNames?.length > 0}
@@ -69,9 +75,8 @@
             {#if taxonInfo.taxonomicStatus && taxonNotAccepted}
                 <div id="taxonomic-status-text" class={'thin dubious-taxon'}>
                     <span>
-                        Status: {capitalizeWords(taxonInfo.taxonomicStatus)}
+                        Taxon Status: {capitalizeWords(taxonInfo.taxonomicStatus)}
                     </span>
-                    <!-- This SHOULDN'T happen as synonyms should be redirected -->
                     {#if taxonInfo.taxonomicStatus.includes('synonym')}
                         <div>
                             Accepted Taxon ID: {taxonInfo.acceptedTaxonID}
@@ -85,10 +90,38 @@
                 </span>
             {/if}
         </div>
+        <div id="observations-download-section">
+            {#if taxonContext.nSValues.observationCount}
+                <div class="observation-count thin"> 
+                    Records: {taxonContext.nSValues.observationCount?.toLocaleString()}
+                </div>
+                <button class="download-button" onclick={handleOccDownloadButton}>
+                    <DownloadIcon />
+                </button>
+            {/if}
+        </div>
     {/if}
 </div>
 
 <style>
+    #observations-download-section {
+        display: flex;
+        gap: .5rem;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: .5rem;
+    }
+    .observation-count {
+        font-size: 1rem;
+    }
+    .download-button {
+        box-sizing: border-box;
+        /* border: 1px solid var(--border); */
+        height: 1.5rem;
+        width: 1.5rem;
+        padding: 0;
+    }
     #sidebar-main-header {
         display: flex;
         flex-direction: column;
@@ -131,7 +164,7 @@
     #aux-taxon-text {
         display: flex;
         justify-content: space-between;
-        gap: 1rem;
+        gap: .5rem;
     }
     .x-icon,
     .loading-icon {
@@ -155,6 +188,7 @@
         opacity: 0.7;
         line-height: 1;
         font-size: 1rem;
+        white-space: nowrap;
     }
     #taxonomic-status-text {
         font-size: 1rem;

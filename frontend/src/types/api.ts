@@ -3,6 +3,7 @@ import type { TaxonomicRank, TaxonomicStatus } from './taxa';
 
 export type RawSearchSuggestion = {
     scientific_name: string;
+    canonical_name: string;
     taxon_id: number;
     taxon_rank: TaxonomicRank;
     us_invasive: boolean;
@@ -11,6 +12,7 @@ export type RawSearchSuggestion = {
 
 export type SearchSuggestion = {
     scientificName: string | null;
+    canonicalName: string | null;
     taxonID: number | null;
     taxonRank: TaxonomicRank;
     usInvasive: boolean;
@@ -173,4 +175,14 @@ export type RawDateRange = {
 export type DateRange = {
     minDate: string;
     maxDate: string;
+};
+
+export type RawEstimateMetrics = {
+    row_count: number;
+    size_estimate: number;
+};
+
+export type EstimateMetrics = {
+    rowCount: number;
+    sizeEstimate: number;
 };

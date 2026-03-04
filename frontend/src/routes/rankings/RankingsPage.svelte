@@ -11,9 +11,13 @@
     import { getFiltersContext } from '../../contexts/filtersContext';
     import DefaultPage from '../../common/DefaultPage.svelte';
     import VirtualizedTable from '../../common/VirtualizedTable.svelte';
+    import DownloadIcon from '../../assets/DownloadIcon.svelte';
+    import { getModalContext } from '../../contexts/modalContext';
+    import DownloadTaxaForm from '../../components/DownloadTaxaForm.svelte';
 
     const taxonContext = getActiveTaxonContext();
     const filtersContext = getFiltersContext();
+    const modalContext = getModalContext();
 
     let filteredTaxa: TaxonNodeType[] = $state([]);
 
@@ -35,7 +39,6 @@
 
     function setActiveTaxon(e: MouseEvent) {
         const target = e.currentTarget as HTMLElement;
-
         const targetID = target.dataset.taxonId;
 
         if (!targetID || !parseInt(targetID)) return;
@@ -43,46 +46,58 @@
         taxonContext.taxonID = parseInt(targetID);
     }
 
-    // Filter taxa by filteredTaxonID
+    // Filter taxa by filteredTaxa
     $effect(() => {
-        let filterID = filtersContext.filteredTaxonID || 1; // Filter to Animalia if no active filter
-        if ($taxaTree && filterID) {
-            const childrenTaxa = getAllChildrenNodes($taxaTree, filterID);
+        // Filter to animalia (all) if not filtered taxa
+        let filterTaxa = filtersContext.filteredTaxa || {1: 'Animalia'};
+        
+        if (!$taxaTree) {
+            return;
+        }
+
+        let activeRanks = filtersContext.nSRanks;
+
+        // Determine which rank we need (for filtering)
+        const relevantRank: Partial<keyof TaxonNodeType> =
+            filtersContext.includeINat
+                ? 'ns_rank_state'
+                : 'ns_rank_state_no_inat';
+
+        const taxaMap = new Map<Number, TaxonNodeType>();
+
+        for (const taxonID of Object.keys(filterTaxa).map(Number)) {
             const parentNode = $taxaTree.find(
-                (node) => node.taxon_id === filterID
+                (node) => node.taxon_id === taxonID
             );
 
-            // If filteredTaxonID is explicitly set, grab the canonicalName here
-            if (filtersContext.filteredTaxonID && parentNode) {
-                filtersContext.filteredCanonicalName =
-                    parentNode.canonical_name;
-            } else {
-                filtersContext.filteredCanonicalName = null;
+            if (!parentNode) continue;
+
+            taxaMap.set(parentNode.taxon_id, parentNode);
+
+            const children = getAllChildrenNodes($taxaTree, taxonID);
+            for (const child of children) {
+                taxaMap.set(child.taxon_id, child);
             }
-
-            let activeRanks = filtersContext.nSRanks;
-
-            let newTaxa = [
-                ...(parentNode ? [parentNode] : []), // include parent first
-                ...childrenTaxa,
-            ].filter((taxonNode) => ['species'].includes(taxonNode.taxon_rank)); // Filter to just species TODO: maybe subspecies?
-
-            // Determine which rank we need (for filtering)
-            const relevantRank: Partial<keyof TaxonNodeType> =
-                filtersContext.includeINat
-                    ? 'ns_rank_state'
-                    : 'ns_rank_state_no_inat';
-
-            // Filter by selected ranks
-            if (activeRanks?.length) {
-                newTaxa = newTaxa.filter((taxonNode) =>
-                    activeRanks.includes(taxonNode[relevantRank])
-                );
-            }
-
-            filteredTaxa = newTaxa;
         }
+
+        let newTaxa = Array.from(
+            taxaMap.values()).filter(
+                (taxonNode) => ['species'].includes(taxonNode.taxon_rank)
+            );
+
+        if (activeRanks?.length) {
+            newTaxa = newTaxa.filter(
+                (taxonNode) => activeRanks.includes(taxonNode[relevantRank])
+            );
+        }
+
+        filteredTaxa = newTaxa;
     });
+
+    function handleDownloadButton() {
+        modalContext.visible = true;
+        modalContext.content = DownloadTaxaForm;
+    }
 </script>
 
 <DefaultPage showSidebar={true}>
@@ -162,6 +177,9 @@
                         </div>
                     {/snippet}
                 </VirtualizedTable>
+                <button id='download-rankings-button' onclick={handleDownloadButton}>
+                    <DownloadIcon/>
+                </button>
             {:else}
                 <div class="no-species-error">
                     No valid rankings found for selected taxon
@@ -172,6 +190,17 @@
 </DefaultPage>
 
 <style>
+    #download-rankings-button {
+        height: 2.5rem;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        opacity: .6;
+        transition: opacity ease-in-out .1s;
+    }
+    #download-rankings-button:hover {
+        opacity: 1;
+    }
     .no-species-error {
         margin: 1rem;
         opacity: 0.5;
@@ -189,8 +218,6 @@
     }
     .taxon-icon-wrapper {
         color: goldenrod;
-        /* display: flex;
-        justify-content: center; */
     }
     .taxon-name-wrapper {
         text-align: left;
@@ -201,6 +228,7 @@
     .virtual-list-wrapper {
         height: 100%;
         width: 100%;
+        position: relative;
     }
     #rankings-page-body {
         height: 100%;

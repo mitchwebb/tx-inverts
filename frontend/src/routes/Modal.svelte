@@ -62,9 +62,7 @@
                     class="button"
                     onclick={handleModalClose}
                 >
-                    <div class="icon">
-                        <XIcon />
-                    </div>
+                    <XIcon />
                 </button>
             </div>
         </div>
@@ -87,8 +85,8 @@
 
     #modal-close-button {
         position: absolute;
-        top: 0.25rem;
-        right: 0.25rem;
+        top: .25rem;
+        right: .25rem;
         color: var(--text-default);
         cursor: pointer;
         padding: 0;
@@ -98,6 +96,7 @@
         align-items: center;
         justify-content: center;
         z-index: 1003;
+        height: 1.5rem;
     }
 
     #modal-content-positioner {
@@ -119,14 +118,15 @@
         background-color: var(--container-back);
         border-radius: 4px;
         min-width: 100px;
-        max-width: 80%;
+        max-width: 80dvw;
         min-height: 2rem;
-        max-height: 80%; /* constrain to viewport */
+        max-height: 95dvh; /* constrain to viewport */
         outline: 1px solid var(--border);
         pointer-events: auto;
         z-index: 1002;
         box-sizing: border-box;
         overflow: hidden; /* keep scroll inside wrapper */
+        padding: 1.75rem;
     }
 
     #modal-content {

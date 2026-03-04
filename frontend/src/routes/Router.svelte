@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, type Component } from 'svelte';
     import MapPage from './map/MapPage.svelte';
-    import { getRouterContext } from '../contexts/routerContext';
+    import { getRouterContext, type RouterPath } from '../contexts/routerContext';
     import TaxonPage from './taxon/TaxonPage.svelte';
     import RankingPage from './rankings/RankingsPage.svelte';
     import { routerSyncedKeys } from '../constants/router';
@@ -11,7 +11,7 @@
     let PageComponent = $state<null | Component>(null);
 
     type RouteDefinition = {
-        pathname: string;
+        pathname: RouterPath;
         component: Component; // Corresponding page component
         relevantParams: string[];
     };
@@ -32,7 +32,7 @@
         {
             pathname: '/rankings',
             component: RankingPage,
-            relevantParams: ['taxon', 'inat', 'filter_taxon', 'status'],
+            relevantParams: ['taxon', 'inat', 'status'],
         },
     ];
 

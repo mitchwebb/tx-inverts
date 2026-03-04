@@ -42,10 +42,11 @@ export async function getCommonNames(taxonID: ActiveTaxonState['taxonID']) {
 // Get taxon info (triggered by change in taxonContext.activeTaxonID)
 export async function getTaxonInfo(taxonID: ActiveTaxonState['taxonID']) {
     const url = '/server/taxa/get_taxon_info';
+    console.log(url, taxonID);
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taxon_id: taxonID }),
+        body: JSON.stringify({ taxon_ids: taxonID }),
     });
 
     const json = await response.json();
@@ -62,7 +63,7 @@ export async function getTaxonInfo(taxonID: ActiveTaxonState['taxonID']) {
 let abortController = new AbortController();
 
 // Get rangeExtent of activeSpecies (plus observationCount since it's convenient)
-export async function getNSValues(
+export async function getNSMetrics(
     taxonID: ActiveTaxonState['taxonID'],
     includeINat: FiltersState['includeINat'],
     dateStart: FiltersState['dateStart'],
@@ -73,14 +74,14 @@ export async function getNSValues(
     if (abortController) abortController.abort();
     abortController = new AbortController();
 
-    const rangeExtentURL = '/server/natureserve/get_ns_values';
+    const rangeExtentURL = '/server/natureserve/get_ns_metrics';
     const signal = abortController.signal;
     const response = await fetch(rangeExtentURL, {
         signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            taxon_id: taxonID,
+            taxon_ids: taxonID,
             include_inat: includeINat,
             date_start: dateStart,
             date_end: dateEnd,

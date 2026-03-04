@@ -1,14 +1,14 @@
 from contextlib import asynccontextmanager
 from psycopg.rows import dict_row, tuple_row
-from psycopg import AsyncConnection
+from psycopg import AsyncConnection, sql
 from typing import Literal
 
 
 @asynccontextmanager  # Guarantees cursor is closed after use, even on error
 async def execute_psql_query(
     conn: AsyncConnection,
-    query: str,
-    params: tuple = None,
+    query: sql.Composed | str,
+    params: tuple | None = None,
     fetch: Literal['one', 'all'] | None = None,
     batch: bool = False,
     dict_cursor=False
@@ -30,12 +30,16 @@ async def execute_psql_query(
 
     row_factory_type = dict_row if dict_cursor else tuple_row
     async with conn.cursor(row_factory=row_factory_type) as cur:
-
         # If batch request, use execute_batch
         if batch:
-            await cur.executemany(cur, query, params)
+            if not params:
+                raise ValueError('Batch operations require params.')
+            await cur.executemany(query, params)
         else:
-            await cur.execute(query, params)
+            if params:
+                await cur.execute(query, params)
+            else:
+                await cur.execute(query)
         # Depending on fetch type, return result(s), or simply commit
         if fetch == 'one':
             result = await cur.fetchone()
