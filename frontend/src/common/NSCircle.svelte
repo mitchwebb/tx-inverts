@@ -59,7 +59,8 @@
             font-size={11}
             fill={getTextColor(active ? color : 'grey')}
         >
-            {level.toUpperCase()}{rank?.toUpperCase()}
+            <!-- {level.toUpperCase()} -->
+            {rank?.toUpperCase()}
         </text>
     </g>
 </svg>

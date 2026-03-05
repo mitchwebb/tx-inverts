@@ -19,9 +19,9 @@ export type SearchSuggestion = {
     taxonomicStatus: TaxonomicStatus;
 };
 
-export type NSRank = 'X' | 'H' | '1' | '2' | '3' | '4' | '5' | 'U' | null;
+export type NSRank = 'x' | 'h' | '1' | '2' | '3' | '4' | '5' | 'u' | null;
 
-export type NSLevel = 'S' | 'G' | 'N';
+export type NSLevel = 's' | 'g' | 'n';
 
 export type RawNSValues = {
     number_of_occurrences: number | null;

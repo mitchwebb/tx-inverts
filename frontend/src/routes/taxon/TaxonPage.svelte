@@ -311,7 +311,7 @@
                                 <NSCircle
                                     active={true}
                                     rank={nsRank}
-                                    level="S"
+                                    level="s"
                                 />
                             </div>
                         {/if}

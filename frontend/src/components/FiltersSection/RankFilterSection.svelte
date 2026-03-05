@@ -29,12 +29,14 @@
     <div class="filters-section-content">
         {#each nSRankKey as rankItem}
             <CheckboxInput
-                value={rankItem.rank}
+                value={rankItem.rank.toUpperCase()}
                 name={rankItem.description}
                 handler={handleRankSelect}
                 checked={!!filtersContext.nSRanks?.includes(rankItem.rank)}
             >
-                <span>S{rankItem.rank} ({rankItem.description})</span>
+                <span
+                    >{rankItem.rank.toUpperCase()} ({rankItem.description})</span
+                >
             </CheckboxInput>
         {/each}
     </div>

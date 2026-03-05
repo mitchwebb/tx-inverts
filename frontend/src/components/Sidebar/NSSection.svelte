@@ -128,7 +128,7 @@
 >
     {#snippet closedDisplay()}
         {#if rank && !taxonInfo.usInvasive}
-            <NSCircle active={true} level="S" rank={rank ? rank : 'U'} />
+            <NSCircle active={true} level="s" rank={rank ? rank : 'u'} />
         {/if}
     {/snippet}
     {#if filtersActive}
@@ -150,7 +150,7 @@
                 </div>
             </div>
             <div class="rank-scale">
-                <NSScale level="S" {rank} />
+                <NSScale level="s" {rank} />
             </div>
         {/if}
 

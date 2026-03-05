@@ -49,8 +49,8 @@
     // Filter taxa by filteredTaxa
     $effect(() => {
         // Filter to animalia (all) if not filtered taxa
-        let filterTaxa = filtersContext.filteredTaxa || {1: 'Animalia'};
-        
+        let filterTaxa = filtersContext.filteredTaxa || { 1: 'Animalia' };
+
         if (!$taxaTree) {
             return;
         }
@@ -80,14 +80,13 @@
             }
         }
 
-        let newTaxa = Array.from(
-            taxaMap.values()).filter(
-                (taxonNode) => ['species'].includes(taxonNode.taxon_rank)
-            );
+        let newTaxa = Array.from(taxaMap.values()).filter((taxonNode) =>
+            ['species'].includes(taxonNode.taxon_rank)
+        );
 
         if (activeRanks?.length) {
-            newTaxa = newTaxa.filter(
-                (taxonNode) => activeRanks.includes(taxonNode[relevantRank])
+            newTaxa = newTaxa.filter((taxonNode) =>
+                activeRanks.includes(taxonNode[relevantRank])
             );
         }
 
@@ -127,7 +126,7 @@
                                     <NSCircle
                                         active={true}
                                         rank={nsRank}
-                                        level="S"
+                                        level="s"
                                     />
                                 </div>
                             {/if}
@@ -177,8 +176,11 @@
                         </div>
                     {/snippet}
                 </VirtualizedTable>
-                <button id='download-rankings-button' onclick={handleDownloadButton}>
-                    <DownloadIcon/>
+                <button
+                    id="download-rankings-button"
+                    onclick={handleDownloadButton}
+                >
+                    <DownloadIcon />
                 </button>
             {:else}
                 <div class="no-species-error">
@@ -195,8 +197,8 @@
         position: absolute;
         right: 0;
         bottom: 0;
-        opacity: .6;
-        transition: opacity ease-in-out .1s;
+        opacity: 0.6;
+        transition: opacity ease-in-out 0.1s;
     }
     #download-rankings-button:hover {
         opacity: 1;

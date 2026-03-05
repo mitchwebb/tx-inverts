@@ -41,8 +41,8 @@
     let container: HTMLDivElement;
     let header: HTMLDivElement | undefined = $state();
 
-    let currSortKey = $state<typeof defaultSortKey>(defaultSortKey);
-    let sortAscending = $state<boolean>(defaultAscending);
+    let currSortKey = $derived<typeof defaultSortKey>(defaultSortKey);
+    let sortAscending = $derived<boolean>(defaultAscending);
 
     let focusedItemIndex = $state<number | null>(null);
 
@@ -282,10 +282,11 @@
                                 </div>
                                 {#if header.info}
                                     <div class="header-info">
-                                        <InfoButton 
-                                            type='tooltip' 
-                                            hover={true} 
-                                            htmlContent={header.info} />
+                                        <InfoButton
+                                            type="tooltip"
+                                            hover={true}
+                                            htmlContent={header.info}
+                                        />
                                     </div>
                                 {/if}
                             </div>
@@ -341,7 +342,7 @@
     }
     .header-info {
         height: 1.5rem;
-        margin-left: .2rem;
+        margin-left: 0.2rem;
         flex-shrink: 0;
         pointer-events: auto;
     }
