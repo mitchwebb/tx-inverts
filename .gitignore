@@ -34,4 +34,7 @@ dist-ssr
 # Data
 backend/data/*
 
+# Jupyter test files
+*.ipynb
+
 backend/database_notes.txt
