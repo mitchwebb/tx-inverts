@@ -17,54 +17,54 @@ router = APIRouter()
 # Downloads WILL include data for invasive species
 
 
-@router.post('/get_occurrence_download')
-async def get_occurrence_download(params: DownloadRequestParams, request: Request):
-    taxon_id = params.taxon_ids
-    include_inat = params.include_inat
-    date_start = params.date_start
-    date_end = params.date_end
-    data_providers = params.data_providers
-    include_invasives = params.include_invasives
-    estimate = params.estimate
+# @router.post('/get_occurrence_download')
+# async def get_occurrence_download(params: DownloadRequestParams, request: Request):
+#     taxon_id = params.taxon_ids
+#     include_inat = params.include_inat
+#     date_start = params.date_start
+#     date_end = params.date_end
+#     data_providers = params.data_providers
+#     include_invasives = params.include_invasives
+#     estimate = params.estimate
 
-    filter_payload = OccurrenceFilter(
-        taxon_id=taxon_id[0],
-        include_inat=include_inat,
-        data_providers=data_providers,
-        date_start=date_start,
-        date_end=date_end
-    )
+#     filter_payload = OccurrenceFilter(
+#         taxon_id=taxon_id[0],
+#         include_inat=include_inat,
+#         data_providers=data_providers,
+#         date_start=date_start,
+#         date_end=date_end
+#     )
 
-    api_logger.info('getting occurrence download...')
+#     api_logger.info('getting occurrence download...')
 
-    occurrence_filter = create_occurrence_filter(
-        filter_payload, include_invasives)
+#     occurrence_filter = create_occurrence_filter(
+#         filter_payload, include_invasives)
 
-    query = sql.SQL('''
-        {dwc_occurrence_select_clause}
-        WHERE
-            {occurrence_filter}
-    ''').format(
-        dwc_occurrence_select_clause=DWC_OCCURRENCE_SELECT_CLAUSE,
-        occurrence_filter=occurrence_filter
-    )
+#     query = sql.SQL('''
+#         {dwc_occurrence_select_clause}
+#         WHERE
+#             {occurrence_filter}
+#     ''').format(
+#         dwc_occurrence_select_clause=DWC_OCCURRENCE_SELECT_CLAUSE,
+#         occurrence_filter=occurrence_filter
+#     )
 
-    try:
-        if estimate:
-            async with request.app.state.db_pool.connection() as conn:
-                return await estimate_tsv_download_size(conn, query)
-        else:
-            return responses.StreamingResponse(
-                downloadAndStream(request.app.state.db_pool,
-                                  query, format='tsv'),
-                media_type='text/tab-separated-values',
-                headers={
-                    'Content-Disposition': 'attachment; filename=taxa_download.tsv'
-                }
-            )
-    except Exception as e:
-        api_logger.exception(e)
-        raise HTTPException(status_code=500, detail=str(e))
+#     try:
+#         if estimate:
+#             async with request.app.state.db_pool.connection() as conn:
+#                 return await estimate_tsv_download_size(conn, query)
+#         else:
+#             return responses.StreamingResponse(
+#                 downloadAndStream(request.app.state.db_pool,
+#                                   query, format='tsv'),
+#                 media_type='text/tab-separated-values',
+#                 headers={
+#                     'Content-Disposition': 'attachment; filename=taxa_download.tsv'
+#                 }
+#             )
+#     except Exception as e:
+#         api_logger.exception(e)
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post('/get_ranked_taxa_download')
