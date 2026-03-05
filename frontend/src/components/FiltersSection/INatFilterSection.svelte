@@ -5,6 +5,8 @@
 
     const filtersContext = getFiltersContext();
 
+    const active = $derived(filtersContext.includeINat)
+
     function handleINatToggle(toggled: boolean) {
         filtersContext.includeINat = toggled;
     }
@@ -24,12 +26,12 @@
             <div class="inat-toggle">
                 <Toggle
                     handler={handleINatToggle}
-                    checked={filtersContext.includeINat !== false}
+                    checked={active}
                     onColor="darkgreen"
                     offColor="darkred"
                 />
             </div>
-            <span class="sidebar-header-text">iNaturalist Data</span>
+            <span class="sidebar-header-text">Include iNaturalist Data</span>
         </div>
     </div>
 </div>

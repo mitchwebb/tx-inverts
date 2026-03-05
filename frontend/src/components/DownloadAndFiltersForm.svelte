@@ -80,7 +80,7 @@
         overflow-y: auto;
         flex: 1;
         min-height: 0;
-        min-width: 500px;
+        min-width: 400px;
     }
     .button-and-metrics-wrapper {
         display: flex;

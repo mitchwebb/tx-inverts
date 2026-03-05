@@ -2,7 +2,6 @@
     import { getFiltersContext } from '../contexts/filtersContext';
     import { getTaxaDownload } from '../lib/downloads';
     import DownloadAndFiltersForm from './DownloadAndFiltersForm.svelte';
-    import DateFilterSection from './FiltersSection/DateFilterSection.svelte';
     import INatFilterSection from './FiltersSection/INatFilterSection.svelte';
     import RankFilterSection from './FiltersSection/RankFilterSection.svelte';
     import TaxonFilterSection from './FiltersSection/TaxonFilterSection.svelte';
@@ -28,8 +27,8 @@
     <DownloadAndFiltersForm header="Download Ranked Taxa TSV" requestHandler={requestTaxaDownload}>
         <div id="taxa-download-filters">
             <TaxonFilterSection/>
-            <RankFilterSection/>
             <INatFilterSection/>
+            <RankFilterSection/>
         </div>
     </DownloadAndFiltersForm>
 </div>

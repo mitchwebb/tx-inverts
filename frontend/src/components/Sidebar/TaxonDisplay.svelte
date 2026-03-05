@@ -1,5 +1,4 @@
 <script lang="ts">
-    import DownloadIcon from '../../assets/DownloadIcon.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
@@ -7,7 +6,7 @@
     import { getModalContext } from '../../contexts/modalContext';
     import { isItalicizedRank } from '../../util/taxa';
     import { capitalizeWords } from '../../util/textHelpers';
-    import DownloadOccurrenceForm from '../DownloadOccurrenceForm.svelte';
+    // import DownloadOccurrenceForm from '../DownloadOccurrenceForm.svelte';
 
     const taxonContext = getActiveTaxonContext();
     const taxonInfo = $derived(taxonContext.taxonInfo);
@@ -17,10 +16,10 @@
     // Tie loading visuals to taxonContext.taxonLoading
     const isLoading = $derived(taxonContext.taxonLoading);
 
-    function handleOccDownloadButton() {
-        modalContext.visible = true;
-        modalContext.content = DownloadOccurrenceForm;
-    }
+    // function handleOccDownloadButton() {
+    //     modalContext.visible = true;
+    //     modalContext.content = DownloadOccurrenceForm;
+    // }
 
     const taxonNotAccepted = $derived(taxonInfo.taxonomicStatus !== 'accepted');
 </script>
@@ -90,7 +89,7 @@
                 </span>
             {/if}
         </div>
-        <div id="observations-download-section">
+        <!-- <div id="observations-download-section">
             {#if taxonContext.nSValues.observationCount}
                 <div class="observation-count thin"> 
                     Records: {taxonContext.nSValues.observationCount?.toLocaleString()}
@@ -99,29 +98,28 @@
                     <DownloadIcon />
                 </button>
             {/if}
-        </div>
+        </div> -->
     {/if}
 </div>
 
 <style>
-    #observations-download-section {
+    /* #observations-download-section {
         display: flex;
         gap: .5rem;
         width: 100%;
         justify-content: space-between;
         align-items: center;
         margin-top: .5rem;
-    }
-    .observation-count {
+    } */
+    /* .observation-count {
         font-size: 1rem;
-    }
-    .download-button {
+    } */
+    /* .download-button {
         box-sizing: border-box;
-        /* border: 1px solid var(--border); */
         height: 1.5rem;
         width: 1.5rem;
         padding: 0;
-    }
+    } */
     #sidebar-main-header {
         display: flex;
         flex-direction: column;

@@ -1,32 +1,49 @@
 <script lang="ts">
-    import LoadingIcon from "../assets/LoadingIcon.svelte";
+    import LoadingIcon from '../assets/LoadingIcon.svelte';
 
     type DownloadWithEstimateProps = {
-        label: string,
-        loadingEstimate?: boolean,
-        disabled: boolean,
+        label: string;
+        loadingEstimate?: boolean;
+        disabled: boolean;
         downloadHandler: () => void;
-        fileSize?: number | null,
-        bytesReceived?: number | null,
-    }
+        fileSize?: number | null;
+        bytesReceived?: number | null;
+    };
 
-    const { 
-        label, 
+    const {
+        label,
         loadingEstimate = false,
         disabled = false,
         downloadHandler,
-        fileSize = null, 
-        bytesReceived = null
+        fileSize = null,
+        bytesReceived = null,
     }: DownloadWithEstimateProps = $props();
 
+    function handleSubmit(event: SubmitEvent) {
+        event.preventDefault();
+        const data = new FormData(event.target as HTMLFormElement);
+        // Exit on dubious activity
+        if (data.get('email_confirm')) return;
+        else downloadHandler();
+    }
 </script>
 
-<div class="download-item-wrapper" class:disabled={disabled}>
-    <button class="download-button" onclick={downloadHandler}>
+<div class="download-item-wrapper" class:disabled>
+    <form onsubmit={handleSubmit}>
+        <!-- Catch some dubious activity -->
+        <input
+            style="display:none"
+            type="text"
+            name="email_confirm"
+            tabindex="-1"
+            autocomplete="off"
+        />
+    </form>
+    <button class="download-button" type="submit">
         <span class="button-label-wrapper">
             {#if loadingEstimate}
                 <div class="icon">
-                    <LoadingIcon/>
+                    <LoadingIcon />
                 </div>
                 <!-- <span> Loading </span> -->
             {:else}
@@ -34,7 +51,10 @@
             {/if}
         </span>
         {#if bytesReceived && fileSize}
-            <div class='loading-bar' style:width={`${(bytesReceived / fileSize) * 100}%`}></div>
+            <div
+                class="loading-bar"
+                style:width={`${(bytesReceived / fileSize) * 100}%`}
+            ></div>
         {/if}
     </button>
 </div>
@@ -42,7 +62,7 @@
 <style>
     .button-label-wrapper {
         display: flex;
-        gap: .5rem;
+        gap: 0.5rem;
         align-items: center;
     }
     .loading-bar {
@@ -58,14 +78,14 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: .5rem;
+        gap: 0.5rem;
     }
     .download-button {
         border: 1px solid var(--border);
         position: relative;
     }
     .disabled {
-        opacity: .75;
+        opacity: 0.75;
     }
     .download-item-wrapper.disabled {
         cursor: wait;

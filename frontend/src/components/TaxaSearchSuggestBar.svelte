@@ -155,6 +155,7 @@
         top: '0px',
         left: '0px',
         width: '0px',
+        maxHeight: '100px',
     });
 
     // Give search results to portal, and set positioning using input element
@@ -175,20 +176,43 @@
 
         const viewportWidth = window.innerWidth;
 
-        let left = inputRect.left;
+        const scrollX = window.scrollX;
+
+        let left = inputRect.left + scrollX;
 
         // Flip right if dropdown would overflow
         if (inputRect.left + dropdownWidth + 10 > viewportWidth) {
-            left = inputRect.right - dropdownWidth;
+            left = inputRect.right + scrollX - dropdownWidth;
             alignRight = true;
         } else {
             alignRight = false;
         }
 
+        // Margin between suggestions and viewport limits
+        const margin = 10;
+        // Calculate space available in viewport above/below input element
+        const spaceBelow = window.innerHeight - (inputRect.bottom + margin);
+        const spaceAbove = inputRect.top - margin;
+
+        let top: number;
+        let maxHeight: number;
+
+        // Determine above/below behavior for suggestions, and set max height
+        if (spaceBelow >= spaceAbove || spaceBelow >= 200) {
+            // Open downward
+            top = inputRect.bottom + window.scrollY;
+            maxHeight = spaceBelow;
+        } else {
+            // Open upward
+            maxHeight = spaceAbove;
+            top = inputRect.top + window.scrollY - maxHeight - 5; // 5px gap
+        }
+
         portalStyle = {
-            top: `${inputRect.bottom + window.scrollY}px`,
+            top: `${top}px`,
             left: `${left}px`,
             width: `${dropdownWidth}px`,
+            maxHeight: `${maxHeight}px`,
         };
     }
 
@@ -246,6 +270,7 @@
             style:top={portalStyle.top}
             style:left={portalStyle.left}
             style:min-width={portalStyle.width}
+            style:max-height={portalStyle.maxHeight}
         >
             {#if suggestions}
                 <ul class="autocomplete-suggestions">
@@ -417,7 +442,7 @@
         border: 1px solid var(--container-shadow);
         box-shadow: 0px 2px 12px 2px var(--container-shadow);
         box-sizing: border-box;
-        z-index: 1000;
+        z-index: 9999;
     }
     .autocomplete-suggestions {
         padding: 0;
