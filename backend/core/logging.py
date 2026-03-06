@@ -27,7 +27,7 @@ LOGGING_CONFIG = {
         "api": {
             "handlers": ["console", "file"],
             "level": "DEBUG",
-            "propogate": False,
+            "propagate": False,
         },
         "data": {
             "handlers": ["console", "file"],
@@ -40,7 +40,7 @@ LOGGING_CONFIG = {
         },
         "db": {
             "handlers": ["file"],
-            "level": "ERROR",
+            "level": "INFO",
         },
         "security": {
             "handlers": ["file"],

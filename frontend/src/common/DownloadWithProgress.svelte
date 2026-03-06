@@ -38,25 +38,25 @@
             tabindex="-1"
             autocomplete="off"
         />
-    </form>
-    <button class="download-button" type="submit">
-        <span class="button-label-wrapper">
-            {#if loadingEstimate}
-                <div class="icon">
-                    <LoadingIcon />
-                </div>
-                <!-- <span> Loading </span> -->
-            {:else}
-                {label}
+        <button class="download-button" type="submit">
+            <span class="button-label-wrapper">
+                {#if loadingEstimate}
+                    <div class="icon">
+                        <LoadingIcon />
+                    </div>
+                    <!-- <span> Loading </span> -->
+                {:else}
+                    {label}
+                {/if}
+            </span>
+            {#if bytesReceived && fileSize}
+                <div
+                    class="loading-bar"
+                    style:width={`${(bytesReceived / fileSize) * 100}%`}
+                ></div>
             {/if}
-        </span>
-        {#if bytesReceived && fileSize}
-            <div
-                class="loading-bar"
-                style:width={`${(bytesReceived / fileSize) * 100}%`}
-            ></div>
-        {/if}
-    </button>
+        </button>
+    </form>
 </div>
 
 <style>

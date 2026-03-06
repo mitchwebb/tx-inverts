@@ -7,9 +7,12 @@
 
     type DownloadFormProps = {
         header: string;
-        requestHandler: (estimate: boolean, onProgress?: (received: number) => void) => Promise<any>;
+        requestHandler: (
+            estimate: boolean,
+            onProgress?: (received: number) => void
+        ) => Promise<any>;
         children?: Snippet;
-    }
+    };
 
     const { header, requestHandler, children }: DownloadFormProps = $props();
 
@@ -18,13 +21,19 @@
     let loadingEstimate: boolean = $state(true);
     let bytesReceived: number | null = $state(null);
 
-    let downloadDisabled: boolean = $derived(rowCount == 0 || estimateSize == null || loadingEstimate);
+    let downloadDisabled: boolean = $derived(
+        rowCount == 0 || estimateSize == null || loadingEstimate
+    );
 
     // Consider download to be 'large' if is exceeds 50 MB
-    let largeFile: boolean = $derived(!!estimateSize && estimateSize > (50 * 1024 * 1024))
+    let largeFile: boolean = $derived(
+        !!estimateSize && estimateSize > 50 * 1024 * 1024
+    );
 
     async function handleDownload() {
-        await requestHandler(false, (r) => { bytesReceived = r });
+        await requestHandler(false, (r) => {
+            bytesReceived = r;
+        });
         bytesReceived = null;
     }
 
@@ -33,37 +42,41 @@
             loadingEstimate = true;
             estimateSize = null;
             rowCount = null;
-            const estimateMetrics: EstimateMetrics = await requestHandler(true) as EstimateMetrics;
-            estimateSize = estimateMetrics.sizeEstimate
-            rowCount = estimateMetrics.rowCount
+            const estimateMetrics: EstimateMetrics = (await requestHandler(
+                true
+            )) as EstimateMetrics;
+            estimateSize = estimateMetrics.sizeEstimate;
+            rowCount = estimateMetrics.rowCount;
             loadingEstimate = false;
-        })()
-    })
-
+        })();
+    });
 </script>
 
 <div id="download-form-wrapper">
     <div id="download-form-header">
-        <span class='header'> {header} </span>
+        <span class="header"> {header} </span>
     </div>
     <div id="download-form-content">
         {@render children?.()}
     </div>
-    <div class='button-and-metrics-wrapper'>
+    <div class="button-and-metrics-wrapper">
         {#if estimateSize !== null && rowCount !== null}
             <div class="download-metrics thin">
                 <span>Total Records: {rowCount.toLocaleString()}</span>
-                <span class:large-file={largeFile}>File Estimate: {getHumanReadableBytes(estimateSize)}</span>
+                <span class:large-file={largeFile}
+                    >File Estimate: {getHumanReadableBytes(estimateSize)}</span
+                >
             </div>
-            <DownloadWithProgress 
+            <DownloadWithProgress
                 label="Download"
-                downloadHandler={handleDownload} 
+                downloadHandler={handleDownload}
                 disabled={downloadDisabled}
-                fileSize={estimateSize} 
-                bytesReceived={bytesReceived} />
+                fileSize={estimateSize}
+                {bytesReceived}
+            />
         {:else if loadingEstimate}
             <div id="download-loading-icon" class="icon">
-                <LoadingIcon/>
+                <LoadingIcon />
             </div>
         {/if}
     </div>
@@ -74,7 +87,7 @@
         color: red;
     }
     #download-loading-icon {
-        margin: .5rem;
+        margin: 0.5rem;
     }
     #download-form-content {
         overflow-y: auto;

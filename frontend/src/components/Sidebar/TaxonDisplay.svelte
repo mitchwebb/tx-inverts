@@ -1,4 +1,5 @@
 <script lang="ts">
+    // import DownloadIcon from '../../assets/DownloadIcon.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
@@ -74,7 +75,9 @@
             {#if taxonInfo.taxonomicStatus && taxonNotAccepted}
                 <div id="taxonomic-status-text" class={'thin dubious-taxon'}>
                     <span>
-                        Taxon Status: {capitalizeWords(taxonInfo.taxonomicStatus)}
+                        Taxon Status: {capitalizeWords(
+                            taxonInfo.taxonomicStatus
+                        )}
                     </span>
                     {#if taxonInfo.taxonomicStatus.includes('synonym')}
                         <div>
@@ -91,10 +94,13 @@
         </div>
         <!-- <div id="observations-download-section">
             {#if taxonContext.nSValues.observationCount}
-                <div class="observation-count thin"> 
+                <div class="observation-count thin">
                     Records: {taxonContext.nSValues.observationCount?.toLocaleString()}
                 </div>
-                <button class="download-button" onclick={handleOccDownloadButton}>
+                <button
+                    class="download-button"
+                    onclick={handleOccDownloadButton}
+                >
                     <DownloadIcon />
                 </button>
             {/if}
@@ -103,23 +109,23 @@
 </div>
 
 <style>
-    /* #observations-download-section {
+    #observations-download-section {
         display: flex;
-        gap: .5rem;
+        gap: 0.5rem;
         width: 100%;
         justify-content: space-between;
         align-items: center;
-        margin-top: .5rem;
-    } */
-    /* .observation-count {
+        margin-top: 0.5rem;
+    }
+    .observation-count {
         font-size: 1rem;
-    } */
-    /* .download-button {
+    }
+    .download-button {
         box-sizing: border-box;
         height: 1.5rem;
         width: 1.5rem;
         padding: 0;
-    } */
+    }
     #sidebar-main-header {
         display: flex;
         flex-direction: column;
@@ -162,7 +168,7 @@
     #aux-taxon-text {
         display: flex;
         justify-content: space-between;
-        gap: .5rem;
+        gap: 0.5rem;
     }
     .x-icon,
     .loading-icon {

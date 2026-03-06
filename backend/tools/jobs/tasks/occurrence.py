@@ -142,13 +142,11 @@ async def update_observations(
                 ON {temp_table} (batch_id);
             ''').format(temp_table=sql.Identifier(temp_table_name)))
 
-        # TODO: This should return chunks, and the rest of the process should operate in chunks
         # Transform data
         for chunk in process_observations.process_dwc_observations(
             observations_fp,
             chunk_size,
         ):
-
             # Overwrite species/subspecies with epithet columns if they exist
             for target, source in [('species', 'specificEpithet'), ('subspecies', 'infraspecificEpithet')]:
                 if source in chunk.columns:
