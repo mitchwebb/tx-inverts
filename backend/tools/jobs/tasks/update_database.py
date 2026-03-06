@@ -18,6 +18,7 @@ async def update_database():
     conn = await get_single_db_connection()
 
     try:
+        # TODO: Bug with new_row_keys. These are under-represented with new observations
         # # Update NatureServe ranks for updated species
         if new_row_keys:
             await update_ns_ranks(conn, new_row_keys)
