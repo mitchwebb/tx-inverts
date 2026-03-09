@@ -14,6 +14,7 @@
     import DownloadIcon from '../../assets/DownloadIcon.svelte';
     import { getModalContext } from '../../contexts/modalContext';
     import DownloadTaxaForm from '../../components/DownloadTaxaForm.svelte';
+    import LoadingIcon from '../../assets/LoadingIcon.svelte';
 
     const taxonContext = getActiveTaxonContext();
     const filtersContext = getFiltersContext();
@@ -102,7 +103,15 @@
 <DefaultPage showSidebar={true}>
     <div id="rankings-page-body">
         <div class="virtual-list-wrapper">
-            {#if filteredTaxa.length}
+            {#if !$taxaTree}
+                <div class="icon rankings-loading">
+                    <LoadingIcon />
+                </div>
+            {:else if !filteredTaxa.length}
+                <div class="no-species-error">
+                    No valid rankings found for selected taxon
+                </div>
+            {:else if filteredTaxa.length}
                 <VirtualizedTable
                     items={[...filteredTaxa]}
                     rowHeight={30}
@@ -182,16 +191,15 @@
                 >
                     <DownloadIcon />
                 </button>
-            {:else}
-                <div class="no-species-error">
-                    No valid rankings found for selected taxon
-                </div>
             {/if}
         </div>
     </div>
 </DefaultPage>
 
 <style>
+    .rankings-loading {
+        margin: 0.5rem;
+    }
     #download-rankings-button {
         height: 2.5rem;
         position: absolute;
