@@ -120,7 +120,7 @@
         margin: 0;
     }
     #header-bar {
-        height: 60px;
+        height: 65px;
         background-color: var(--container-fore);
         display: flex;
         align-items: center;
@@ -129,8 +129,8 @@
         gap: 2rem;
         z-index: 100;
         color: var(--text-default);
-        border-bottom: 1px solid var(--container-shadow);
-        box-shadow: 0px 0px 5px var(--container-shadow);
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0px 0px 2px var(--container-shadow);
         justify-content: space-between;
         position: sticky;
     }

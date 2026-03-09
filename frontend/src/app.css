@@ -9,7 +9,7 @@
     --container-back: rgb(247, 246, 242);
     --container-mid: rgb(221, 220, 217);
     --container-fore: rgb(238, 237, 234);
-    --container-highlight: rgb(237, 236, 233);
+    --container-highlight: rgb(240, 239, 236);
     --container-shadow: rgb(175, 173, 169);
     --tooltip-background: rgb(255, 255, 255);
     --fill-color: rgb(84, 122, 32);
@@ -17,7 +17,7 @@
 }
 
 [data-theme='dark'] {
-    --border: rgb(102, 112, 105);
+    --border: rgb(92, 102, 95);
     --text-default: rgb(208, 194, 164);
     --container-back: rgb(35, 42, 47);
     --container-mid: rgb(43, 51, 57);
@@ -49,6 +49,11 @@ input[type='checkbox']:checked {
     color: var(--fill-color);
     accent-color: var(--fill-color);
 }
+
+/* input[type='checkbox'] {
+    background-color: green;
+    accent-color: blue;
+} */
 
 button {
     all: unset;

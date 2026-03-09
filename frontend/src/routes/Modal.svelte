@@ -85,8 +85,8 @@
 
     #modal-close-button {
         position: absolute;
-        top: .25rem;
-        right: .25rem;
+        top: 0.25rem;
+        right: 0.25rem;
         color: var(--text-default);
         cursor: pointer;
         padding: 0;

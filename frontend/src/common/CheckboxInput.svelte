@@ -104,8 +104,4 @@
         z-index: 5;
         display: none;
     }
-    input[type='checkbox']:checked {
-        color: var(--fill-color);
-        accent-color: var(--fill-color);
-    }
 </style>

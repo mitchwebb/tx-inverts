@@ -433,14 +433,14 @@
         position: absolute;
         white-space: nowrap;
         margin-top: 5px;
-        background-color: var(--container-mid);
+        background-color: var(--container-back);
         overflow: visible;
         /* border-radius: 4px; */
         width: fit-content;
         max-width: 500px;
         overflow-y: scroll;
         border: 1px solid var(--container-shadow);
-        box-shadow: 0px 2px 12px 2px var(--container-shadow);
+        box-shadow: 0px 3px 10px 1px var(--container-shadow);
         box-sizing: border-box;
         z-index: 9999;
     }

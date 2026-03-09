@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
     import type { Component, Snippet } from 'svelte';
-    
+
     type ToolbarFoldoutProps = {
         id: string;
         ButtonLabel: string | Component;
@@ -51,6 +51,8 @@
         overflow-y: auto;
     }
     .foldout-button-wrapper {
+        /* border: 1px solid var(--container-shadow); */
+        border-radius: 3px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -60,6 +62,8 @@
         height: 1.5rem;
     }
     .foldout-button {
+        background-color: var(--container-fore);
+        border: 1px solid var(--border);
         color: var(--text-default);
         height: 100%;
         width: max-content;

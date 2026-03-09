@@ -159,29 +159,28 @@ class TaxaChildrenRequest(BaseModel):
 async def get_backbone(request: Request):
     query = '''
         SELECT
-                        taxon_id,
-                        taxon_rank,
-                        parent_name_usage_id,
+            taxon_id,
+            taxon_rank,
+            parent_name_usage_id,
             accepted_name_usage_id,
-                        canonical_name,
-                        scientific_name_authorship,
-                        ns_rank_state,
+            canonical_name,
+            scientific_name_authorship,
+            ns_rank_state,
             ns_rank_state_no_inat,
             taxonomic_status,
             us_invasive,
             phylum,
             class,
             "order",
-            family
+            family,
+            genus
                 FROM tx_taxa
         WHERE taxonomic_status IN ('accepted', 'doubtful')
                 ORDER BY taxon_rank, canonical_name
     '''
-    # start = time.time()
+
     async with request.app.state.db_pool.connection() as conn:
         async with execute_psql_query(conn, query, fetch='all', dict_cursor=True) as result:
-            # end = time.time()
-            # api_logger.debug(f"Query time: {end-start:.4f}s")
             if not result:
                 raise HTTPException(
                     status_code=404, detail='Backbone not retrieved')

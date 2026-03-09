@@ -426,6 +426,7 @@
         width: 100%;
         box-sizing: border-box;
         border-right: 1px solid var(--container-shadow);
+        border-bottom: 1px solid var(--container-shadow);
         overflow: hidden;
     }
     .column-header {
@@ -463,7 +464,7 @@
         padding: 0 0.5rem;
         overflow: hidden;
         text-overflow: ellipsis;
-        background-color: var(--container-back);
+        /* background-color: var(--container-back); */
     }
     .spacer {
         position: relative;

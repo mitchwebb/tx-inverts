@@ -34,7 +34,7 @@
         `repeat(${rankColumns.length}, minmax(max-content, 1fr)`
     );
 
-    let openNodes: Set<number> = $state.raw(new Set());
+    let openNodes: Set<number> = $state.raw(new Set([1]));
 
     // Minimum pixel movement to count as dragging
     const minMoveThreshold = 5;
@@ -459,21 +459,22 @@
         text-align: left;
         background-color: var(--container-highlight);
         padding: 1rem 0.5rem 0.5rem 0.5rem;
-        box-shadow: 0px 2px 0px 0px var(--container-shadow);
+        /* box-shadow: 0px 2px 0px 0px var(--container-shadow); */
         border-right: 1px solid var(--container-shadow);
+        border-bottom: 1px solid var(--container-shadow);
         font-weight: 600;
         user-select: none;
     }
     #taxon-page-body {
         height: 100%;
         display: grid;
-        background-color: var(--container-back);
+        background-color: var(--container-mid);
         grid-auto-rows: max-content;
         border-radius: 3px;
         justify-content: baseline;
         border: 1px solid var(--border);
         /* padding-bottom: 1rem; */
-        box-shadow: inset 0px 1px 10px var(--container-shadow);
+        /* box-shadow: inset 0px 1px 10px var(--container-shadow); */
         transition: all 0.1 ease-in-out;
         cursor: grab;
         box-sizing: border-box;

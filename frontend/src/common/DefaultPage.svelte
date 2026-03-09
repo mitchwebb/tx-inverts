@@ -28,7 +28,7 @@
     .page-wrapper {
         height: 100%;
         width: 100%;
-        background-color: var(--container-shadow);
+        background-color: var(--container-back);
         padding: 10px;
         display: flex;
         box-sizing: border-box;

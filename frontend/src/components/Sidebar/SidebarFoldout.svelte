@@ -137,7 +137,7 @@
     }
     .sidebar-foldout-content {
         display: block;
-        background-color: var(--container-mid);
+        background-color: var(--container-fore);
         padding: 0.75rem;
     }
 </style>

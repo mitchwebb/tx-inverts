@@ -139,6 +139,7 @@
         </div>
     {/if}
     <div id="sidebar">
+        <div id="filters-coverup"></div>
         <button
             aria-label="resize containers"
             class="resize-bar"
@@ -178,6 +179,15 @@
 </div>
 
 <style>
+    #filters-coverup {
+        position: absolute;
+        height: 100%;
+        left: calc(0.5rem - 3px);
+        top: 0;
+        width: 2px;
+        z-index: 5;
+        background-color: var(--container-back);
+    }
     #filters-button-wrapper {
         height: 100%;
     }
@@ -187,10 +197,10 @@
     #filters-section-wrapper {
         position: absolute;
         top: 0;
-        right: calc(100% - 0.5rem);
+        right: calc(100% - 0.5rem + 1px);
         z-index: 1;
         pointer-events: all;
-        box-shadow: -4px 6px 12px rgba(0, 0, 0, 0.175);
+        box-shadow: -4px 0px 12px var(--container-shadow);
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
     }
@@ -277,7 +287,7 @@
         display: flex;
         flex-direction: column;
         max-height: 100%;
-        box-shadow: -4px 6px 12px rgba(0, 0, 0, 0.175);
+        /* box-shadow: -4px 6px 12px var(--container-shadow); */
         border: 1px solid var(--border);
         box-sizing: border-box;
     }

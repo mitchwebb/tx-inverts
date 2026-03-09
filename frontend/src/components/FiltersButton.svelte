@@ -34,7 +34,7 @@
 <style>
     .counted-button.open {
         background-color: var(--container-back);
-        box-shadow: inset 0 4px 10px var(--container-shadow);
+        box-shadow: inset 0 2px 5px var(--container-shadow);
     }
     .counted-button-wrapper {
         height: 100%;

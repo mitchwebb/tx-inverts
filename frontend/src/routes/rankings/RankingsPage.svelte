@@ -35,7 +35,8 @@
         { label: 'Class', sortKey: 'class' },
         { label: 'Order', sortKey: 'order' },
         { label: 'Family', sortKey: 'family' },
-        { label: 'Taxon Rank', sortKey: 'taxon_rank' },
+        // { label: 'Genus', sortKey: 'genus' },
+        // { label: 'Taxon Rank', sortKey: 'taxon_rank' },
     ]);
 
     function setActiveTaxon(e: MouseEvent) {
@@ -180,9 +181,9 @@
                         <div class="taxon-rank-label">
                             {taxon.family}
                         </div>
-                        <div class="taxon-rank-label">
-                            {capitalizeWords(taxon.taxon_rank)}
-                        </div>
+                        <!-- <div class="taxon-rank-label">
+                            {taxon.genus}
+                        </div> -->
                     {/snippet}
                 </VirtualizedTable>
                 <button
@@ -245,11 +246,11 @@
         flex-grow: 1;
         display: flex;
         flex-direction: column;
-        background-color: var(--container-back);
+        background-color: var(--container-mid);
         border-radius: 3px;
         justify-content: baseline;
         border: 1px solid var(--border);
-        box-shadow: inset 0px 1px 10px var(--container-shadow);
+        /* box-shadow: inset 0px 1px 10px var(--container-shadow); */
         transition: all 0.1 ease-in-out;
         box-sizing: border-box;
         gap: 0.25rem;

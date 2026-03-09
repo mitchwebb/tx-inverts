@@ -164,6 +164,7 @@ export type TaxonNodeType = {
     class: string | null;
     order: string | null;
     family: string | null;
+    genus: string | null;
     us_invasive: boolean | null;
 };
 

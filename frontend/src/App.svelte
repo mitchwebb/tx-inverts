@@ -12,7 +12,7 @@
     import { loadBackbone } from './lib/taxa';
     import { loadDataProviders } from './lib/occurrence';
 
-    // TODO: Logic for getting browser theme
+    // TODO: Logic for getting browser theme/determine a light color scheme
     let isDarkTheme = $state(true);
 
     // Load taxaTree and dataProviders structures on mount

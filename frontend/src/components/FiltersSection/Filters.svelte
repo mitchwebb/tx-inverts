@@ -70,18 +70,8 @@
         </div>
     </div>
 </div>
-<div id="border-coverup"></div>
 
 <style>
-    #border-coverup {
-        height: 1px;
-        width: 0.5rem;
-        position: absolute;
-        right: 0;
-        top: calc(100% - 1px);
-        z-index: 800;
-        background-color: var(--container-back);
-    }
     .filters-content-wrapper {
         overflow-y: auto;
         width: 100%;
@@ -92,12 +82,11 @@
         padding: 0.5rem;
         gap: 0.5rem;
         background-color: var(--container-back);
-        border-top: 1px solid var(--border);
-        border-left: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
+        border: 1px solid var(--border);
         position: relative;
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
+        border-bottom-right-radius: 3px;
         /* max-width: 500px; */
         min-width: 300px;
         max-height: 475px;
