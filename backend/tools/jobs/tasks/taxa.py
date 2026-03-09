@@ -344,7 +344,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
 
     # Calcuate ranks for all taxa (with and without inat)
     for index, taxon_id in enumerate(taxa_to_update):
-        data_logger.debug(index + 1, f'of {total}')
+        data_logger.debug(f'{index + 1} of {total}')
 
         ranks = []
 

@@ -265,7 +265,7 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     return df
 
 
-def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Generator[DataFrame]:
+def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Generator[DataFrame, None, None]:
     """
     Take an unclean dwc observations file and process it in chunks
     into a format suitable for txinverts database insertion.
