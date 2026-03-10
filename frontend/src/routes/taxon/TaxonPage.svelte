@@ -247,7 +247,13 @@
         onkeydown={null}
     >
         {#each rankColumns as rank, i}
-            <div class="taxon-rank grid-item" style:grid-column={i + 1}>
+            <!-- Flag last header for styling -->
+            {@const last = i == rankColumns.length - 1}
+            <div
+                class="taxon-rank-header grid-item"
+                class:last
+                style:grid-column={i + 1}
+            >
                 {capitalizeWords(rank)}
             </div>
         {/each}
@@ -451,7 +457,7 @@
     .horizontal-line {
         border-bottom: 1px solid var(--border);
     }
-    .taxon-rank {
+    .taxon-rank-header {
         position: sticky;
         top: 0;
         z-index: 2;
@@ -459,11 +465,12 @@
         text-align: left;
         background-color: var(--container-highlight);
         padding: 1rem 0.5rem 0.5rem 0.5rem;
-        /* box-shadow: 0px 2px 0px 0px var(--container-shadow); */
-        border-right: 1px solid var(--container-shadow);
         border-bottom: 1px solid var(--container-shadow);
         font-weight: 600;
         user-select: none;
+    }
+    .taxon-rank-header:not(.last) {
+        border-right: 1px solid var(--container-shadow);
     }
     #taxon-page-body {
         height: 100%;
@@ -472,9 +479,6 @@
         grid-auto-rows: max-content;
         border-radius: 3px;
         justify-content: baseline;
-        border: 1px solid var(--border);
-        /* padding-bottom: 1rem; */
-        /* box-shadow: inset 0px 1px 10px var(--container-shadow); */
         transition: all 0.1 ease-in-out;
         cursor: grab;
         box-sizing: border-box;

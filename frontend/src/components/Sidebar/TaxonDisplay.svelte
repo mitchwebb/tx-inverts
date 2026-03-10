@@ -1,18 +1,12 @@
 <script lang="ts">
-    // import DownloadIcon from '../../assets/DownloadIcon.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
     import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
-    import { getModalContext } from '../../contexts/modalContext';
     import { isItalicizedRank } from '../../util/taxa';
     import { capitalizeWords } from '../../util/textHelpers';
-    // import DownloadOccurrenceForm from '../DownloadOccurrenceForm.svelte';
-
     const taxonContext = getActiveTaxonContext();
     const taxonInfo = $derived(taxonContext.taxonInfo);
-
-    const modalContext = getModalContext();
 
     // Tie loading visuals to taxonContext.taxonLoading
     const isLoading = $derived(taxonContext.taxonLoading);
@@ -25,7 +19,7 @@
     const taxonNotAccepted = $derived(taxonInfo.taxonomicStatus !== 'accepted');
 </script>
 
-<div id="sidebar-main-header" class="sidebar-section sidebar-header">
+<div id="sidebar-main-header" class="sidebar-header sidebar-section">
     {#if taxonContext.taxonError}
         <div id="taxon-error">Requested Taxon Not Found</div>
     {:else}
@@ -109,23 +103,23 @@
 </div>
 
 <style>
-    #observations-download-section {
+    /* #observations-download-section {
         display: flex;
         gap: 0.5rem;
         width: 100%;
         justify-content: space-between;
         align-items: center;
         margin-top: 0.5rem;
-    }
-    .observation-count {
+    } */
+    /* .observation-count {
         font-size: 1rem;
-    }
-    .download-button {
+    } */
+    /* .download-button {
         box-sizing: border-box;
         height: 1.5rem;
         width: 1.5rem;
         padding: 0;
-    }
+    } */
     #sidebar-main-header {
         display: flex;
         flex-direction: column;

@@ -198,19 +198,22 @@
 </DefaultPage>
 
 <style>
+    #rankings-page-body:hover #download-rankings-button {
+        opacity: 0.6;
+    }
     .rankings-loading {
         margin: 0.5rem;
     }
     #download-rankings-button {
         height: 2.5rem;
         position: absolute;
-        right: 0;
-        bottom: 0;
-        opacity: 0.6;
+        right: 5px;
+        bottom: 5px;
+        opacity: 0.4;
         transition: opacity ease-in-out 0.1s;
     }
     #download-rankings-button:hover {
-        opacity: 1;
+        opacity: 1 !important;
     }
     .no-species-error {
         margin: 1rem;
@@ -244,16 +247,10 @@
     #rankings-page-body {
         height: 100%;
         flex-grow: 1;
-        display: flex;
-        flex-direction: column;
         background-color: var(--container-mid);
         border-radius: 3px;
-        justify-content: baseline;
-        border: 1px solid var(--border);
-        /* box-shadow: inset 0px 1px 10px var(--container-shadow); */
         transition: all 0.1 ease-in-out;
         box-sizing: border-box;
-        gap: 0.25rem;
         color: var(--text-default);
         overflow-y: hidden;
     }

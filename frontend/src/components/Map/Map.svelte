@@ -33,11 +33,10 @@
         clearTargetFeatures,
         handleLegendHover,
     } from '../../lib/map/mapFeatures';
-    import { toggleLayer } from '../../util/handleMapLayerToggle';
 
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
     // Contexts & reactive state
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
 
     let map: mapboxgl.Map;
 
@@ -58,9 +57,9 @@
     // Logical center of the map (Texas)
     let center: mapboxgl.LngLatLike = $state([-100.0, 31.3]);
 
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
     // Layer visibility & management
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
 
     mapContext.isLayerGroupActive = function (groupID: LayerGroupID) {
         const layerIDs = layerGroups[groupID];
@@ -123,9 +122,9 @@
         }
     };
 
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
     // Tooltip management
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
 
     // Add mouse handlers, tooltips, etc...
     let tooltip = new mapboxgl.Popup({
@@ -142,9 +141,9 @@
         });
     }
 
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
     // Map initialization & onLoad
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
 
     $effect(() => {
         map = new mapboxgl.Map({
@@ -158,6 +157,7 @@
 
         map.on('load', () => {
             mapReady = true;
+            map.dragRotate.disable();
             // Iterate through allMapLayers and add them to the map
             for (const layerBundle of allMapLayers as LayerBundle[]) {
                 // Skip deferred layers
@@ -176,9 +176,9 @@
                 mapContext.setLayerVisibility(layerID, isVisible, false);
             }
 
-            // ─────────────────────────────────────────────
+            // ---------------------------------------------
             // Mouse movement and hover handling
-            // ─────────────────────────────────────────────
+            // ---------------------------------------------
 
             // Logic for handling hover states
             map.on('mousemove', (e) => {
@@ -250,9 +250,9 @@
                     : null;
             });
 
-            // ─────────────────────────────────────────────
+            // ---------------------------------------------
             // Mouse click and tooltip handling
-            // ─────────────────────────────────────────────
+            // ---------------------------------------------
 
             // Logic for handling select states and tooltips
             map.on('click', (e) => {
@@ -328,9 +328,9 @@
         });
     });
 
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
     // Reactive layer updates (filters, taxon changes)
-    // ─────────────────────────────────────────────
+    // ---------------------------------------------
 
     const tileLayers = [...observationsLayer.layers];
 

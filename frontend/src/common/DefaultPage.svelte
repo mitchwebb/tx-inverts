@@ -20,24 +20,43 @@
         {@render children?.()}
     </div>
     {#if showSidebar}
-        <Sidebar />
+        <div id="default-sidebar-wrapper">
+            <div id="filters-border-coverup"></div>
+            <Sidebar />
+        </div>
     {/if}
 </div>
 
 <style>
+    #default-sidebar-wrapper {
+        position: relative;
+    }
+    #filters-border-coverup {
+        position: absolute;
+        height: 100%;
+        width: 0.5rem;
+        left: -0.5rem;
+        top: 0;
+        z-index: 5;
+        background-color: var(--container-back);
+        border-radius: 3px;
+        pointer-events: none;
+    }
     .page-wrapper {
         height: 100%;
         width: 100%;
         background-color: var(--container-back);
-        padding: 10px;
         display: flex;
         box-sizing: border-box;
         gap: 0.5rem;
+        padding: 0.5rem;
     }
     .body-wrapper {
         flex-grow: 1;
         flex-shrink: 1;
         box-sizing: border-box;
         overflow: auto;
+        border-radius: 3px;
+        border: 1px solid var(--border);
     }
 </style>

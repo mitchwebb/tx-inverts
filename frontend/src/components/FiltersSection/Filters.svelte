@@ -82,12 +82,11 @@
         padding: 0.5rem;
         gap: 0.5rem;
         background-color: var(--container-back);
-        border: 1px solid var(--border);
-        position: relative;
+        border-left: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
         border-bottom-right-radius: 3px;
-        /* max-width: 500px; */
         min-width: 300px;
         max-height: 475px;
     }

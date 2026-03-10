@@ -40,17 +40,14 @@
 </script>
 
 <div
-    class={['sidebar-foldout', { open }, customClass]}
+    class={['sidebar-foldout', 'sidebar-section', { open }, customClass]}
     class:loading-blink={isLoading}
 >
     <div
         role="button"
         tabindex="0"
         aria-expanded={open}
-        class={[
-            'sidebar-foldout-header sidebar-header sidebar-section',
-            { open },
-        ]}
+        class={['sidebar-foldout-header sidebar-header', { open }]}
         class:filters-active={activeFilters}
         onclick={() => (open = !open)}
         onkeydown={handleKey}
@@ -129,9 +126,7 @@
     .sidebar-foldout {
         width: 100%;
         background-color: var(--container-highlight);
-        border-width: 1px;
-        border-style: solid;
-        border-color: var(--border);
+        border: 1px solid var(--border);
         transition: opacity 0.2s ease-in-out;
         box-sizing: border-box;
     }

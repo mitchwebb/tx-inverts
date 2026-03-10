@@ -409,10 +409,13 @@
     .virtualized-table-headers {
         display: grid;
         background-color: var(--container-highlight);
+        border-bottom: 1px solid var(--container-shadow);
         justify-content: start;
         width: 100%;
         overflow-x: hidden;
         flex-shrink: 0;
+        box-sizing: border-box;
+        height: 45px;
     }
     button.column-header {
         margin: unset;
@@ -426,7 +429,6 @@
         width: 100%;
         box-sizing: border-box;
         border-right: 1px solid var(--container-shadow);
-        border-bottom: 1px solid var(--container-shadow);
         overflow: hidden;
     }
     .column-header {
@@ -434,6 +436,7 @@
         text-align: left;
         font-weight: 600;
         justify-content: space-between;
+        box-sizing: border-box;
         align-items: center;
         width: 100%;
         height: 100%;
@@ -464,7 +467,6 @@
         padding: 0 0.5rem;
         overflow: hidden;
         text-overflow: ellipsis;
-        /* background-color: var(--container-back); */
     }
     .spacer {
         position: relative;

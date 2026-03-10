@@ -19,7 +19,6 @@
         getRouterContext,
         type RouterPath,
     } from '../../contexts/routerContext';
-    import { getModalContext } from '../../contexts/modalContext';
 
     type SidebarProps = {
         showTaxonDisplay?: boolean;
@@ -34,7 +33,6 @@
     const sidebarContext = getSidebarContext();
     const filtersContext = getFiltersContext();
     const routerContext = getRouterContext();
-    const modalContext = getModalContext();
 
     // Casting here is a quick fix, but doesn't guard for the future
     // Adding new routes in the future COULD cause issues
@@ -138,8 +136,8 @@
             <Filters bind:filtersOpen />
         </div>
     {/if}
+    <div id="filters-coverup"></div>
     <div id="sidebar">
-        <div id="filters-coverup"></div>
         <button
             aria-label="resize containers"
             class="resize-bar"
@@ -179,14 +177,18 @@
 </div>
 
 <style>
+    :global(.sidebar-section) {
+        border-radius: 3px;
+    }
     #filters-coverup {
         position: absolute;
         height: 100%;
-        left: calc(0.5rem - 3px);
+        left: -0.5rem;
         top: 0;
-        width: 2px;
+        width: 0.5rem;
         z-index: 5;
         background-color: var(--container-back);
+        border-radius: 3px;
     }
     #filters-button-wrapper {
         height: 100%;
@@ -196,11 +198,10 @@
     }
     #filters-section-wrapper {
         position: absolute;
-        top: 0;
-        right: calc(100% - 0.5rem + 1px);
+        top: -0.5rem;
+        right: calc(100%);
         z-index: 1;
         pointer-events: all;
-        box-shadow: -4px 0px 12px var(--container-shadow);
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
     }
@@ -225,7 +226,7 @@
         transition: all 0.1s ease-in-out;
         border: none;
         position: absolute;
-        left: -0.5rem;
+        left: -1rem;
         top: 0;
         z-index: 750;
         pointer-events: all;
@@ -266,7 +267,8 @@
         grid-column: 2;
         grid-row: 1 / 4;
         width: 100%;
-        height: 100%;
+        height: fit-content;
+        max-height: 100%;
         flex-shrink: 0;
         z-index: 2;
         display: flex;
@@ -274,6 +276,8 @@
         gap: 1rem;
         color: var(--text-default);
         hyphens: manual;
+        border-radius: 3px;
+        box-sizing: border-box;
     }
     #sidebar {
         position: relative;
@@ -281,15 +285,11 @@
         pointer-events: auto;
         flex-direction: column;
         color: var(--text-default);
-        background-color: var(--container-back);
-        padding: 0.5rem;
-        border-radius: 3px;
         display: flex;
         flex-direction: column;
         max-height: 100%;
-        /* box-shadow: -4px 6px 12px var(--container-shadow); */
-        border: 1px solid var(--border);
         box-sizing: border-box;
+        border-radius: 3px;
     }
     #sidebar-content-wrapper {
         display: flex;

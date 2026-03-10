@@ -129,8 +129,7 @@
         gap: 2rem;
         z-index: 100;
         color: var(--text-default);
-        border-bottom: 1px solid var(--border);
-        box-shadow: 0px 0px 2px var(--container-shadow);
+        box-shadow: 0px 0px 4px var(--container-shadow);
         justify-content: space-between;
         position: sticky;
     }
