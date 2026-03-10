@@ -112,7 +112,10 @@ export async function loadBackbone() {
         const json = await response.json();
         const result: TaxonNodeType[] = json.taxa;
         if (result) {
-            taxaTree.set(result);
+            const taxaMap = new Map(
+                result.map((node) => [node.taxon_id, node])
+            );
+            taxaTree.set(taxaMap);
         }
         return;
     } catch (error) {

@@ -46,5 +46,6 @@
         background-color: var(--container-back);
         padding: 0.5rem;
         box-sizing: border-box;
+        box-shadow: 0px 2px 4px 0px var(--container-shadow);
     }
 </style>

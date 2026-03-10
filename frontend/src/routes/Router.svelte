@@ -1,7 +1,10 @@
 <script lang="ts">
     import { onMount, type Component } from 'svelte';
     import MapPage from './map/MapPage.svelte';
-    import { getRouterContext, type RouterPath } from '../contexts/routerContext';
+    import {
+        getRouterContext,
+        type RouterPath,
+    } from '../contexts/routerContext';
     import TaxonPage from './taxon/TaxonPage.svelte';
     import RankingPage from './rankings/RankingsPage.svelte';
     import { routerSyncedKeys } from '../constants/router';
@@ -53,15 +56,18 @@
         for (const { getContext, keys } of Object.values(routerSyncedKeys)) {
             const context = getContext();
             for (const [contextKey, { param, codec }] of Object.entries(keys)) {
-                // If param is irrelevant, set to null
                 // TODO: Is there anything dangerous about this?
                 // TODO: It implies all params CAN be null. Should this be true?
+                // If param is irrelevant, set to null
                 if (!relevantParams.includes(param)) {
                     (context as any)[contextKey] = null;
                 }
+                // Get param value
                 const value = (context as any)[contextKey];
+                // Convert to URL string
                 const serialized = codec.toURL(value);
                 if (!serialized) continue;
+                // Add to collected URL params
                 for (const v of serialized) params.append(param, v);
             }
         }

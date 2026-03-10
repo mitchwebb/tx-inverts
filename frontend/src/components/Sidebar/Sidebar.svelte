@@ -204,6 +204,7 @@
         pointer-events: all;
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
+        box-shadow: -4px 3px 4px 0px var(--container-shadow);
     }
     #search-and-filter-section {
         display: flex;

@@ -95,12 +95,9 @@
         const set = new Set(openNodes);
         let currentID = taxonID;
 
-        const taxaMap = new Map<number, TaxonNodeType>();
-        $taxaTree?.forEach((node) => taxaMap.set(node.taxon_id, node));
-
         while (currentID) {
             set.add(currentID);
-            const currentNode = taxaMap.get(currentID);
+            const currentNode = $taxaTree?.get(currentID);
             if (!currentNode || !currentNode.parent_name_usage_id) break;
             currentID = currentNode.parent_name_usage_id;
         }
@@ -190,6 +187,15 @@
 
         window.addEventListener('mouseup', endWindowDrag);
         window.addEventListener('mousemove', dragToScroll);
+    }
+
+    // Determine if passed taxonID is a parent node in the taxaTree
+    function taxonIsParent(id: number): boolean {
+        if (!$taxaTree) return false;
+        for (const node of $taxaTree.values()) {
+            if (node.parent_name_usage_id === id) return true;
+        }
+        return false;
     }
 
     // Parse visible nodes tree every render based on dependencies
@@ -282,9 +288,7 @@
                 <!-- Determine if we need a horizontal line -->
                 {@const showHorizontalLine = offset > 0}
                 <!-- Check if node has children -->
-                {@const hasChildren = $taxaTree.some(
-                    (n) => n.parent_name_usage_id === node.taxon_id
-                )}
+                {@const hasChildren = taxonIsParent(node.taxon_id)}
                 {@const nsRank =
                     filtersContext.includeINat !== false
                         ? node.ns_rank_state

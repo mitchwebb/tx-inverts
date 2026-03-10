@@ -3,6 +3,7 @@ import type { ActiveTaxonState } from '../contexts/activeTaxonContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawDateRange } from '../types/api';
 
+// Get observation counts for each provider for current taxon
 export async function getProviderCounts(
     activeTaxonID: ActiveTaxonState['taxonID'],
     includeINat: FiltersState['includeINat'],

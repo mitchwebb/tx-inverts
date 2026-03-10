@@ -7,7 +7,6 @@
     import NSCircle from '../../common/NSCircle.svelte';
     import MagnifyIcon from '../../assets/MagnifyIcon.svelte';
     import { getAllChildrenNodes } from '../../util/taxonNodes';
-    import { capitalizeWords } from '../../util/textHelpers';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import DefaultPage from '../../common/DefaultPage.svelte';
     import VirtualizedTable from '../../common/VirtualizedTable.svelte';
@@ -65,24 +64,22 @@
                 ? 'ns_rank_state'
                 : 'ns_rank_state_no_inat';
 
-        const taxaMap = new Map<Number, TaxonNodeType>();
+        const filteredMap = new Map<number, TaxonNodeType>();
 
         for (const taxonID of Object.keys(filterTaxa).map(Number)) {
-            const parentNode = $taxaTree.find(
-                (node) => node.taxon_id === taxonID
-            );
+            const parentNode = $taxaTree.get(taxonID);
 
             if (!parentNode) continue;
 
-            taxaMap.set(parentNode.taxon_id, parentNode);
+            filteredMap.set(parentNode.taxon_id, parentNode);
 
             const children = getAllChildrenNodes($taxaTree, taxonID);
             for (const child of children) {
-                taxaMap.set(child.taxon_id, child);
+                filteredMap.set(child.taxon_id, child);
             }
         }
 
-        let newTaxa = Array.from(taxaMap.values()).filter((taxonNode) =>
+        let newTaxa = Array.from(filteredMap.values()).filter((taxonNode) =>
             ['species'].includes(taxonNode.taxon_rank)
         );
 

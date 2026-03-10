@@ -6,7 +6,7 @@
     } from '../contexts/mapContext';
     import HeaderBar from '../components/HeaderBar.svelte';
     import {
-    EMPTY_NS_VALUES,
+        EMPTY_NS_VALUES,
         EMPTY_TAXON_INFO,
         getActiveTaxonContext,
         initialTaxonState,
@@ -53,6 +53,7 @@
         setMetricsContext,
         type MetricsParams,
     } from '../contexts/metricsParamsContext';
+    import type { Provider, ProviderCode } from '../constants/mapLegendKeys';
 
     // Intialize contexts
     const taxonState: ActiveTaxonState = $state(initialTaxonState);
@@ -79,6 +80,7 @@
     const metricsParamsState: MetricsParams = $state(initialMetricsState);
     setMetricsContext(metricsParamsState);
 
+    // Set initial URL in context for parsing into various contexts
     onMount(() => {
         const url = new URL(window.location.href);
         routerContext.url = url;
@@ -90,6 +92,8 @@
         if (activeTaxonID && activeTaxonID !== taxonContext.lastLoadedID) {
             taxonContext.taxonLoading = true;
             taxonContext.taxonError = false;
+
+            // Clear taxonInfo and nSValues in context
             taxonContext.taxonInfo = EMPTY_TAXON_INFO;
             taxonContext.nSValues = EMPTY_NS_VALUES;
 
@@ -183,6 +187,18 @@
                         ),
                         getObservationDates(activeTaxonID, includeINat),
                     ]);
+                    // If publishers are already selected, but they do not have this taxon,
+                    // make sure to include them in the provider counts with a value of 0
+                    if (filtersContext.dataProviders && providerCounts) {
+                        const existingProviders = new Set(
+                            Object.keys(providerCounts)
+                        );
+                        for (const provider of filtersContext.dataProviders) {
+                            if (!existingProviders.has(provider)) {
+                                providerCounts[provider] = 0;
+                            }
+                        }
+                    }
                     taxonContext.providerCounts = providerCounts;
 
                     if (dateRange) {

@@ -4,11 +4,11 @@ import type { TaxonNodeType } from '../types/api';
 
 // Create nested visible notes for render
 export function getVisibleNodes(
-    flatList: TaxonNodeType[],
+    flatMap: Map<number, TaxonNodeType>,
     openSet: Set<number>
 ): TaxonNodeType[] {
     const visible: TaxonNodeType[] = [];
-    const childrenByParent = getNestedTree(flatList);
+    const childrenByParent = getNestedTree(flatMap);
 
     function addChildren(parent_id: number | null) {
         for (const child of childrenByParent[parent_id ?? -1] || []) {
@@ -24,21 +24,24 @@ export function getVisibleNodes(
     return visible;
 }
 
-export function getNestedTree(flatList: TaxonNodeType[]) {
+export function getNestedTree(
+    flatMap: Map<number, TaxonNodeType>
+): Record<number, TaxonNodeType[]> {
     const childrenByParent: Record<number, TaxonNodeType[]> = {};
 
     // Group nodes by parent_id
-    for (const node of flatList) {
-        if (!childrenByParent[node.parent_name_usage_id ?? -1]) {
-            childrenByParent[node.parent_name_usage_id ?? -1] = [];
+    for (const node of flatMap.values()) {
+        const parentID = node.parent_name_usage_id ?? -1;
+        if (!childrenByParent[parentID]) {
+            childrenByParent[parentID] = [];
         }
-        childrenByParent[node.parent_name_usage_id ?? -1].push(node);
+        childrenByParent[parentID].push(node);
     }
     return childrenByParent;
 }
 
 export function getAllChildrenNodes(
-    flatList: TaxonNodeType[],
+    flatList: Map<number, TaxonNodeType>,
     parentID: number
 ): TaxonNodeType[] {
     const result: TaxonNodeType[] = [];
