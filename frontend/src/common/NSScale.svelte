@@ -29,6 +29,7 @@
 <style>
     .nature-serve-scale {
         width: 100%;
+        max-width: 350px;
         display: flex;
         flex-wrap: nowrap;
         align-items: center;

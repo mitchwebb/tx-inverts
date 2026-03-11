@@ -1,0 +1,97 @@
+<!-- Styled, reusable AirDatepicker Element for Svelte -->
+
+<script lang="ts">
+    import { onMount } from 'svelte';
+    import AirDatepicker, {
+        type AirDatepickerOptions,
+        type AirDatepickerPositionCallback,
+    } from 'air-datepicker';
+    import localeEn from 'air-datepicker/locale/en';
+    import 'air-datepicker/air-datepicker.css';
+
+    let inputEl: HTMLInputElement;
+
+    export type AirDatepickerPayload = {
+        date: Date | Date[];
+        formattedDate: string | string[];
+        datepicker: AirDatepicker;
+    };
+
+    type DatePickerProps = {
+        id: string;
+        hiddenInput?: boolean;
+        placeholder?: string;
+        value?: string | Date | null;
+    } & AirDatepickerOptions;
+
+    const {
+        id,
+        hiddenInput = false,
+        placeholder = '',
+        value,
+        ...props
+    }: DatePickerProps = $props();
+
+    let datepicker: AirDatepicker | null = $state(null);
+
+    const positionCalendar: AirDatepickerPositionCallback = ({
+        $datepicker,
+        $target,
+        $pointer,
+        // done,
+    }) => {
+        console.warn($datepicker, $target, $pointer);
+        const { top, left, height } = $target.getBoundingClientRect();
+        const dpHeight = $datepicker.offsetHeight;
+
+        const margin = 10;
+
+        const spaceBelow = window.innerHeight - top - height;
+        const spaceAbove = top;
+        const showAbove = spaceBelow < dpHeight && spaceAbove >= dpHeight;
+
+        $datepicker.style.left = `${left + window.scrollX}px`;
+        $datepicker.style.top = showAbove
+            ? `${top + window.scrollY - dpHeight - margin}px`
+            : `${top + window.scrollY + height + margin}px`;
+    };
+
+    $effect(() => {
+        if (!datepicker) return;
+
+        if (value) {
+            datepicker.selectDate(value);
+        } else {
+            datepicker.clear();
+        }
+    });
+
+    onMount(() => {
+        if (inputEl) {
+            datepicker = new AirDatepicker(inputEl, {
+                locale: localeEn,
+                position: positionCalendar,
+                ...props,
+            });
+            // return () => datepicker.destroy();
+        }
+        return;
+    });
+</script>
+
+<input
+    {id}
+    class:hidden-input={hiddenInput}
+    bind:this={inputEl}
+    class="datepicker"
+    {placeholder}
+/>
+
+<style>
+    .hidden-input {
+        display: none;
+    }
+    input {
+        color: var(--text-default);
+    }
+</style>

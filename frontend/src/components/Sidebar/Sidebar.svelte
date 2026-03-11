@@ -90,11 +90,17 @@
         const target = e.target as Node;
         const portal = document.querySelector('#portal-root');
 
+        // Container from AirDatepicker, used in date filter
+        const datepickerContainer = document.querySelector(
+            '.air-datepicker-global-container'
+        );
+
         // Don't react if click is on the filters element, button, or portal in general
         if (
             filtersElement?.contains(target) ||
             filtersButtonElement?.contains(target) ||
-            portal?.contains(target)
+            portal?.contains(target) ||
+            datepickerContainer?.contains(target)
         )
             return;
 
@@ -183,9 +189,9 @@
     #filters-coverup {
         position: absolute;
         height: 100%;
-        left: -0.5rem;
+        left: -0.25rem;
         top: 0;
-        width: 0.5rem;
+        width: 0.25rem;
         z-index: 5;
         background-color: var(--container-back);
         border-radius: 3px;

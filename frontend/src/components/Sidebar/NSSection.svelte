@@ -332,6 +332,8 @@
         justify-content: center;
     }
     .rank-scale {
+        display: flex;
+        justify-content: center;
         margin-bottom: 0.5rem;
     }
 </style>

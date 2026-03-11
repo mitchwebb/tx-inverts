@@ -6,7 +6,6 @@
 <script lang="ts">
     import Sidebar from './Sidebar/Sidebar.svelte';
     import { getActiveTaxonContext } from '../contexts/activeTaxonContext';
-    import { getSidebarContext } from '../contexts/sidebarContext';
     import MapToolbar from './MapToolbar/MapToolbar.svelte';
 
     const taxonContext = getActiveTaxonContext();
@@ -35,7 +34,7 @@
         pointer-events: none; /* Prevents the overlay from blocking mouse events */
         display: grid;
         grid-template-rows: 33px 1fr;
-        gap: 2px;
+        /* gap: 2px; */
         position: relative;
         z-index: 2;
         box-sizing: border-box;

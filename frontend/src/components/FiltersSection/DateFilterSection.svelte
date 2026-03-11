@@ -1,15 +1,27 @@
 <script lang="ts">
-    import RangeInput from '../../common/RangeInput.svelte';
     import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
+    import DatePicker, {
+        type AirDatepickerPayload,
+    } from '../../common/DatePicker.svelte';
 
     const filtersContext = getFiltersContext();
     const taxonContext = getActiveTaxonContext();
 
-    function handleDate(start: string | null, end: string | null) {
-        filtersContext.dateStart = start;
-        filtersContext.dateEnd = end;
+    function handleStartDate({ formattedDate }: AirDatepickerPayload) {
+        filtersContext.dateStart = (formattedDate as string) || null;
     }
+
+    function handleEndDate({ formattedDate }: AirDatepickerPayload) {
+        filtersContext.dateEnd = (formattedDate as string) || null;
+    }
+
+    const minDate = $derived(
+        taxonContext.dateMin ? new Date(taxonContext.dateMin) : undefined
+    );
+    const maxDate = $derived(
+        taxonContext.dateMax ? new Date(taxonContext.dateMax) : undefined
+    );
 </script>
 
 <div
@@ -20,20 +32,36 @@
         <span>Dates</span>
     </div>
     <div class="filters-section-content">
-        <RangeInput
-            startValue={filtersContext.dateStart}
-            endValue={filtersContext.dateEnd}
-            type="date"
-            handler={handleDate}
-            customClass="date-range-filter"
-            max={taxonContext.dateMax}
-            min={taxonContext.dateMin}
-        />
+        <div class="date-filters-wrapper">
+            <DatePicker
+                onSelect={handleStartDate}
+                id="date-start-filter"
+                startDate={minDate}
+                {minDate}
+                buttons={'clear'}
+                value={filtersContext.dateStart}
+                placeholder={`${minDate?.toLocaleDateString()} (Min Date)`}
+            />
+            <span> to </span>
+            <DatePicker
+                onSelect={handleEndDate}
+                id="date-end-filter"
+                startDate={maxDate}
+                {maxDate}
+                buttons={'clear'}
+                value={filtersContext.dateEnd}
+                placeholder={`${maxDate?.toLocaleDateString()} (Max Date)`}
+            />
+        </div>
     </div>
 </div>
 
 <style>
-    .date-filters-section {
-        min-width: 275px;
+    .filters-section-header {
+        width: 100%;
+    }
+    .date-filters-wrapper {
+        display: flex;
+        gap: 1rem;
     }
 </style>

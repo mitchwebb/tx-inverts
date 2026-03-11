@@ -123,8 +123,10 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, 
                             async for chunk in response.content.iter_chunked(chunk_size):
                                 f.write(chunk)
                                 downloaded += len(chunk)
-                                data_logger.debug(
-                                    f"\rDownloaded {downloaded / (1024 * 1024):.2f} MB")
+                                # Log download progress in 50MB chunks
+                                if total_size and downloaded % (50 * 1024 * 1024) < chunk_size:
+                                    data_logger.info(
+                                        f"Downloaded {downloaded / (1024*1024):.0f} / {total_size / (1024*1024):.0f} MB")
                         data_logger.info(f'Download complete: {zip_fp}')
                         output_fp = extract_zip_files(zip_fp, os.path.join(
                             output_fp, key), target_files, delete_zip=True)
@@ -152,4 +154,5 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, 
         await asyncio.sleep(waiting_interval)
 
     # If failed within provided time, give up
-    raise (f'No successful response received within {time_to_wait} seconds.')
+    raise TimeoutError(
+        f'No successful response received within {time_to_wait} seconds.')
