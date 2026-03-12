@@ -124,7 +124,8 @@
         background-color: var(--container-fore);
         display: flex;
         align-items: center;
-        width: 100%;
+        width: fit-content;
+        min-width: 100%;
         padding: 0 2rem;
         gap: 2rem;
         z-index: 100;
