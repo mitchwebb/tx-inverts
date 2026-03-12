@@ -318,6 +318,7 @@ async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_prov
                             collection_end_date,
                             ST_Transform(geometry, 3857) AS geom
                         FROM {occurrence_table}
+                        WHERE
                         {occurrence_filter}
                     ),
                     mvt_geom AS (
