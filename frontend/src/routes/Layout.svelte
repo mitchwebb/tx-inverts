@@ -238,7 +238,7 @@
     #layout {
         height: 100%;
         min-height: 500px;
-        min-width: 1000px;
+        min-width: min(1000px, 100%);
         display: flex;
         flex-direction: column;
         position: relative;
