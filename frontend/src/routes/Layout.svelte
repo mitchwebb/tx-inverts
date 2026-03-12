@@ -242,9 +242,10 @@
         display: flex;
         flex-direction: column;
         position: relative;
+        overflow: auto;
     }
     #page-body {
         height: 100%;
-        overflow: auto;
+        /* overflow: auto; */
     }
 </style>
