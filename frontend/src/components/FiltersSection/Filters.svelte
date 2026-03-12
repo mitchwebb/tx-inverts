@@ -88,6 +88,7 @@
         border-bottom-left-radius: 3px;
         border-bottom-right-radius: 3px;
         min-width: 300px;
+        max-width: 500px;
         max-height: 475px;
     }
     #filters-content {

@@ -70,6 +70,9 @@
                                     >
                                         {institutionName || institutionCode}
                                     </div>
+                                    <div class="institution-code">
+                                        {institutionCode}
+                                    </div>
                                     <div class="institution-count">
                                         ({count})
                                     </div>
@@ -105,6 +108,10 @@
         min-width: 0;
         text-overflow: ellipsis;
         overflow: hidden;
+    }
+    .institution-code {
+        /* font-style: italic; */
+        font-weight: 200;
     }
     .data-providers-section {
         display: flex;
