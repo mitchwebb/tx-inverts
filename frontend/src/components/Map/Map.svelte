@@ -153,6 +153,7 @@
             // Offset for the map's starting center
             center: [center[0] + 3, center[1]],
             zoom: 4.7,
+            cooperativeGestures: true,
         });
 
         map.on('load', () => {
