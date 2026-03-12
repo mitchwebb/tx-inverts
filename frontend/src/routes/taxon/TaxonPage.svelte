@@ -398,7 +398,7 @@
         margin-left: 0.5rem;
     }
     .invasive > * {
-        color: goldenrod;
+        color: var(--accent-color);
     }
     #taxa-loading-icon {
         padding: 0.5rem;
@@ -490,5 +490,10 @@
     }
     .leaf .taxon-name {
         padding-left: 0.5rem;
+        vertical-align: middle;
+    }
+
+    .taxon-name > * {
+        vertical-align: middle;
     }
 </style>

@@ -24,6 +24,7 @@
     import { countActiveFilters } from '../../lib/filters.svelte';
     import { calculateNSRank } from '../../lib/natureServe';
     import { getMetricsContext } from '../../contexts/metricsParamsContext';
+    import Dropdown from '../../common/Dropdown.svelte';
 
     const mapContext = getMapContext();
 
@@ -103,9 +104,8 @@
         }
     });
 
-    function aOOGridHandler(e: Event) {
-        const target = e.target as HTMLSelectElement;
-        const gridSize = target.value as '1km2' | '4km2';
+    function aOOGridHandler(value: string) {
+        const gridSize = value as typeof metricsContext.aOOResolution;
         metricsContext.aOOResolution = gridSize;
     }
 
@@ -235,23 +235,14 @@
                             </span>
                         </span>
                         <span id="aoo-grid-select-wrapper">
-                            <select
-                                id="aoo-grid-select"
-                                onchange={aOOGridHandler}
-                            >
-                                <option
-                                    value="1km2"
-                                    selected={aOOGridSize == '1km2'}
-                                >
-                                    1km2
-                                </option>
-                                <option
-                                    value="4km2"
-                                    selected={aOOGridSize == '4km2'}
-                                >
-                                    4km2
-                                </option>
-                            </select>
+                            <Dropdown
+                                options={[
+                                    { value: '1km2', label: '1km2' },
+                                    { value: '4km2', label: '4km2' },
+                                ]}
+                                selected={aOOGridSize}
+                                onChange={aOOGridHandler}
+                            />
                             Grid Cells
                         </span>
                     </div>
@@ -273,6 +264,11 @@
 </SidebarFoldout>
 
 <style>
+    #ns-metrics-section {
+        display: flex;
+        flex-direction: column;
+        /* gap: 0.25rem; */
+    }
     #aoo-text {
         display: flex;
         justify-content: space-between;
@@ -280,18 +276,19 @@
         line-break: unset;
         flex-wrap: wrap;
         column-gap: 0.5rem;
+        align-items: center;
     }
     #aoo-grid-select-wrapper {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
         white-space: nowrap;
-    }
-    #aoo-grid-select {
-        color: var(--text-default);
     }
     :global(.ns-section-wrapper > .sidebar-foldout-content) {
         padding: 0;
     }
     #filter-warning {
-        background-color: goldenrod;
+        background-color: var(--accent-color);
         color: black;
         height: 1rem;
         font-size: 0.75rem;

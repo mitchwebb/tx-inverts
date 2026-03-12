@@ -467,6 +467,7 @@
         padding: 0 0.5rem;
         overflow: hidden;
         text-overflow: ellipsis;
+        align-self: center;
     }
     .spacer {
         position: relative;

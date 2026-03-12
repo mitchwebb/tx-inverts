@@ -17,7 +17,7 @@
 <style>
     svg {
         display: block;
-        width: 100%;
+        /* width: 100%; */
         height: 100%;
         animation: rotation linear 1s infinite;
     }

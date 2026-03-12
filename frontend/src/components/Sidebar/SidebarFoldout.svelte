@@ -29,7 +29,7 @@
         customClass = '',
     }: SidebarFoldoutProps = $props();
 
-    let open = $state(defaultOpen);
+    let open = $derived(defaultOpen);
 
     function handleKey(e: KeyboardEvent) {
         if (e.key === 'Enter' || e.key === ' ') {

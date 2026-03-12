@@ -18,7 +18,7 @@
             '<div> This species has been identified as invasive within the United States </div>';
         tooltipContext.visible = true;
         tooltipContext.target = invasiveIcon;
-        tooltipContext.backgroundColor = 'goldenrod';
+        // tooltipContext.backgroundColor = 'goldenrod';
     }
 
     function handleMouseExit() {
@@ -42,7 +42,7 @@
     onblur={handleMouseExit}
     bind:this={invasiveIcon}
 >
-    <div class="icon">
+    <div>
         <AlertTriangle />
     </div>
 </button>
@@ -55,6 +55,7 @@
         margin: 0;
         padding: 0;
         background-color: transparent;
-        color: goldenrod;
+        color: var(--accent-color);
+        border: none;
     }
 </style>

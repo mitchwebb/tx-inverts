@@ -41,7 +41,7 @@
 
         filtersContext.filteredTaxa = {
             ...currentTaxa,
-            [taxonID]: canonicalName
+            [taxonID]: canonicalName,
         };
     }
 </script>
@@ -58,20 +58,21 @@
             handleSelect={handleSearchSelect}
         />
         {#if filtersContext.filteredTaxa}
-            <div id='taxon-cards-wrapper'>
-            {#each Object.entries(filtersContext.filteredTaxa ?? {}) as [taxonID, canonicalName]}
-                <div class='filtered-taxon-card button'>
-                    <div class='filtered-taxon-name'>
-                        {canonicalName}
+            <div id="taxon-cards-wrapper">
+                {#each Object.entries(filtersContext.filteredTaxa ?? {}) as [taxonID, canonicalName]}
+                    <div class="filtered-taxon-card button">
+                        <div class="filtered-taxon-name">
+                            {canonicalName}
+                        </div>
+                        <button
+                            class="remove-taxon-icon"
+                            data-taxon-id={taxonID}
+                            onclick={handleRemoveTaxon}
+                        >
+                            <XIcon />
+                        </button>
                     </div>
-                    <button 
-                        class='remove-taxon-icon icon'
-                        data-taxon-id={taxonID} 
-                        onclick={handleRemoveTaxon}>
-                        <XIcon/>
-                    </button>
-                </div>
-            {/each}
+                {/each}
             </div>
         {/if}
     </div>
@@ -84,12 +85,12 @@
         border: 1px solid var(--border);
     }
     .filtered-taxon-name {
-        padding: .25rem .5rem;
+        padding: 0.25rem 0.5rem;
     }
     .filters-section-content {
         display: flex;
         flex-direction: column;
-        gap: .5rem;
+        gap: 0.5rem;
     }
     .remove-taxon-icon {
         cursor: pointer;
@@ -100,7 +101,7 @@
     }
     .filtered-taxon-card {
         display: flex;
-        gap: .5rem;
+        gap: 0.5rem;
         background-color: var(--container-mid);
         /* border: 1px solid var(--border); */
         cursor: unset;
@@ -114,5 +115,4 @@
     .filtered-taxon-card:not(:last-child) {
         border-bottom: 1px solid var(--border);
     }
-    
 </style>

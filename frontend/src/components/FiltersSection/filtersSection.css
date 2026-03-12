@@ -6,7 +6,7 @@
     border-radius: 3px;
 }
 .filters-section.active {
-    box-shadow: inset 3px 0px 0px 0px goldenrod;
+    box-shadow: inset 3px 0px 0px 0px var(--accent-color);
 }
 .filters-section-header {
     text-align: left;

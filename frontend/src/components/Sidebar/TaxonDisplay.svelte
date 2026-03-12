@@ -19,7 +19,7 @@
     const taxonNotAccepted = $derived(taxonInfo.taxonomicStatus !== 'accepted');
 </script>
 
-<div id="sidebar-main-header" class="sidebar-header sidebar-section">
+<div id="sidebar-main-header" class="sidebar-header header sidebar-section">
     {#if taxonContext.taxonError}
         <div id="taxon-error">Requested Taxon Not Found</div>
     {:else}
@@ -28,11 +28,11 @@
             class:invasive={taxonInfo.usInvasive}
             class:loading-blink={isLoading}
         >
-            <span id="main-header-name">
+            <div id="main-header-name">
                 {#if taxonInfo.usInvasive}
-                    <span class="invasive-icon icon">
+                    <div class="invasive-icon">
                         <InvasiveIcon />
-                    </span>
+                    </div>
                 {/if}
                 <span
                     class={'scientific-name'}
@@ -40,18 +40,20 @@
                 >
                     {taxonInfo.canonicalName}
                 </span>
-                <span class="authorship subheader thin">
-                    {taxonInfo.scientificNameAuthorship}
-                </span>
+                {#if taxonInfo.scientificNameAuthorship}
+                    <span class="scientific-authorship thin">
+                        {taxonInfo.scientificNameAuthorship}
+                    </span>
+                {/if}
                 {#if taxonInfo.canonicalName}
-                    <span class="gbif-link-button">
+                    <div class="gbif-link-button">
                         <LinkButton
                             href={`https://www.gbif.org/species/${taxonContext.taxonID}`}
                             target="_blank"
                         />
-                    </span>
+                    </div>
                 {/if}
-            </span>
+            </div>
             {#if isLoading}
                 <div class="loading-icon icon">
                     <LoadingIcon />
@@ -120,13 +122,21 @@
         width: 1.5rem;
         padding: 0;
     } */
+    #main-header-name {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        line-height: 1.2rem;
+        font-size: 1.4rem;
+    }
     #sidebar-main-header {
         display: flex;
         flex-direction: column;
         text-align: left;
         gap: 0.5rem;
         position: relative;
-        font-size: 1.5rem;
+        /* font-size: 1.4rem; */
         overflow-wrap: anywhere;
         word-break: normal;
         hyphens: manual;
@@ -136,23 +146,24 @@
         border: 1px solid var(--border);
     }
     #taxon-error {
-        color: goldenrod;
+        color: var(--accent-color);
     }
     .gbif-link-button {
         height: 0.9rem;
         display: inline-block;
         color: var(--fill-color);
+        align-self: flex-start;
     }
     .invasive-icon {
-        display: inline-block;
-        vertical-align: -0.125em;
-        color: goldenrod;
+        height: 1.2rem;
+        width: 1.2rem;
+        color: var(--accent-color);
     }
     .invasive > * {
-        color: goldenrod;
+        color: var(--accent-color);
     }
     .dubious-taxon {
-        color: goldenrod;
+        color: var(--accent-color);
     }
     #main-header-top {
         display: flex;
@@ -181,6 +192,10 @@
     }
     .scientific-name {
         font-weight: 400;
+        flex-shrink: 0;
+    }
+    .scientific-authorship {
+        flex-shrink: 0;
     }
     #taxon-rank {
         opacity: 0.7;

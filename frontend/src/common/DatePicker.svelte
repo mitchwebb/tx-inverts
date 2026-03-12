@@ -42,13 +42,15 @@
     }) => {
         console.warn($datepicker, $target, $pointer);
         const { top, left, height } = $target.getBoundingClientRect();
+        console.warn(top);
         const dpHeight = $datepicker.offsetHeight;
 
         const margin = 10;
 
         const spaceBelow = window.innerHeight - top - height;
+        console.warn(spaceBelow, dpHeight);
         const spaceAbove = top;
-        const showAbove = spaceBelow < dpHeight && spaceAbove >= dpHeight;
+        const showAbove = spaceBelow < dpHeight && spaceAbove > spaceBelow;
 
         $datepicker.style.left = `${left + window.scrollX}px`;
         $datepicker.style.top = showAbove
@@ -92,6 +94,13 @@
         display: none;
     }
     input {
+        padding: 0.5rem;
         color: var(--text-default);
+        background-color: var(--container-back);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+    }
+    input:focus {
+        outline: 1px solid var(--accent-color);
     }
 </style>

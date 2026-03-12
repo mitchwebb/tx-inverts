@@ -26,16 +26,17 @@
     --container-shadow: rgb(19, 26, 31);
     --tooltip-background: rgb(124, 116, 97);
     --fill-color: rgb(219, 188, 122);
+    --accent-color: goldenrod;
     --overlay: rgba(19, 26, 31, 0.8);
 }
 
 :root {
     height: 100%;
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     /* line-height: 1.5; */
     font-weight: 400;
 
-    color-scheme: light dark;
+    /* color-scheme: light dark; */
     color: var(--text-default);
     background-color: var(--container-back);
 
@@ -45,15 +46,35 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-input[type='checkbox']:checked {
-    color: var(--fill-color);
-    accent-color: var(--fill-color);
+@font-face {
+    font-family: 'Inter';
+    src: url('/src/lib/fonts/Inter-VariableFont_opsz,wght.ttf')
+        format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
 }
 
-/* input[type='checkbox'] {
-    background-color: green;
-    accent-color: blue;
+@font-face {
+    font-family: 'Inter';
+    src: url('/src/lib/fonts/Inter-Italic-VariableFont_opsz,wght.ttf')
+        format('truetype');
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* input[type='checkbox']:checked {
+    color: var(--fill-color);
+    accent-color: var(--fill-color);
 } */
+
+input,
+textarea,
+select,
+button {
+    font-family: inherit;
+}
 
 button {
     all: unset;
@@ -123,7 +144,6 @@ a:hover {
 
 body {
     margin: 0;
-    /* display: flex; */
     place-items: center;
     min-width: 320px;
     height: 100%;

@@ -339,12 +339,8 @@
         pointer-events: none;
     }
     .search-close-button {
-        position: absolute;
-        right: 0;
-        top: 0;
-        height: 100%;
-        margin: 0;
-        padding: 0 0.25rem 0 0;
+        padding: 0;
+        margin-right: 0.5rem;
         background-color: unset;
         color: unset;
         border: unset;
@@ -357,13 +353,16 @@
         background-color: var(--container-back);
         margin: 0;
         height: 100%;
-        min-height: 1.75rem;
+        /* min-height: 1.75rem; */
         max-height: 2.5rem;
         position: relative;
         flex-grow: 1;
         max-width: 350px;
         align-items: center;
         box-sizing: border-box;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .invasive-icon {
         display: inline-block;
@@ -372,7 +371,7 @@
         width: 1.5rem;
     }
     .invasive > * {
-        color: goldenrod;
+        color: var(--accent-color);
     }
     .scientific-name {
         display: flex;
@@ -390,6 +389,7 @@
         padding: 0.5rem;
     }
     .taxon-search {
+        min-height: 1.75rem;
         height: 100%;
         width: 100%;
         color: var(--text-default);
@@ -400,6 +400,7 @@
         box-sizing: border-box;
         text-overflow: ellipsis;
         overflow: hidden;
+        /* margin: 0; */
     }
     .taxon-search:focus {
         outline: 1px solid var(--fill-color);
@@ -442,7 +443,7 @@
         border: 1px solid var(--container-shadow);
         box-shadow: 0px 3px 10px 1px var(--container-shadow);
         box-sizing: border-box;
-        z-index: 9999;
+        z-index: 8000;
     }
     .autocomplete-suggestions {
         padding: 0;

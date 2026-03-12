@@ -169,13 +169,13 @@
                                 <MagnifyIcon />
                             </button>
                         </div>
-                        <div class="taxon-rank-label">
+                        <div class="row-text">
                             {taxon.class}
                         </div>
-                        <div class="taxon-rank-label">
+                        <div class="row-text">
                             {taxon.order}
                         </div>
-                        <div class="taxon-rank-label">
+                        <div class="row-text">
                             {taxon.family}
                         </div>
                         <!-- <div class="taxon-rank-label">
@@ -195,6 +195,10 @@
 </DefaultPage>
 
 <style>
+    .row-text {
+        display: flex;
+        /* align-items: center; */
+    }
     #rankings-page-body:hover #download-rankings-button {
         opacity: 0.6;
     }
@@ -228,13 +232,14 @@
         width: fit-content;
     }
     .taxon-icon-wrapper {
-        color: goldenrod;
+        color: var(--accent-color);
     }
     .taxon-name-wrapper {
         text-align: left;
         flex-grow: 1;
         display: flex;
         justify-content: start;
+        align-items: center;
     }
     .virtual-list-wrapper {
         height: 100%;
@@ -257,7 +262,7 @@
         gap: 0.5rem;
     }
     .invasive > * {
-        color: goldenrod;
+        color: var(--accent-color);
     }
     .filler-row {
         height: 1.5rem;

@@ -57,6 +57,7 @@
     }
     :global(#layers-menu) {
         height: 33px;
+        width: 3.5rem;
         grid-row: 1/3;
         justify-content: left;
         pointer-events: none;
@@ -80,6 +81,6 @@
     }
     #map-loading-icon {
         z-index: 50;
-        color: goldenrod;
+        color: var(--accent-color);
     }
 </style>

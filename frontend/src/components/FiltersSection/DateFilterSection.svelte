@@ -22,6 +22,8 @@
     const maxDate = $derived(
         taxonContext.dateMax ? new Date(taxonContext.dateMax) : undefined
     );
+
+    // TODO: Once we add mobile support, AirDatepicker has an isMobile arg
 </script>
 
 <div

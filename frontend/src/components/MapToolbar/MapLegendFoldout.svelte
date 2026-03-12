@@ -32,7 +32,7 @@
         defaultOpen = false,
     }: MapLegendFoldoutProps = $props();
 
-    let open = $state(defaultOpen);
+    let open = $derived(defaultOpen);
 
     const mapContext = getMapContext();
 
@@ -74,10 +74,7 @@
         </span>
     </div>
     {#if open}
-        <div
-            id="foldout-content-{layerID}"
-            class="map-key-foldout-content"
-        >
+        <div id="foldout-content-{layerID}" class="map-key-foldout-content">
             {@render children?.()}
         </div>
     {/if}

@@ -64,5 +64,8 @@
         font-size: 0.8rem;
         color: black;
         font-weight: 550;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 </style>

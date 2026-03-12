@@ -43,7 +43,7 @@
     }
 </script>
 
-<label class={`checkbox-label ${customClass}`}>
+<label class={`container ${customClass}`}>
     <!-- Normal checkbox (hidden if custom icon provided) -->
     <input
         {checked}
@@ -59,6 +59,8 @@
         <span class="checkbox-icon icon">
             {@render checkboxIcon(checked!)}
         </span>
+    {:else}
+        <span class="checkmark"></span>
     {/if}
     <!-- Label content snippet (provided as child) -->
     {#if children}
@@ -69,11 +71,6 @@
 </label>
 
 <style>
-    .checkbox-label {
-        display: flex;
-        gap: 0.5rem;
-        cursor: pointer;
-    }
     .label-content {
         width: 100%;
         min-width: 0;
@@ -84,7 +81,7 @@
         align-items: center;
         justify-content: center;
         pointer-events: none; /* allow clicks to pass through to the hidden checkbox */
-        color: var(--fill-color);
+        color: var(--accent-color);
         transition: color 0.2s ease;
         z-index: 1;
     }
@@ -103,5 +100,60 @@
         transform: translateY(-50%);
         z-index: 5;
         display: none;
+    }
+    .checkbox-label input {
+        padding: 0;
+    }
+    .container {
+        display: flex;
+        gap: 0.5rem;
+        cursor: pointer;
+        display: flex;
+        position: relative;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    .container input {
+        position: relative;
+        opacity: 0;
+        cursor: pointer;
+        height: 1rem;
+        width: 1rem;
+    }
+    .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 1rem;
+        width: 1rem;
+        background-color: var(--container-back);
+        border: 1px solid var(--border);
+    }
+    .container:hover input ~ .checkmark {
+        background-color: var(--container-mid);
+    }
+    .container input:checked ~ .checkmark {
+        background-color: var(--accent-color);
+    }
+    .checkmark:after {
+        content: '';
+        position: absolute;
+        display: none;
+    }
+    .container input:checked ~ .checkmark:after {
+        display: block;
+    }
+    .container .checkmark:after {
+        left: 0.35rem;
+        top: 0.1rem;
+        width: 0.2rem;
+        height: 0.5rem;
+        border: solid black;
+        border-width: 0 3px 3px 0;
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        transform: rotate(45deg);
     }
 </style>
