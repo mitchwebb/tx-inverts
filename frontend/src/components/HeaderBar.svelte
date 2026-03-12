@@ -124,7 +124,7 @@
         background-color: var(--container-fore);
         display: flex;
         align-items: center;
-        /* width: 100%; */
+        width: 100%;
         padding: 0 2rem;
         gap: 2rem;
         z-index: 100;
@@ -132,6 +132,8 @@
         box-shadow: 0px 0px 4px var(--container-shadow);
         justify-content: space-between;
         position: sticky;
+        top: 0;
+        box-sizing: border-box;
     }
     .logo {
         color: var(--text-default);
