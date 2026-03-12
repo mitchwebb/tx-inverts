@@ -149,6 +149,8 @@ body {
     height: 100%;
     min-height: 100%;
     scrollbar-width: thin;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
 }
 
 h1 {
