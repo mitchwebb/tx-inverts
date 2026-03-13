@@ -63,15 +63,17 @@
                                 ) ?? false}
                             >
                                 <div class="provider-label">
-                                    <div
-                                        class="institution-name"
-                                        title={institutionName ||
-                                            institutionCode}
-                                    >
-                                        {institutionName || institutionCode}
-                                    </div>
-                                    <div class="institution-code">
-                                        {institutionCode}
+                                    <div class="institution-name-wrapper">
+                                        <div
+                                            class="institution-name"
+                                            title={institutionName ||
+                                                institutionCode}
+                                        >
+                                            {institutionName || institutionCode}
+                                        </div>
+                                        <div class="institution-code">
+                                            {institutionCode}
+                                        </div>
                                     </div>
                                     <div class="institution-count">
                                         ({count})
@@ -99,8 +101,16 @@
     .provider-label {
         display: flex;
         justify-content: space-between;
+        width: 100%;
         gap: 0.5rem;
         overflow: hidden;
+    }
+    .institution-name-wrapper {
+        display: flex;
+        justify-content: space-between;
+        /* width: 100%; */
+        flex-grow: 1;
+        min-width: 0;
     }
     .institution-name {
         align-self: left;
@@ -108,6 +118,9 @@
         min-width: 0;
         text-overflow: ellipsis;
         overflow: hidden;
+    }
+    .institution-count {
+        flex-shrink: 0;
     }
     .institution-code {
         /* font-style: italic; */

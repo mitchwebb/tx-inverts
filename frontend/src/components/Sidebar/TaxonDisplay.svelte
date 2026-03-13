@@ -176,7 +176,6 @@
         justify-content: space-between;
         gap: 0.5rem;
     }
-    .x-icon,
     .loading-icon {
         cursor: pointer;
         background-color: transparent;
@@ -184,12 +183,6 @@
         color: var(--text-default);
         border: none;
         flex-shrink: 0;
-    }
-    .x-icon {
-        align-self: first baseline;
-    }
-    .x-icon:hover {
-        color: var(--border);
     }
     .scientific-name {
         font-weight: 400;
