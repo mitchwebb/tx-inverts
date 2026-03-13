@@ -120,6 +120,7 @@
         margin: 0;
     }
     #header-bar {
+        flex-shrink: 0;
         height: 65px;
         background-color: var(--container-fore);
         display: flex;

@@ -33,7 +33,7 @@
     }
     #filters-border-coverup {
         position: absolute;
-        height: 100%;
+        height: fit-content;
         width: 0.5rem;
         left: -0.5rem;
         top: 0;
@@ -52,6 +52,8 @@
         padding: 0.5rem;
     }
     .body-wrapper {
+        height: 100%;
+        min-width: 500px;
         flex-grow: 1;
         flex-shrink: 1;
         box-sizing: border-box;

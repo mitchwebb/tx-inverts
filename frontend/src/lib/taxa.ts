@@ -25,9 +25,8 @@ export async function getCommonNames(taxonID: ActiveTaxonState['taxonID']) {
                     country: string;
                 }) =>
                     (option.language === 'eng' || option.country === 'US') &&
-                    (option.source ===
-                        'Integrated Taxonomic Information System (ITIS)' ||
-                        "Martha's Vineyard species checklist")
+                    option.source ===
+                        'Integrated Taxonomic Information System (ITIS)'
             )
             .map((option: { vernacularName: string }) => option.vernacularName);
         // Deduplicate English names

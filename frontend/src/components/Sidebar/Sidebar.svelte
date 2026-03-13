@@ -169,7 +169,7 @@
                 />
             </div>
             {#if taxonContext.taxonID}
-                <div id="sidebar-content">
+                <div id="sidebar-content" class="sidebar-section">
                     {#if showTaxonDisplay}
                         <TaxonDisplay />
                         {#if taxonContext.taxonID && showNSDisplay}
@@ -307,7 +307,7 @@
     #sidebar-content {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        /* gap: 0.5rem; */
         overflow-y: auto;
     }
 </style>

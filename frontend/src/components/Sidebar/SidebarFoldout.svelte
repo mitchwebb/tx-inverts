@@ -40,7 +40,7 @@
 </script>
 
 <div
-    class={['sidebar-foldout', 'sidebar-section', { open }, customClass]}
+    class={['sidebar-foldout', { open }, customClass]}
     class:loading-blink={isLoading}
 >
     <div

@@ -36,10 +36,6 @@
     /* line-height: 1.5; */
     font-weight: 400;
 
-    /* color-scheme: light dark; */
-    color: var(--text-default);
-    background-color: var(--container-back);
-
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -151,6 +147,8 @@ body {
     scrollbar-width: thin;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+    color: var(--text-default);
+    background-color: var(--container-back);
 }
 
 h1 {

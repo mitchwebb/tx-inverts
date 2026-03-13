@@ -19,7 +19,7 @@
     const taxonNotAccepted = $derived(taxonInfo.taxonomicStatus !== 'accepted');
 </script>
 
-<div id="sidebar-main-header" class="sidebar-header header sidebar-section">
+<div id="sidebar-main-header" class="sidebar-header header">
     {#if taxonContext.taxonError}
         <div id="taxon-error">Requested Taxon Not Found</div>
     {:else}
@@ -144,6 +144,7 @@
         -moz-hyphens: auto;
         background-color: var(--container-highlight);
         border: 1px solid var(--border);
+        border-bottom: none;
     }
     #taxon-error {
         color: var(--accent-color);
@@ -192,7 +193,8 @@
     }
     .scientific-name {
         font-weight: 400;
-        flex-shrink: 0;
+        /* flex-shrink: 0; */
+        word-break: normal;
     }
     .scientific-authorship {
         flex-shrink: 0;

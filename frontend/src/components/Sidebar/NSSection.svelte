@@ -121,7 +121,7 @@
 </script>
 
 <SidebarFoldout
-    defaultOpen={true}
+    defaultOpen={false}
     label="Conservation Values"
     isLoading={taxonContext.nSValuesLoading}
     customClass="ns-section-wrapper"

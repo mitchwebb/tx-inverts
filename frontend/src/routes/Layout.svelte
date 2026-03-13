@@ -238,14 +238,17 @@
     #layout {
         height: 100%;
         min-height: 500px;
-        min-width: fit-content;
+        /* min-width: fit-content; */
         display: flex;
         flex-direction: column;
         position: relative;
         overflow: auto;
+        width: 100%;
+        min-width: 1000px;
     }
     #page-body {
         height: 100%;
-        /* overflow: auto; */
+        /* min-height: 500px; */
+        overflow: auto;
     }
 </style>
