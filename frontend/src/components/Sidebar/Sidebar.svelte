@@ -110,11 +110,9 @@
         filtersOpen = false;
     }
 
-    function handleFiltersButton(e: MouseEvent) {
-        e.stopPropagation();
-        filtersOpen = !filtersOpen;
-        // modalContext.content = Filters;
-        // modalContext.visible = true;
+    function handleFiltersButton() {
+        modalContext.content = Filters;
+        modalContext.visible = true;
     }
 
     // Register click-to-close functionality for filters section
@@ -144,7 +142,7 @@
 >
     {#if filtersOpen}
         <div id="filters-section-wrapper" bind:this={filtersElement}>
-            <Filters bind:filtersOpen />
+            <Filters />
         </div>
     {/if}
     <div id="filters-coverup"></div>

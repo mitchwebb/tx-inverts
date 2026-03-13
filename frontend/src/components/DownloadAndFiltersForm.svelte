@@ -102,6 +102,7 @@
         justify-content: right;
         align-items: center;
         height: 50px;
+        padding-top: 0.5rem;
     }
     .download-metrics {
         display: flex;
@@ -112,8 +113,10 @@
     #download-form-wrapper {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
         min-width: 200px;
         max-height: 80dvh;
+    }
+    #download-form-header {
+        padding: 0.5rem 0;
     }
 </style>

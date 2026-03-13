@@ -65,11 +65,13 @@
                             {canonicalName}
                         </div>
                         <button
-                            class="remove-taxon-icon"
+                            class="remove-taxon-button icon"
                             data-taxon-id={taxonID}
                             onclick={handleRemoveTaxon}
                         >
-                            <XIcon />
+                            <div class="remove-taxon-icon">
+                                <XIcon />
+                            </div>
                         </button>
                     </div>
                 {/each}
@@ -82,7 +84,9 @@
     #taxon-cards-wrapper {
         display: flex;
         flex-direction: column;
-        border: 1px solid var(--border);
+        /* border-radius: 3px; */
+        gap: 0.25rem;
+        width: fit-content;
     }
     .filtered-taxon-name {
         padding: 0.25rem 0.5rem;
@@ -93,26 +97,30 @@
         gap: 0.5rem;
     }
     .remove-taxon-icon {
+        height: 1.5rem;
+    }
+    .remove-taxon-button {
         cursor: pointer;
         padding: 0;
-        background-color: var(--container-fore);
+        background-color: var(--container-back);
+        border-radius: 3px;
         height: 100%;
-        border-radius: 0;
+        width: 1.75rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* margin-right: 0.25rem; */
     }
     .filtered-taxon-card {
         display: flex;
         gap: 0.5rem;
         background-color: var(--container-mid);
-        /* border: 1px solid var(--border); */
         cursor: unset;
         justify-content: space-between;
+        border: 1px solid var(--border);
         font-size: 1rem;
         align-items: center;
         height: 30px;
-    }
-
-    /* .filtered-taxon-card() */
-    .filtered-taxon-card:not(:last-child) {
-        border-bottom: 1px solid var(--border);
+        border-radius: 3px;
     }
 </style>

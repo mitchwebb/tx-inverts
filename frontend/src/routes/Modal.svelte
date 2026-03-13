@@ -24,8 +24,14 @@
         el.focus();
     }
 
+    // Toggle overflow scroll when shown
     $effect(() => {
-        $inspect(typeof modalContext.content);
+        if (modalContext.visible) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
     });
 </script>
 
@@ -81,22 +87,31 @@
         inset: 0;
         background-color: var(--container-shadow);
         opacity: 0.75;
+        user-select: none;
+        /* pointer-events: none; */
     }
 
     #modal-close-button {
         position: absolute;
-        top: 0.25rem;
-        right: 0.25rem;
+        top: 0rem;
+        right: 0rem;
         color: var(--text-default);
         cursor: pointer;
         padding: 0;
         border: none;
-        background: transparent;
+        background-color: transparent;
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 1003;
         height: 1.5rem;
+        opacity: 0.8;
+        transition: opacity 0.1s ease-in-out;
+        /* margin: 0.25rem; */
+    }
+
+    #modal-close-button:hover {
+        opacity: 1;
     }
 
     #modal-content-positioner {
@@ -126,7 +141,7 @@
         z-index: 1002;
         box-sizing: border-box;
         overflow: hidden; /* keep scroll inside wrapper */
-        padding: 1.75rem;
+        padding: 0.5rem;
     }
 
     #modal-content {

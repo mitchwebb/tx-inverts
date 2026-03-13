@@ -12,6 +12,7 @@
         getFiltersContext,
         type FiltersState,
     } from '../../contexts/filtersContext';
+    import { getModalContext } from '../../contexts/modalContext';
     import { getRouterContext } from '../../contexts/routerContext';
     import DatasetFilterSection from './DatasetFilterSection.svelte';
     import DateFilterSection from './DateFilterSection.svelte';
@@ -22,15 +23,18 @@
 
     const filtersContext = getFiltersContext();
     const routerContext = getRouterContext();
+    const modalContext = getModalContext();
 
     // Determine if we're on the map page (in order to include/exclude page-specific sections)
     const pageID = $derived(routerContext.url.pathname);
 
     // Bindable allows this component to close itself in a parent
-    let { filtersOpen = $bindable() } = $props();
+    // let { filtersOpen = $bindable() } = $props();
 
     function handleApplyFilters() {
-        filtersOpen = false;
+        // filtersOpen = false;
+        modalContext.visible = false;
+        // modalContext.content = null;
     }
 
     // This is fairly safe within SIDEBAR_FILTER_META, but ts doesn't like the union
@@ -73,31 +77,25 @@
 
 <style>
     .filters-content-wrapper {
-        overflow-y: auto;
         width: 100%;
         color: var(--text-default);
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        padding: 0.5rem;
+        /* padding: 0.5rem; */
         gap: 0.5rem;
         background-color: var(--container-back);
-        border-left: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-        border-top-left-radius: 3px;
-        border-bottom-left-radius: 3px;
-        border-bottom-right-radius: 3px;
-        min-width: 300px;
-        max-width: 500px;
+        width: 500px;
         max-height: 475px;
+        box-sizing: border-box;
     }
     #filters-content {
         display: flex;
         flex-direction: column;
-        overflow-y: auto;
         box-sizing: border-box;
         gap: 0.5rem;
         width: 100%;
+        overflow: auto;
     }
     .filters-buttons-wrapper {
         display: flex;
