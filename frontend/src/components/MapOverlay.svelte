@@ -15,8 +15,10 @@
     <MapToolbar />
     <!-- Sidebar only visible if taxon selected -->
     {#if taxonContext.taxonID}
-        <div id="map-sidebar-wrapper">
-            <Sidebar />
+        <div id="map-sidebar-positioner">
+            <div id="map-sidebar-wrapper">
+                <Sidebar />
+            </div>
         </div>
     {/if}
     <!-- {#if mapHoverContext.lnglat}
@@ -40,14 +42,20 @@
         z-index: 2;
         box-sizing: border-box;
     }
+    #map-sidebar-positioner {
+        height: 100%;
+        grid-row: 1/3;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
     #map-sidebar-wrapper {
-        /* max-height: fit-content; */
-        height: fit-content;
+        /* height: fit-content; */
+        flex-shrink: 1;
+        max-height: 100%;
         border-radius: 3px;
         background-color: var(--container-back);
         padding: 0.5rem;
         box-sizing: border-box;
-        box-shadow: 0px 2px 4px 0px var(--container-shadow);
-        grid-row: 1/3;
     }
 </style>

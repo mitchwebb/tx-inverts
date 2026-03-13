@@ -132,7 +132,7 @@
         {/if}
     {/snippet}
     {#if filtersActive}
-        <div id="filter-warning">Filters Applied to Data</div>
+        <div id="filter-warning">Filters Applied to Ranking</div>
     {/if}
     <div class="ns-section">
         {#if rank && !taxonInfo.usInvasive}

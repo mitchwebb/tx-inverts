@@ -19,6 +19,7 @@
         getRouterContext,
         type RouterPath,
     } from '../../contexts/routerContext';
+    import SidebarFoldout from './SidebarFoldout.svelte';
 
     type SidebarProps = {
         showTaxonDisplay?: boolean;
@@ -189,9 +190,9 @@
     #filters-coverup {
         position: absolute;
         height: 100%;
-        left: -0.25rem;
+        left: -0.5rem;
         top: 0;
-        width: 0.25rem;
+        width: 0.5rem;
         z-index: 5;
         background-color: var(--container-back);
         border-radius: 3px;
@@ -210,7 +211,7 @@
         pointer-events: all;
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
-        box-shadow: -4px 3px 4px 0px var(--container-shadow);
+        /* box-shadow: -4px 3px 4px 0px var(--container-shadow); */
     }
     #search-and-filter-section {
         display: flex;
@@ -220,6 +221,7 @@
         gap: 0.5rem;
         z-index: 100;
         height: 2.5rem;
+        flex-shrink: 0;
     }
     :global(.date-range-filter) {
         margin: auto;
@@ -274,8 +276,8 @@
         grid-column: 2;
         grid-row: 1 / 4;
         width: 100%;
-        height: fit-content;
-        max-height: 100%;
+        height: 100%;
+        /* max-height: 100%; */
         flex-shrink: 0;
         z-index: 2;
         display: flex;
@@ -294,7 +296,7 @@
         color: var(--text-default);
         display: flex;
         flex-direction: column;
-        max-height: 100%;
+        height: 100%;
         box-sizing: border-box;
         border-radius: 3px;
     }
@@ -309,5 +311,7 @@
         flex-direction: column;
         /* gap: 0.5rem; */
         overflow-y: auto;
+        flex-shrink: 1;
+        min-height: 0;
     }
 </style>
