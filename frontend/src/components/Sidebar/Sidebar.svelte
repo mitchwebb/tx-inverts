@@ -20,6 +20,7 @@
         type RouterPath,
     } from '../../contexts/routerContext';
     import SidebarFoldout from './SidebarFoldout.svelte';
+    import { getModalContext } from '../../contexts/modalContext';
 
     type SidebarProps = {
         showTaxonDisplay?: boolean;
@@ -34,6 +35,7 @@
     const sidebarContext = getSidebarContext();
     const filtersContext = getFiltersContext();
     const routerContext = getRouterContext();
+    const modalContext = getModalContext();
 
     // Casting here is a quick fix, but doesn't guard for the future
     // Adding new routes in the future COULD cause issues
@@ -111,6 +113,8 @@
     function handleFiltersButton(e: MouseEvent) {
         e.stopPropagation();
         filtersOpen = !filtersOpen;
+        // modalContext.content = Filters;
+        // modalContext.visible = true;
     }
 
     // Register click-to-close functionality for filters section

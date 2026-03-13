@@ -32,7 +32,7 @@
     <form onsubmit={handleSubmit}>
         <!-- Catch some dubious activity -->
         <input
-            style="display:none"
+            style:display="none"
             type="text"
             name="email_confirm"
             tabindex="-1"
