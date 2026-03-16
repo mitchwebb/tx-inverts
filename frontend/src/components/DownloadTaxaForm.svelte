@@ -46,6 +46,7 @@
         /* padding: 0.75rem; */
         display: flex;
         flex-direction: column;
+        max-width: 100%;
         /* gap: 1rem; */
     }
     #taxa-download-filters {

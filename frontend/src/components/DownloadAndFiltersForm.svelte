@@ -93,7 +93,7 @@
         overflow-y: auto;
         flex: 1;
         min-height: 0;
-        min-width: 400px;
+        width: 100%;
     }
     .button-and-metrics-wrapper {
         display: flex;
@@ -114,9 +114,10 @@
         display: flex;
         flex-direction: column;
         min-width: 200px;
+        max-width: 100%;
         max-height: 80dvh;
     }
     #download-form-header {
-        padding: 0.5rem 0;
+        padding: 1rem 1rem 0.5rem 1rem;
     }
 </style>

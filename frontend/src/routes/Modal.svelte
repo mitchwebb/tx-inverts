@@ -133,7 +133,7 @@
         background-color: var(--container-back);
         border-radius: 4px;
         min-width: 100px;
-        max-width: 80dvw;
+        max-width: 95dvw;
         min-height: 2rem;
         max-height: 95dvh; /* constrain to viewport */
         outline: 1px solid var(--border);

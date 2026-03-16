@@ -3,13 +3,17 @@
     - Foldout component to be used with Sidebar
 -->
 <script lang="ts">
-    import type { Snippet } from 'svelte';
+    import { onMount, type Snippet } from 'svelte';
     import ChevronDown from '../../assets/ChevronDown.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import ChevronUp from '../../assets/ChevronUp.svelte';
     import { slide } from 'svelte/transition';
+    import { getSidebarContext } from '../../contexts/sidebarContext';
+
+    const sidebarContext = getSidebarContext();
 
     type SidebarFoldoutProps = {
+        id: string; // Required for setting foldoutState
         label: string;
         activeFilters?: boolean;
         closedDisplay?: Snippet;
@@ -20,6 +24,7 @@
     };
 
     let {
+        id,
         label,
         activeFilters = false,
         closedDisplay,
@@ -29,17 +34,30 @@
         customClass = '',
     }: SidebarFoldoutProps = $props();
 
-    let open = $derived(defaultOpen);
+    let open = $derived(sidebarContext.foldoutStates[id] === true);
 
     function handleKey(e: KeyboardEvent) {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            open = !open;
+            toggleFoldoutState();
         }
     }
+
+    // Toggle foldout state in context
+    function toggleFoldoutState() {
+        sidebarContext.foldoutStates[id] = !open;
+    }
+
+    // On mount, set foldout state in context
+    onMount(() => {
+        if (!(id in sidebarContext.foldoutStates)) {
+            sidebarContext.foldoutStates[id] = defaultOpen;
+        }
+    });
 </script>
 
 <div
+    {id}
     class={['sidebar-foldout', { open }, customClass]}
     class:loading-blink={isLoading}
 >
@@ -49,7 +67,7 @@
         aria-expanded={open}
         class={['sidebar-foldout-header sidebar-header', { open }]}
         class:filters-active={activeFilters}
-        onclick={() => (open = !open)}
+        onclick={toggleFoldoutState}
         onkeydown={handleKey}
     >
         <span class="sidebar-header-text">

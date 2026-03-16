@@ -86,6 +86,7 @@
         gap: 0.5rem;
         background-color: var(--container-back);
         width: 500px;
+        max-width: 100%;
         max-height: 475px;
         box-sizing: border-box;
     }
