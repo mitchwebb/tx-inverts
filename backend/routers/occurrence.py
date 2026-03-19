@@ -5,9 +5,9 @@ from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
-from backend.models.api_types import ObservationsRequestParams, TaxaRequestParams
+from backend.models.api_types import ObservationsRequestParams
 from backend.core.sql import create_occurrence_filter, create_occurrence_taxon_filter
-from backend.models.sql import OccurrenceFilter
+from backend.models.sql import OccurrenceFilter, SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 
 
@@ -36,23 +36,18 @@ async def get_data_providers(request: Request):
 
 @router.post('/get_provider_counts')
 async def get_provider_counts(params: ObservationsRequestParams, request: Request):
-    taxon_id = params.taxon_ids
-    include_inat = params.include_inat
-    date_start = params.date_start
-    date_end = params.date_end
-
     pool = request.app.state.db_pool
 
     async with pool.connection() as conn:
 
         filter_payload = OccurrenceFilter(
-            taxon_id=taxon_id,
-            include_inat=include_inat,
-            date_start=date_start,
-            date_end=date_end
+            taxon_ids=params.taxon_ids,
+            include_inat=params.include_inat,
+            date_start=params.date_start,
+            date_end=params.date_end
         )
 
-        taxon_filter = create_occurrence_taxon_filter(filter_payload.taxon_id)
+        taxon_filter = create_occurrence_taxon_filter(filter_payload.taxon_ids)
         occurrence_filter = create_occurrence_filter(filter_payload)
 
         query = sql.SQL('''
@@ -96,16 +91,13 @@ async def get_provider_counts(params: ObservationsRequestParams, request: Reques
 
 @router.post('/get_observation_dates')
 async def get_observation_dates(params: ObservationsRequestParams, request: Request):
-    taxon_id = params.taxon_ids
-    include_inat = params.include_inat
-
     pool = request.app.state.db_pool
 
     async with pool.connection() as conn:
 
         filter_payload = OccurrenceFilter(
-            taxon_id=taxon_id,
-            include_inat=include_inat
+            taxon_ids=params.taxon_ids,
+            include_inat=params.include_inat
         )
 
         occurrence_filter = create_occurrence_filter(filter_payload)
@@ -129,53 +121,53 @@ async def get_observation_dates(params: ObservationsRequestParams, request: Requ
                 return None
 
 
-@router.post('/get_observations')
-async def get_observations(params: TaxaRequestParams, request: Request):
-    taxon_id = params.taxon_id
+# @router.post('/get_observations')
+# async def get_observations(params: TaxaRequestParams, request: Request):
+#     taxon_id = params.taxon_id
 
-    query = '''
-        WITH bounds AS (
-            SELECT ST_SetSRID(ST_Extent(geometry) AS bbox
-            FROM gbif_observations
-            WHERE accepted_taxon_key = %s
-        ),
-        grid AS (
-            SELECT ST_SetSRID((ST_SquareGrid(0.2, bbox)).geom, 4326) AS cell
-            FROM bounds
-        ),
-        joined AS (
-            SELECT g.cell, COUNT(o.*) AS count
-            FROM grid g
-            LEFT JOIN gbif_observations o
-                ON ST_Contains(g.cell, ST_SetSRID(geometry))
-                AND o.accepted_taxon_key = %s
-            GROUP BY g.cell
-        )
-        SELECT jsonb_build_object(
-            'type', 'FeatureCollection',
-            'features', jsonb_agg(
-                jsonb_build_object(
-                    'type', 'Feature',
-                    'geometry', ST_AsGeoJSON(cell)::jsonb,
-                    'properties', jsonb_build_object('count', count)
-                )
-            )
-        )
-        FROM joined;
-        '''
-    async with request.app.state.db_pool.connection() as conn:
-        async with execute_psql_query(
-            conn, query, [taxon_id, taxon_id], fetch='one'
-        ) as result:
-            return result[0] if result else {
-                'type': 'FeatureCollection', 'features': []
-            }
+#     query = '''
+#         WITH bounds AS (
+#             SELECT ST_SetSRID(ST_Extent(geometry) AS bbox
+#             FROM gbif_observations
+#             WHERE accepted_taxon_key = %s
+#         ),
+#         grid AS (
+#             SELECT ST_SetSRID((ST_SquareGrid(0.2, bbox)).geom, 4326) AS cell
+#             FROM bounds
+#         ),
+#         joined AS (
+#             SELECT g.cell, COUNT(o.*) AS count
+#             FROM grid g
+#             LEFT JOIN gbif_observations o
+#                 ON ST_Contains(g.cell, ST_SetSRID(geometry))
+#                 AND o.accepted_taxon_key = %s
+#             GROUP BY g.cell
+#         )
+#         SELECT jsonb_build_object(
+#             'type', 'FeatureCollection',
+#             'features', jsonb_agg(
+#                 jsonb_build_object(
+#                     'type', 'Feature',
+#                     'geometry', ST_AsGeoJSON(cell)::jsonb,
+#                     'properties', jsonb_build_object('count', count)
+#                 )
+#             )
+#         )
+#         FROM joined;
+#         '''
+#     async with request.app.state.db_pool.connection() as conn:
+#         async with execute_psql_query(
+#             conn, query, [taxon_id, taxon_id], fetch='one'
+#         ) as result:
+#             return result[0] if result else {
+#                 'type': 'FeatureCollection', 'features': []
+#             }
 
 
-@router.get('/tiles/{include_inat}/{taxon_id}/{taxon_rank}/{data_providers}/{date_start}/{date_end}/{z}/{x}/{y}.mvt', response_class=Response)
-async def get_tile(include_inat: bool, taxon_id: int, taxon_rank: str, data_providers: str, date_start: str, date_end: str, z: int, x: int, y: int, request: Request):
+@router.get('/tiles/{include_inat}/{taxon_id}/{data_providers}/{date_start}/{date_end}/{z}/{x}/{y}.mvt', response_class=Response)
+async def get_tile(include_inat: bool, taxon_id: int, data_providers: str, date_start: str, date_end: str, z: int, x: int, y: int, request: Request):
 
-    filter_payload = OccurrenceFilter(
+    filter_payload = SingleTaxonOccurrenceFilter(
         taxon_id=taxon_id,
         include_inat=include_inat,
         data_providers=data_providers,

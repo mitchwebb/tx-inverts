@@ -251,66 +251,49 @@ export const observationsLayer = {
     deferred: true,
 } as const satisfies LayerBundle;
 
-export const allMapLayers = [
+// Collect all static map layers in one place
+export const staticMapLayers = [
     l3EcoregionsLayer,
     l4EcoregionsLayer,
     texasParksLayer,
-    rangeExtentLayer,
-    observationsLayer,
 ] satisfies LayerBundle[];
 
 // Map layer source literal type
-export type MapLayerSource =
-    (typeof allMapLayers)[number]['layers'][number]['source'];
+export type StaticMapLayerSource =
+    (typeof staticMapLayers)[number]['layers'][number]['source'];
 
 // Extract layers with source-layers for typing
-type LayerWithSourceLayer = Extract<
-    (typeof allMapLayers)[number]['layers'][number],
+type StaticLayerWithSourceLayer = Extract<
+    (typeof staticMapLayers)[number]['layers'][number],
     { 'source-layer': string }
 >;
 // Map layer source-layer literal type
-export type MapSourceLayer = LayerWithSourceLayer['source-layer'];
+export type StaticMapSourceLayer = StaticLayerWithSourceLayer['source-layer'];
 
 // Map layer id literal type
-export type MapLayerID = (typeof allMapLayers)[number]['layers'][number]['id'];
+export type StaticMapLayerID =
+    (typeof staticMapLayers)[number]['layers'][number]['id'];
 
-export const allMapLayerIDs: MapLayerID[] = allMapLayers.flatMap((layerDef) =>
-    layerDef.layers.map((layer) => layer.id)
+export const staticMapLayerIDs: StaticMapLayerID[] = staticMapLayers.flatMap(
+    (layerDef) => layerDef.layers.map((layer) => layer.id)
 );
 
-export const layerGroups = {
-    'observations-layer-group': [
-        'observations-fill',
-        'observations-fill-outline',
-        'observations-circles',
-    ],
-    'range-extent-layer-group': [
-        'range-extent-polygon',
-        'range-extent-outline',
-    ],
+export const staticLayerGroups = {
     'ecoregions-group': ['l3-ecoregions', 'l4-ecoregions'],
 } as const;
 
-// List of layers
-export const performanceSensitiveLayers = new Set<LayerGroupID | MapLayerID>([
-    'observations-layer-group',
-    'observations-fill',
-    'observations-fill-outline',
-    'observations-circles',
-]);
-
-export type LayerGroupID = keyof typeof layerGroups;
+export type StaticLayerGroupID = keyof typeof staticLayerGroups;
 
 export type LayerWithPromotedID = Extract<
-    (typeof allMapLayers)[number]['source'],
+    (typeof staticMapLayers)[number]['source'],
     { promoteId: string }
 >;
 
 export type PromotedID = LayerWithPromotedID['promoteId'];
 
 // List of all promoteIds property values
-export const promotedMapProperties = allMapLayers
-    .map((layer) => {
+export const promotedMapProperties = staticMapLayers
+    .map((layer): string | undefined => {
         // Narrow to vector sources
         if (layer.source.type === 'vector') {
             return layer.source.promoteId;
@@ -320,7 +303,7 @@ export const promotedMapProperties = allMapLayers
     .filter((id): id is string => id !== undefined);
 
 // Selector definitions for promoted props (used for setting hover/select state)
-export const promotedPropSelectors = allMapLayers.reduce(
+export const promotedPropSelectors = staticMapLayers.reduce(
     (acc, layer) => {
         // Narrow to vector sources
         if (layer.source.type !== 'vector') return acc;
@@ -341,3 +324,136 @@ export const promotedPropSelectors = allMapLayers.reduce(
     },
     {} as Record<string, { source: string; sourceLayer: string }>
 );
+
+export const staticPerformanceSensitiveLayers = new Set<
+    StaticLayerGroupID | StaticMapLayerID
+>([]);
+
+export function createObservationsBundle(taxonID: number, color: string) {
+    const sourceID = `observations-tiles-${taxonID}`;
+    return {
+        id: sourceID,
+        source: {
+            type: 'vector',
+            tiles: [],
+            minzoom: 0,
+            maxzoom: 14,
+            promoteId: 'gbif_id',
+        } as mapboxgl.VectorSourceSpecification,
+        layers: [
+            {
+                id: `observations-fill-${taxonID}`,
+                type: 'fill',
+                source: sourceID,
+                'source-layer': 'observations-heatmap',
+                minzoom: 0,
+                maxzoom: observationsZoomCutoff,
+                paint: {
+                    'fill-color': color,
+                    'fill-opacity': [
+                        'interpolate',
+                        ['linear'],
+                        ['ln', ['+', ['get', 'observation_count'], 1]],
+                        Math.log(1),
+                        0.3,
+                        Math.log(2),
+                        0.4,
+                        Math.log(5),
+                        0.5,
+                        Math.log(10),
+                        0.6,
+                        Math.log(20),
+                        0.7,
+                        Math.log(50),
+                        0.8,
+                        Math.log(100),
+                        0.9,
+                        Math.log(200),
+                        1.0,
+                    ],
+                },
+            },
+            {
+                id: `observations-fill-outline-${taxonID}`,
+                type: 'line',
+                source: sourceID,
+                'source-layer': 'observations-heatmap',
+                minzoom: 0,
+                maxzoom: observationsZoomCutoff,
+                paint: {
+                    'line-color': 'white',
+                    'line-width': 1,
+                },
+            },
+            {
+                id: `observations-circles-${taxonID}`,
+                type: 'circle',
+                source: sourceID,
+                'source-layer': 'observations-circles',
+                minzoom: observationsZoomCutoff,
+                paint: {
+                    'circle-color': color,
+                    'circle-opacity': [
+                        'case',
+                        ['boolean', ['feature-state', 'selected'], false],
+                        1.0,
+                        ['boolean', ['feature-state', 'hover'], false],
+                        0.9,
+                        0.8,
+                    ],
+                    'circle-radius': [
+                        'case',
+                        ['boolean', ['feature-state', 'selected'], false],
+                        10,
+                        ['boolean', ['feature-state', 'hover'], false],
+                        12,
+                        8,
+                    ],
+                    'circle-stroke-color': [
+                        'match',
+                        ['get', 'institution_code'],
+                        ...providersColorStops.flat(),
+                        'white',
+                    ],
+                    'circle-stroke-width': 2,
+                },
+            },
+        ],
+        deferred: true,
+    } satisfies LayerBundle;
+}
+
+export function createRangeExtentBundle(taxonID: number, color: string) {
+    const sourceID = `range-extent-${taxonID}`;
+    return {
+        id: sourceID,
+        source: {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: [],
+            },
+        } as mapboxgl.GeoJSONSourceSpecification,
+        layers: [
+            {
+                id: `range-extent-polygon-${taxonID}`,
+                type: 'fill',
+                source: sourceID,
+                paint: {
+                    'fill-color': color,
+                    'fill-opacity': 0.2,
+                    'fill-outline-color': '#000000',
+                },
+            },
+            {
+                id: `range-extent-outline-${taxonID}`,
+                type: 'line',
+                source: sourceID,
+                paint: {
+                    'line-color': color,
+                    'line-width': 1,
+                },
+            },
+        ],
+    } satisfies LayerBundle;
+}

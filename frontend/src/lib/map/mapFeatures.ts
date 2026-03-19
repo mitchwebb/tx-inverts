@@ -41,7 +41,6 @@ export function highlightMatchingFeatures(
 ) {
     // Query all features in the source + sourceLayer
     const allFeatures = map.querySourceFeatures(source, { sourceLayer });
-    console.log(source, sourceLayer, property, value);
 
     for (const feature of allFeatures) {
         // Skip features without an ID

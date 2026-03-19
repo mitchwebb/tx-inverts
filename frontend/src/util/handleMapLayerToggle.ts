@@ -1,24 +1,19 @@
 import { type MapState } from '../contexts/mapContext';
-import {
-    layerGroups,
-    performanceSensitiveLayers,
-    type LayerGroupID,
-    type MapLayerID,
-} from '../lib/map/mapLayers';
+import { staticPerformanceSensitiveLayers } from '../lib/map/mapLayers';
 import type { LayerTogglePayload } from '../types/map';
 
 // Safely handle mapContext.activeLayer list changes and pass to
 // setLayerVisiblity function
 export function toggleLayer(
     context: MapState,
-    layerOrGroupID: MapLayerID | LayerGroupID,
+    layerOrGroupID: string,
     visible: boolean,
     opacityOnly: boolean
 ) {
     // Expand possible group IDs into actual layer IDs
-    const layerIDs: MapLayerID[] = layerGroups[
-        layerOrGroupID as LayerGroupID
-    ]?.slice() ?? [layerOrGroupID as MapLayerID];
+    const layerIDs: string[] = context.layerGroups[layerOrGroupID]?.slice() ?? [
+        layerOrGroupID,
+    ];
 
     // If trying to make visible
     if (visible) {
@@ -48,9 +43,14 @@ export function handleLayerToggle(
     }
 
     // Get layer id
-    const id = payload.layerID as MapLayerID | LayerGroupID;
+    const id = payload.layerID;
+    // Taxon layers are always performance sensitive
+    const isTaxonLayer =
+        /-(fill|fill-outline|circles|polygon|outline)-\d+$/.test(id) ||
+        /-(layer-group)-\d+$/.test(id);
     // Determine if layer is marked as 'performanceSensitive'
-    const opacityOnly = performanceSensitiveLayers.has(id);
+    const opacityOnly =
+        isTaxonLayer || staticPerformanceSensitiveLayers.has(id);
 
     toggleLayer(context, id, payload.layerVisible, opacityOnly);
 }

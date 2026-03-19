@@ -6,20 +6,22 @@
     import XIcon from '../assets/XIcon.svelte';
 
     import { portal } from '../common/Portal.svelte';
-    import { tick } from 'svelte';
+    import { onMount, tick } from 'svelte';
 
     type SearchSuggestProps = {
         placeholder?: string | null;
-        currentSelection?: string | null;
         handleSelect: (suggestion: SearchSuggestion) => void;
-        handleClear: () => void;
+        handleClear?: (taxonID: number) => void;
+        handleBlur?: () => void;
+        autoFocus?: boolean;
     };
 
-    const {
+    let {
         placeholder = '',
-        currentSelection = null,
         handleSelect,
         handleClear,
+        handleBlur,
+        autoFocus = false,
     }: SearchSuggestProps = $props();
 
     let suggestions: SearchSuggestion[] = $state([]);
@@ -29,6 +31,8 @@
 
     // Used for keyboard navigation of search results
     let activeIndex = $state(-1);
+
+    let currentSelection: SearchSuggestion | null = $state(null);
 
     // Always reset
     $effect(() => {
@@ -43,6 +47,8 @@
 
     let inputElement: HTMLInputElement;
     let suggestionsElement: HTMLElement | undefined = $state();
+
+    let focused: boolean = $derived(autoFocus || false);
 
     // Suggestion alignment controller
     let alignRight = $state(false);
@@ -98,11 +104,14 @@
 
     function selectTaxon(suggestion: SearchSuggestion) {
         handleSelect(suggestion);
+        currentSelection = suggestion;
         suggestionsVisible = false;
     }
 
     function clearSearch() {
-        handleClear();
+        if (currentSelection?.taxonID && handleClear) {
+            handleClear(currentSelection.taxonID);
+        }
         inputText = '';
     }
 
@@ -117,10 +126,13 @@
         }
     }
 
-    function handleBlur() {
+    function handleBlurInternal() {
         suggestionsVisible = false;
-        // suggestions = [];
-        // inputText = currentSelection;
+        focused = false;
+        // Pass blur notification to parent for side effects
+        if (handleBlur) {
+            handleBlur();
+        }
     }
 
     function handleInputKeydown(e: KeyboardEvent) {
@@ -245,13 +257,20 @@
     });
 
     $effect(() => {
-        if (!suggestionsVisible) {
-            inputText = currentSelection;
+        if (!suggestionsVisible && currentSelection) {
+            inputText = currentSelection.scientificName;
+        }
+    });
+
+    onMount(() => {
+        if (autoFocus) {
+            inputElement.focus();
+            focused = true;
         }
     });
 </script>
 
-<div class="search-wrapper">
+<div class="search-wrapper" class:focused>
     <input
         class="taxon-search"
         type="text"
@@ -259,8 +278,9 @@
         bind:this={inputElement}
         oninput={debounceSearchSuggest}
         {placeholder}
-        onblur={handleBlur}
+        onblur={handleBlurInternal}
         onkeydown={handleInputKeydown}
+        onfocus={() => (focused = true)}
     />
     {#if suggestionsVisible && inputText?.length !== 0}
         <div
@@ -340,7 +360,7 @@
     }
     .search-close-button {
         padding: 0;
-        margin-right: 0.5rem;
+        margin: 0 0.5rem;
         background-color: unset;
         color: unset;
         border: unset;
@@ -357,12 +377,18 @@
         max-height: 2.5rem;
         position: relative;
         flex-grow: 1;
-        max-width: 350px;
+        /* max-width: 350px; */
         align-items: center;
         box-sizing: border-box;
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+    .search-wrapper.focused {
+        border: 1px solid var(--fill-color);
+    }
+    input {
+        outline: none;
     }
     .invasive-icon {
         display: inline-block;
@@ -391,6 +417,7 @@
     .taxon-search {
         min-height: 1.75rem;
         height: 100%;
+        min-width: 100px;
         width: 100%;
         color: var(--text-default);
         background-color: transparent;
@@ -401,9 +428,6 @@
         text-overflow: ellipsis;
         overflow: hidden;
         /* margin: 0; */
-    }
-    .taxon-search:focus {
-        outline: 1px solid var(--fill-color);
     }
     .taxon-rank {
         opacity: 0.5;

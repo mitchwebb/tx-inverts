@@ -1,11 +1,11 @@
 import { dataProviders } from '../contexts/DataProviders';
-import type { ActiveTaxonState } from '../contexts/activeTaxonContext';
+import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawDateRange } from '../types/api';
 
 // Get observation counts for each provider for current taxon
 export async function getProviderCounts(
-    activeTaxonID: ActiveTaxonState['taxonID'],
+    activeTaxonID: ActiveTaxon['taxonID'],
     includeINat: FiltersState['includeINat'],
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd']
@@ -25,7 +25,7 @@ export async function getProviderCounts(
             throw new Error(`Response status: ${response.status}`);
         }
         const json = await response.json();
-        const result: ActiveTaxonState['providerCounts'] = json;
+        const result: ActiveTaxon['providerCounts'] = json;
         return result;
     } catch (error) {
         console.error(error);
@@ -74,7 +74,7 @@ export async function loadDataProviders() {
 
 // Fetches observation date ranges based on current taxon and inat inclusion
 export async function getObservationDates(
-    activeTaxonID: ActiveTaxonState['taxonID'],
+    activeTaxonID: ActiveTaxon['taxonID'],
     includeINat: FiltersState['includeINat']
 ) {
     try {

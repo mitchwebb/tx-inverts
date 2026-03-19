@@ -3,7 +3,7 @@
     import EyeOn from '../../assets/EyeOn.svelte';
     import NSScale from '../../common/NSScale.svelte';
     import { getMapContext } from '../../contexts/mapContext';
-    import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { nSRankKey } from '../../constants/natureServe';
     import { handleLayerToggle } from '../../util/handleMapLayerToggle';
     import NSCircle from '../../common/NSCircle.svelte';
@@ -15,22 +15,23 @@
     import CheckboxInput, {
         type CheckboxPayload,
     } from '../../common/CheckboxInput.svelte';
-    import {
-        layerGroups,
-        type LayerGroupID,
-        type MapLayerID,
-    } from '../../lib/map/mapLayers';
     import InfoButton from '../../common/InfoButton.svelte';
     import { countActiveFilters } from '../../lib/filters.svelte';
     import { calculateNSRank } from '../../lib/natureServe';
     import { getMetricsContext } from '../../contexts/metricsParamsContext';
     import Dropdown from '../../common/Dropdown.svelte';
 
+    type NSSectionProps = {
+        taxonID: number;
+    };
+
+    const { taxonID }: NSSectionProps = $props();
+
     const mapContext = getMapContext();
 
-    const taxonContext = getActiveTaxonContext();
-    const taxonInfo = $derived(taxonContext.taxonInfo);
-    const nSValues = $derived(taxonContext.nSValues);
+    const taxaContext = getActiveTaxaContext();
+    const taxon = $derived(taxaContext.taxa[taxonID]);
+    const nSValues = $derived(taxon.nSValues);
 
     const filtersContext = getFiltersContext();
     const routerContext = getRouterContext();
@@ -59,8 +60,8 @@
     // in this component
     function deriveLocalRank() {
         if (
-            taxonContext.taxonInfo.taxonRank &&
-            ['species', 'subspecies'].includes(taxonContext.taxonInfo.taxonRank)
+            taxon.info.taxonRank &&
+            ['species', 'subspecies'].includes(taxon.info.taxonRank)
         ) {
             if (
                 aOOValue !== null &&
@@ -86,8 +87,8 @@
     const rank = $derived(
         localRank ||
             (filtersContext.includeINat
-                ? taxonInfo.nSRankDB
-                : taxonInfo.nSRankDBNoINat)
+                ? taxon.info.nSRankDB
+                : taxon.info.nSRankDBNoINat)
     );
 
     // According to IUCN, rangeExtent should be at LEAST areaOfOccupancy,
@@ -110,7 +111,7 @@
     }
 
     function layerToggleHandler(payload: CheckboxPayload) {
-        const layerID = payload.value as MapLayerID | LayerGroupID;
+        const layerID = payload.value;
         const layerVisible = payload.checked as boolean;
         handleLayerToggle(mapContext, { layerID, layerVisible });
     }
@@ -121,22 +122,22 @@
 </script>
 
 <SidebarFoldout
-    id={`${taxonContext.taxonID}-ns-section`}
+    id={`${taxonID}-ns-section`}
     defaultOpen={false}
     label="Conservation Values"
-    isLoading={taxonContext.nSValuesLoading}
+    isLoading={taxon.nSValuesLoading}
     customClass="ns-section-wrapper"
 >
     {#snippet closedDisplay()}
-        {#if rank && !taxonInfo.usInvasive}
+        {#if rank && !taxon.info.usInvasive}
             <NSCircle active={true} level="s" rank={rank ? rank : 'u'} />
         {/if}
     {/snippet}
     {#if filtersActive}
-        <div id="filter-warning">Filters Applied to Ranking</div>
+        <div id="filter-warning">Filters Applied</div>
     {/if}
     <div class="ns-section">
-        {#if rank && !taxonInfo.usInvasive}
+        {#if rank && !taxon.info.usInvasive}
             <div id="rank-text" class="centered-text subheader">
                 <span
                     >{nSRankKey.find((item) => item.rank === rank)
@@ -181,10 +182,10 @@
                         <CheckboxInput
                             customClass="space-between"
                             name="observations-checkbox"
-                            value="observations-layer-group"
+                            value={`observations-layer-group-${taxonID}`}
                             handler={layerToggleHandler}
                             checked={mapContext.isLayerGroupActive(
-                                'observations-layer-group'
+                                `observations-layer-group-${taxonID}`
                             )}
                             checkboxIcon={eyeIcon}
                         />
@@ -214,12 +215,10 @@
                         <CheckboxInput
                             customClass="space-between"
                             name="extent-checkbox"
-                            value="range-extent-layer-group"
+                            value={`range-extent-layer-group-${taxonID}`}
                             handler={layerToggleHandler}
-                            checked={layerGroups[
-                                'range-extent-layer-group'
-                            ].every((id) =>
-                                mapContext.activeLayers.includes(id)
+                            checked={mapContext.isLayerGroupActive(
+                                `range-extent-layer-group-${taxonID}`
                             )}
                             checkboxIcon={eyeIcon}
                         />
@@ -249,7 +248,7 @@
                     </div>
                 {/if}
             </div>
-            <div class="inat-toggle-section ns-metric-row">
+            <!-- <div class="inat-toggle-section ns-metric-row">
                 <span>Include iNat Data</span>
                 <div class="inat-toggle icon">
                     <Toggle
@@ -259,7 +258,7 @@
                         offColor="darkred"
                     />
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
 </SidebarFoldout>

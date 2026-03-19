@@ -29,7 +29,7 @@
 <!-- TODO: fix this aria-label -->
 <button onclick={handleClick} aria-label="toggle">
     <svg
-        viewBox="0 0 24 24"
+        viewBox="0 3 24 19"
         fill="none"
         stroke-width="1"
         stroke-linecap="round"

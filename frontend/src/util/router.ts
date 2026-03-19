@@ -32,10 +32,10 @@ export const stringArrayCodec = (): ParamCodec<string[]> => ({
     toURL(values) {
         return values === null || values.length === 0
             ? null
-            : values.map(String);
+            : [...new Set(values)].map(String);
     },
     fromURL(values) {
-        return values;
+        return [...new Set(values)];
     },
 });
 
@@ -43,10 +43,10 @@ export const numberArrayCodec = (): ParamCodec<number[]> => ({
     toURL(values) {
         return values === null || values.length === 0
             ? null
-            : values.map(String);
+            : [...new Set(values)].map(String);
     },
     fromURL(values) {
-        return values.map(Number);
+        return [...new Set(values.map(Number))];
     },
 });
 

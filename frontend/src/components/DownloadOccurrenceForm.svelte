@@ -1,6 +1,6 @@
 <script lang="ts">
     import Toggle from '../common/Toggle.svelte';
-    import { getActiveTaxonContext } from '../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
     import { getFiltersContext } from '../contexts/filtersContext';
     import { getOccurrenceDownload } from '../lib/downloads';
     import DownloadAndFiltersForm from './DownloadAndFiltersForm.svelte';
@@ -9,7 +9,7 @@
     import INatFilterSection from './FiltersSection/INatFilterSection.svelte';
 
     const filters = getFiltersContext();
-    const taxonContext = getActiveTaxonContext();
+    const taxaContext = getActiveTaxaContext();
 
     let includeInvasives: boolean = $state(false);
 
@@ -19,7 +19,7 @@
     ) {
         // Get list of just taxonIDs from filtered taxa list
         const response = await getOccurrenceDownload(
-            taxonContext.taxonID || 1,
+            taxaContext.taxonIDs || [1],
             filters.includeINat,
             filters.dateStart,
             filters.dateEnd,
@@ -47,37 +47,61 @@
                 <div class="filters-section-header">
                     <span>Selected Taxa:</span>
                 </div>
-                <div class="selected-taxon-content">
-                    <span>{taxonContext.taxonInfo.canonicalName}</span>
-                </div>
+                <ul class="selected-taxa-content">
+                    {#each Object.values(taxaContext.taxa) as taxon}
+                        <li>{taxon.info.canonicalName}</li>
+                    {/each}
+                </ul>
             </div>
+        </div>
+        <div id="toggles-section">
+            <div class="inat-toggle-wrapper">
+                <INatFilterSection />
+            </div>
+
             <div class="filters-section invasives-filter-section">
                 <div class="filters-section-header">
                     <span>Invasive Taxa:</span>
                 </div>
-                <div class="selected-taxon-content">
+                <div id="invasives-toggle-wrapper">
                     <div class="icon invasives-toggle">
                         <Toggle
                             handler={handleInvasivesToggle}
                             checked={includeInvasives}
                         />
                     </div>
-                    <span>Include Invasive Subtaxa</span>
+                    <span> Include Invasive Taxa </span>
                 </div>
             </div>
         </div>
-        <INatFilterSection />
+
         <DatasetFilterSection />
         <DateFilterSection />
     </div>
 </DownloadAndFiltersForm>
 
 <style>
+    .inat-toggle-wrapper {
+        width: 100%;
+    }
+    #invasives-toggle-wrapper {
+        display: flex;
+        gap: 1rem;
+    }
+    #toggles-section {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .selected-taxa-content li {
+        white-space: nowrap;
+        margin: 1px 0;
+    }
     .selected-taxa-section {
-        width: 50%;
+        width: 100%;
     }
     .invasives-filter-section {
-        width: 50%;
+        width: 100%;
+        height: fit-content;
     }
     .invasives-toggle {
         stroke: var(--text-default);
@@ -87,10 +111,13 @@
         gap: 0.5rem;
         width: 100%;
     }
-    .selected-taxon-content {
+    .selected-taxa-content {
         text-align: left;
         display: flex;
-        gap: 0.5rem;
+        flex-direction: column;
+        margin: 0;
+        height: fit-content;
+        /* gap: 0.5rem; */
     }
     #occurrence-download-filters {
         display: flex;

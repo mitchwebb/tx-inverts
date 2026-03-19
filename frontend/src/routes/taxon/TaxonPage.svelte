@@ -1,7 +1,7 @@
 <script lang="ts">
     import { type TaxonNodeType } from '../../types/api';
     import { taxaTree } from '../../contexts/TaxaTree';
-    import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import NSCircle from '../../common/NSCircle.svelte';
     import ChevronDown from '../../assets/ChevronDown.svelte';
     import ChevronRight from '../../assets/ChevronRight.svelte';
@@ -16,7 +16,7 @@
     import DefaultPage from '../../common/DefaultPage.svelte';
     import type { TaxonomicRank } from '../../types/taxa';
 
-    const taxonContext = getActiveTaxonContext();
+    const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
 
     const rankColumns: TaxonomicRank[] = [
@@ -86,7 +86,7 @@
         const targetID = parseInt(parentNode.id);
         if (!targetID) return;
 
-        taxonContext.taxonID = targetID;
+        taxaContext.add(targetID);
     }
 
     function openTaxon(taxonID: TaxonNodeType['taxon_id']) {
@@ -205,34 +205,28 @@
         }
     });
 
-    // If a new activeTaxonID is set or if the page was just loaded,
-    // open it in the tree
+    // If a new activeTaxonID is set or if the page was just loaded, open it in the tree
     $effect(() => {
-        const targetID = taxonContext.taxonID;
-
-        if (
-            targetID &&
-            (targetID !== taxonContext.lastLoadedID || !initialTaxonOpened)
-        ) {
-            if ($taxaTree) {
-                openTaxon(targetID);
-            }
+        const lastAddedID = taxaContext.taxonIDs.slice(-1)[0];
+        if (lastAddedID && $taxaTree) {
+            openTaxon(lastAddedID);
         }
     });
 
     // Check for active taxon node and scroll to it
     $effect(() => {
+        const lastAddedTaxonID = taxaContext.taxonIDs.slice(-1)[0];
         if (
-            taxonContext.taxonID &&
+            lastAddedTaxonID &&
             !initialTaxonOpened &&
             visibleNodes.length > 0
         ) {
             const activeNodeExists = visibleNodes.some(
-                (node) => node.taxon_id === taxonContext.taxonID
+                (node) => node.taxon_id === lastAddedTaxonID
             );
 
             if (activeNodeExists) {
-                moveToTaxon(taxonContext.taxonID);
+                moveToTaxon(lastAddedTaxonID);
                 initialTaxonOpened = true; // Prevents this from running again.
             }
         }
@@ -241,7 +235,7 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<DefaultPage showSidebar={!!taxonContext.taxonID}>
+<DefaultPage>
     <div
         id="taxon-page-body"
         role="application"
@@ -347,7 +341,13 @@
                         class={`
                             taxon-select-icon
                             icon
-                            ${taxonContext.taxonID == node.taxon_id ? 'active' : null}
+                            ${
+                                taxaContext.taxonIDs.some(
+                                    (taxonID) => taxonID == node.taxon_id
+                                )
+                                    ? 'active'
+                                    : null
+                            }
                         `}
                         onclick={setActiveTaxon}
                     >

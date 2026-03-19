@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import DatePicker, {
         type AirDatepickerPayload,
     } from '../../common/DatePicker.svelte';
 
     const filtersContext = getFiltersContext();
-    const taxonContext = getActiveTaxonContext();
+    const taxonContext = getActiveTaxaContext();
 
     function handleStartDate({ formattedDate }: AirDatepickerPayload) {
         filtersContext.dateStart = (formattedDate as string) || null;
@@ -16,11 +16,23 @@
         filtersContext.dateEnd = (formattedDate as string) || null;
     }
 
+    function getTaxonDates(type: 'dateMin' | 'dateMax') {
+        return Object.values(taxonContext.taxa)
+            .map((t) => t[type])
+            .filter((d): d is string => d !== null)
+            .map((d) => new Date(d).getTime());
+    }
+
     const minDate = $derived(
-        taxonContext.dateMin ? new Date(taxonContext.dateMin) : undefined
+        getTaxonDates('dateMin').length
+            ? new Date(Math.min(...getTaxonDates('dateMin')))
+            : undefined
     );
+
     const maxDate = $derived(
-        taxonContext.dateMax ? new Date(taxonContext.dateMax) : undefined
+        getTaxonDates('dateMax').length
+            ? new Date(Math.max(...getTaxonDates('dateMax')))
+            : undefined
     );
 
     // TODO: Once we add mobile support, AirDatepicker has an isMobile arg

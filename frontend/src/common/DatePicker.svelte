@@ -37,18 +37,15 @@
     const positionCalendar: AirDatepickerPositionCallback = ({
         $datepicker,
         $target,
-        $pointer,
+        // $pointer,
         // done,
     }) => {
-        console.warn($datepicker, $target, $pointer);
         const { top, left, height } = $target.getBoundingClientRect();
-        console.warn(top);
         const dpHeight = $datepicker.offsetHeight;
 
         const margin = 10;
 
         const spaceBelow = window.innerHeight - top - height;
-        console.warn(spaceBelow, dpHeight);
         const spaceAbove = top;
         const showAbove = spaceBelow < dpHeight && spaceAbove > spaceBelow;
 

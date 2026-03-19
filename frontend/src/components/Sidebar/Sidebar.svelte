@@ -6,7 +6,7 @@
 
 <script lang="ts">
     import NSSection from './NSSection.svelte';
-    import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { getSidebarContext } from '../../contexts/sidebarContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import TaxaSearchSuggestBar from '../TaxaSearchSuggestBar.svelte';
@@ -19,8 +19,10 @@
         getRouterContext,
         type RouterPath,
     } from '../../contexts/routerContext';
-    import SidebarFoldout from './SidebarFoldout.svelte';
     import { getModalContext } from '../../contexts/modalContext';
+    import AddTaxonButton from './AddTaxonButton.svelte';
+    // import DownloadOccurrenceForm from '../DownloadOccurrenceForm.svelte';
+    // import DownloadIcon from '../../assets/DownloadIcon.svelte';
 
     type SidebarProps = {
         showTaxonDisplay?: boolean;
@@ -31,7 +33,7 @@
         $props();
 
     // Load relevant contexts
-    const taxonContext = getActiveTaxonContext();
+    const taxaContext = getActiveTaxaContext();
     const sidebarContext = getSidebarContext();
     const filtersContext = getFiltersContext();
     const routerContext = getRouterContext();
@@ -76,14 +78,13 @@
         window.addEventListener('mousemove', resizeWindow);
     }
 
-    function clearActiveTaxon() {
-        taxonContext.taxonID = null;
+    function removeTaxon(taxonID: number) {
+        taxaContext.remove(taxonID);
     }
-
     function handleSearchSelect(suggestion: SearchSuggestion) {
         if (!suggestion.taxonID) return;
 
-        taxonContext.taxonID = suggestion.taxonID;
+        taxaContext.add(suggestion.taxonID);
     }
 
     // Handle click-to-close functionality for filters section
@@ -133,6 +134,11 @@
             );
         };
     });
+
+    // function handleOccDownloadButton() {
+    //     modalContext.visible = true;
+    //     modalContext.content = DownloadOccurrenceForm;
+    // }
 </script>
 
 <div
@@ -166,19 +172,38 @@
                 </div>
                 <TaxaSearchSuggestBar
                     placeholder={'Search by taxon...'}
-                    currentSelection={taxonContext.taxonInfo.canonicalName}
-                    handleClear={clearActiveTaxon}
+                    handleClear={removeTaxon}
                     handleSelect={handleSearchSelect}
                 />
+                <!-- <button
+                    class="download-button button"
+                    onclick={handleOccDownloadButton}
+                >
+                    <DownloadIcon />
+                </button> -->
             </div>
-            {#if taxonContext.taxonID}
+            {#if Object.keys(taxaContext.taxa).length}
                 <div id="sidebar-content" class="sidebar-section">
-                    {#if showTaxonDisplay}
-                        <TaxonDisplay />
-                        {#if taxonContext.taxonID && showNSDisplay}
-                            <NSSection />
-                        {/if}
-                    {/if}
+                    {#each Object.keys(taxaContext.taxa).map(Number) as taxonID}
+                        <div id={`${taxonID}-sidebar-section`}>
+                            <TaxonDisplay {taxonID} />
+                            {#if taxonID && showNSDisplay}
+                                <div class="sidebar-body-wrapper">
+                                    <div
+                                        class="sidebar-body-overlay"
+                                        style:background-color={taxaContext
+                                            .taxa[taxonID].color}
+                                    ></div>
+                                    <NSSection {taxonID} />
+                                </div>
+                            {/if}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+            {#if !!taxaContext.taxonIDs.length}
+                <div class="sidebar-endcap">
+                    <AddTaxonButton />
                 </div>
             {/if}
         </div>
@@ -186,6 +211,33 @@
 </div>
 
 <style>
+    /* .download-button {
+        box-sizing: border-box;
+        height: 100%;
+        width: 3rem;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        border: 1px solid var(--border);
+        box-sizing: border-box;
+    } */
+    .sidebar-endcap {
+        display: flex;
+        gap: 0.5rem;
+        height: 2.5rem;
+    }
+    .sidebar-body-wrapper {
+        position: relative;
+    }
+    .sidebar-body-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        opacity: 0.05;
+        pointer-events: none;
+    }
     :global(.sidebar-section) {
         border-radius: 3px;
     }
@@ -301,19 +353,22 @@
         height: 100%;
         box-sizing: border-box;
         border-radius: 3px;
+        gap: 0.5rem;
     }
     #sidebar-content-wrapper {
         display: flex;
         flex-direction: column;
         height: 100%;
         gap: 0.5rem;
+        box-sizing: border-box;
     }
     #sidebar-content {
         display: flex;
         flex-direction: column;
-        /* gap: 0.5rem; */
+        box-sizing: border-box;
         overflow-y: auto;
         flex-shrink: 1;
         min-height: 0;
+        gap: 0.5rem;
     }
 </style>

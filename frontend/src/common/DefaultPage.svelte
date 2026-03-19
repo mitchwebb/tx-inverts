@@ -8,7 +8,7 @@
     import Sidebar from '../components/Sidebar/Sidebar.svelte';
 
     type DefaultPageProps = {
-        showSidebar: boolean;
+        showSidebar?: boolean;
         children: Snippet;
     };
 

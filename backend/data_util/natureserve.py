@@ -4,7 +4,7 @@ from psycopg import Connection, sql
 from backend.routers.taxa import TaxonomicRank
 import psycopg
 from backend.core.sql import create_occurrence_filter
-from backend.models.sql import OccurrenceFilter
+from backend.models.sql import SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 
 
@@ -110,13 +110,12 @@ def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy) -> NS
     return (zero_range_rank)
 
 
-# TODO: Try except!
 # TODO: Minimum convex polygon vs a-hull (https://help.natureserve.org/biotics/Content/Record_Management/Element_Files/Element_Ranking/ERANK_Definitions_of_Extent_of_Occurrence_and_Area_of_Occupancy.htm)
 # TODO: Round up Range Extent to match AOO minimum
 # Separated from router to allow command line or other direct access
 async def calculate_ns_values(
     conn: Connection,
-    filters: OccurrenceFilter,
+    filters: SingleTaxonOccurrenceFilter,
     taxon_rank: TaxonomicRank = 'species'
 ) -> dict | None:
     """
@@ -125,8 +124,9 @@ async def calculate_ns_values(
         for a requested taxon_id.
 
         Args:
-            conn: async DB connection or context manager supporting async with
-            taxon_ids: taxon key(s) to query
+            conn (Connection): async DB connection or context manager supporting async with
+            filters (SingleTaxonOccurrenceFilter): Occurrence filters, with taxon_ids being a single taxon_id
+            taxon_rank (TaxonomicRank): The rank of the queried taxon, defaults to 'species'
 
         Returns:
             dict with keys 'range_extent_km2', 

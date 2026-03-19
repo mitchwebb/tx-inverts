@@ -14,12 +14,11 @@ import io
 
 router = APIRouter()
 
-# Downloads WILL include data for invasive species
 
-
+# # Downloads WILL include data for invasive species
 # @router.post('/get_occurrence_download')
 # async def get_occurrence_download(params: DownloadRequestParams, request: Request):
-#     taxon_id = params.taxon_ids
+#     taxon_ids = params.taxon_ids
 #     include_inat = params.include_inat
 #     date_start = params.date_start
 #     date_end = params.date_end
@@ -28,7 +27,7 @@ router = APIRouter()
 #     estimate = params.estimate
 
 #     filter_payload = OccurrenceFilter(
-#         taxon_id=taxon_id[0],
+#         taxon_ids=taxon_ids,
 #         include_inat=include_inat,
 #         data_providers=data_providers,
 #         date_start=date_start,
@@ -171,8 +170,6 @@ async def estimate_tsv_download_size(conn: AsyncConnection, query: sql.Composed)
             avg_row_bytes = (buf.tell() - header_bytes) / len(df)
         else:
             avg_row_bytes = 0
-
-        print(avg_row_bytes, total_rows)
 
     return {
         'size_estimate': (total_rows * avg_row_bytes) + header_bytes,

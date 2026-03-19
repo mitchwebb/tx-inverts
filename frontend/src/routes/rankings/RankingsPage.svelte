@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { taxaTree } from '../../contexts/TaxaTree';
     import { type TaxonNodeType } from '../../types/api';
     import { isItalicizedRank } from '../../util/taxa';
@@ -15,7 +15,7 @@
     import DownloadTaxaForm from '../../components/DownloadTaxaForm.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
 
-    const taxonContext = getActiveTaxonContext();
+    const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
     const modalContext = getModalContext();
 
@@ -44,7 +44,7 @@
 
         if (!targetID || !parseInt(targetID)) return;
 
-        taxonContext.taxonID = parseInt(targetID);
+        taxaContext.add(parseInt(targetID));
     }
 
     // Filter taxa by filteredTaxa
@@ -114,7 +114,7 @@
                     items={[...filteredTaxa]}
                     rowHeight={30}
                     headers={tableHeaders}
-                    activeValue={taxonContext.taxonID}
+                    activeValue={taxaContext.taxonIDs.slice(-1)[0]}
                     indexCol={'taxon_id'}
                 >
                     {#snippet row(taxon: TaxonNodeType)}
@@ -158,7 +158,10 @@
                                     taxon-select-icon 
                                     icon 
                                     ${
-                                        taxonContext.taxonID == taxon.taxon_id
+                                        taxaContext.taxonIDs.some(
+                                            (taxonID) =>
+                                                taxonID == taxon.taxon_id
+                                        )
                                             ? 'active'
                                             : null
                                     }

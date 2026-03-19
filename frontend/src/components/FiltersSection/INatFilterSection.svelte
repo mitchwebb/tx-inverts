@@ -5,7 +5,7 @@
 
     const filtersContext = getFiltersContext();
 
-    const active = $derived(filtersContext.includeINat)
+    const active = $derived(filtersContext.includeINat);
 
     function handleINatToggle(toggled: boolean) {
         filtersContext.includeINat = toggled;
@@ -31,7 +31,7 @@
                     offColor="darkred"
                 />
             </div>
-            <span class="sidebar-header-text">Include iNaturalist Data</span>
+            <span class="sidebar-header-text">Include iNat Data</span>
         </div>
     </div>
 </div>

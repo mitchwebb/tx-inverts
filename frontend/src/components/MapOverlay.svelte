@@ -5,16 +5,16 @@
 -->
 <script lang="ts">
     import Sidebar from './Sidebar/Sidebar.svelte';
-    import { getActiveTaxonContext } from '../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
     import MapToolbar from './MapToolbar/MapToolbar.svelte';
 
-    const taxonContext = getActiveTaxonContext();
+    const taxaContext = getActiveTaxaContext();
 </script>
 
 <div id="map-overlay-wrapper">
     <MapToolbar />
     <!-- Sidebar only visible if taxon selected -->
-    {#if taxonContext.taxonID}
+    {#if Object.keys(taxaContext.taxa).length}
         <div id="map-sidebar-positioner">
             <div id="map-sidebar-wrapper">
                 <Sidebar />

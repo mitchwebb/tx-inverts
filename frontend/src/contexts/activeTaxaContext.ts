@@ -2,16 +2,17 @@ import { getContext, setContext } from 'svelte';
 import type { NSValues, TaxonInfo } from '../types/api';
 import type { Provider } from '../constants/mapLegendKeys';
 
-export const activeTaxonStateKey = 'taxa';
+export const activeTaxaStateKey = 'taxa';
 
-export type ActiveTaxonState = {
+export type ActiveTaxon = {
+    color: string;
     taxonLoading: boolean;
     taxonError: boolean;
     observationMetricsLoading: boolean;
     nSValuesLoading: boolean;
     lastLoadedID: number | null;
     taxonID: number | null;
-    taxonInfo: TaxonInfo;
+    info: TaxonInfo;
     nSValues: NSValues;
     providerCounts: Record<Provider, number> | null;
     dateMin: string | null;
@@ -50,14 +51,15 @@ export const EMPTY_TAXON_INFO: TaxonInfo = {
     nSRankDBNoINat: null,
 };
 
-export const initialTaxonState: ActiveTaxonState = {
+export const initialTaxonState: ActiveTaxon = {
+    color: 'orange',
     taxonLoading: false,
     taxonError: true,
     observationMetricsLoading: false,
     nSValuesLoading: false,
     lastLoadedID: null,
     taxonID: null,
-    taxonInfo: EMPTY_TAXON_INFO, // Values retrieved from get_taxon_info call
+    info: EMPTY_TAXON_INFO, // Values retrieved from get_taxon_info call
     nSValues: {
         numberOfOccurrences: null,
         areaOfOccupancy4Km2Bins: null,
@@ -70,10 +72,24 @@ export const initialTaxonState: ActiveTaxonState = {
     dateMax: null, // Max obs date in db
 };
 
-export function setActiveTaxonContext(activeTaxonState: ActiveTaxonState) {
-    setContext(activeTaxonStateKey, activeTaxonState);
+export type ActiveTaxaState = {
+    taxa: Record<number, ActiveTaxon>;
+    taxonIDs: number[];
+    add: (taxonID: number, append?: boolean) => void;
+    remove: (taxonID: number) => void;
+};
+
+export const initialActiveTaxaState: ActiveTaxaState = {
+    taxa: {},
+    taxonIDs: [],
+    add: () => {},
+    remove: () => {},
+};
+
+export function setActiveTaxaContext(activeTaxaState: ActiveTaxaState) {
+    setContext(activeTaxaStateKey, activeTaxaState);
 }
 
-export function getActiveTaxonContext(): ActiveTaxonState {
-    return getContext(activeTaxonStateKey) as ActiveTaxonState;
+export function getActiveTaxaContext(): ActiveTaxaState {
+    return getContext(activeTaxaStateKey) as ActiveTaxaState;
 }

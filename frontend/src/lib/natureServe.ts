@@ -18,7 +18,7 @@ export function calculateNSRank(
     // If all values are 0, species is data deficient
     // NatureServe doesn't actually have this ranking. This would be presumed extinct
     if (occurrences == 0 && rangeExtent == 0 && areaOfOccupancy == 0) {
-        return 'U';
+        return 'u';
     }
     // According to IUCN, rangeExtent should be AT LEAST equal to areaOfOccupancy
     if (rangeExtent < areaOfOccupancy) {
@@ -27,7 +27,7 @@ export function calculateNSRank(
 
     // If one of these values exists, all of them must at this point
     if (occurrences == 0 || rangeExtent == 0 || areaOfOccupancy == 0) {
-        return 'U';
+        return 'u';
     }
 
     let points = 0.0;
@@ -121,7 +121,7 @@ export function calculateNSRank(
     // In this case, 'range' refers to the difference between low/high
     // ranking estimates.
     // With our parameters, there is no estimate range, hence 'zero_range'
-    let zeroRangeRank: NSRank = 'U';
+    let zeroRangeRank: NSRank = 'u';
 
     if (threeAverageScore <= 1.5) {
         zeroRangeRank = '1';

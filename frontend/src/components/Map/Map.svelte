@@ -14,25 +14,25 @@
         type HoveredFeatureInfo,
     } from '../../contexts/mapContext';
     import {
-        allMapLayerIDs,
-        allMapLayers,
-        layerGroups,
-        observationsLayer,
-        observationsLayerSource,
+        createObservationsBundle,
+        createRangeExtentBundle,
+        staticMapLayerIDs,
+        staticMapLayers,
         type LayerBundle,
-        type LayerGroupID,
-        type MapLayerID,
-        type MapLayerSource,
-        type MapSourceLayer,
+        type StaticLayerGroupID,
     } from '../../lib/map/mapLayers';
     import { getMapHoverContext } from '../../contexts/mapHoverContext';
-    import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
-    import { getFiltersContext } from '../../contexts/filtersContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import {
+        getFiltersContext,
+        type FiltersState,
+    } from '../../contexts/filtersContext';
     import { buildTooltipSections } from '../../lib/map/mapTooltips';
     import {
         clearTargetFeatures,
         handleLegendHover,
     } from '../../lib/map/mapFeatures';
+    import { untrack } from 'svelte';
 
     // ---------------------------------------------
     // Contexts & reactive state
@@ -42,7 +42,7 @@
 
     // Get contexts
     const mapContext = getMapContext();
-    const taxonContext = getActiveTaxonContext();
+    const taxaContext = getActiveTaxaContext();
     const mapHoverContext = getMapHoverContext();
     const filtersContext = getFiltersContext();
 
@@ -61,21 +61,26 @@
     // Layer visibility & management
     // ---------------------------------------------
 
-    mapContext.isLayerGroupActive = function (groupID: LayerGroupID) {
-        const layerIDs = layerGroups[groupID];
-        return layerIDs.every((id) => mapContext.activeLayers.includes(id));
+    // Check layerGroups for
+    mapContext.isLayerGroupActive = function (groupID: string) {
+        const layerIDs = mapContext.layerGroups[groupID as StaticLayerGroupID];
+        if (layerIDs) {
+            return layerIDs.every((id) => mapContext.activeLayers.includes(id));
+        }
+        // For dynamic layer groups, check the single ID directly
+        return mapContext.activeLayers.includes(groupID);
     };
 
     // Create layer hide/show functionality
     mapContext.setLayerVisibility = function (
-        layerOrGroupID: MapLayerID | LayerGroupID,
+        layerOrGroupID: string,
         visible: boolean,
         opacityOnly: boolean = false // if True, will preserve layer and set opacity to 0
     ) {
         // If a group is added, always parse it into
-        const layerIDs = layerGroups[layerOrGroupID as LayerGroupID] || [
-            layerOrGroupID,
-        ];
+        const layerIDs = mapContext.layerGroups[
+            layerOrGroupID as StaticLayerGroupID
+        ] ?? [layerOrGroupID];
         for (const id of layerIDs) {
             const layer = map.getLayer(id);
             if (!layer) continue;
@@ -84,10 +89,10 @@
             if (opacityOnly) {
                 switch (layer.type) {
                     case 'fill':
-                        map.setPaintProperty(
+                        map.setLayoutProperty(
                             id,
-                            'fill-opacity',
-                            visible ? 0.6 : 0
+                            'visibility',
+                            visible ? 'visible' : 'none'
                         );
                         break;
                     case 'line':
@@ -145,6 +150,14 @@
     // Map initialization & onLoad
     // ---------------------------------------------
 
+    // Helper to get list of all active layer ids
+    function getAllActiveLayerIDs() {
+        return [
+            ...staticMapLayerIDs,
+            ...Object.values(mapContext.taxonLayers).flatMap((t) => t.layerIDs),
+        ];
+    }
+
     $effect(() => {
         map = new mapboxgl.Map({
             accessToken: MAPBOX_TOKEN,
@@ -159,12 +172,8 @@
         map.on('load', () => {
             mapReady = true;
             map.dragRotate.disable();
-            // Iterate through allMapLayers and add them to the map
-            for (const layerBundle of allMapLayers as LayerBundle[]) {
-                // Skip deferred layers
-                if (layerBundle.deferred === true) {
-                    continue;
-                }
+            // Iterate through staticMapLayers and add them to the map
+            for (const layerBundle of staticMapLayers as LayerBundle[]) {
                 map.addSource(layerBundle.id, layerBundle.source);
                 layerBundle.layers.forEach((layer) => {
                     map.addLayer(layer);
@@ -172,7 +181,7 @@
             }
 
             // After all layers are added:
-            for (const layerID of allMapLayerIDs) {
+            for (const layerID of staticMapLayerIDs) {
                 const isVisible = mapContext.activeLayers.includes(layerID);
                 mapContext.setLayerVisibility(layerID, isVisible, false);
             }
@@ -195,7 +204,9 @@
 
                 // Get features from featureLayers that currently exist
                 let features = map!.queryRenderedFeatures(e.point, {
-                    layers: allMapLayerIDs.filter((id) => map.getLayer(id)),
+                    layers: getAllActiveLayerIDs().filter((id) =>
+                        map.getLayer(id)
+                    ),
                 });
 
                 // If we're hovering on an observation point, ONLY focus on the point
@@ -234,8 +245,8 @@
                         // Keep track of hovered features in order to clear them
                         hoveredFeatures.push(hoveredFeature);
                         hoveredFeatureInfo.push({
-                            source: feature.source as MapLayerSource,
-                            sourceLayer: feature.sourceLayer as MapSourceLayer,
+                            source: feature.source,
+                            sourceLayer: feature.sourceLayer ?? '',
                             id: feature.id,
                             properties: feature.properties ?? {},
                         });
@@ -262,7 +273,9 @@
                 clearTooltip();
 
                 let features = map!.queryRenderedFeatures(e.point, {
-                    layers: allMapLayerIDs.filter((id) => map.getLayer(id)),
+                    layers: getAllActiveLayerIDs().filter((id) =>
+                        map.getLayer(id)
+                    ),
                 });
 
                 clearTargetFeatures(map, selectedFeatures, 'selected');
@@ -278,7 +291,7 @@
 
                 // Iterate through selected features to set mouseover display data
                 for (const feature of features) {
-                    const layerId = feature.layer?.id as MapLayerID | undefined;
+                    const layerId = feature.layer?.id as string | undefined;
                     if (!layerId || !feature.source || !feature.id) continue;
 
                     // Set new selected features for map hover effects
@@ -309,14 +322,10 @@
                 }
             });
 
-            // Monitor layer events to trigger loading behavior
+            // Monitor taxon layer events to trigger loading behavior
             map.on('sourcedata', (e) => {
-                if (e.sourceId === observationsLayerSource.id) {
-                    if (!e.isSourceLoaded) {
-                        mapContext.loading = true;
-                    } else if (e.isSourceLoaded) {
-                        mapContext.loading = false;
-                    }
+                if (e.sourceId?.startsWith('observations-tiles-')) {
+                    mapContext.loading = !e.isSourceLoaded;
                 }
             });
 
@@ -333,124 +342,192 @@
     // Reactive layer updates (filters, taxon changes)
     // ---------------------------------------------
 
-    const tileLayers = [...observationsLayer.layers];
+    // Get range extent geometry per-taxon
+    // This needs to be done when observations change (from filtering)
+    async function fetchRangeExtentGeom(taxonID: number) {
+        const includeINat = filtersContext.includeINat;
+        const dataProviders = filtersContext.dataProviders?.length
+            ? filtersContext.dataProviders
+            : null;
+        const dateStart = filtersContext.dateStart;
+        const dateEnd = filtersContext.dateEnd;
 
-    // Function for redrawing observations tiles layer
-    function setupTileLayers() {
-        if (!map) return;
-
-        tileLayers.forEach((layer) => {
-            if (!map.getLayer(layer.id)) {
-                map.addLayer(layer);
+        const response = await fetch(
+            '/server/natureserve/get_range_extent_geom',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    taxon_ids: taxonID,
+                    include_inat: includeINat,
+                    date_start: dateStart,
+                    date_end: dateEnd,
+                    data_providers: dataProviders,
+                }),
             }
+        );
+
+        if (!response.ok) {
+            const errData = await response.json();
+            console.error('Error:', response.status, errData.detail);
+            return;
+        }
+
+        const json = await response.json();
+        const result = json.result;
+        mapContext.taxonLayers[taxonID].rangeExtentGeom =
+            result.range_extent_geom;
+
+        const source = map.getSource(`range-extent-${taxonID}`);
+        if (source && 'setData' in source) {
+            (source as mapboxgl.GeoJSONSource).setData(
+                result.range_extent_geom ?? {
+                    type: 'FeatureCollection',
+                    features: [],
+                }
+            );
+        }
+    }
+
+    // Set up each taxon layer bundle
+    async function setupTaxonLayers(taxonID: number) {
+        const taxon = taxaContext.taxa[taxonID];
+        const color = taxaContext.taxa[taxonID].color;
+        const includeINat = filtersContext.includeINat;
+        const dataProviders = filtersContext.dataProviders?.length
+            ? filtersContext.dataProviders
+            : null;
+        const dateStart = filtersContext.dateStart;
+        const dateEnd = filtersContext.dateEnd;
+
+        const obsBundle = createObservationsBundle(taxonID, color);
+        const rangeBundle = createRangeExtentBundle(taxonID, color);
+
+        // Add observation source with tile URL
+        map.addSource(obsBundle.id, {
+            ...obsBundle.source,
+            tiles: [
+                `${window.location.origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${dataProviders}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
+            ],
         });
+        obsBundle.layers.forEach((layer) => map.addLayer(layer));
+
+        // Add range extent source
+        map.addSource(rangeBundle.id, rangeBundle.source);
+        rangeBundle.layers.forEach((layer) => map.addLayer(layer));
+
+        // Populate layerIDs on taxonLayers
+        mapContext.taxonLayers[taxonID].layerIDs = [
+            ...obsBundle.layers.map((l) => l.id),
+            ...rangeBundle.layers.map((l) => l.id),
+        ];
+
+        // Register dynamic layer groups
+        mapContext.layerGroups[`observations-layer-group-${taxonID}`] =
+            obsBundle.layers.map((l) => l.id);
+        mapContext.layerGroups[`range-extent-layer-group-${taxonID}`] =
+            rangeBundle.layers.map((l) => l.id);
+
+        // Add to activeLayers
+        mapContext.activeLayers = [
+            ...mapContext.activeLayers,
+            ...mapContext.taxonLayers[taxonID].layerIDs,
+        ];
+
+        // Fetch range extent geom
+        await fetchRangeExtentGeom(taxonID);
+
+        mapContext.taxonLayers[taxonID].loaded = true;
     }
 
     // Update select map layers which depend on activeSpecies changes
     $effect(() => {
-        // Kick off reactivity based on activeSpecies
-        const taxonID = taxonContext.taxonID;
-        const taxonRank = taxonContext?.taxonInfo.taxonRank;
         const includeINat = filtersContext.includeINat;
         const dataProviders = filtersContext?.dataProviders?.length
             ? filtersContext.dataProviders
             : null;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
-
-        const ready = mapReady;
-
-        if (!map || !taxonID || !ready) return;
+        if (!map || !mapReady) return;
 
         let cancelled = false;
 
-        async function updateLayers() {
-            try {
-                tileLayers.forEach((layer) => {
-                    if (map.getLayer(layer.id)) map.removeLayer(layer.id);
-                });
+        untrack(() => {
+            for (const taxonID of Object.keys(mapContext.taxonLayers).map(
+                Number
+            )) {
+                // Make sure taxon exists and is loaded
+                if (!mapContext.taxonLayers[taxonID].loaded) continue;
+                const taxon = taxaContext.taxa[taxonID];
+                if (!taxon) continue; // taxon was removed
 
-                if (map.getSource(observationsLayerSource.id)) {
-                    map.removeSource(observationsLayerSource.id);
+                const sourceID = `observations-tiles-${taxonID}`;
+                const source = map.getSource(
+                    sourceID
+                ) as mapboxgl.VectorTileSource;
+                if (source) {
+                    source.setTiles([
+                        `${window.location.origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${dataProviders}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
+                    ]);
                 }
-
-                const origin = window.location.origin;
-
-                // Add new tile source with updated species ID
-                map.addSource(observationsLayerSource.id, {
-                    ...observationsLayerSource.source,
-                    tiles: [
-                        `${origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${taxonRank}/${dataProviders}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
-                    ],
-                } as mapboxgl.VectorSourceSpecification);
-
-                // Add tile layers again
-                setupTileLayers();
-
-                async function getRangeExtentGeom() {
-                    // Fetch range extent data
-                    const rangeExtentURL =
-                        '/server/natureserve/get_range_extent_geom';
-
-                    const response = await fetch(rangeExtentURL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            taxon_ids: taxonID,
-                            include_inat: includeINat,
-                            date_start: dateStart,
-                            date_end: dateEnd,
-                            data_providers: dataProviders,
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        // This is triggered for 404/500 etc.
-                        const errData = await response.json();
-                        console.error(
-                            'Error:',
-                            response.status,
-                            errData.detail
-                        );
-                        return;
-                    }
-
-                    const json = await response.json();
-
-                    if (cancelled) return;
-
-                    const result = json.result;
-
-                    mapContext.rangeExtentGeom = result.range_extent_geom;
-
-                    const sourceID = 'range-extent';
-                    const source = map.getSource(sourceID);
-                    if (source && 'setData' in source) {
-                        (source as mapboxgl.GeoJSONSource).setData(
-                            result.range_extent_geom ?? {
-                                type: 'FeatureCollection',
-                                features: [],
-                            }
-                        );
-                    }
-                }
-
-                getRangeExtentGeom();
-            } catch (error) {
-                console.error('Failed to update map layers:', error);
+                fetchRangeExtentGeom(taxonID);
             }
-        }
-
-        updateLayers();
+        });
 
         return () => {
             cancelled = true;
         };
     });
 
+    // Add and remove taxaLayers when they are toggled in context
+    $effect(() => {
+        const currentIDs = new Set(taxaContext.taxonIDs);
+        if (!mapReady) return;
+
+        untrack(() => {
+            // Add new layers
+            for (const taxonID of currentIDs) {
+                if (!(taxonID in mapContext.taxonLayers)) {
+                    mapContext.taxonLayers[taxonID] = {
+                        color: taxaContext.taxa[taxonID].color,
+                        loaded: false,
+                        layerIDs: [],
+                        rangeExtentGeom: null,
+                        areaOfOccupancyGeom: null,
+                    };
+                    setupTaxonLayers(taxonID);
+                }
+            }
+            // Remove old layers
+            for (const taxonID of Object.keys(mapContext.taxonLayers).map(
+                Number
+            )) {
+                if (!currentIDs.has(taxonID)) {
+                    const layerIDs = mapContext.taxonLayers[taxonID].layerIDs;
+                    layerIDs.forEach((id) => {
+                        if (map.getLayer(id)) map.removeLayer(id);
+                    });
+                    if (map.getSource(`observations-tiles-${taxonID}`))
+                        map.removeSource(`observations-tiles-${taxonID}`);
+                    if (map.getSource(`range-extent-${taxonID}`))
+                        map.removeSource(`range-extent-${taxonID}`);
+                    delete mapContext.layerGroups[
+                        `observations-layer-group-${taxonID}`
+                    ];
+                    delete mapContext.layerGroups[
+                        `range-extent-layer-group-${taxonID}`
+                    ];
+                    delete mapContext.taxonLayers[taxonID];
+                    mapContext.activeLayers = mapContext.activeLayers.filter(
+                        (id) => !layerIDs.includes(id)
+                    );
+                }
+            }
+        });
+    });
+
     // React to hovered feature state changes from outside map component
     $effect(() => {
-        console.log(mapContext.activeLayers);
         const hoveredLegendInfo = mapContext.hoveredLegendInfo;
         if (!hoveredLegendInfo) return;
 

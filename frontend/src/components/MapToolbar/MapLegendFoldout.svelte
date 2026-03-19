@@ -6,9 +6,8 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import {
-        layerGroups,
-        type LayerGroupID,
-        type MapLayerID,
+        type StaticLayerGroupID,
+        type StaticMapLayerID,
     } from '../../lib/map/mapLayers';
     import type { CheckboxPayload } from '../../common/CheckboxInput.svelte';
     import { getMapContext } from '../../contexts/mapContext';
@@ -18,7 +17,7 @@
 
     type MapLegendFoldoutProps = {
         label: string;
-        layerID: MapLayerID | LayerGroupID;
+        layerID: StaticMapLayerID | StaticLayerGroupID;
         handler: (payload: CheckboxPayload) => void;
         children?: Snippet;
         defaultOpen?: boolean;
@@ -37,7 +36,7 @@
     const mapContext = getMapContext();
 
     const layerIDs = $derived(
-        layerGroups[layerID as LayerGroupID] || [layerID]
+        mapContext.layerGroups[layerID as StaticLayerGroupID] || [layerID]
     );
 
     const layerActive = $derived(

@@ -1,127 +1,125 @@
 <script lang="ts">
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
+    import XIcon from '../../assets/XIcon.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
-    import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { isItalicizedRank } from '../../util/taxa';
     import { capitalizeWords } from '../../util/textHelpers';
-    const taxonContext = getActiveTaxonContext();
-    const taxonInfo = $derived(taxonContext.taxonInfo);
 
-    // Tie loading visuals to taxonContext.taxonLoading
-    const isLoading = $derived(taxonContext.taxonLoading);
+    type TaxonDisplayProps = {
+        taxonID: number;
+    };
 
-    // function handleOccDownloadButton() {
-    //     modalContext.visible = true;
-    //     modalContext.content = DownloadOccurrenceForm;
-    // }
+    const { taxonID }: TaxonDisplayProps = $props();
 
-    const taxonNotAccepted = $derived(taxonInfo.taxonomicStatus !== 'accepted');
+    const taxaContext = getActiveTaxaContext();
+    const taxon = $derived(taxaContext.taxa[taxonID]);
+
+    // Tie loading visuals to taxaContext.taxonLoading
+    const isLoading = $derived(taxon.taxonLoading);
+
+    const taxonNotAccepted = $derived(
+        taxon.info.taxonomicStatus !== 'accepted'
+    );
+
+    function handleTaxonClose() {
+        taxaContext.remove(taxonID);
+    }
 </script>
 
 <div id="sidebar-main-header" class="sidebar-header header">
-    {#if taxonContext.taxonError}
-        <div id="taxon-error">Requested Taxon Not Found</div>
-    {:else}
-        <div
-            id="main-header-top"
-            class:invasive={taxonInfo.usInvasive}
-            class:loading-blink={isLoading}
-        >
-            <div id="main-header-name">
-                {#if taxonInfo.usInvasive}
-                    <div class="invasive-icon">
-                        <InvasiveIcon />
-                    </div>
-                {/if}
+    <div
+        class="taxon-display-overlay"
+        style:background-color={taxon.color}
+    ></div>
+    <div
+        id="main-header-top"
+        class:invasive={taxon.info.usInvasive}
+        class:loading-blink={isLoading}
+    >
+        {#if taxon.taxonError}
+            <div id="taxon-error">Requested Taxon Not Found</div>
+        {/if}
+        <div id="main-header-name">
+            {#if taxon.info.usInvasive}
+                <div class="invasive-icon">
+                    <InvasiveIcon />
+                </div>
+            {/if}
+            {#if taxon.info.canonicalName}
                 <span
                     class={'scientific-name'}
-                    class:italicized={isItalicizedRank(taxonInfo.taxonRank)}
+                    class:italicized={isItalicizedRank(taxon.info.taxonRank)}
                 >
-                    {taxonInfo.canonicalName}
+                    {taxon.info.canonicalName}
                 </span>
-                {#if taxonInfo.scientificNameAuthorship}
-                    <span class="scientific-authorship thin">
-                        {taxonInfo.scientificNameAuthorship}
-                    </span>
-                {/if}
-                {#if taxonInfo.canonicalName}
-                    <div class="gbif-link-button">
-                        <LinkButton
-                            href={`https://www.gbif.org/species/${taxonContext.taxonID}`}
-                            target="_blank"
-                        />
-                    </div>
-                {/if}
-            </div>
+            {/if}
+            {#if taxon.info.scientificNameAuthorship}
+                <span class="scientific-authorship thin">
+                    {taxon.info.scientificNameAuthorship}
+                </span>
+            {/if}
+            {#if taxon.info.canonicalName}
+                <div class="gbif-link-button">
+                    <LinkButton
+                        href={`https://www.gbif.org/species/${taxon.taxonID}`}
+                        target="_blank"
+                    />
+                </div>
+            {/if}
             {#if isLoading}
                 <div class="loading-icon icon">
                     <LoadingIcon />
                 </div>
             {/if}
         </div>
-        {#if taxonInfo.commonNames && taxonInfo.commonNames?.length > 0}
-            <div id="common-names" class="thin">
-                {(capitalizeWords(taxonInfo.commonNames) as string[]).join(
-                    ', '
-                )}
+        <button class="icon close-taxon-button" onclick={handleTaxonClose}>
+            <XIcon />
+        </button>
+    </div>
+    {#if taxon.info.commonNames && taxon.info.commonNames?.length > 0}
+        <div id="common-names" class="thin">
+            {(capitalizeWords(taxon.info.commonNames) as string[]).join(', ')}
+        </div>
+    {/if}
+    <div id="aux-taxon-text">
+        {#if taxon.info.taxonomicStatus && taxonNotAccepted}
+            <div id="taxonomic-status-text" class={'thin dubious-taxon'}>
+                <span>
+                    Taxon Status: {capitalizeWords(taxon.info.taxonomicStatus)}
+                </span>
+                {#if taxon.info.taxonomicStatus.includes('synonym')}
+                    <div>
+                        Accepted Taxon ID: {taxon.info.acceptedTaxonID}
+                    </div>
+                {/if}
             </div>
         {/if}
-        <div id="aux-taxon-text">
-            {#if taxonInfo.taxonomicStatus && taxonNotAccepted}
-                <div id="taxonomic-status-text" class={'thin dubious-taxon'}>
-                    <span>
-                        Taxon Status: {capitalizeWords(
-                            taxonInfo.taxonomicStatus
-                        )}
-                    </span>
-                    {#if taxonInfo.taxonomicStatus.includes('synonym')}
-                        <div>
-                            Accepted Taxon ID: {taxonInfo.acceptedTaxonID}
-                        </div>
-                    {/if}
-                </div>
-            {/if}
-            {#if taxonInfo.taxonRank}
-                <span id="taxon-rank" class="thin">
-                    {taxonInfo.taxonRank}
-                </span>
-            {/if}
-        </div>
-        <!-- <div id="observations-download-section">
-            {#if taxonContext.nSValues.observationCount}
-                <div class="observation-count thin">
-                    Records: {taxonContext.nSValues.observationCount?.toLocaleString()}
-                </div>
-                <button
-                    class="download-button"
-                    onclick={handleOccDownloadButton}
-                >
-                    <DownloadIcon />
-                </button>
-            {/if}
-        </div> -->
-    {/if}
+        {#if taxon.info.taxonRank}
+            <span id="taxon-rank" class="thin">
+                {taxon.info.taxonRank}
+            </span>
+        {/if}
+    </div>
 </div>
 
 <style>
-    /* #observations-download-section {
-        display: flex;
-        gap: 0.5rem;
-        width: 100%;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 0.5rem;
-    } */
-    /* .observation-count {
-        font-size: 1rem;
-    } */
-    /* .download-button {
-        box-sizing: border-box;
-        height: 1.5rem;
-        width: 1.5rem;
+    .taxon-display-overlay {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        opacity: 0.15;
+        pointer-events: none;
+    }
+    .close-taxon-button {
         padding: 0;
-    } */
+        align-self: baseline;
+        justify-self: end;
+        background-color: transparent;
+    }
     #main-header-name {
         display: flex;
         flex-wrap: wrap;
@@ -131,6 +129,8 @@
         font-size: 1.4rem;
     }
     #sidebar-main-header {
+        background-size: cover;
+        background-position: center;
         display: flex;
         flex-direction: column;
         text-align: left;
@@ -170,6 +170,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        width: 100%;
+        position: relative;
     }
     #aux-taxon-text {
         display: flex;

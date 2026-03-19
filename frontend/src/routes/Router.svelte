@@ -64,10 +64,12 @@
                 }
                 // Get param value
                 const value = (context as any)[contextKey];
+
                 // Convert to URL string
                 const serialized = codec.toURL(value);
                 if (!serialized) continue;
                 // Add to collected URL params
+                params.delete(param);
                 for (const v of serialized) params.append(param, v);
             }
         }

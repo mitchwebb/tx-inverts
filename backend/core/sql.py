@@ -1,10 +1,7 @@
 # Shared sql query builders used across the txinverts API
 
-from locale import normalize
 from typing import List, Optional
-from xml.etree.ElementInclude import include
 from backend.data_util.helpers import normalize_to_list
-from backend.db_schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db_schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.sql import OccurrenceFilter
@@ -24,7 +21,7 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
     """
 
     taxon_filter = create_occurrence_taxon_filter(
-        filter.taxon_id, include_invasives)
+        filter.taxon_ids, include_invasives)
     observations_table = GBIF_OBSERVATIONS_TABLE
 
     # If no individual data providers are selected
@@ -59,7 +56,6 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
         {date_start_clause}
         {date_end_clause}
     ''').format(
-        taxon_id=sql.Literal(filter.taxon_id),
         include_inat=sql.Literal(filter.include_inat),
         data_provider_clause=data_provider_clause,
         date_start_clause=date_start_clause,
@@ -75,14 +71,15 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
 # create specialized requests
 def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives: Optional[bool] = False):
     """
-    Takes taxon_id and generates sql formatted clause to find occurrences with
+    Takes taxon_ids and generates sql formatted clause to find occurrences with
     matching ids in occurrences table. This matches to taxa in any rank as long
-    as they match the taxon_id somewhere in their lineage.
+    as they match the taxon_ids somewhere in their lineage.
     This filter does not pick up invasive taxa unless the taxon_id requested
-    is, itself, an invasive taxon.
+    is, itself, an invasive taxon, or include_invasives is true.
 
     Args:
-        taxon_id (int): Taxon ID of desired taxon
+        taxon_ids (int): Taxon ID of desired taxon
+        inclue_invasives (optional, boolean): Whether to include invasives subspecies
 
     Returns:
         taxon_clause (str): sql.SQL() formatted clause
@@ -126,7 +123,6 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives
     )
 
     if include_invasives:
-        print('it is true, here I am')
         taxon_clause = lineage_clause
     else:
         taxon_clause = sql.SQL("{lineage_clause} AND {invasive_clause}").format(

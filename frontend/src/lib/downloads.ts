@@ -55,7 +55,7 @@ export async function getDownload(
 
 // Thin wrapper for specific, allowed downloads
 export async function getOccurrenceDownload(
-    taxonID: number,
+    taxonIDs: number[],
     includeINat: FiltersState['includeINat'],
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd'],
@@ -68,7 +68,7 @@ export async function getOccurrenceDownload(
         'server/downloads/get_occurrence_download',
         'occurrence_download.tsv',
         {
-            taxon_ids: [taxonID],
+            taxon_ids: taxonIDs,
             include_inat: includeINat,
             date_start: dateStart,
             date_end: dateEnd,

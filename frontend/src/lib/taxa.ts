@@ -1,10 +1,10 @@
 import { taxaTree } from '../contexts/TaxaTree';
-import type { ActiveTaxonState } from '../contexts/activeTaxonContext';
+import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawNSValues, RawTaxonInfo, TaxonNodeType } from '../types/api';
 import { deduplicateStringArray } from '../util/deduplicate';
 
-export async function getCommonNames(taxonID: ActiveTaxonState['taxonID']) {
+export async function getCommonNames(taxonID: ActiveTaxon['taxonID']) {
     const commonNamesURL = `https://api.gbif.org/v1/species/${taxonID}/vernacularNames?limit=100`;
     try {
         const response = await fetch(commonNamesURL, {
@@ -39,9 +39,8 @@ export async function getCommonNames(taxonID: ActiveTaxonState['taxonID']) {
 }
 
 // Get taxon info (triggered by change in taxonContext.activeTaxonID)
-export async function getTaxonInfo(taxonID: ActiveTaxonState['taxonID']) {
+export async function getTaxonInfo(taxonID: ActiveTaxon['taxonID']) {
     const url = '/server/taxa/get_taxon_info';
-    console.log(url, taxonID);
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,20 +60,20 @@ export async function getTaxonInfo(taxonID: ActiveTaxonState['taxonID']) {
 
 let abortController = new AbortController();
 
-// Get rangeExtent of activeSpecies (plus observationCount since it's convenient)
+// Get nSMetrics of activeSpecies (plus observationCount since it's convenient)
 export async function getNSMetrics(
-    taxonID: ActiveTaxonState['taxonID'],
+    taxonID: ActiveTaxon['taxonID'],
     includeINat: FiltersState['includeINat'],
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd'],
-    dataProviders: FiltersState['dataProviders']
+    dataProviders: FiltersState['dataProviders'],
+    signal?: AbortSignal
 ) {
     // Cancel previous request if necessary
     if (abortController) abortController.abort();
     abortController = new AbortController();
 
     const rangeExtentURL = '/server/natureserve/get_ns_metrics';
-    const signal = abortController.signal;
     const response = await fetch(rangeExtentURL, {
         signal,
         method: 'POST',

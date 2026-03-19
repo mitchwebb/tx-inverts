@@ -1,8 +1,9 @@
 import { getMapContext, type MapState } from '../contexts/mapContext';
 import {
-    getActiveTaxonContext,
-    type ActiveTaxonState,
-} from '../contexts/activeTaxonContext';
+    getActiveTaxaContext,
+    type ActiveTaxaState,
+    type ActiveTaxon,
+} from '../contexts/activeTaxaContext';
 import {
     getFiltersContext,
     type FiltersState,
@@ -41,11 +42,6 @@ export const routerSyncedKeys = {
                 param: 'status',
                 codec: stringArrayCodec() as ParamCodec<NSRank[] | null>,
             },
-            // TODO: Filtered taxa has been made more complex than this URL key can handle
-            // filteredTaxa: {
-            //     param: 'filter_taxon',
-            //     codec: numberArrayCodec() as ParamCodec<number[] | null>,
-            // },
             taxonRank: {
                 param: 'rank',
                 codec: stringCodec() as ParamCodec<TaxonomicRank | null>,
@@ -56,9 +52,9 @@ export const routerSyncedKeys = {
     },
 
     taxon: {
-        getContext: getActiveTaxonContext,
-        keys: makeSyncedKeys<ActiveTaxonState>({
-            taxonID: { param: 'taxon', codec: numberCodec(null) },
+        getContext: getActiveTaxaContext,
+        keys: makeSyncedKeys<ActiveTaxaState>({
+            taxonIDs: { param: 'taxon', codec: numberArrayCodec() },
         }),
     },
 

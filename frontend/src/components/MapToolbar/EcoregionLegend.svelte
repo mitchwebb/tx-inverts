@@ -13,7 +13,10 @@
         type LegendFeatureValue,
     } from '../../constants/mapLegendKeys';
     import { getMapContext } from '../../contexts/mapContext';
-    import type { LayerGroupID, MapLayerID } from '../../lib/map/mapLayers';
+    import type {
+        StaticLayerGroupID,
+        StaticMapLayerID,
+    } from '../../lib/map/mapLayers';
     import { handleLayerToggle } from '../../util/handleMapLayerToggle';
     import MapLegendDisplay from './MapLegendDisplay.svelte';
     import MapLegendFoldout from './MapLegendFoldout.svelte';
@@ -21,7 +24,7 @@
     const mapContext = getMapContext();
 
     function layerToggleHandler(payload: CheckboxPayload) {
-        const layerID = payload.value as MapLayerID | LayerGroupID;
+        const layerID = payload.value as StaticMapLayerID | StaticLayerGroupID;
         const layerVisible = payload.checked as boolean;
         handleLayerToggle(mapContext, { layerID, layerVisible });
     }

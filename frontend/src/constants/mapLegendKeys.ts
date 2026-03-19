@@ -1,7 +1,16 @@
-import type { MapLayerSource, MapSourceLayer } from '../lib/map/mapLayers';
-
 // Keys for map features in ['name: color'] format for MapBox styling
 export type Color = string;
+
+export const TAXON_COLORS = [
+    '#e69f00',
+    '#56b4e9',
+    '#009e73',
+    '#f0e442',
+    '#0072b2',
+    '#d55e00',
+    '#cc79a7',
+    '#000000',
+];
 
 // Level 3 Ecoregions Key
 export const l3EcoregionsLegend = {
@@ -238,8 +247,8 @@ export type LegendFeatureValue =
     | TexasParkClassification
     | ProviderCode;
 
-type HoverablePropertyDef = {
-    propName: LegendFeatureProperty;
-    source: MapLayerSource;
-    sourceLayer: MapSourceLayer;
-};
+// type HoverablePropertyDef = {
+//     propName: LegendFeatureProperty;
+//     source: MapLayerSource;
+//     sourceLayer: MapSourceLayer;
+// };

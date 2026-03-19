@@ -4,12 +4,12 @@
         type CheckboxPayload,
     } from '../../common/CheckboxInput.svelte';
     import type { Provider } from '../../constants/mapLegendKeys';
-    import { getActiveTaxonContext } from '../../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { dataProviders } from '../../contexts/DataProviders';
     import { getFiltersContext } from '../../contexts/filtersContext';
 
     const filtersContext = getFiltersContext();
-    const taxonContext = getActiveTaxonContext();
+    const taxonContext = getActiveTaxaContext();
 
     function handleDataProvider({ value, checked }: CheckboxPayload) {
         // Get list of currently selected providers
@@ -28,24 +28,47 @@
         // Update reactive state
         filtersContext.dataProviders = currProviders;
     }
+
+    // Determine if observationsMetrics are loading for any taxa
+    const observationsMetricsLoading = $derived(
+        Object.values(taxonContext.taxa).some(
+            (taxon) => taxon.observationMetricsLoading
+        )
+    );
+
+    // Determine providerCounts added across all taxa
+    let providerCounts = $derived(
+        Object.values(taxonContext.taxa).reduce(
+            (acc, taxon) => {
+                if (!taxon.providerCounts) return acc;
+                for (const [provider, count] of Object.entries(
+                    taxon.providerCounts
+                )) {
+                    acc[provider] = (acc[provider] ?? 0) + count;
+                }
+                return acc;
+            },
+            {} as Record<string, number>
+        )
+    );
 </script>
 
 {#if $dataProviders}
     <div
         class="data-providers-section filters-section"
         class:active={!!filtersContext.dataProviders?.length}
-        class:loading-blink={taxonContext.observationMetricsLoading}
+        class:loading-blink={observationsMetricsLoading}
     >
-        {#if taxonContext.observationMetricsLoading}
+        {#if observationsMetricsLoading}
             <div class="loading-icon icon">
                 <LoadingIcon />
             </div>
         {/if}
         <div class="filters-section-header">Datasets</div>
         <div class="filters-section-content">
-            {#if taxonContext.providerCounts}
+            {#if !!providerCounts}
                 <form id="datasets-filter">
-                    {#each Object.entries(taxonContext.providerCounts) as [institutionCode, count] (institutionCode)}
+                    {#each Object.entries(providerCounts) as [institutionCode, count] (institutionCode)}
                         {@const institutionName =
                             $dataProviders?.[institutionCode]?.[
                                 'institutionName'

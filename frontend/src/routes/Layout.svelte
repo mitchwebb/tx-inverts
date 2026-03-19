@@ -8,11 +8,12 @@
     import {
         EMPTY_NS_VALUES,
         EMPTY_TAXON_INFO,
-        getActiveTaxonContext,
+        getActiveTaxaContext,
+        initialActiveTaxaState,
         initialTaxonState,
-        setActiveTaxonContext,
-        type ActiveTaxonState,
-    } from '../contexts/activeTaxonContext';
+        setActiveTaxaContext,
+        type ActiveTaxaState,
+    } from '../contexts/activeTaxaContext';
     import Router from './Router.svelte';
     import {
         getRouterContext,
@@ -39,7 +40,6 @@
         NS_VALUES_MAP,
         TAXON_INFO_MAP,
         type NSValues,
-        type RawTaxonInfo,
         type TaxonInfo,
     } from '../types/api';
     import {
@@ -47,18 +47,50 @@
         setSidebarContext,
         type SidebarState,
     } from '../contexts/sidebarContext';
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import {
         initialMetricsState,
         setMetricsContext,
         type MetricsParams,
     } from '../contexts/metricsParamsContext';
-    import type { Provider, ProviderCode } from '../constants/mapLegendKeys';
+    import { TAXON_COLORS, type Provider } from '../constants/mapLegendKeys';
 
     // Intialize contexts
-    const taxonState: ActiveTaxonState = $state(initialTaxonState);
-    setActiveTaxonContext(taxonState);
-    const taxonContext = getActiveTaxonContext();
+    const taxaState: ActiveTaxaState = $state(initialActiveTaxaState);
+    setActiveTaxaContext(taxaState);
+
+    function getNextColor(): string {
+        const usedColors = new Set(
+            Object.values(taxaState.taxa).map((t) => t.color)
+        );
+        return TAXON_COLORS.find((c) => !usedColors.has(c)) ?? TAXON_COLORS[0];
+    }
+
+    function addActiveTaxon(taxonID: number, append = false) {
+        if (taxaState.taxa[taxonID]) return;
+        if (!append) {
+            // Get latest taxonID in context
+            const lastID = taxaState.taxonIDs.slice(-1)[0];
+            if (lastID !== undefined) {
+                delete taxaState.taxa[lastID];
+                taxaState.taxonIDs.pop();
+            }
+        }
+        taxaState.taxa[taxonID] = {
+            ...initialTaxonState,
+            taxonID,
+            color: getNextColor(),
+        };
+        taxaState.taxonIDs = [...taxaState.taxonIDs, taxonID];
+        loadTaxonInfo(taxonID);
+    }
+    function removeActiveTaxon(taxonID: number) {
+        delete taxaState.taxa[taxonID];
+        taxaState.taxonIDs = taxaState.taxonIDs.filter((id) => id !== taxonID);
+    }
+    taxaState.add = addActiveTaxon;
+    taxaState.remove = removeActiveTaxon;
+    const taxaContext = getActiveTaxaContext();
 
     const filtersState: FiltersState = $state(initialFiltersState);
     setFiltersContext(filtersState);
@@ -86,106 +118,136 @@
         routerContext.url = url;
     });
 
-    // Retrieve and set taxon info in context (on activeTaxonID changes)
-    $effect(() => {
-        const activeTaxonID = taxonContext.taxonID;
-        if (activeTaxonID && activeTaxonID !== taxonContext.lastLoadedID) {
-            taxonContext.taxonLoading = true;
-            taxonContext.taxonError = false;
+    // Retrieve and set taxon info in context
+    async function loadTaxonInfo(taxonID: number) {
+        const taxon = taxaContext.taxa[taxonID];
+        if (!taxon || taxon.taxonID === taxon.lastLoadedID) return;
 
-            // Clear taxonInfo and nSValues in context
-            taxonContext.taxonInfo = EMPTY_TAXON_INFO;
-            taxonContext.nSValues = EMPTY_NS_VALUES;
+        taxon.taxonLoading = true;
+        taxon.taxonError = false;
 
-            // Wrap in async IIFE
-            (async () => {
-                try {
-                    const taxonInfoPromise: Promise<RawTaxonInfo> =
-                        getTaxonInfo(activeTaxonID);
-                    const commonNamesPromise = getCommonNames(activeTaxonID);
+        // Clear taxonInfo and nSValues in context
+        taxon.info = EMPTY_TAXON_INFO;
+        taxon.nSValues = EMPTY_NS_VALUES;
 
-                    const [rawTaxonInfo, commonNamesResult] = await Promise.all(
-                        [taxonInfoPromise, commonNamesPromise]
-                    );
-
-                    const taxonInfo = normalizeAPIResponse<TaxonInfo>(
-                        rawTaxonInfo,
-                        TAXON_INFO_MAP
-                    );
-
-                    taxonInfo.commonNames = commonNamesResult
-                        ? commonNamesResult.slice(0, 3)
-                        : null;
-
-                    taxonContext.taxonInfo = taxonInfo;
-
-                    taxonContext.lastLoadedID = activeTaxonID;
-                } catch (error) {
-                    taxonContext.taxonError = true;
-                } finally {
-                    taxonContext.taxonLoading = false;
-                }
-            })();
-        } else if (!activeTaxonID) {
-            taxonContext.taxonInfo = EMPTY_TAXON_INFO;
+        try {
+            const [rawTaxonInfo, commonNamesResult] = await Promise.all([
+                getTaxonInfo(taxonID),
+                getCommonNames(taxonID),
+            ]);
+            const taxonInfo = normalizeAPIResponse<TaxonInfo>(
+                rawTaxonInfo,
+                TAXON_INFO_MAP
+            );
+            taxonInfo.commonNames = commonNamesResult?.slice(0, 3) ?? null;
+            taxon.info = taxonInfo;
+            taxon.lastLoadedID = taxonID;
+        } catch {
+            taxon.taxonError = true;
+        } finally {
+            taxon.taxonLoading = false;
         }
-    });
+    }
 
-    // Get NatureServe values from server on new taxon or filters change
+    // Get NSValues for all taxa on filters change
     $effect(() => {
-        const activeTaxonID = taxonContext.taxonID;
         const includeINat = filtersContext.includeINat !== false;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
         const dataProviders = filtersContext.dataProviders;
 
-        taxonContext.nSValuesLoading = true;
-
-        if (activeTaxonID) {
-            (async () => {
-                try {
-                    const rawNSResult = await getNSMetrics(
-                        activeTaxonID,
-                        includeINat,
-                        dateStart,
-                        dateEnd,
-                        dataProviders
-                    );
-                    const nSValues = normalizeAPIResponse<NSValues>(
-                        rawNSResult,
-                        NS_VALUES_MAP
-                    );
-                    taxonContext.nSValues = nSValues;
-                } catch (error) {
-                    console.error(error);
-                } finally {
-                    taxonContext.nSValuesLoading = false;
-                }
-            })();
-        }
+        untrack(() => {
+            for (const taxonID of taxaContext.taxonIDs) {
+                const taxon = taxaContext.taxa[taxonID];
+                if (!taxon) continue;
+                loadNSValues(
+                    taxonID,
+                    includeINat,
+                    dateStart,
+                    dateEnd,
+                    dataProviders
+                );
+            }
+        });
     });
+
+    // Get NSValues for all taxa that have no values
+    $effect(() => {
+        const taxonIDs = taxaContext.taxonIDs;
+
+        untrack(() => {
+            for (const taxonID of taxonIDs) {
+                const taxon = taxaContext.taxa[taxonID];
+                // Check to make sure taxon exists and that it doesn't already have values
+                if (!taxon || taxon.nSValues.numberOfOccurrences !== null)
+                    continue;
+                const includeINat = filtersContext.includeINat !== false;
+                const dateStart = filtersContext.dateStart;
+                const dateEnd = filtersContext.dateEnd;
+                const dataProviders = filtersContext.dataProviders;
+                loadNSValues(
+                    taxonID,
+                    includeINat,
+                    dateStart,
+                    dateEnd,
+                    dataProviders
+                );
+            }
+        });
+    });
+
+    async function loadNSValues(
+        taxonID: number,
+        includeINat: boolean,
+        dateStart: string | null,
+        dateEnd: string | null,
+        dataProviders: Provider[] | null
+    ) {
+        const taxon = taxaContext.taxa[taxonID];
+        if (!taxon) return;
+        taxon.nSValuesLoading = true;
+        const abortController = new AbortController();
+        try {
+            const rawNSResult = await getNSMetrics(
+                taxonID,
+                includeINat,
+                dateStart,
+                dateEnd,
+                dataProviders,
+                abortController.signal
+            );
+            taxon.nSValues = normalizeAPIResponse<NSValues>(
+                rawNSResult,
+                NS_VALUES_MAP
+            );
+        } catch (error) {
+            console.error(error);
+        } finally {
+            taxon.nSValuesLoading = false;
+        }
+    }
 
     // Get institution counts in context (on activeTaxonID and select filter changes)
     $effect(() => {
-        const activeTaxonID = taxonContext.taxonID;
         const includeINat = filtersContext.includeINat !== false;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
 
-        if (activeTaxonID) {
-            taxonContext.observationMetricsLoading = true;
+        for (const taxonID of Object.keys(taxaContext.taxa).map(Number)) {
+            const taxon = taxaContext.taxa[taxonID];
+            taxon.observationMetricsLoading = true;
 
             (async () => {
                 try {
                     // Run both async calls concurrently
                     const [providerCounts, dateRange] = await Promise.all([
                         getProviderCounts(
-                            activeTaxonID,
+                            taxonID,
                             includeINat,
                             dateStart,
                             dateEnd
                         ),
-                        getObservationDates(activeTaxonID, includeINat),
+                        getObservationDates(taxonID, includeINat),
                     ]);
                     // If publishers are already selected, but they do not have this taxon,
                     // make sure to include them in the provider counts with a value of 0
@@ -199,31 +261,29 @@
                             }
                         }
                     }
-                    taxonContext.providerCounts = providerCounts;
+                    taxon.providerCounts = providerCounts;
 
                     if (dateRange) {
-                        taxonContext.dateMin = dateRange?.minDate;
-                        taxonContext.dateMax = dateRange?.maxDate;
+                        taxon.dateMin = dateRange?.minDate;
+                        taxon.dateMax = dateRange?.maxDate;
                     }
                 } catch (error) {
                     console.error(error);
                 } finally {
-                    taxonContext.observationMetricsLoading = false;
+                    taxon.observationMetricsLoading = false;
                 }
             })();
-        } else {
-            taxonContext.dateMin = null;
-            taxonContext.dateMax = null;
-            taxonContext.providerCounts = null;
         }
     });
 
-    // // On taxa filter change, set in state
-    // $effect(() => {
-    // 	const taxaFilter = routerContext.url.searchParams.get('taxa_filter')
-    // 	if (!taxaFilter) return;
-    // 	taxonContext.filteredTaxonID = parseInt(taxaFilter);
-    // })
+    // Special case for adding taxa based on URL params
+    onMount(() => {
+        const taxonParams = routerContext.url.searchParams
+            .getAll('taxon')
+            .map(Number)
+            .filter(Boolean);
+        taxonParams.forEach((id) => addActiveTaxon(id, true));
+    });
 </script>
 
 <div id="layout">

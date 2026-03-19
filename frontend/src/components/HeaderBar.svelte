@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getActiveTaxonContext } from '../contexts/activeTaxonContext';
+    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
     import {
         getRouterContext,
         type RouterPath,
@@ -9,18 +9,20 @@
     import TaxaSearchSuggestBar from './TaxaSearchSuggestBar.svelte';
 
     const routerContext = getRouterContext();
-    const taxonContext = getActiveTaxonContext();
+    const taxaContext = getActiveTaxaContext();
 
-    // When clearing previous selection from searchbar, dump current taxonID
+    // When clearing previous selection from searchbar, dump most recent taxonID
     function handleSearchClear() {
-        taxonContext.taxonID = null;
+        const lastAddedTaxonID = taxaContext.taxonIDs.slice(-1)[0];
+        if (lastAddedTaxonID) {
+            taxaContext.remove(lastAddedTaxonID);
+        }
     }
 
     // When selecting from searchbar, set taxonID in context
     function handleSearchSelect(suggestion: SearchSuggestion) {
         if (!suggestion.taxonID) return;
-
-        taxonContext.taxonID = suggestion.taxonID;
+        taxaContext.add(suggestion.taxonID);
     }
 
     const currPath = $derived(routerContext.url.pathname);
@@ -71,11 +73,14 @@
         <div>TEXAS</div>
         <div>INVERTS</div>
     </a>
-    <TaxaSearchSuggestBar
-        placeholder="Search by taxon..."
-        handleClear={handleSearchClear}
-        handleSelect={handleSearchSelect}
-    />
+    <div id="header-search-bar">
+        <TaxaSearchSuggestBar
+            placeholder="Search by taxon..."
+            handleClear={handleSearchClear}
+            handleSelect={handleSearchSelect}
+        />
+    </div>
+
     <ul id="main-nav" class="nav-item">
         {#each navRoutes as route, i}
             {@render menuPageLink(route)}
@@ -84,6 +89,14 @@
 </header>
 
 <style>
+    #header-search-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        max-width: 350px;
+    }
     .navbar-link {
         all: unset;
         height: 100%;
