@@ -34,7 +34,7 @@
         { label: 'Class', sortKey: 'class' },
         { label: 'Order', sortKey: 'order' },
         { label: 'Family', sortKey: 'family' },
-        // { label: 'Genus', sortKey: 'genus' },
+        { label: 'Genus', sortKey: 'genus' },
         // { label: 'Taxon Rank', sortKey: 'taxon_rank' },
     ]);
 
@@ -181,9 +181,9 @@
                         <div class="row-text">
                             {taxon.family}
                         </div>
-                        <!-- <div class="taxon-rank-label">
+                        <div class="taxon-rank-label">
                             {taxon.genus}
-                        </div> -->
+                        </div>
                     {/snippet}
                 </VirtualizedTable>
                 <button
