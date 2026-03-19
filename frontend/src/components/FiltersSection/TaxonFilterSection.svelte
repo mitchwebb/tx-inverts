@@ -1,29 +1,19 @@
 <script lang="ts">
     import XIcon from '../../assets/XIcon.svelte';
-    import { getFiltersContext } from '../../contexts/filtersContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import type { SearchSuggestion } from '../../types/api';
+    import { isItalicizedRank } from '../../util/taxa';
     import TaxaSearchSuggestBar from '../TaxaSearchSuggestBar.svelte';
 
-    const filtersContext = getFiltersContext();
+    const taxaContext = getActiveTaxaContext();
 
     function handleRemoveTaxon(e: MouseEvent) {
-        const target = e.target as HTMLElement;
-        const parent = target.parentNode as HTMLElement;
-        const taxonID = parent.dataset.taxonId;
+        const target = e.currentTarget as HTMLElement;
+        const taxonID = target.dataset.taxonId;
 
-        const currentTaxa = filtersContext.filteredTaxa;
+        if (!taxonID) return;
 
-        if (!taxonID || !currentTaxa) return;
-
-        const taxonIDNum = Number(taxonID);
-
-        let { [taxonIDNum]: _, ...newTaxa } = currentTaxa;
-
-        if (Object.keys(newTaxa).length === 0) {
-            filtersContext.filteredTaxa = null;
-        } else {
-            filtersContext.filteredTaxa = newTaxa;
-        }
+        taxaContext.remove(Number(taxonID));
     }
 
     function handleSearchClear() {
@@ -35,20 +25,14 @@
 
         // Get info from current selection
         const taxonID = suggestion.taxonID;
-        const canonicalName = suggestion.canonicalName;
 
-        const currentTaxa = filtersContext.filteredTaxa;
-
-        filtersContext.filteredTaxa = {
-            ...currentTaxa,
-            [taxonID]: canonicalName,
-        };
+        taxaContext.add(Number(taxonID), true);
     }
 </script>
 
 <div
     class="taxon-filter filters-section"
-    class:active={!!filtersContext.filteredTaxa}
+    class:active={!!taxaContext.taxonIDs.length}
 >
     <div class="filters-section-header">Taxa</div>
     <div class="filters-section-content">
@@ -57,13 +41,24 @@
             handleClear={handleSearchClear}
             handleSelect={handleSearchSelect}
         />
-        {#if filtersContext.filteredTaxa}
+        {#if !!taxaContext.taxonIDs.length}
             <div id="taxon-cards-wrapper">
-                {#each Object.entries(filtersContext.filteredTaxa ?? {}) as [taxonID, canonicalName]}
+                {#each taxaContext.taxonIDs as taxonID}
+                    {@const taxonInfo = taxaContext.taxa[taxonID].info}
+                    {@const isItalicized = isItalicizedRank(
+                        taxonInfo.taxonRank
+                    )}
                     <div class="filtered-taxon-card button">
                         <div class="filtered-taxon-name">
-                            {canonicalName}
+                            <span class:italicized={isItalicized}
+                                >{taxonInfo.canonicalName}</span
+                            >
+                            <div class="filtered-taxon-authorship thin">
+                                {taxaContext.taxa[taxonID].info
+                                    .scientificNameAuthorship}
+                            </div>
                         </div>
+
                         <button
                             class="remove-taxon-button icon"
                             data-taxon-id={taxonID}
@@ -81,6 +76,9 @@
 </div>
 
 <style>
+    .italicized {
+        font-style: italic;
+    }
     #taxon-cards-wrapper {
         display: flex;
         flex-direction: column;
@@ -89,6 +87,8 @@
         width: fit-content;
     }
     .filtered-taxon-name {
+        display: flex;
+        gap: 0.5rem;
         padding: 0.25rem 0.5rem;
     }
     .filters-section-content {
@@ -98,6 +98,7 @@
     }
     .remove-taxon-icon {
         height: 1.5rem;
+        pointer-events: none;
     }
     .remove-taxon-button {
         cursor: pointer;
@@ -113,7 +114,7 @@
     }
     .filtered-taxon-card {
         display: flex;
-        gap: 0.5rem;
+        /* gap: 0.5rem; */
         background-color: var(--container-mid);
         cursor: unset;
         justify-content: space-between;

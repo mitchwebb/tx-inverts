@@ -5,7 +5,7 @@ export const TAXON_COLORS = [
     '#e69f00',
     '#56b4e9',
     '#009e73',
-    '#f0e442',
+    '#cee028',
     '#0072b2',
     '#d55e00',
     '#cc79a7',

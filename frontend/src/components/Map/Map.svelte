@@ -32,7 +32,7 @@
         clearTargetFeatures,
         handleLegendHover,
     } from '../../lib/map/mapFeatures';
-    import { untrack } from 'svelte';
+    import { onMount, untrack } from 'svelte';
 
     // ---------------------------------------------
     // Contexts & reactive state
@@ -180,10 +180,21 @@
                 });
             }
 
-            // After all layers are added:
+            // Set visibility of static layers
             for (const layerID of staticMapLayerIDs) {
+                console.log(layerID);
                 const isVisible = mapContext.activeLayers.includes(layerID);
                 mapContext.setLayerVisibility(layerID, isVisible, false);
+            }
+
+            // Add dynamic layers (if IDs already in context)
+            // This reloads ALL taxonLayers, which isn't the most
+            // efficient thing in the world. But is it an issue in earnest?
+            for (const taxonID of taxaContext.taxonIDs) {
+                if (taxonID in mapContext.taxonLayers) {
+                    mapContext.taxonLayers[taxonID].loaded = false;
+                }
+                setupTaxonLayers(taxonID);
             }
 
             // ---------------------------------------------
@@ -235,8 +246,8 @@
                             id: feature.id,
                         };
 
-                        // TODO: This is very hard-coded and suspect, but I want to
-                        // disable L3-ecoregion hovering map-side, while allowing it via the legend
+                        // This is a hard-coded way to disable L3-ecoregion
+                        // hovering map-side, while allowing it via the legend
                         if (feature.source !== 'l3-ecoregions') {
                             map.setFeatureState(hoveredFeature, {
                                 hover: true,
@@ -391,7 +402,6 @@
 
     // Set up each taxon layer bundle
     async function setupTaxonLayers(taxonID: number) {
-        const taxon = taxaContext.taxa[taxonID];
         const color = taxaContext.taxa[taxonID].color;
         const includeINat = filtersContext.includeINat;
         const dataProviders = filtersContext.dataProviders?.length
@@ -399,6 +409,16 @@
             : null;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
+
+        if (!mapContext.taxonLayers[taxonID]) {
+            mapContext.taxonLayers[taxonID] = {
+                color: taxaContext.taxa[taxonID].color,
+                loaded: false,
+                layerIDs: [],
+                rangeExtentGeom: null,
+                areaOfOccupancyGeom: null,
+            };
+        }
 
         const obsBundle = createObservationsBundle(taxonID, color);
         const rangeBundle = createRangeExtentBundle(taxonID, color);
@@ -563,7 +583,9 @@
         box-sizing: border-box;
     }
 
-    /* Mapbox tooltip restyle */
+    /*  */
+    /* Mapbox restyle */
+    /*  */
     :global(.tooltip-section ul) {
         margin: 0 0 0 1rem;
         padding: 0;
@@ -653,7 +675,6 @@
         pointer-events: none !important;
         z-index: 0 !important;
     }
-
     :global(.mapboxgl-popup-content > *) {
         position: relative !important;
         z-index: 1 !important; /* ensure content sits above overlay */

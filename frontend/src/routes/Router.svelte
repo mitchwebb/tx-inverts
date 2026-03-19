@@ -8,8 +8,10 @@
     import TaxonPage from './taxon/TaxonPage.svelte';
     import RankingPage from './rankings/RankingsPage.svelte';
     import { routerSyncedKeys } from '../constants/router';
+    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
 
     let routerContext = getRouterContext();
+    let taxaContext = getActiveTaxaContext();
 
     let PageComponent = $state<null | Component>(null);
 
@@ -83,8 +85,9 @@
 
     // On mount, populate state from URL
     onMount(() => {
-        const url = routerContext.url;
+        const url = new URL(window.location.href);
         const currentRoute = getCurrentRoute(url);
+        routerContext.url = url;
 
         // Default to /map if no route matches (including "/")
         if (!currentRoute) {
@@ -104,14 +107,27 @@
                 // Else populate relevant params to their corresponding contexts
                 const values = url.searchParams.getAll(param);
                 if (values.length > 0) {
-                    (context as any)[contextKey] = codec.fromURL(values);
+                    const decoded = codec.fromURL(values);
+                    if (decoded != null) {
+                        (context as any)[contextKey] = decoded;
+                    }
                 }
             }
         }
 
+        // Special case for adding taxa based on URL params
+        const taxonParams = url.searchParams
+            .getAll('taxon')
+            .map(Number)
+            .filter(Boolean);
+        taxonParams.forEach((id) => taxaContext.add(id, true));
+
         // Set initial page component
         PageComponent = currentRoute.component;
     });
+
+    // Set initial URL in context for parsing into various contexts
+    onMount(() => {});
 
     // When any routerSyncedKey changes in their respective context, update URL
     // Also, when changing pages, set irrelevant params to null

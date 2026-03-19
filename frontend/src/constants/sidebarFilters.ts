@@ -60,12 +60,6 @@ export const SIDEBAR_FILTER_META: Record<
         domain: 'taxa',
         count: true,
     },
-    filteredTaxa: {
-        path: ['/rankings'],
-        default: FILTER_DEFAULTS.filteredTaxa,
-        domain: 'taxa',
-        count: true,
-    },
 } satisfies {
     [K in keyof FiltersState]: {
         path: RouterPath[];

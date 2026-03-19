@@ -19,7 +19,11 @@
     const filtersContext = getFiltersContext();
     const modalContext = getModalContext();
 
+    // All taxa return from current filters, to be shown in list
     let filteredTaxa: TaxonNodeType[] = $state([]);
+
+    // ID of locally selected taxon, used to control filtering behavior
+    let locallySelectedID: number | undefined = $state();
 
     // Define headers/sort-keys for virtualized rankings table
     const tableHeaders = $derived([
@@ -45,12 +49,24 @@
         if (!targetID || !parseInt(targetID)) return;
 
         taxaContext.add(parseInt(targetID));
+
+        // Track selectedID to control behavior
+        locallySelectedID = parseInt(targetID);
     }
 
-    // Filter taxa by filteredTaxa
+    // Filter taxa to currently active taxa
     $effect(() => {
+        // Skip filtering taxon was selected locally (prevents filtering behavior when selected species in chart)
+        if (
+            locallySelectedID &&
+            taxaContext.taxonIDs.includes(locallySelectedID)
+        )
+            return;
+
         // Filter to animalia (all) if not filtered taxa
-        let filterTaxa = filtersContext.filteredTaxa || { 1: 'Animalia' };
+        let filterTaxa = taxaContext.taxonIDs.length
+            ? taxaContext.taxonIDs
+            : [1];
 
         if (!$taxaTree) {
             return;
@@ -66,7 +82,7 @@
 
         const filteredMap = new Map<number, TaxonNodeType>();
 
-        for (const taxonID of Object.keys(filterTaxa).map(Number)) {
+        for (const taxonID of filterTaxa.map(Number)) {
             const parentNode = $taxaTree.get(taxonID);
 
             if (!parentNode) continue;

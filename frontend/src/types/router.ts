@@ -15,7 +15,7 @@ import type { NSRank } from './api';
 
 export type ParamCodec<T> = {
     toURL(value: T): string[] | null;
-    fromURL(values: string[]): T;
+    fromURL(values: string[]): T | null | undefined;
 };
 
 // Type for relevant router keys to keep in sync

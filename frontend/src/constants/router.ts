@@ -13,10 +13,9 @@ import type { Provider } from './mapLegendKeys';
 import type { ParamCodec, SyncedKeys } from '../types/router';
 import {
     booleanCodec,
-    numberArrayCodec,
-    numberCodec,
     stringArrayCodec,
     stringCodec,
+    taxaCodec,
 } from '../util/router';
 import type { TaxonomicRank } from '../types/taxa';
 
@@ -51,10 +50,11 @@ export const routerSyncedKeys = {
         }),
     },
 
+    // Special case of setting active taxa in state from URL
     taxon: {
         getContext: getActiveTaxaContext,
         keys: makeSyncedKeys<ActiveTaxaState>({
-            taxonIDs: { param: 'taxon', codec: numberArrayCodec() },
+            taxa: { param: 'taxon', codec: taxaCodec() },
         }),
     },
 

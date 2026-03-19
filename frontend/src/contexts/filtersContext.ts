@@ -6,7 +6,6 @@ import type { TaxonomicRank } from '../types/taxa';
 export const filtersStateKey = 'filters';
 
 export type FiltersState = {
-    filteredTaxa: Record<number, string | null> | null; // taxonID: canonicalName
     taxonRank: TaxonomicRank | null;
     includeINat: boolean;
     dataProviders: Provider[] | null;
@@ -16,7 +15,6 @@ export type FiltersState = {
 };
 
 export const initialFiltersState: FiltersState = {
-    filteredTaxa: null,
     taxonRank: null,
     includeINat: true,
     dataProviders: null,

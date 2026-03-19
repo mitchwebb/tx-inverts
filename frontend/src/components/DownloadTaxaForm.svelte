@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
     import { getFiltersContext } from '../contexts/filtersContext';
     import { getTaxaDownload } from '../lib/downloads';
     import DownloadAndFiltersForm from './DownloadAndFiltersForm.svelte';
@@ -7,15 +8,13 @@
     import TaxonFilterSection from './FiltersSection/TaxonFilterSection.svelte';
 
     const filters = getFiltersContext();
+    const taxaContext = getActiveTaxaContext();
 
     async function requestTaxaDownload(
         estimate: boolean,
         onProgress?: (received: number) => void
     ) {
-        // Get list of just taxonIDs from filtered taxa list
-        const filteredTaxonIDs = Object.keys(filters.filteredTaxa ?? {}).map(
-            Number
-        );
+        const filteredTaxonIDs = taxaContext.taxonIDs;
         const response = await getTaxaDownload(
             filteredTaxonIDs,
             filters.includeINat,
@@ -43,11 +42,9 @@
 
 <style>
     #download-form-wrapper {
-        /* padding: 0.75rem; */
         display: flex;
         flex-direction: column;
         max-width: 100%;
-        /* gap: 1rem; */
     }
     #taxa-download-filters {
         display: flex;

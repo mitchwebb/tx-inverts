@@ -1,3 +1,4 @@
+import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { ParamCodec } from '../types/router';
 
 /**
@@ -62,3 +63,10 @@ export const stringCodec = (
         return values[0]; // just take the first
     },
 });
+
+export function taxaCodec(): ParamCodec<Record<number, ActiveTaxon>> {
+    return {
+        toURL: (taxa) => (taxa ? Object.keys(taxa).map(String) : null),
+        fromURL: (_values) => undefined, // No function, onMount handles this
+    };
+}

@@ -68,6 +68,7 @@
 
     function addActiveTaxon(taxonID: number, append = false) {
         if (taxaState.taxa[taxonID]) return;
+        // If append is false, replace the latest taxon
         if (!append) {
             // Get latest taxonID in context
             const lastID = taxaState.taxonIDs.slice(-1)[0];
@@ -111,12 +112,6 @@
 
     const metricsParamsState: MetricsParams = $state(initialMetricsState);
     setMetricsContext(metricsParamsState);
-
-    // Set initial URL in context for parsing into various contexts
-    onMount(() => {
-        const url = new URL(window.location.href);
-        routerContext.url = url;
-    });
 
     // Retrieve and set taxon info in context
     async function loadTaxonInfo(taxonID: number) {
@@ -171,7 +166,7 @@
         });
     });
 
-    // Get NSValues for all taxa that have no values
+    // Get NSValues for currently empty taxa on taxonIDs change
     $effect(() => {
         const taxonIDs = taxaContext.taxonIDs;
 
@@ -274,15 +269,6 @@
                 }
             })();
         }
-    });
-
-    // Special case for adding taxa based on URL params
-    onMount(() => {
-        const taxonParams = routerContext.url.searchParams
-            .getAll('taxon')
-            .map(Number)
-            .filter(Boolean);
-        taxonParams.forEach((id) => addActiveTaxon(id, true));
     });
 </script>
 

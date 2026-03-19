@@ -217,7 +217,8 @@
         } else {
             // Open upward
             maxHeight = spaceAbove;
-            top = inputRect.top + window.scrollY - maxHeight - 5; // 5px gap
+            const height = suggestionsElement?.offsetHeight ?? 0;
+            top = inputRect.top + window.scrollY - height - 5;
         }
 
         portalStyle = {
@@ -228,7 +229,7 @@
         };
     }
 
-    // Recalculate on suggestions show and window resize
+    // Recalculate portal position on suggestions show and window resize
     $effect(() => {
         if (!suggestionsVisible) return;
 
