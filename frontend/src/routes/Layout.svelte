@@ -54,6 +54,11 @@
         type MetricsParams,
     } from '../contexts/metricsParamsContext';
     import { TAXON_COLORS, type Provider } from '../constants/mapLegendKeys';
+    import {
+        initialRankingsState,
+        setRankingsContext,
+        type RankingsState,
+    } from '../contexts/rankingsContext';
 
     // Intialize contexts
     const taxaState: ActiveTaxaState = $state(initialActiveTaxaState);
@@ -112,6 +117,9 @@
 
     const metricsParamsState: MetricsParams = $state(initialMetricsState);
     setMetricsContext(metricsParamsState);
+
+    const rankingsState: RankingsState = $state(initialRankingsState);
+    setRankingsContext(rankingsState);
 
     // Retrieve and set taxon info in context
     async function loadTaxonInfo(taxonID: number) {

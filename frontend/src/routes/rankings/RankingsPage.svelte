@@ -14,10 +14,12 @@
     import { getModalContext } from '../../contexts/modalContext';
     import DownloadTaxaForm from '../../components/DownloadTaxaForm.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
+    import { getRankingsContext } from '../../contexts/rankingsContext';
 
     const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
     const modalContext = getModalContext();
+    const rankingsContext = getRankingsContext();
 
     // All taxa return from current filters, to be shown in list
     let filteredTaxa: TaxonNodeType[] = $state([]);
@@ -144,8 +146,16 @@
         modalContext.content = DownloadTaxaForm;
     }
 
-    // Scroll to taxon
-    $effect(() => {});
+    // Handle sort form virtualized table (preserving sort across pages)
+    function handleSort(sortKey: string | null | undefined, asc: boolean) {
+        if (sortKey) {
+            rankingsContext.currSortKey = sortKey;
+            rankingsContext.sortAscending = asc;
+        } else {
+            rankingsContext.currSortKey = null;
+            rankingsContext.sortAscending = null;
+        }
+    }
 </script>
 
 <DefaultPage showSidebar={true}>
@@ -166,6 +176,10 @@
                     headers={tableHeaders}
                     scrollToID={scrollToTaxonID}
                     indexCol={'taxon_id'}
+                    onSort={handleSort}
+                    defaultSortKey={rankingsContext.currSortKey ||
+                        'canonical_name'}
+                    defaultAscending={rankingsContext.sortAscending}
                 >
                     {#snippet row(taxon: TaxonNodeType)}
                         {@const nsRank =

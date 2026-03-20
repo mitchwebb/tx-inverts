@@ -22,7 +22,11 @@
         hideHeader?: boolean;
         overscan?: number;
         defaultSortKey?: (typeof headers)[number]['sortKey'] | null;
-        defaultAscending?: boolean;
+        defaultAscending?: boolean | null;
+        onSort?: (
+            sortKey: (typeof headers)[number]['sortKey'],
+            asc: boolean
+        ) => void;
     };
 
     const {
@@ -36,64 +40,26 @@
         overscan = 5,
         defaultSortKey = headers[0]?.['sortKey'] ?? null,
         defaultAscending = true,
+        onSort = () => {},
     }: VirtualizedTableProps = $props();
 
     let container: HTMLDivElement;
     let header: HTMLDivElement | undefined = $state();
 
+    // Currently active sort key for table
     let currSortKey = $derived<typeof defaultSortKey>(defaultSortKey);
-    let sortAscending = $derived<boolean>(defaultAscending);
-
-    let focusedItemIndex = $state<number | null>(null);
-
+    // Boolean sort direction
+    let sortAscending = $derived<boolean>(defaultAscending ?? true);
+    // Index of item to scroll to
+    let scrollToItemIndex = $state<number | null>(null);
+    // Sorted list of items (items passed through sortItems function)
     let sortedItems = $derived(
         sortItems(items, currSortKey, sortAscending ? 'asc' : 'desc')
     );
+    // Array of items currently visible in virtual window
     let visibleItems = $state<Record<any, any>[]>([]);
 
-    let start = $state(0);
-    let end = $state(0);
-
-    let columnCount = $derived(headers.length);
-    let columnWidths = $state<string[]>([]);
-    let gridTemplateColumns = $derived<string>(
-        columnWidths.length
-            ? columnWidths.join(' ')
-            : 'auto '.repeat(columnCount).trim()
-    );
-
-    // Update elements currently visible in virtual table
-    function updateVisible() {
-        if (!container) return;
-
-        const scrollTop = container.scrollTop;
-        const containerHeight = container.clientHeight;
-
-        const perView = Math.ceil(containerHeight / rowHeight);
-        start = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-        // Using sortedItems is theoretically safer here
-        end = Math.min(sortedItems.length, start + perView + overscan * 2);
-
-        visibleItems = sortedItems.slice(start, end);
-    }
-
-    // Sort current list based on selected header/sort-key
-    function handleSort(e: MouseEvent) {
-        const target = e.target as HTMLElement;
-        const sortKey = target?.dataset?.sortKey;
-        if (!sortKey) return;
-
-        // If clicking on already selected column, flip order
-        if (currSortKey === sortKey) {
-            sortAscending = !sortAscending;
-            // Else if clicking on new column, set to ascending
-        } else {
-            sortAscending = true;
-        }
-
-        currSortKey = sortKey;
-    }
-
+    // Main sorting function for table
     function sortItems<T extends Record<string, any>>(
         array: T[],
         sortKey: keyof T | null | undefined,
@@ -133,6 +99,54 @@
         return sorted;
     }
 
+    let start = $state(0);
+    let end = $state(0);
+
+    let columnCount = $derived(headers.length);
+    let columnWidths = $state<string[]>([]);
+    let gridTemplateColumns = $derived<string>(
+        columnWidths.length
+            ? columnWidths.join(' ')
+            : 'auto '.repeat(columnCount).trim()
+    );
+
+    // Update elements currently visible in virtual table
+    function updateVisible() {
+        if (!container) return;
+
+        const scrollTop = container.scrollTop;
+        const containerHeight = container.clientHeight;
+
+        const perView = Math.ceil(containerHeight / rowHeight);
+        start = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
+        // Using sortedItems is theoretically safer here
+        end = Math.min(sortedItems.length, start + perView + overscan * 2);
+
+        visibleItems = sortedItems.slice(start, end);
+    }
+
+    // Sort sort button click, assigning sort key and direction
+    function handleSortClick(e: MouseEvent) {
+        const target = e.target as HTMLElement;
+        const sortKey = target?.dataset?.sortKey;
+        if (!sortKey) return;
+
+        // If clicking on already selected column, flip order
+        if (currSortKey === sortKey) {
+            sortAscending = !sortAscending;
+            // Else if clicking on new column, set to ascending
+        } else {
+            sortAscending = true;
+        }
+
+        currSortKey = sortKey;
+
+        if (onSort) {
+            onSort(sortKey, sortAscending);
+        }
+    }
+
+    // Handle user resizing table columns
     function resizeColumn(e: MouseEvent) {
         const target = e.target as HTMLElement;
         const targetIndex = target?.dataset?.columnIndex;
@@ -153,7 +167,8 @@
         }
     }
 
-    // On mount, attempt to determine reasonable column widths given headers and first row
+    // Attempt to determine reasonable column widths given headers and first row
+    // To be used onMount
     async function measureColumnWidths() {
         // Wait for DOM update
         await tick();
@@ -196,7 +211,7 @@
         if (!indexCol || !scrollToID || !container) return;
 
         // If we're already on it, skip it
-        if (focusedItemIndex === scrollToID) return;
+        if (scrollToItemIndex === scrollToID) return;
 
         // Note: This leads to a reactivity to sortedItems, causing this to run on any change
         // Find index of active item
@@ -217,11 +232,12 @@
             return;
 
         // Else, scroll to active item, placing it at the top of the table
-        // Smooth scrolling is jarring with long lists
+        // Smooth scrolling is jarring with long lists, but it's not the worst thing
         container.scrollTo({ top: position + 8, behavior: 'smooth' });
-        focusedItemIndex = itemIndex;
+        scrollToItemIndex = itemIndex;
     }
 
+    // Handle functionality of scrolling the visible window
     function handleVirtualScroll() {
         // Sync header x-axis scroll (if there's a header provided)
         if (header && container) {
@@ -231,6 +247,7 @@
         updateVisible();
     }
 
+    // On mount, update visible items and determine initial column widths
     onMount(() => {
         updateVisible();
 
@@ -240,7 +257,7 @@
         });
     });
 
-    // Update visible rows on change
+    // Update visible rows on any change (and scroll to item if applicable)
     $effect(() => {
         updateVisible();
         if (scrollToID) {
@@ -274,7 +291,7 @@
                             class:active={currSortKey === header.sortKey}
                             style:cursor={header.sortKey ? 'pointer' : 'auto'}
                             data-sort-key={header.sortKey || null}
-                            onclick={handleSort}
+                            onclick={handleSortClick}
                         >
                             <div class="header-label-wrapper">
                                 <div class="header-label">
