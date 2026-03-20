@@ -298,7 +298,7 @@
         position: relative;
         overflow: auto;
         width: 100%;
-        min-width: 1000px;
+        min-width: 800px;
     }
     #page-body {
         height: 100%;
