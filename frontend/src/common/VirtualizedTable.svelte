@@ -18,7 +18,7 @@
         }[];
         row: Snippet<[item: any, index: number]>;
         indexCol?: string | null;
-        activeValue?: number | string | null;
+        scrollToID?: number | string | null;
         hideHeader?: boolean;
         overscan?: number;
         defaultSortKey?: (typeof headers)[number]['sortKey'] | null;
@@ -31,7 +31,7 @@
         headers,
         row,
         indexCol = null,
-        activeValue = null,
+        scrollToID = null,
         hideHeader = false,
         overscan = 5,
         defaultSortKey = headers[0]?.['sortKey'] ?? null,
@@ -191,17 +191,17 @@
         columnWidths = widths;
     }
 
-    // Scroll virtual list to provided item[indexCol] == activeValue
-    function scrollToID() {
-        if (!indexCol || !activeValue || !container) return;
+    // Scroll virtual list to provided item[indexCol] == scrollToID
+    function handleScrollToID() {
+        if (!indexCol || !scrollToID || !container) return;
 
         // If we're already on it, skip it
-        if (focusedItemIndex === activeValue) return;
+        if (focusedItemIndex === scrollToID) return;
 
         // Note: This leads to a reactivity to sortedItems, causing this to run on any change
         // Find index of active item
         const itemIndex = sortedItems.findIndex((item) => {
-            return item[indexCol] == activeValue;
+            return item[indexCol] == scrollToID;
         });
 
         // If not found in current list, do nothing
@@ -218,7 +218,7 @@
 
         // Else, scroll to active item, placing it at the top of the table
         // Smooth scrolling is jarring with long lists
-        container.scrollTo({ top: position + 2 });
+        container.scrollTo({ top: position + 8, behavior: 'smooth' });
         focusedItemIndex = itemIndex;
     }
 
@@ -238,14 +238,14 @@
         tick().then(() => {
             measureColumnWidths();
         });
-
-        // For now, we'll just scroll to the activeID when entering the page
-        scrollToID();
     });
 
     // Update visible rows on change
     $effect(() => {
         updateVisible();
+        if (scrollToID) {
+            handleScrollToID();
+        }
     });
 </script>
 

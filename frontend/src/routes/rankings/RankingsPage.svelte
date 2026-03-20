@@ -22,9 +22,6 @@
     // All taxa return from current filters, to be shown in list
     let filteredTaxa: TaxonNodeType[] = $state([]);
 
-    // ID of locally selected taxon, used to control filtering behavior
-    let locallySelectedID: number | undefined = $state();
-
     // Define headers/sort-keys for virtualized rankings table
     const tableHeaders = $derived([
         {
@@ -42,34 +39,68 @@
         // { label: 'Taxon Rank', sortKey: 'taxon_rank' },
     ]);
 
-    function setActiveTaxon(e: MouseEvent) {
+    function handleTaxonSelect(e: MouseEvent) {
         const target = e.currentTarget as HTMLElement;
         const targetID = target.dataset.taxonId;
 
         if (!targetID || !parseInt(targetID)) return;
 
         taxaContext.add(parseInt(targetID));
-
-        // Track selectedID to control behavior
-        locallySelectedID = parseInt(targetID);
     }
+
+    // Active taxon id to scroll table to (has to be species or subspecies id)
+    let scrollToTaxonID: number | undefined | null = $state();
 
     // Filter taxa to currently active taxa
     $effect(() => {
-        // Skip filtering taxon was selected locally (prevents filtering behavior when selected species in chart)
-        if (
-            locallySelectedID &&
-            taxaContext.taxonIDs.includes(locallySelectedID)
-        )
-            return;
-
-        // Filter to animalia (all) if not filtered taxa
-        let filterTaxa = taxaContext.taxonIDs.length
-            ? taxaContext.taxonIDs
-            : [1];
-
+        // If taxaTree isn't loaded, end
         if (!$taxaTree) {
             return;
+        }
+
+        // List of taxonIDs to filter list to
+        let filterTaxaIDs;
+
+        // Behavior for
+        switch (taxaContext.taxonIDs.length) {
+            // If no active taxonIDs, filter to Animalia
+            case 0:
+                filterTaxaIDs = [1];
+                scrollToTaxonID = null;
+                break;
+            // If only one active taxonID
+            case 1: {
+                // If taxon is species or subspecies, skip filtering but scroll to taxon
+                const taxon = $taxaTree.get(taxaContext.taxonIDs[0]);
+                if (
+                    !taxon ||
+                    ['species', 'subspecies'].includes(taxon.taxon_rank)
+                ) {
+                    filterTaxaIDs = [1];
+                    scrollToTaxonID = taxon?.taxon_id;
+                    break;
+                }
+                // Else filter to taxon
+                else {
+                    filterTaxaIDs = [taxon.taxon_id];
+                    break;
+                }
+            }
+            // If more than one active taxonID, filter to taxa
+            default: {
+                filterTaxaIDs = taxaContext.taxonIDs;
+                scrollToTaxonID = null;
+                // If any taxa are species/subspecies, scroll to latest (last in list)
+                for (const taxonID of taxaContext.taxonIDs) {
+                    const taxonRank = $taxaTree.get(taxonID)?.taxon_rank;
+                    if (
+                        taxonRank &&
+                        ['species', 'subspecies'].includes(taxonRank)
+                    ) {
+                        scrollToTaxonID = taxonID;
+                    }
+                }
+            }
         }
 
         let activeRanks = filtersContext.nSRanks;
@@ -82,7 +113,7 @@
 
         const filteredMap = new Map<number, TaxonNodeType>();
 
-        for (const taxonID of filterTaxa.map(Number)) {
+        for (const taxonID of filterTaxaIDs.map(Number)) {
             const parentNode = $taxaTree.get(taxonID);
 
             if (!parentNode) continue;
@@ -112,6 +143,9 @@
         modalContext.visible = true;
         modalContext.content = DownloadTaxaForm;
     }
+
+    // Scroll to taxon
+    $effect(() => {});
 </script>
 
 <DefaultPage showSidebar={true}>
@@ -130,7 +164,7 @@
                     items={[...filteredTaxa]}
                     rowHeight={30}
                     headers={tableHeaders}
-                    activeValue={taxaContext.taxonIDs.slice(-1)[0]}
+                    scrollToID={scrollToTaxonID}
                     indexCol={'taxon_id'}
                 >
                     {#snippet row(taxon: TaxonNodeType)}
@@ -182,7 +216,7 @@
                                             : null
                                     }
                                 `}
-                                onclick={setActiveTaxon}
+                                onclick={handleTaxonSelect}
                                 data-taxon-id={taxon.taxon_id.toString()}
                             >
                                 <MagnifyIcon />
