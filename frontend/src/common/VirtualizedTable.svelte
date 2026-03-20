@@ -3,7 +3,7 @@
     - Virtualized table structure capable of supporting column headers.
 -->
 <script lang="ts">
-    import { onMount, tick, type Snippet } from 'svelte';
+    import { onMount, tick, untrack, type Snippet } from 'svelte';
     import ArrowDown from '../assets/ArrowDown.svelte';
     import ArrowUp from '../assets/ArrowUp.svelte';
     import InfoButton from './InfoButton.svelte';
@@ -213,28 +213,32 @@
         // If we're already on it, skip it
         if (scrollToItemIndex === scrollToID) return;
 
-        // Note: This leads to a reactivity to sortedItems, causing this to run on any change
         // Find index of active item
-        const itemIndex = sortedItems.findIndex((item) => {
-            return item[indexCol] == scrollToID;
+        untrack(() => {
+            const itemIndex = sortedItems.findIndex((item) => {
+                return item[indexCol] == scrollToID;
+            });
+
+            // If not found in current list, do nothing
+            if (itemIndex === -1) return;
+
+            const position = rowHeight * itemIndex;
+
+            const scrollTop = container.scrollTop;
+            const containerHeight = container.clientHeight;
+
+            // If item is already within view, do nothing
+            if (position > scrollTop && position < scrollTop + containerHeight)
+                return;
+
+            container.scrollTo({ top: Math.max(position - 500, 0) });
+            // Else, scroll to active item, placing it at the top of the table
+            // Smooth scrolling is jarring with long lists, but it's not the worst thing
+            requestAnimationFrame(() => {
+                container.scrollTo({ top: position + 8, behavior: 'smooth' });
+            });
+            scrollToItemIndex = itemIndex;
         });
-
-        // If not found in current list, do nothing
-        if (itemIndex === -1) return;
-
-        const position = rowHeight * itemIndex;
-
-        const scrollTop = container.scrollTop;
-        const containerHeight = container.clientHeight;
-
-        // If item is already within view, do nothing
-        if (position > scrollTop && position < scrollTop + containerHeight)
-            return;
-
-        // Else, scroll to active item, placing it at the top of the table
-        // Smooth scrolling is jarring with long lists, but it's not the worst thing
-        container.scrollTo({ top: position + 8, behavior: 'smooth' });
-        scrollToItemIndex = itemIndex;
     }
 
     // Handle functionality of scrolling the visible window
@@ -257,9 +261,12 @@
         });
     });
 
-    // Update visible rows on any change (and scroll to item if applicable)
+    // Update visible rows on any change
     $effect(() => {
         updateVisible();
+    });
+
+    $effect(() => {
         if (scrollToID) {
             handleScrollToID();
         }
