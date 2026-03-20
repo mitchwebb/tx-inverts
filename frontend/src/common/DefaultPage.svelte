@@ -53,7 +53,7 @@
     }
     .body-wrapper {
         height: 100%;
-        min-width: 500px;
+        min-width: 300px;
         flex-grow: 1;
         flex-shrink: 1;
         box-sizing: border-box;
