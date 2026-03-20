@@ -326,9 +326,14 @@
                             >
                                 <div
                                     title={suggestion.scientificName}
-                                    class={['scientific-name', { italicized }]}
+                                    class="scientific-name-wrapper"
                                 >
-                                    {suggestion.scientificName}
+                                    <span
+                                        class={[
+                                            'scientific-name',
+                                            { italicized },
+                                        ]}>{suggestion.scientificName}</span
+                                    >
                                     {#if suggestion.usInvasive}
                                         <div class="invasive-icon icon">
                                             <InvasiveIcon />
@@ -378,7 +383,6 @@
         max-height: 2.5rem;
         position: relative;
         flex-grow: 1;
-        /* max-width: 350px; */
         align-items: center;
         box-sizing: border-box;
         display: flex;
@@ -401,11 +405,15 @@
         color: var(--accent-color);
     }
     .scientific-name {
-        display: flex;
-        align-items: center;
         min-width: 0;
         white-space: nowrap;
         text-overflow: ellipsis;
+        overflow: hidden;
+    }
+    .scientific-name-wrapper {
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
         flex-shrink: 1;
         overflow: hidden;
         /* display: block; */
@@ -463,7 +471,7 @@
         overflow: visible;
         /* border-radius: 4px; */
         width: fit-content;
-        max-width: 500px;
+        max-width: 350px;
         overflow-y: scroll;
         border: 1px solid var(--container-shadow);
         box-shadow: 0px 3px 10px 1px var(--container-shadow);
