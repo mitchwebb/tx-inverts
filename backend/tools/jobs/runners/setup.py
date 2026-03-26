@@ -2,7 +2,10 @@
 
 import asyncio
 import sys
+from backend.constants.shapefiles import GEOMETRY_TABLE_CONFIGS
 from backend.data_util.db import get_single_db_connection
+from backend.db_schema.base import DBTable
+from backend.db_schema.geometries import TexasParksTable
 from backend.tools.jobs.tasks.initialize_db import initialize_all_tables
 from backend.constants.map import TEXAS_GEOJSON
 from backend.tools.jobs.tasks.taxa import update_backbone, update_ns_ranks
@@ -10,7 +13,8 @@ from backend.tools.jobs.tasks.occurrence import update_observations
 import geopandas as gpd
 from backend.tools.jobs.tasks.taxa import create_invasives_table
 from backend.core.logging import setup_logging, db_logger
-from backend.tools.jobs.tasks.views import create_view
+from shapely.geometry import MultiPolygon
+from psycopg import sql
 
 
 # Initial script to create and populate database for Texas Inverts
@@ -24,25 +28,55 @@ async def main():
         await initialize_all_tables(conn, verbose=True, strict=True)
         await conn.commit()
 
-        # TODO: This whole process should be moved to a function
-        # Populate geometries (just the Texas shapefile for now)
-        texas_gdf = gpd.read_file(TEXAS_GEOJSON)
-        # in case it's a MultiPolygon collection
-        texas_geom = texas_gdf.geometry.union_all()
-        texas_wkt_geom = texas_geom.wkt  # Keep in EPSG:4326
+        # TODO: Move to separate file
+        # Fill geometry tables with information from geojson files (mapped to new names)
+        async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn):
+            gdf = gpd.read_file(fp)
+            async with conn.cursor() as cur:
+                for _, row in gdf.iterrows():
+                    geom = row.geometry
+                    if geom.geom_type == 'Polygon':
+                        geom = MultiPolygon([geom])
+                    wkt_geom = geom.wkt
 
-        async with conn.cursor() as cur:
-            await cur.execute(
-                '''
-                    INSERT INTO geometries (geometry_name, geometry)
-                    VALUES (%s, ST_GeomFromText(%s, 4326))
-                    ON CONFLICT (geometry_name)
-                        DO UPDATE SET geometry = EXCLUDED.geometry
-                ''',
-                ('Texas', texas_wkt_geom)
-            )
-            db_logger.info('Updating geometries table...')
-            await conn.commit()
+                    table_cols = list(col_map.values()) + ['geometry']
+                    shapefile_vals = [row[shp_col]
+                                      for shp_col in col_map.keys()] + [wkt_geom]
+
+                    table_ident = sql.Identifier(table.name)
+                    primary_key_ident = sql.Identifier(table.primary_key)
+                    col_idents = sql.SQL(', ').join(
+                        sql.Identifier(c) for c in table_cols)
+                    placeholders = sql.SQL(', ').join(
+                        [sql.Placeholder()] * (len(table_cols) - 1) +
+                        [sql.SQL('ST_GeomFromText(') +
+                         sql.Placeholder() + sql.SQL(', 4326)')]
+                    )
+                    update_str = sql.SQL(', ').join(
+                        sql.SQL('{col} = EXCLUDED.{col}').format(
+                            col=sql.Identifier(c))
+                        for c in table_cols if c != table.primary_key
+                    )
+
+                    query = sql.SQL('''
+                        INSERT INTO {table} ({cols})
+                        VALUES ({placeholders})
+                        ON CONFLICT ({primary_key})
+                            DO UPDATE SET {update_str}
+                    ''').format(
+                        table=table_ident,
+                        cols=col_idents,
+                        placeholders=placeholders,
+                        primary_key=primary_key_ident,
+                        update_str=update_str,
+                    )
+
+                    await cur.execute(query, shapefile_vals)
+                await conn.commit()
+                db_logger.info(f'Updated {table.name} table...')
+
+        for fp, table, col_map in GEOMETRY_TABLE_CONFIGS:
+            await fill_geometry_table(fp, table, col_map, conn)
 
         # Create invasives table
         await create_invasives_table()

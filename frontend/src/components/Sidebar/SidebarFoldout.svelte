@@ -98,7 +98,7 @@
 
 <style>
     .sidebar-foldout-header.filters-active {
-        border-left: 3px solid var(--fill-color);
+        box-shadow: inset 3px 0px 0px 0px var(--accent-color);
     }
     .sidebar-header-text {
         font-size: 1.2rem;
@@ -126,7 +126,6 @@
         line-height: 1;
         color: var(--text-default);
         background-color: transparent;
-        border-left: 3px solid transparent;
         width: 100%;
         box-sizing: border-box;
     }

@@ -36,11 +36,13 @@
 >
     <div class="filters-section-header">Taxa</div>
     <div class="filters-section-content">
-        <TaxaSearchSuggestBar
-            placeholder="Filter by taxon..."
-            handleClear={handleSearchClear}
-            handleSelect={handleSearchSelect}
-        />
+        <div class="taxa-search-wrapper">
+            <TaxaSearchSuggestBar
+                placeholder="Search by taxon..."
+                handleSelect={handleSearchSelect}
+            />
+        </div>
+
         {#if !!taxaContext.taxonIDs.length}
             <div id="taxon-cards-wrapper">
                 {#each taxaContext.taxonIDs as taxonID}
@@ -76,6 +78,10 @@
 </div>
 
 <style>
+    .taxa-search-wrapper {
+        height: 2.5rem;
+        max-width: 350px;
+    }
     .italicized {
         font-style: italic;
     }

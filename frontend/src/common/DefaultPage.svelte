@@ -21,7 +21,6 @@
     </div>
     {#if showSidebar}
         <div id="default-sidebar-wrapper">
-            <div id="filters-border-coverup"></div>
             <Sidebar />
         </div>
     {/if}
@@ -30,17 +29,6 @@
 <style>
     #default-sidebar-wrapper {
         position: relative;
-    }
-    #filters-border-coverup {
-        position: absolute;
-        height: fit-content;
-        width: 0.5rem;
-        left: -0.5rem;
-        top: 0;
-        z-index: 5;
-        background-color: var(--container-back);
-        border-radius: 3px;
-        pointer-events: none;
     }
     .page-wrapper {
         height: 100%;

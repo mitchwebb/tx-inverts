@@ -6,14 +6,17 @@
 
 <script lang="ts">
     import NSSection from './NSSection.svelte';
-    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import {
+        getActiveTaxaContext,
+        initialActiveTaxaState,
+    } from '../../contexts/activeTaxaContext';
     import { getSidebarContext } from '../../contexts/sidebarContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import TaxaSearchSuggestBar from '../TaxaSearchSuggestBar.svelte';
     import { countActiveFilters } from '../../lib/filters.svelte';
     import type { SearchSuggestion } from '../../types/api';
     import FiltersButton from '../FiltersButton.svelte';
-    import Filters from '../FiltersSection/Filters.svelte';
+    import Filters from '../FiltersSection/MapFilters.svelte';
     import TaxonDisplay from './TaxonDisplay.svelte';
     import {
         getRouterContext,
@@ -21,8 +24,13 @@
     } from '../../contexts/routerContext';
     import { getModalContext } from '../../contexts/modalContext';
     import AddTaxonButton from './AddTaxonButton.svelte';
-    // import DownloadOccurrenceForm from '../DownloadOccurrenceForm.svelte';
-    // import DownloadIcon from '../../assets/DownloadIcon.svelte';
+    import XIcon from '../../assets/XIcon.svelte';
+    import MapFilters from '../FiltersSection/MapFilters.svelte';
+    import RankingsFilters from '../FiltersSection/RankingsFilters.svelte';
+    import Toggle from '../../common/Toggle.svelte';
+    import ChevronUp from '../../assets/ChevronUp.svelte';
+    import ChevronDown from '../../assets/ChevronDown.svelte';
+    import { slide } from 'svelte/transition';
 
     type SidebarProps = {
         showTaxonDisplay?: boolean;
@@ -53,37 +61,35 @@
 
     let filtersOpen = $state<boolean>(false);
 
-    // Sidebar resizing logic
-    function handleResize(e: MouseEvent) {
-        if (!e.currentTarget) return;
+    // // Sidebar resizing logic
+    // function handleResize(e: MouseEvent) {
+    //     if (!e.currentTarget) return;
 
-        const origin = e.clientX;
-        const originalWidth = sidebarContext.width;
+    //     const origin = e.clientX;
+    //     const originalWidth = sidebarContext.width;
 
-        function resizeWindow(e: MouseEvent) {
-            let change = origin - e.clientX;
+    //     function resizeWindow(e: MouseEvent) {
+    //         let change = origin - e.clientX;
 
-            // Set new width, with max of 425px and min of 250px
-            sidebarContext.width = Math.max(
-                Math.min(originalWidth + change, 425),
-                250
-            );
-        }
+    //         // Set new width, with max of 425px and min of 250px
+    //         sidebarContext.width = Math.max(
+    //             Math.min(originalWidth + change, 425),
+    //             250
+    //         );
+    //     }
 
-        function endResize() {
-            window.removeEventListener('mouseup', endResize);
-            window.removeEventListener('mousemove', resizeWindow);
-        }
-        window.addEventListener('mouseup', endResize);
-        window.addEventListener('mousemove', resizeWindow);
-    }
+    //     function endResize() {
+    //         window.removeEventListener('mouseup', endResize);
+    //         window.removeEventListener('mousemove', resizeWindow);
+    //     }
+    //     window.addEventListener('mouseup', endResize);
+    //     window.addEventListener('mousemove', resizeWindow);
+    // }
 
-    function removeTaxon(taxonID: number) {
-        taxaContext.remove(taxonID);
-    }
     function handleSearchSelect(suggestion: SearchSuggestion) {
         if (!suggestion.taxonID) return;
 
+        taxaContext.clear();
         taxaContext.add(suggestion.taxonID);
     }
 
@@ -112,8 +118,13 @@
     }
 
     function handleFiltersButton() {
-        modalContext.content = Filters;
-        modalContext.visible = true;
+        if (currPath === '/map') {
+            modalContext.content = MapFilters;
+            modalContext.visible = true;
+        } else if (currPath === '/rankings') {
+            modalContext.content = RankingsFilters;
+            modalContext.visible = true;
+        }
     }
 
     // Register click-to-close functionality for filters section
@@ -135,46 +146,68 @@
         };
     });
 
+    function handleOpenSidebar() {
+        sidebarContext.open = !sidebarContext.open;
+    }
+
+    function handleINatToggle(toggled: boolean) {
+        filtersContext.includeINat = toggled;
+    }
+
     // function handleOccDownloadButton() {
     //     modalContext.visible = true;
     //     modalContext.content = DownloadOccurrenceForm;
     // }
 </script>
 
-<div
-    id="sidebar-wrapper"
-    class="space-between"
-    style:width={`${sidebarContext.width}px`}
->
-    {#if filtersOpen}
-        <div id="filters-section-wrapper" bind:this={filtersElement}>
-            <Filters />
-        </div>
-    {/if}
-    <div id="filters-coverup"></div>
+<div id="sidebar-wrapper" class="space-between">
     <div id="sidebar">
-        <button
-            aria-label="resize containers"
-            class="resize-bar"
-            onmousedown={handleResize}
-        ></button>
-        <div id="sidebar-content-wrapper">
+        <div id="sidebar-content-wrapper" class:open={sidebarContext.open}>
             <div id="search-and-filter-section">
-                <div
-                    id="filters-button-wrapper"
-                    bind:this={filtersButtonElement}
-                >
-                    <FiltersButton
-                        count={filtersCount}
-                        open={filtersOpen}
-                        handler={handleFiltersButton}
+                {#if currPath === '/taxa'}
+                    <div class="inat-toggle-section ns-metric-row">
+                        <span>iNat</span>
+                        <div class="inat-toggle icon">
+                            <Toggle
+                                handler={handleINatToggle}
+                                checked={filtersContext.includeINat !== false}
+                                onColor="darkgreen"
+                                offColor="darkred"
+                            />
+                        </div>
+                    </div>
+                {:else}
+                    <div
+                        id="filters-button-wrapper"
+                        bind:this={filtersButtonElement}
+                    >
+                        <FiltersButton
+                            count={filtersCount}
+                            open={filtersOpen}
+                            handler={handleFiltersButton}
+                        />
+                    </div>
+                {/if}
+                <div class="sidebar-search-wrapper">
+                    <TaxaSearchSuggestBar
+                        placeholder={'Search by taxon...'}
+                        handleSelect={handleSearchSelect}
                     />
                 </div>
-                <TaxaSearchSuggestBar
-                    placeholder={'Search by taxon...'}
-                    handleClear={removeTaxon}
-                    handleSelect={handleSearchSelect}
-                />
+                <!-- {#if Object.keys(taxaContext.taxa).length}
+                    <button
+                        id="sidebar-foldout-button"
+                        onclick={handleOpenSidebar}
+                    >
+                        <div id="sidebar-foldout-icon" class="icon">
+                            {#if sidebarContext.open}
+                                <ChevronUp />
+                            {:else}
+                                <ChevronDown />
+                            {/if}
+                        </div>
+                    </button>
+                {/if} -->
                 <!-- <button
                     class="download-button button"
                     onclick={handleOccDownloadButton}
@@ -182,7 +215,7 @@
                     <DownloadIcon />
                 </button> -->
             </div>
-            {#if Object.keys(taxaContext.taxa).length}
+            {#if Object.keys(taxaContext.taxa).length && sidebarContext.open}
                 <div id="sidebar-content" class="sidebar-section">
                     {#each Object.keys(taxaContext.taxa).map(Number) as taxonID}
                         <div id={`${taxonID}-sidebar-section`}>
@@ -211,6 +244,57 @@
 </div>
 
 <style>
+    .sidebar-search-wrapper {
+        height: 100%;
+        width: 100%;
+    }
+    .inat-toggle-section {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        white-space: nowrap;
+        gap: 0.5rem;
+        background-color: var(--container-highlight);
+        border: 1px solid var(--border);
+        box-sizing: border-box;
+        height: 100%;
+        border-radius: 3px;
+        padding: 0 0.5rem;
+        width: 100px;
+        flex-shrink: 0;
+    }
+    .inat-toggle {
+        height: 1.5rem;
+        display: block;
+        stroke: var(--text-default);
+    }
+    #sidebar-foldout-icon {
+        padding: 0;
+        margin: 0;
+    }
+    #sidebar-foldout-button {
+        height: 100%;
+        border: 1px solid var(--border);
+    }
+
+    #sidebar-content-wrapper {
+        height: 100%;
+        /* gap: 0.5rem; */
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
+    #sidebar-content {
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        overflow-y: auto;
+        flex-shrink: 1;
+        min-height: 0;
+        gap: 0.5rem;
+        grid-row: 2;
+        margin-top: 0.5rem;
+    }
     /* .download-button {
         box-sizing: border-box;
         height: 100%;
@@ -225,6 +309,8 @@
         display: flex;
         gap: 0.5rem;
         height: 2.5rem;
+        grid-row: 3;
+        margin-top: 0.5rem;
     }
     .sidebar-body-wrapper {
         position: relative;
@@ -253,6 +339,8 @@
     }
     #filters-button-wrapper {
         height: 100%;
+        width: 100px;
+        flex-shrink: 0;
     }
     :global(#search-and-filter-section > .search-wrapper) {
         background-color: var(--container-fore);
@@ -268,6 +356,7 @@
         /* box-shadow: -4px 3px 4px 0px var(--container-shadow); */
     }
     #search-and-filter-section {
+        grid-row: 1;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -279,28 +368,6 @@
     }
     :global(.date-range-filter) {
         margin: auto;
-    }
-    .resize-bar {
-        height: 100%;
-        flex-shrink: 0;
-        width: 1rem;
-        padding: 0;
-        cursor: ew-resize;
-        transition: all 0.1s ease-in-out;
-        border: none;
-        position: absolute;
-        left: -1rem;
-        top: 0;
-        z-index: 750;
-        pointer-events: all;
-        box-sizing: border-box;
-        background-color: unset;
-    }
-    .resize-bar:active {
-        cursor: grabbing;
-    }
-    .resize-bar:focus {
-        outline: none;
     }
     :global(.iNat-toggle-wrapper svg) {
         stroke: var(--text-default);
@@ -316,7 +383,7 @@
     :global(.sidebar-header) {
         line-height: 1.5rem;
         /* margin-bottom: 0.1rem; */
-        padding: 0.75rem;
+        padding: 0.5rem;
         display: flex;
         justify-content: space-between;
         font-size: 1.2rem;
@@ -329,7 +396,8 @@
         top: 0;
         grid-column: 2;
         grid-row: 1 / 4;
-        width: 100%;
+        width: 350px;
+        max-width: 95dvw;
         height: 100%;
         /* max-height: 100%; */
         flex-shrink: 0;
@@ -344,31 +412,13 @@
     }
     #sidebar {
         position: relative;
-        display: flex;
         pointer-events: auto;
         flex-direction: column;
         color: var(--text-default);
-        display: flex;
         flex-direction: column;
         height: 100%;
         box-sizing: border-box;
         border-radius: 3px;
-        gap: 0.5rem;
-    }
-    #sidebar-content-wrapper {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        gap: 0.5rem;
-        box-sizing: border-box;
-    }
-    #sidebar-content {
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-        overflow-y: auto;
-        flex-shrink: 1;
-        min-height: 0;
         gap: 0.5rem;
     }
 </style>

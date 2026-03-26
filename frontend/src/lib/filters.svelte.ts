@@ -21,7 +21,7 @@ export function countActiveFilters(
         const value = filters[filterKey as keyof FiltersState];
         if (
             value !== meta.default &&
-            (meta.domain === domain || !domain) && // Domain value check
+            (!domain || meta.domain.includes(domain)) && // Domain value check
             (!path || meta.path.includes(path)) // Path value check
         ) {
             filterCount++;

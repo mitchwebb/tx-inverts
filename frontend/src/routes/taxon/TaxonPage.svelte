@@ -72,6 +72,8 @@
     }
 
     function setActiveTaxon(e: MouseEvent) {
+        e.stopPropagation();
+
         // Ignore clicks while dragging
         if (isDragging) {
             isDragging = false;
@@ -83,10 +85,15 @@
 
         if (!target || !parentNode || !parentNode.id) return;
 
-        const targetID = parseInt(parentNode.id);
-        if (!targetID) return;
+        const targetInt = parseInt(parentNode.id);
 
-        taxaContext.add(targetID);
+        // If taxon is already selected, deselect it
+        if (taxaContext.taxonIDs.includes(targetInt)) {
+            taxaContext.remove(targetInt);
+            // Otherwise, select it
+        } else {
+            taxaContext.add(targetInt, true);
+        }
     }
 
     function openTaxon(taxonID: TaxonNodeType['taxon_id']) {
@@ -413,11 +420,13 @@
     .taxon-select-icon {
         color: transparent;
         background: transparent;
-        padding: 0.25rem;
+        padding: 0;
+        margin-left: 0.5rem;
     }
     .taxon-node-wrapper:hover > .taxon-select-icon,
     .taxon-select-icon.active {
         color: var(--fill-color);
+        /* border: 1px solid var(--accent-color); */
     }
     .spacer-row {
         height: 1rem;

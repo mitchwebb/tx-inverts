@@ -72,7 +72,6 @@
                 position: positionCalendar,
                 ...props,
             });
-            // return () => datepicker.destroy();
         }
         return;
     });
@@ -87,6 +86,9 @@
 />
 
 <style>
+    :global(#air-datepicker-global-container) {
+        z-index: 2000;
+    }
     .hidden-input {
         display: none;
     }

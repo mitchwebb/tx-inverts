@@ -38,6 +38,10 @@ export const targetFeatureFieldsMap: Partial<Record<string, MapHoverSection>> =
                 },
             ],
         },
+        'tx_counties-25946r': {
+            sectionLabel: 'County',
+            fields: [{ label: '', property: 'COUNTY' }],
+        },
         'observations-circles': {
             sectionLabel: 'Observation',
             fields: [
@@ -94,7 +98,18 @@ export function buildTooltipSections(
     features: mapboxgl.GeoJSONFeature[]
 ): string {
     const sections: string[] = [];
-    for (const feature of features) {
+
+    // Eliminate duplicate features (sometimes caused by multiple layers with the same source)
+    const dedupedFeatures = features.filter((feature, index, self) => {
+        return (
+            index ===
+            self.findIndex(
+                (f) => f.source === feature.source && f.id === feature.id
+            )
+        );
+    });
+
+    for (const feature of dedupedFeatures) {
         const sourceID = feature.source as string | undefined;
         if (!sourceID) continue;
 

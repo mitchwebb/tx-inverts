@@ -15,6 +15,8 @@
     // TODO: Logic for getting browser theme/determine a light color scheme
     let isDarkTheme = $state(true);
 
+    let isMobile = $state(window.matchMedia('(pointer: coarse)').matches);
+
     // Load taxaTree and dataProviders structures on mount
     onMount(() => {
         if (!$taxaTree) {

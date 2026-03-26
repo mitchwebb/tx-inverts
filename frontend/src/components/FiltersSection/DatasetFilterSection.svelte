@@ -8,6 +8,14 @@
     import { dataProviders } from '../../contexts/DataProviders';
     import { getFiltersContext } from '../../contexts/filtersContext';
 
+    type DatasetFilterProps = {
+        header?: string;
+        showCounts?: boolean;
+    };
+
+    const { header = 'Datasets', showCounts = true }: DatasetFilterProps =
+        $props();
+
     const filtersContext = getFiltersContext();
     const taxonContext = getActiveTaxaContext();
 
@@ -64,9 +72,9 @@
                 <LoadingIcon />
             </div>
         {/if}
-        <div class="filters-section-header">Datasets</div>
+        <div class="filters-section-header">{header}</div>
         <div class="filters-section-content">
-            {#if !!providerCounts}
+            {#if !!providerCounts.length}
                 <form id="datasets-filter">
                     {#each Object.entries(providerCounts) as [institutionCode, count] (institutionCode)}
                         {@const institutionName =
@@ -98,9 +106,11 @@
                                             {institutionCode}
                                         </div>
                                     </div>
-                                    <div class="institution-count">
-                                        ({count})
-                                    </div>
+                                    {#if showCounts}
+                                        <div class="institution-count">
+                                            ({count})
+                                        </div>
+                                    {/if}
                                 </div>
                             </CheckboxInput>
                         </div>

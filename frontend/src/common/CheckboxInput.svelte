@@ -34,6 +34,7 @@
     }: CheckboxInputProps = $props();
 
     function handleChange(e: Event) {
+        e.stopPropagation();
         const target = e.target as HTMLInputElement;
         handler?.({
             name,
@@ -48,7 +49,6 @@
     <input
         {checked}
         {name}
-        onclick={(e) => e.stopPropagation()}
         type="checkbox"
         class:hidden-checkbox={checkboxIcon}
         onchange={handleChange}

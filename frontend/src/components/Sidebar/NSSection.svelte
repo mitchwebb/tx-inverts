@@ -10,7 +10,6 @@
     import SidebarFoldout from './SidebarFoldout.svelte';
     import { getRouterContext } from '../../contexts/routerContext';
     import { toLocaleRounded } from '../../util/textHelpers';
-    import Toggle from '../../common/Toggle.svelte';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import CheckboxInput, {
         type CheckboxPayload,
@@ -114,10 +113,6 @@
         const layerID = payload.value;
         const layerVisible = payload.checked as boolean;
         handleLayerToggle(mapContext, { layerID, layerVisible });
-    }
-
-    function handleINatToggle(toggled: boolean) {
-        filtersContext.includeINat = toggled;
     }
 </script>
 
@@ -248,17 +243,6 @@
                     </div>
                 {/if}
             </div>
-            <!-- <div class="inat-toggle-section ns-metric-row">
-                <span>Include iNat Data</span>
-                <div class="inat-toggle icon">
-                    <Toggle
-                        handler={handleINatToggle}
-                        checked={filtersContext.includeINat !== false}
-                        onColor="darkgreen"
-                        offColor="darkred"
-                    />
-                </div>
-            </div> -->
         </div>
     </div>
 </SidebarFoldout>
@@ -293,13 +277,6 @@
         height: 1rem;
         font-size: 0.75rem;
     }
-    .inat-toggle-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 0.5rem;
-        white-space: nowrap;
-    }
     .ns-section {
         position: relative;
         text-align: left;
@@ -315,12 +292,6 @@
     :global(.ns-metric-row .input-item-wrapper) {
         display: flex;
         justify-content: center;
-    }
-    .inat-toggle {
-        flex-grow: 0;
-        flex-shrink: 0;
-        display: block;
-        stroke: var(--text-default);
     }
     #rank-text {
         margin-bottom: 0.5rem;

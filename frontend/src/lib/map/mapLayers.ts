@@ -39,7 +39,7 @@ export const l4EcoregionsLayer = {
                     // ['boolean', ['feature-state', 'selected'], false],
                     // 0.7,
                     ['boolean', ['feature-state', 'hover'], false],
-                    0.7,
+                    0.6,
                     0.2,
                 ],
                 'fill-outline-color': '#000000',
@@ -72,7 +72,7 @@ export const l3EcoregionsLayer = {
                     // ['boolean', ['feature-state', 'selected'], false],
                     // 0.7,
                     ['boolean', ['feature-state', 'hover'], false],
-                    0.7,
+                    0.8,
                     0.0,
                 ],
                 'fill-outline-color': '#000000',
@@ -114,148 +114,62 @@ export const texasParksLayer = {
     ] as const,
 } as const satisfies LayerBundle;
 
-export const rangeExtentLayer = {
-    id: 'range-extent',
-    source: {
-        type: 'geojson',
-        data: {
-            type: 'FeatureCollection',
-            features: [],
-        },
-    },
-    layers: [
-        {
-            id: 'range-extent-polygon',
-            type: 'fill',
-            source: 'range-extent',
-            paint: {
-                'fill-color': '#8888ff',
-                'fill-opacity': 0.2,
-                'fill-outline-color': '#000000',
-            },
-        } as const,
-        {
-            id: 'range-extent-outline',
-            type: 'line',
-            source: 'range-extent',
-            paint: {
-                'line-color': '#8888ff',
-                'line-width': 1,
-            },
-        } as const,
-    ] as const,
-} as const satisfies LayerBundle;
-
-// TODO: This needs to link up with the API. Determine where to store number
-export const observationsZoomCutoff: number = 10;
-
-export const observationsLayerSource: {
-    id: string;
-    source: mapboxgl.VectorSourceSpecification;
-} = {
-    id: 'observations-tiles',
+export const countiesLayer = {
+    id: 'tx-counties',
     source: {
         type: 'vector',
-        tiles: [], // Tiles need to be added dynamically when source is created
-        minzoom: 0,
-        maxzoom: 14,
-        promoteId: 'gbif_id',
+        url: 'mapbox://mihtmo.4u7cu2jb',
+        promoteId: 'COUNTY',
     },
-} as const;
-
-export const observationsLayer = {
-    ...observationsLayerSource,
     layers: [
-        // Low zoom: Heatmap bins
         {
-            id: 'observations-fill',
-            type: 'fill',
-            source: 'observations-tiles',
-            'source-layer': 'observations-heatmap',
-            minzoom: 0,
-            maxzoom: observationsZoomCutoff,
+            id: 'counties-outline',
+            source: 'tx-counties',
+            type: 'line',
+            'source-layer': 'tx_counties-25946r',
             paint: {
-                'fill-color': 'darkorange',
-                'fill-opacity': [
-                    'interpolate',
-                    ['linear'],
-                    ['ln', ['+', ['get', 'observation_count'], 1]],
-                    Math.log(1),
-                    0.3,
-                    Math.log(2),
-                    0.4,
-                    Math.log(5),
+                'line-color': 'black',
+                'line-width': [
+                    'case',
+                    ['boolean', ['feature-state', 'hover'], false],
+                    1,
                     0.5,
-                    Math.log(10),
-                    0.6,
-                    Math.log(20),
-                    0.7,
-                    Math.log(50),
-                    0.8,
-                    Math.log(100),
-                    0.9,
-                    Math.log(200),
-                    1.0,
+                ],
+                'line-opacity': [
+                    'case',
+                    ['boolean', ['feature-state', 'hover'], false],
+                    1,
+                    0.5,
+                ],
+            },
+        } as const,
+        {
+            id: `counties-fill`,
+            type: 'fill',
+            source: 'tx-counties',
+            'source-layer': 'tx_counties-25946r',
+            paint: {
+                'fill-color': 'black',
+                'fill-opacity': [
+                    'case',
+                    ['boolean', ['feature-state', 'hover'], false],
+                    0.1,
+                    0.0,
                 ],
             },
         },
-        {
-            id: 'observations-fill-outline',
-            type: 'line',
-            source: 'observations-tiles',
-            'source-layer': 'observations-heatmap',
-            minzoom: 0,
-            maxzoom: observationsZoomCutoff,
-            paint: {
-                'line-color': 'white',
-                'line-width': 1,
-            },
-        } as const,
-
-        // High zoom: circle points
-        {
-            id: 'observations-circles',
-            type: 'circle',
-            source: 'observations-tiles',
-            'source-layer': 'observations-circles',
-            minzoom: observationsZoomCutoff,
-            paint: {
-                'circle-color': [
-                    'match',
-                    ['get', 'institution_code'],
-                    ...providersColorStops.flat(),
-                    'white',
-                ],
-                'circle-opacity': [
-                    'case',
-                    ['boolean', ['feature-state', 'selected'], false],
-                    1.0,
-                    ['boolean', ['feature-state', 'selected'], false],
-                    0.9,
-                    0.8,
-                ],
-                'circle-radius': [
-                    'case',
-                    ['boolean', ['feature-state', 'selected'], false],
-                    10,
-                    ['boolean', ['feature-state', 'hover'], false],
-                    12,
-                    8,
-                ],
-                'circle-stroke-color': 'black',
-                'circle-stroke-width': 1,
-                'line-opacity': 1,
-            },
-        } as const,
     ] as const,
-    deferred: true,
 } as const satisfies LayerBundle;
+
+// TODO: This should be linked up with the API. Determine where to store value
+export const observationsZoomCutoff: number = 10;
 
 // Collect all static map layers in one place
 export const staticMapLayers = [
     l3EcoregionsLayer,
     l4EcoregionsLayer,
     texasParksLayer,
+    countiesLayer,
 ] satisfies LayerBundle[];
 
 // Map layer source literal type
@@ -280,6 +194,7 @@ export const staticMapLayerIDs: StaticMapLayerID[] = staticMapLayers.flatMap(
 
 export const staticLayerGroups = {
     'ecoregions-group': ['l3-ecoregions', 'l4-ecoregions'],
+    'counties-group': ['counties-outline', 'counties-fill'],
 } as const;
 
 export type StaticLayerGroupID = keyof typeof staticLayerGroups;

@@ -1,9 +1,5 @@
-<!--
-    @component
-    - Variable component to house relevant filters
-    - Uses URL pathname to determine which filters to show
--->
 <script lang="ts">
+    import type { Snippet } from 'svelte';
     import {
         FILTER_KEYS,
         SIDEBAR_FILTER_META,
@@ -13,23 +9,16 @@
         type FiltersState,
     } from '../../contexts/filtersContext';
     import { getModalContext } from '../../contexts/modalContext';
-    import { getRouterContext } from '../../contexts/routerContext';
-    import DatasetFilterSection from './DatasetFilterSection.svelte';
-    import DateFilterSection from './DateFilterSection.svelte';
-    import INatFilterSection from './INatFilterSection.svelte';
-    import RankFilterSection from './RankFilterSection.svelte';
-    import TaxonFilterSection from './TaxonFilterSection.svelte';
-    import './filtersSection.css';
 
-    const filtersContext = getFiltersContext();
-    const routerContext = getRouterContext();
+    type FiltersWrapperProps = {
+        header: string;
+        children: Snippet;
+    };
+
+    const { header, children }: FiltersWrapperProps = $props();
+
     const modalContext = getModalContext();
-
-    // Determine if we're on the map page (in order to include/exclude page-specific sections)
-    const pageID = $derived(routerContext.url.pathname);
-
-    // Bindable allows this component to close itself in a parent
-    // let { filtersOpen = $bindable() } = $props();
+    const filtersContext = getFiltersContext();
 
     function handleApplyFilters() {
         // filtersOpen = false;
@@ -50,16 +39,9 @@
 </script>
 
 <div class="filters-content-wrapper">
+    <div class="filters-header header">{header}</div>
     <div id="filters-content">
-        <INatFilterSection />
-        {#if pageID === '/map'}
-            <DatasetFilterSection />
-            <DateFilterSection />
-        {/if}
-        {#if pageID === '/rankings'}
-            <TaxonFilterSection />
-            <RankFilterSection />
-        {/if}
+        {@render children?.()}
     </div>
     <div class="apply-filters-section">
         <div class="filters-buttons-wrapper">
@@ -76,6 +58,9 @@
 </div>
 
 <style>
+    .filters-header {
+        margin: 0.5rem;
+    }
     .filters-content-wrapper {
         width: 100%;
         color: var(--text-default);
@@ -85,9 +70,9 @@
         /* padding: 0.5rem; */
         gap: 0.5rem;
         background-color: var(--container-back);
-        width: 500px;
-        max-width: 100%;
-        max-height: 475px;
+        min-width: 500px;
+        max-width: 1000px;
+        height: 100%;
         box-sizing: border-box;
     }
     #filters-content {
@@ -103,6 +88,7 @@
         gap: 0.5rem;
         justify-content: right;
         white-space: nowrap;
+        flex-shrink: 0;
     }
     .clear-filters-button {
         border: 1px solid var(--border);

@@ -13,4 +13,5 @@ FiltersPopup: 800
 FilterBorderCoverup: 800
 Modal: 1000
 Tooltip: 1000
+datePicker: 2000
 SearchSuggestions: 9999

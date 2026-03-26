@@ -2,6 +2,7 @@ import io
 import json
 import os
 import pandas as pd
+from backend.db_schema.geometries import TEXAS_GEOMETRY_TABLE
 import psycopg
 import time
 
@@ -229,9 +230,10 @@ async def update_observations(
                         WHERE batch_id={batch_id}
                             AND NOT ST_Within(
                                 geometry,
-                                (SELECT geometry FROM geometries WHERE geometry_name = 'Texas')
+                                (SELECT geometry FROM {tx_table} WHERE name = 'Texas')
                             );
                     ''').format(
+                        tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
                         temp_table=sql.Identifier(temp_table_name),
                         batch_id=sql.Literal(batch_id)
                     ))

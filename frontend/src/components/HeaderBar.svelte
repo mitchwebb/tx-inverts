@@ -11,17 +11,11 @@
     const routerContext = getRouterContext();
     const taxaContext = getActiveTaxaContext();
 
-    // When clearing previous selection from searchbar, dump most recent taxonID
-    function handleSearchClear() {
-        const lastAddedTaxonID = taxaContext.taxonIDs.slice(-1)[0];
-        if (lastAddedTaxonID) {
-            taxaContext.remove(lastAddedTaxonID);
-        }
-    }
-
     // When selecting from searchbar, set taxonID in context
     function handleSearchSelect(suggestion: SearchSuggestion) {
         if (!suggestion.taxonID) return;
+
+        taxaContext.clear();
         taxaContext.add(suggestion.taxonID);
     }
 
@@ -76,7 +70,6 @@
     <div id="header-search-bar">
         <TaxaSearchSuggestBar
             placeholder="Search by taxon..."
-            handleClear={handleSearchClear}
             handleSelect={handleSearchSelect}
         />
     </div>

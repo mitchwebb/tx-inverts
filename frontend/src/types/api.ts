@@ -14,9 +14,9 @@ export type SearchSuggestion = {
     scientificName: string | null;
     canonicalName: string | null;
     taxonID: number | null;
-    taxonRank: TaxonomicRank;
-    usInvasive: boolean;
-    taxonomicStatus: TaxonomicStatus;
+    taxonRank: TaxonomicRank | null;
+    usInvasive: boolean | null;
+    taxonomicStatus: TaxonomicStatus | null;
 };
 
 export type NSRank = 'x' | 'h' | '1' | '2' | '3' | '4' | '5' | 'u' | null;

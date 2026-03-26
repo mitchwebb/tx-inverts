@@ -13,23 +13,6 @@ class DBTable:
     name: str = ''
     primary_key: str | None = None  # This assumes a single primary key!
     columns: dict[str, str] = {}
-    raw_column_map: dict[str, str] = {}
-
-    # Verify that the column mapping provided satisfies the columns provided
-    @classmethod
-    def get_column_mapping(cls) -> Dict[str, str]:
-        """Return RAW → table mapping, verifying table coverage."""
-
-        if not cls.raw_column_map:
-            # No raw mapping defined — safe for derived tables that don't ingest raw data
-            return {}
-
-        missing: list[str] = [
-            v for v in cls.raw_column_map.values() if v not in cls.columns]
-        if missing:
-            raise ValueError(
-                f"raw_column_map maps to undefined columns: {missing}")
-        return cls.raw_column_map
 
     def __init__(self):
         if not self.name or not self.columns:

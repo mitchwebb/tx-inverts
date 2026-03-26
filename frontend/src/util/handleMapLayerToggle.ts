@@ -1,5 +1,8 @@
 import { type MapState } from '../contexts/mapContext';
-import { staticPerformanceSensitiveLayers } from '../lib/map/mapLayers';
+import {
+    staticPerformanceSensitiveLayers,
+    type StaticMapLayerID,
+} from '../lib/map/mapLayers';
 import type { LayerTogglePayload } from '../types/map';
 
 // Safely handle mapContext.activeLayer list changes and pass to
@@ -50,7 +53,8 @@ export function handleLayerToggle(
         /-(layer-group)-\d+$/.test(id);
     // Determine if layer is marked as 'performanceSensitive'
     const opacityOnly =
-        isTaxonLayer || staticPerformanceSensitiveLayers.has(id);
+        isTaxonLayer ||
+        staticPerformanceSensitiveLayers.has(id as StaticMapLayerID);
 
     toggleLayer(context, id, payload.layerVisible, opacityOnly);
 }

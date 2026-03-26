@@ -1,6 +1,4 @@
-import type { LayerGroupID, MapLayerID } from '../lib/map/mapLayers';
-
 export type LayerTogglePayload = {
-    layerID: MapLayerID | LayerGroupID;
+    layerID: string;
     layerVisible: boolean;
 };

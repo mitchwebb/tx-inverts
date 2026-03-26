@@ -21,6 +21,7 @@
         handler: (payload: CheckboxPayload) => void;
         children?: Snippet;
         defaultOpen?: boolean;
+        foldout?: boolean;
     };
 
     let {
@@ -29,6 +30,7 @@
         handler,
         children,
         defaultOpen = false,
+        foldout = true,
     }: MapLegendFoldoutProps = $props();
 
     let open = $derived(defaultOpen);
@@ -42,16 +44,24 @@
     const layerActive = $derived(
         layerIDs.every((id) => mapContext.activeLayers.includes(id))
     );
+
+    function handleClick(payload: CheckboxPayload) {
+        handler(payload);
+    }
+
+    function handleFoldout() {
+        if (!foldout) return;
+        open = !open;
+    }
 </script>
 
 <div class={['map-key-foldout', { open }]}>
-    <div
-        role="button"
+    <button
         tabindex="0"
         aria-expanded={open}
         aria-controls="foldout-content-{layerID}"
         class="map-key-foldout-header map-key-header map-key-section"
-        onclick={() => (open = !open)}
+        onclick={handleFoldout}
         onkeydown={(e) =>
             (e.key === 'Enter' || e.key === ' ') && (open = !open)}
     >
@@ -60,22 +70,26 @@
                 name="layers"
                 value={layerID}
                 checked={layerActive}
-                {handler}
+                handler={handleClick}
             />
             <span>{label}</span>
         </span>
-        <span class="map-key-header-icons icon">
-            {#if open}
-                <ChevronUp />
-            {:else}
-                <ChevronDown />
-            {/if}
-        </span>
-    </div>
-    {#if open}
-        <div id="foldout-content-{layerID}" class="map-key-foldout-content">
-            {@render children?.()}
-        </div>
+        {#if foldout}
+            <span class="map-key-header-icons icon">
+                {#if open}
+                    <ChevronUp />
+                {:else}
+                    <ChevronDown />
+                {/if}
+            </span>
+        {/if}
+    </button>
+    {#if foldout}
+        {#if open}
+            <div id="foldout-content-{layerID}" class="map-key-foldout-content">
+                {@render children?.()}
+            </div>
+        {/if}
     {/if}
 </div>
 
@@ -109,7 +123,8 @@
         gap: 0.75rem;
     }
     .map-key-foldout-header {
-        /* padding: unset; */
+        outline: none;
+        border: none;
         text-align: left;
         display: flex;
         justify-content: space-between;

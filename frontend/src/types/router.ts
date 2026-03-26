@@ -1,6 +1,3 @@
-import type { Provider } from '../constants/mapLegendKeys';
-import type { NSRank } from './api';
-
 // export interface RouteParamDefaults {
 //     include_inat: boolean | null;
 //     taxon_id: number | null;

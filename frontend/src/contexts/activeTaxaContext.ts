@@ -75,6 +75,7 @@ export const initialTaxonState: ActiveTaxon = {
 export type ActiveTaxaState = {
     taxa: Record<number, ActiveTaxon>;
     taxonIDs: number[];
+    clear: () => void;
     add: (taxonID: number, append?: boolean) => void;
     remove: (taxonID: number) => void;
 };
@@ -82,6 +83,7 @@ export type ActiveTaxaState = {
 export const initialActiveTaxaState: ActiveTaxaState = {
     taxa: {},
     taxonIDs: [],
+    clear: () => {},
     add: () => {},
     remove: () => {},
 };

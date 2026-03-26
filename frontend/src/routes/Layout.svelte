@@ -94,8 +94,13 @@
         delete taxaState.taxa[taxonID];
         taxaState.taxonIDs = taxaState.taxonIDs.filter((id) => id !== taxonID);
     }
+    function clearTaxa() {
+        taxaContext.taxa = initialActiveTaxaState.taxa;
+        taxaContext.taxonIDs = initialActiveTaxaState.taxonIDs;
+    }
     taxaState.add = addActiveTaxon;
     taxaState.remove = removeActiveTaxon;
+    taxaState.clear = clearTaxa;
     const taxaContext = getActiveTaxaContext();
 
     const filtersState: FiltersState = $state(initialFiltersState);
@@ -107,7 +112,6 @@
 
     const routerState: RouterState = $state(initialRouterState);
     setRouterContext(routerState);
-    const routerContext = getRouterContext();
 
     const modalState: ModalState = $state(initialModalState);
     setModalContext(modalState);

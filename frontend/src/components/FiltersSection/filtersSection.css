@@ -4,6 +4,8 @@
     border: 1px solid var(--border);
     position: relative;
     border-radius: 3px;
+    width: 100%;
+    box-sizing: border-box;
 }
 .filters-section.active {
     box-shadow: inset 3px 0px 0px 0px var(--accent-color);

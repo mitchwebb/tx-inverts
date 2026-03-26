@@ -7,11 +7,13 @@
 
     import { portal } from '../common/Portal.svelte';
     import { onMount, tick } from 'svelte';
+    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
+
+    const taxaContext = getActiveTaxaContext();
 
     type SearchSuggestProps = {
         placeholder?: string | null;
         handleSelect: (suggestion: SearchSuggestion) => void;
-        handleClear?: (taxonID: number) => void;
         handleBlur?: () => void;
         autoFocus?: boolean;
     };
@@ -19,7 +21,6 @@
     let {
         placeholder = '',
         handleSelect,
-        handleClear,
         handleBlur,
         autoFocus = false,
     }: SearchSuggestProps = $props();
@@ -45,6 +46,7 @@
 
     let debounceTimeout: ReturnType<typeof setTimeout>;
 
+    let wrapperElement: HTMLElement;
     let inputElement: HTMLInputElement;
     let suggestionsElement: HTMLElement | undefined = $state();
 
@@ -109,10 +111,12 @@
     }
 
     function clearSearch() {
-        if (currentSelection?.taxonID && handleClear) {
-            handleClear(currentSelection.taxonID);
-        }
+        // console.log(currentSelection);
+        // if (currentSelection?.taxonID) {
+        //     taxaContext.remove(currentSelection.taxonID);
+        // }
         inputText = '';
+        inputElement.focus();
     }
 
     // Handler for keypress on taxon name
@@ -133,6 +137,11 @@
         if (handleBlur) {
             handleBlur();
         }
+    }
+
+    function handleFocus() {
+        suggestionsVisible = true;
+        focused = true;
     }
 
     function handleInputKeydown(e: KeyboardEvent) {
@@ -172,11 +181,11 @@
 
     // Give search results to portal, and set positioning using input element
     async function updatePortalPosition() {
-        if (!inputElement || !suggestionsVisible) return;
+        if (!wrapperElement || !suggestionsVisible) return;
 
         await tick();
 
-        const inputRect = inputElement.getBoundingClientRect();
+        const inputRect = wrapperElement.getBoundingClientRect();
         const suggestionsRect = suggestionsElement?.getBoundingClientRect();
         let dropdownWidth = inputRect.width;
         if (!!suggestions.length) {
@@ -257,11 +266,37 @@
         };
     });
 
-    $effect(() => {
-        if (!suggestionsVisible && currentSelection) {
-            inputText = currentSelection.scientificName;
-        }
-    });
+    // $effect(() => {
+    //     if (!suggestionsVisible && currentSelection) {
+    //         inputText = currentSelection.scientificName;
+    //     }
+    // });
+
+    // // When activeTaxaContext.taxonIDs updates, get latest name, set as inputText
+    // $effect(() => {
+    //     const activeTaxa = taxaContext.taxonIDs;
+    //     const latestTaxonID = activeTaxa.slice(-1)[0];
+
+    //     if (!latestTaxonID) {
+    //         inputText = '';
+    //         return;
+    //     }
+
+    //     const taxonInfo = taxaContext.taxa[latestTaxonID].info;
+
+    //     if (!taxonInfo.canonicalName) {
+    //         return;
+    //     } else {
+    //         currentSelection = {
+    //             scientificName: `${taxonInfo.canonicalName} ${taxonInfo.scientificNameAuthorship}`,
+    //             canonicalName: taxonInfo.canonicalName,
+    //             taxonID: taxaContext.taxa[latestTaxonID].taxonID,
+    //             taxonRank: taxonInfo.taxonRank,
+    //             usInvasive: taxonInfo.usInvasive,
+    //             taxonomicStatus: taxonInfo.taxonomicStatus,
+    //         };
+    //     }
+    // });
 
     onMount(() => {
         if (autoFocus) {
@@ -271,7 +306,7 @@
     });
 </script>
 
-<div class="search-wrapper" class:focused>
+<div class="search-wrapper" class:focused bind:this={wrapperElement}>
     <input
         class="taxon-search"
         type="text"
@@ -281,7 +316,7 @@
         {placeholder}
         onblur={handleBlurInternal}
         onkeydown={handleInputKeydown}
-        onfocus={() => (focused = true)}
+        onfocus={handleFocus}
     />
     {#if suggestionsVisible && inputText?.length !== 0}
         <div
@@ -350,7 +385,7 @@
             {/if}
         </div>
     {/if}
-    {#if currentSelection}
+    {#if !!inputText}
         <button class="search-close-button icon" onclick={clearSearch}>
             <XIcon />
         </button>

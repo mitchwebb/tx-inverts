@@ -3,15 +3,15 @@ import { getContext, setContext } from 'svelte';
 export const sidebarStateKey = 'sidebar';
 
 export type SidebarState = {
-    width: number;
     visible: boolean;
     foldoutStates: Record<string, boolean>;
+    open?: boolean;
 };
 
 export const initialSidebarState: SidebarState = {
-    width: 350,
     visible: false,
     foldoutStates: {},
+    open: true,
 };
 
 export function setSidebarContext(sidebarState: SidebarState) {

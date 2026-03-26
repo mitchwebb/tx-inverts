@@ -21,6 +21,7 @@
     const mapContext = getMapContext();
 
     function layerToggleHandler(payload: CheckboxPayload) {
+        console.log(payload.value);
         const layerID = payload.value as StaticMapLayerID | StaticLayerGroupID;
         const layerVisible = payload.checked as boolean;
         handleLayerToggle(mapContext, { layerID, layerVisible });
@@ -33,6 +34,12 @@
         ariaLabel="Expand layers and legends menu"
         ButtonLabel={LayersIcon}
     >
+        <MapLegendFoldout
+            label="Counties"
+            layerID="counties-group"
+            handler={layerToggleHandler}
+            foldout={false}
+        ></MapLegendFoldout>
         <EcoregionLegend />
         <MapLegendFoldout
             label="Parks"

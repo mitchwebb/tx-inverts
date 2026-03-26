@@ -38,6 +38,7 @@
     }
     .counted-button-wrapper {
         height: 100%;
+        width: 100%;
         position: relative;
         display: flex;
         align-items: center;
@@ -51,6 +52,7 @@
         height: 100%;
         box-sizing: border-box;
         border: 1px solid var(--border);
+        width: 100%;
     }
     .count-indicator {
         background-color: var(--fill-color);

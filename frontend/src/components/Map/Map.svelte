@@ -33,6 +33,7 @@
         handleLegendHover,
     } from '../../lib/map/mapFeatures';
     import { onMount, untrack } from 'svelte';
+    import { isMobile } from '../../contexts/device';
 
     // ---------------------------------------------
     // Contexts & reactive state
@@ -166,7 +167,7 @@
             // Offset for the map's starting center
             center: [center[0] + 3, center[1]],
             zoom: 4.7,
-            cooperativeGestures: true,
+            cooperativeGestures: $isMobile ? true : false,
         });
 
         map.on('load', () => {
@@ -182,7 +183,6 @@
 
             // Set visibility of static layers
             for (const layerID of staticMapLayerIDs) {
-                console.log(layerID);
                 const isVisible = mapContext.activeLayers.includes(layerID);
                 mapContext.setLayerVisibility(layerID, isVisible, false);
             }

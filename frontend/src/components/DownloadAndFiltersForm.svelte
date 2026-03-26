@@ -118,6 +118,6 @@
         max-height: 80dvh;
     }
     #download-form-header {
-        padding: 1rem 1rem 0.5rem 1rem;
+        padding: 0.5rem 1rem 1rem 1rem;
     }
 </style>

@@ -28,7 +28,7 @@
     const tableHeaders = $derived([
         {
             label: `${filtersContext.includeINat ? 'Rank' : 'Rank (no iNat)'}`,
-            info: 'The rankings in this column are precalculated using a 4km2 grid cell. Aside from toggling iNaturalist data, they will not respond to further filtering.',
+            info: 'The rankings in this column are precalculated using a 4km2 grid cell. Aside from toggling iNaturalist data, they do not respond to further filtering, and instead reflect all available data.',
             sortKey: filtersContext.includeINat
                 ? 'ns_rank_state'
                 : 'ns_rank_state_no_inat',
@@ -47,7 +47,15 @@
 
         if (!targetID || !parseInt(targetID)) return;
 
-        taxaContext.add(parseInt(targetID));
+        const targetInt = parseInt(targetID);
+
+        // If taxon is already selected, deselect it
+        if (taxaContext.taxonIDs.includes(targetInt)) {
+            taxaContext.remove(targetInt);
+            // Otherwise, select it
+        } else {
+            taxaContext.add(targetInt, true);
+        }
     }
 
     // Active taxon id to scroll table to (has to be species or subspecies id)
@@ -62,13 +70,13 @@
 
         // List of taxonIDs to filter list to
         let filterTaxaIDs;
+        scrollToTaxonID = null;
 
         // Behavior for
         switch (taxaContext.taxonIDs.length) {
             // If no active taxonIDs, filter to Animalia
             case 0:
                 filterTaxaIDs = [1];
-                scrollToTaxonID = null;
                 break;
             // If only one active taxonID
             case 1: {
@@ -82,16 +90,27 @@
                     scrollToTaxonID = taxon?.taxon_id;
                     break;
                 }
-                // Else filter to taxon
-                else {
-                    filterTaxaIDs = [taxon.taxon_id];
-                    break;
-                }
+                // Else, filter to taxa
+                filterTaxaIDs = [taxon.taxon_id];
+                break;
             }
-            // If more than one active taxonID, filter to taxa
+            // If more than one active taxonID
             default: {
+                // // If they're all species or subspecies, skip filtering
+                // if (
+                //     taxaContext.taxonIDs.every((taxonID) => {
+                //         return ['species', 'subspecies', null].includes(
+                //             taxaContext?.taxa[taxonID]?.info?.taxonRank || null
+                //         );
+                //     })
+                // ) {
+                //     filterTaxaIDs = [1];
+                //     console.log(taxaContext.taxonIDs.slice(-1)[0]);
+                //     scrollToTaxonID = taxaContext.taxonIDs.slice(-1)[0];
+                //     break;
+                // }
+                // Else, filter to taxa
                 filterTaxaIDs = taxaContext.taxonIDs;
-                scrollToTaxonID = null;
                 // If any taxa are species/subspecies, scroll to latest (last in list)
                 for (const taxonID of taxaContext.taxonIDs) {
                     const taxonRank = $taxaTree.get(taxonID)?.taxon_rank;
@@ -305,7 +324,7 @@
         text-align: left;
         flex-grow: 1;
         display: flex;
-        justify-content: start;
+        justify-content: space-between;
         align-items: center;
     }
     .virtual-list-wrapper {
@@ -337,7 +356,8 @@
     .taxon-select-icon {
         color: transparent;
         background: transparent;
-        padding: 0.25rem;
+        padding: 0rem;
+        margin-left: 0.5rem;
         flex-shrink: 0;
     }
     .taxon-name-wrapper:hover .taxon-select-icon,

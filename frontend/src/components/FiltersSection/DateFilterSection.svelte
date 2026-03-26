@@ -4,6 +4,13 @@
     import DatePicker, {
         type AirDatepickerPayload,
     } from '../../common/DatePicker.svelte';
+    import { isMobile } from '../../contexts/device';
+
+    type DateFilterProps = {
+        header?: string;
+    };
+
+    const { header = 'Dates' }: DateFilterProps = $props();
 
     const filtersContext = getFiltersContext();
     const taxonContext = getActiveTaxaContext();
@@ -43,7 +50,7 @@
     class:active={filtersContext.dateStart || filtersContext.dateEnd}
 >
     <div class="filters-section-header">
-        <span>Dates</span>
+        <span>{header}</span>
     </div>
     <div class="filters-section-content">
         <div class="date-filters-wrapper">
@@ -54,7 +61,10 @@
                 {minDate}
                 buttons={'clear'}
                 value={filtersContext.dateStart}
-                placeholder={`${minDate?.toLocaleDateString()} (Min Date)`}
+                placeholder={minDate
+                    ? `${minDate.toLocaleDateString()} (Min Date)`
+                    : 'Min Date'}
+                isMobile={$isMobile}
             />
             <span> to </span>
             <DatePicker
@@ -64,7 +74,10 @@
                 {maxDate}
                 buttons={'clear'}
                 value={filtersContext.dateEnd}
-                placeholder={`${maxDate?.toLocaleDateString()} (Max Date)`}
+                placeholder={maxDate
+                    ? `${maxDate.toLocaleDateString()} (Max Date)`
+                    : 'Max Date'}
+                isMobile={$isMobile}
             />
         </div>
     </div>
@@ -76,6 +89,7 @@
     }
     .date-filters-wrapper {
         display: flex;
+        align-items: center;
         gap: 1rem;
     }
 </style>

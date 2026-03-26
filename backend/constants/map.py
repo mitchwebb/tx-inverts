@@ -10,6 +10,18 @@ settings = get_settings()
 TEXAS_GEOJSON = os.path.join(
     settings.backend_root, 'static', 'shapefiles', 'tx.geojson')
 
+TEXAS_PARKS_GEOJSON = os.path.join(
+    settings.backend_root, 'static', 'shapefiles', 'tx_parks.geojson')
+
+TEXAS_COUNTIES_GEOJSON = os.path.join(
+    settings.backend_root, 'static', 'shapefiles', 'tx_counties.geojson')
+
+TEXAS_ECO_L3_SHP = os.path.join(
+    settings.backend_root, 'static', 'shapefiles', 'tx_eco_l3.shp')
+
+TEXAS_ECO_L4_SHP = os.path.join(
+    settings.backend_root, 'static', 'shapefiles', 'tx_eco_l4.shp')
+
 # Base tile size in pixels at each zoom level
 WEB_MERCATOR_TILE_SIZE = 156543.03
 

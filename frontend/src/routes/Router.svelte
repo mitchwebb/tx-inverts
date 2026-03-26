@@ -22,7 +22,7 @@
     };
 
     // Possible routes and their relevant parameters (and default values)
-    // TODO: Figure out type protection on relevantParams—refer to constants/router.ts for now
+    // This determines which params to show in the URL (or populate from the URL on page-load)
     export const routeDefinitions: RouteDefinition[] = [
         {
             pathname: '/map',
@@ -37,7 +37,7 @@
         {
             pathname: '/rankings',
             component: RankingPage,
-            relevantParams: ['taxon', 'inat', 'status'],
+            relevantParams: ['taxon', 'inat', 'status', 'd1', 'd2'],
         },
     ];
 
@@ -58,14 +58,11 @@
         for (const { getContext, keys } of Object.values(routerSyncedKeys)) {
             const context = getContext();
             for (const [contextKey, { param, codec }] of Object.entries(keys)) {
-                // TODO: Is there anything dangerous about this?
-                // TODO: It implies all params CAN be null. Should this be true?
-                // If param is irrelevant, set to null
-                if (!relevantParams.includes(param)) {
-                    (context as any)[contextKey] = null;
-                }
                 // Get param value
                 const value = (context as any)[contextKey];
+
+                // If param is irrelevant, skip it
+                if (!relevantParams.includes(param)) continue;
 
                 // Convert to URL string
                 const serialized = codec.toURL(value);

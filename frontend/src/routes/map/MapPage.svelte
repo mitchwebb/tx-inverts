@@ -1,6 +1,6 @@
 <script lang="ts">
     import Map from '../../components/Map/Map.svelte';
-    import MapOverlay from '../../components/MapOverlay.svelte';
+    import MapOverlay from '../../components/Map/MapOverlay.svelte';
     import {
         setMapHoverContext,
         type MapHoverFormattedData,

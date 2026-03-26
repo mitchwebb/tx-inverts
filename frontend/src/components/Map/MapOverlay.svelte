@@ -4,9 +4,9 @@
     - Includes map toolbar and sidebar
 -->
 <script lang="ts">
-    import Sidebar from './Sidebar/Sidebar.svelte';
-    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
-    import MapToolbar from './MapToolbar/MapToolbar.svelte';
+    import Sidebar from '../Sidebar/Sidebar.svelte';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import MapToolbar from '../MapToolbar/MapToolbar.svelte';
 
     const taxaContext = getActiveTaxaContext();
 </script>
@@ -14,13 +14,11 @@
 <div id="map-overlay-wrapper">
     <MapToolbar />
     <!-- Sidebar only visible if taxon selected -->
-    {#if Object.keys(taxaContext.taxa).length}
-        <div id="map-sidebar-positioner">
-            <div id="map-sidebar-wrapper">
-                <Sidebar />
-            </div>
+    <div id="map-sidebar-positioner">
+        <div id="map-sidebar-wrapper">
+            <Sidebar />
         </div>
-    {/if}
+    </div>
     <!-- {#if mapHoverContext.lnglat}
         <div id="lnglat-display-wrapper">
             <div id="lnglat-display">{mapHoverContext.lnglat.join(', ')}</div>

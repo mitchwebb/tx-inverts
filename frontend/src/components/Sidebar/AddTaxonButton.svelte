@@ -31,6 +31,7 @@
         />
     {:else}
         <button id="add-taxon-button" onclick={() => (active = !active)}>
+            <span>Add Taxon</span>
             <span id="add-taxon-icon" class="icon">
                 <PlusIcon />
             </span>
@@ -53,5 +54,6 @@
         width: 100%;
         height: 100%;
         padding: 0;
+        gap: 0.5rem;
     }
 </style>

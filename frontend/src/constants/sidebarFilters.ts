@@ -14,7 +14,7 @@ const FILTER_DEFAULTS = initialFiltersState;
 type SidebarFilterMetaItem = {
     path: RouterPath[]; // Notes which page a filter belongs to (they can belong ot multiple)
     default: unknown;
-    domain: FilterDomain;
+    domain: FilterDomain[];
     count: boolean;
 };
 
@@ -27,44 +27,44 @@ export const SIDEBAR_FILTER_META: Record<
     nSRanks: {
         path: ['/rankings'],
         default: FILTER_DEFAULTS.nSRanks,
-        domain: 'taxa',
+        domain: ['taxa'],
         count: true,
     },
     dataProviders: {
         path: ['/map'],
         default: FILTER_DEFAULTS.dataProviders,
-        domain: 'observations',
+        domain: ['observations'],
         count: true,
     },
     dateEnd: {
-        path: ['/map'],
+        path: ['/map', '/rankings'],
         default: FILTER_DEFAULTS.dateEnd,
-        domain: 'observations',
+        domain: ['observations', 'taxa'],
         count: true,
     },
     dateStart: {
-        path: ['/map'],
+        path: ['/map', '/rankings'],
         default: FILTER_DEFAULTS.dateStart,
-        domain: 'observations',
+        domain: ['observations', 'taxa'],
         count: true,
     },
     includeINat: {
         path: ['/map', '/rankings', '/taxa'],
         default: FILTER_DEFAULTS.includeINat,
-        domain: 'observations',
+        domain: ['observations'],
         count: true,
     },
     taxonRank: {
         path: ['/rankings'],
         default: FILTER_DEFAULTS.taxonRank,
-        domain: 'taxa',
+        domain: ['taxa'],
         count: true,
     },
 } satisfies {
     [K in keyof FiltersState]: {
         path: RouterPath[];
         default: FiltersState[K];
-        domain: FilterDomain;
+        domain: FilterDomain[];
         count: boolean;
     };
 };
@@ -75,8 +75,8 @@ export const FILTER_KEYS = Object.keys(
 
 export const TAXA_FILTER_KEYS = (
     Object.keys(SIDEBAR_FILTER_META) as (keyof FiltersState)[]
-).filter((key) => SIDEBAR_FILTER_META[key].domain == 'taxa');
+).filter((key) => SIDEBAR_FILTER_META[key].domain.includes('taxa'));
 
 export const OCCURRENCE_FILTER_KEYS = (
     Object.keys(SIDEBAR_FILTER_META) as (keyof FiltersState)[]
-).filter((key) => SIDEBAR_FILTER_META[key].domain == 'observations');
+).filter((key) => SIDEBAR_FILTER_META[key].domain.includes('observations'));

@@ -1,4 +1,5 @@
 from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db_schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.models.api_types import NSRank
 from psycopg import Connection, sql
 from backend.routers.taxa import TaxonomicRank
@@ -145,8 +146,8 @@ async def calculate_ns_values(
         query = sql.SQL("""
             WITH region AS (
                 SELECT geometry
-                FROM geometries
-                WHERE geometry_name = 'Texas'
+                FROM {tx_table}
+                WHERE name = 'Texas'
             ),
             obs_points AS (
                 SELECT
@@ -197,6 +198,7 @@ async def calculate_ns_values(
 
             FROM hull h, region r, a4, a1
         """).format(
+            tx_table=sql.Literal(TEXAS_GEOMETRY_TABLE.name),
             taxon_id=sql.Literal(filters.taxon_id),
             rank_col=sql.Identifier(rank_col),
             include_inat=sql.Literal(filters.include_inat),

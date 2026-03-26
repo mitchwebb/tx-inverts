@@ -1,13 +1,45 @@
 from .base import DBTable
 
 
-class GeometriesTable(DBTable):
-    name = 'geometries'
-    primary_key = 'geometry_name'
+class TexasGeometry(DBTable):
+    name = 'tx_geometry'
+    primary_key = 'state'
     columns = {
-        'geometry_name': 'TEXT PRIMARY KEY',
+        'state': 'TEXT PRIMARY KEY',
         'geometry': 'GEOMETRY(MultiPolygon, 4326)'
     }
 
 
-GEOMETRIES_TABLE = GeometriesTable()
+TEXAS_GEOMETRY_TABLE = TexasGeometry()
+
+
+class TexasParksTable(DBTable):
+    name = 'tx_parks'
+    primary_key = 'id'  # ParkName in file
+    columns = {
+        'id': 'INT PRIMARY KEY',
+        'park_name': 'TEXT',
+        'prop_type': 'TEXT',
+        'geometry': 'GEOMETRY(MultiPolygon, 4326)'
+    }
+
+
+TEXAS_PARKS_TABLE = TexasParksTable()
+
+
+class TexasCountiesTable(DBTable):
+    name = 'tx_counties'
+    primary_key = 'county'
+    columns = {
+        'county': 'TEXT PRIMARY KEY',
+        'geometry': 'GEOMETRY(MultiPolygon, 4326)'
+    }
+
+
+TEXAS_COUNTIES_TABLE = TexasCountiesTable()
+
+GEOMETRY_TABLES = [
+    TEXAS_GEOMETRY_TABLE,
+    TEXAS_COUNTIES_TABLE,
+    TEXAS_PARKS_TABLE
+]

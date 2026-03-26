@@ -1,4 +1,5 @@
 from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db_schema.geometries import TEXAS_GEOMETRY_TABLE
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -100,8 +101,8 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
             query = sql.SQL('''
                 WITH region AS (
                     SELECT geometry
-                    FROM geometries
-                    WHERE geometry_name = 'Texas'
+                    FROM {tx_table}
+                    WHERE name = 'Texas'
                 ),
                 hull AS (
                     SELECT ST_ConvexHull(ST_Collect(
@@ -119,6 +120,7 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
                 ) AS range_extent_geom
                 FROM hull, region;
             ''').format(
+                tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
                 occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
                 occurrence_filter=occurrence_filter
             )
