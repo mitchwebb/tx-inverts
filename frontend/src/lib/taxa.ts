@@ -73,16 +73,16 @@ export async function getNSMetrics(
     if (abortController) abortController.abort();
     abortController = new AbortController();
 
-    const rangeExtentURL = '/server/natureserve/get_ns_metrics';
-    const response = await fetch(rangeExtentURL, {
+    const nSMetricsURL = '/server/natureserve/get_ns_metrics';
+    const response = await fetch(nSMetricsURL, {
         signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             taxon_ids: taxonID,
             include_inat: includeINat,
-            date_start: dateStart,
-            date_end: dateEnd,
+            date_start: dateStart?.toISOString(),
+            date_end: dateEnd?.toISOString(),
             data_providers: dataProviders,
         }),
     });

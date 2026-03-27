@@ -1,20 +1,9 @@
 <script lang="ts">
     import PlusIcon from '../../assets/PlusIcon.svelte';
-    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
-    import type { SearchSuggestion } from '../../types/api';
-    import TaxaSearchSuggestBar from '../TaxaSearchSuggestBar.svelte';
-
-    const taxaContext = getActiveTaxaContext();
+    import TaxaSearch from '../TaxaSearch.svelte';
 
     // This param determines whether to show the add button or the search bar
     let active: boolean = $state(false);
-
-    // When selecting a new taxon, append to list of taxa in context
-    function handleAddTaxon(suggestion: SearchSuggestion) {
-        if (!suggestion.taxonID) return;
-        taxaContext.add(suggestion.taxonID, true);
-        active = false;
-    }
 
     function handleSearchBlur() {
         active = false;
@@ -23,9 +12,9 @@
 
 <div id="add-taxon-button-wrapper">
     {#if active}
-        <TaxaSearchSuggestBar
+        <TaxaSearch
+            append={true}
             placeholder="Search for Taxon to Add..."
-            handleSelect={handleAddTaxon}
             autoFocus={true}
             handleBlur={handleSearchBlur}
         />

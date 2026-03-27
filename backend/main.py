@@ -4,7 +4,7 @@ from backend.core.logging import setup_logging
 from fastapi import FastAPI
 from backend.core.logging import api_logger
 from backend.routers.occurrence import router as occurrence_router
-from backend.routers.maps import router as maps_router
+from backend.routers.map import router as maps_router
 from backend.routers.taxa import router as taxa_router
 from backend.routers.natureserve import router as natureserve_router
 from backend.routers.downloads import router as downloads_router
@@ -61,7 +61,7 @@ app.add_middleware(
 
 # Add routers
 app.include_router(occurrence_router, prefix='/occurrence')
-app.include_router(maps_router, prefix='/maps')
+app.include_router(maps_router, prefix='/map')
 app.include_router(taxa_router, prefix='/taxa')
 app.include_router(natureserve_router, prefix='/natureserve')
 app.include_router(downloads_router, prefix='/downloads')

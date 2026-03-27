@@ -17,8 +17,8 @@ export async function getProviderCounts(
             body: JSON.stringify({
                 taxon_ids: activeTaxonID,
                 include_inat: includeINat,
-                date_start: dateStart,
-                date_end: dateEnd,
+                date_start: dateStart?.toISOString(),
+                date_end: dateEnd?.toISOString(),
             }),
         });
         if (!response.ok) {

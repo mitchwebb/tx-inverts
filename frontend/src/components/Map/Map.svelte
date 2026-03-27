@@ -340,6 +340,10 @@
                 }
             });
 
+            map.on('error', (e) => {
+                console.error(e.error);
+            });
+
             // Cleanup function on destroy
             return () => {
                 // window.removeEventListener('resize', updateMapOffset);
@@ -371,8 +375,8 @@
                 body: JSON.stringify({
                     taxon_ids: taxonID,
                     include_inat: includeINat,
-                    date_start: dateStart,
-                    date_end: dateEnd,
+                    date_start: dateStart?.toISOString(),
+                    date_end: dateEnd?.toISOString(),
                     data_providers: dataProviders,
                 }),
             }
@@ -407,8 +411,8 @@
         const dataProviders = filtersContext.dataProviders?.length
             ? filtersContext.dataProviders
             : null;
-        const dateStart = filtersContext.dateStart;
-        const dateEnd = filtersContext.dateEnd;
+        const dateStart = filtersContext.dateStart?.toISOString();
+        const dateEnd = filtersContext.dateEnd?.toISOString();
 
         if (!mapContext.taxonLayers[taxonID]) {
             mapContext.taxonLayers[taxonID] = {
@@ -419,6 +423,8 @@
                 areaOfOccupancyGeom: null,
             };
         }
+
+        console.warn(dateStart, dateEnd);
 
         const obsBundle = createObservationsBundle(taxonID, color);
         const rangeBundle = createRangeExtentBundle(taxonID, color);
@@ -466,8 +472,8 @@
         const dataProviders = filtersContext?.dataProviders?.length
             ? filtersContext.dataProviders
             : null;
-        const dateStart = filtersContext.dateStart;
-        const dateEnd = filtersContext.dateEnd;
+        const dateStart = filtersContext.dateStart?.toISOString();
+        const dateEnd = filtersContext.dateEnd?.toISOString();
         if (!map || !mapReady) return;
 
         let cancelled = false;

@@ -230,7 +230,7 @@ async def update_observations(
                         WHERE batch_id={batch_id}
                             AND NOT ST_Within(
                                 geometry,
-                                (SELECT geometry FROM {tx_table} WHERE name = 'Texas')
+                                (SELECT geometry FROM {tx_table} WHERE state = 'Texas')
                             );
                     ''').format(
                         tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),

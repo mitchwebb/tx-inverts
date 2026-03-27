@@ -96,19 +96,19 @@
             }
             // If more than one active taxonID
             default: {
-                // // If they're all species or subspecies, skip filtering
-                // if (
-                //     taxaContext.taxonIDs.every((taxonID) => {
-                //         return ['species', 'subspecies', null].includes(
-                //             taxaContext?.taxa[taxonID]?.info?.taxonRank || null
-                //         );
-                //     })
-                // ) {
-                //     filterTaxaIDs = [1];
-                //     console.log(taxaContext.taxonIDs.slice(-1)[0]);
-                //     scrollToTaxonID = taxaContext.taxonIDs.slice(-1)[0];
-                //     break;
-                // }
+                // If they're all species or subspecies, skip filtering
+                if (
+                    taxaContext.taxonIDs.every((taxonID) => {
+                        return ['species', 'subspecies', null].includes(
+                            taxaContext?.taxa[taxonID]?.info?.taxonRank || null
+                        );
+                    })
+                ) {
+                    filterTaxaIDs = [1];
+                    console.log(taxaContext.taxonIDs.slice(-1)[0]);
+                    scrollToTaxonID = taxaContext.taxonIDs.slice(-1)[0];
+                    break;
+                }
                 // Else, filter to taxa
                 filterTaxaIDs = taxaContext.taxonIDs;
                 // If any taxa are species/subspecies, scroll to latest (last in list)
@@ -206,6 +206,10 @@
                                 ? taxon.ns_rank_state
                                 : taxon.ns_rank_state_no_inat}
                         {@const italicized = isItalicizedRank(taxon.taxon_rank)}
+                        {@const taxonID = taxon.taxon_id}
+                        {@const activeTaxa = taxaContext.taxa}
+                        {@const activeTaxaIDs = taxaContext.taxonIDs}
+                        {@const nextColor = taxaContext.getNextColor()}
                         <div class="taxon-icon-wrapper centered">
                             {#if taxon.us_invasive}
                                 <div class="invasive-icon taxon-icon icon">
@@ -237,20 +241,15 @@
                                 </span>
                             </span>
                             <button
-                                class={`
-                                    taxon-select-icon 
-                                    icon 
-                                    ${
-                                        taxaContext.taxonIDs.some(
-                                            (taxonID) =>
-                                                taxonID == taxon.taxon_id
-                                        )
-                                            ? 'active'
-                                            : null
-                                    }
-                                `}
+                                class="taxon-select-icon icon"
+                                class:active={activeTaxaIDs.some(
+                                    (activeID) => activeID == taxonID
+                                )}
+                                style:color={activeTaxa[taxonID]
+                                    ? activeTaxa[taxonID].color
+                                    : nextColor}
                                 onclick={handleTaxonSelect}
-                                data-taxon-id={taxon.taxon_id.toString()}
+                                data-taxon-id={taxonID.toString()}
                             >
                                 <MagnifyIcon />
                             </button>
@@ -306,16 +305,9 @@
         margin: 1rem;
         opacity: 0.5;
     }
-    .taxon-column-name {
-        cursor: pointer;
-    }
     .centered {
         text-align: center;
         justify-self: center;
-    }
-    .rankings-body-grid {
-        padding: 0.5rem;
-        width: fit-content;
     }
     .taxon-icon-wrapper {
         color: var(--accent-color);
@@ -342,16 +334,8 @@
         color: var(--text-default);
         overflow-y: hidden;
     }
-    .taxon-label {
-        height: 1.5rem;
-        display: flex;
-        gap: 0.5rem;
-    }
     .invasive > * {
         color: var(--accent-color);
-    }
-    .filler-row {
-        height: 1.5rem;
     }
     .taxon-select-icon {
         color: transparent;
@@ -359,54 +343,17 @@
         padding: 0rem;
         margin-left: 0.5rem;
         flex-shrink: 0;
+        visibility: hidden;
     }
     .taxon-name-wrapper:hover .taxon-select-icon,
     .taxon-select-icon.active {
-        color: var(--fill-color);
+        visibility: visible;
     }
     .taxon-name {
         text-overflow: ellipsis;
         overflow: hidden;
     }
-    .spacer-row {
-        height: 1rem;
-    }
     .taxon-authorship {
         font-weight: 200;
-    }
-    .taxon-label {
-        position: relative;
-        background-color: transparent;
-        width: fit-content;
-        color: var(--text-default);
-        border: none;
-        padding: 0;
-        text-align: left;
-        display: flex;
-        align-items: center;
-        white-space: nowrap;
-        padding-top: 4px;
-    }
-    .taxon-label.active {
-        font-weight: bold;
-    }
-    .taxon-label-left {
-        line-height: 2rem;
-        padding-right: 1rem;
-        display: flex;
-        align-items: center;
-        width: 100%;
-        position: relative;
-    }
-    .vertical-line {
-        border-left: 1px solid var(--border);
-    }
-    .vertical-line,
-    .horizontal-line {
-        margin-left: calc(0.5rem + 3px);
-        margin-bottom: calc(0.5rem + 3px);
-    }
-    .horizontal-line {
-        border-bottom: 1px solid var(--border);
     }
 </style>

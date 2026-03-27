@@ -12,8 +12,8 @@
     }
 </script>
 
-<div class="filters-section" class:active={!filtersContext.includeINat}>
-    <div id="inat-filters-section" class="filters-section-header">
+<div id="inat-filters-section" class="filters-section" class:active={!filtersContext.includeINat}>
+    <div id="inat-filter-section-header" class="filters-section-header">
         <span>iNaturalist</span>
         <InfoButton
             type="tooltip"
@@ -31,23 +31,31 @@
                     offColor="darkred"
                 />
             </div>
-            <span class="sidebar-header-text">Include iNat Data</span>
+            <span class="inat-label">Include iNat Data</span>
         </div>
     </div>
 </div>
 
 <style>
     #inat-filters-section {
+        flex-grow: 0;
+    }
+    #inat-filter-section-header {
         display: flex;
-        gap: 0.25rem;
+        gap: .25rem;
     }
     .inat-toggle-wrapper {
         display: flex;
         gap: 0.5rem;
         justify-content: left;
+        align-items: center;
     }
     .inat-toggle {
         height: 1.5rem;
+        width: 1.5rem;
         stroke: var(--text-default);
+    }
+    .inat-label {
+        white-space: nowrap;
     }
 </style>

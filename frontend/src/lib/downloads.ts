@@ -70,8 +70,8 @@ export async function getOccurrenceDownload(
         {
             taxon_ids: taxonIDs,
             include_inat: includeINat,
-            date_start: dateStart,
-            date_end: dateEnd,
+            date_start: dateStart?.toISOString(),
+            date_end: dateEnd?.toISOString(),
             data_providers: dataProviders,
             include_invasives: includeInvasives,
         },

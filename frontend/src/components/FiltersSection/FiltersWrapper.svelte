@@ -60,28 +60,30 @@
 <style>
     .filters-header {
         margin: 0.5rem;
+        display: flex;
+        justify-content: center;
     }
     .filters-content-wrapper {
-        width: 100%;
         color: var(--text-default);
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        /* padding: 0.5rem; */
         gap: 0.5rem;
         background-color: var(--container-back);
-        min-width: 500px;
-        max-width: 1000px;
-        height: 100%;
-        box-sizing: border-box;
+        min-width: 200px;
+        width: fit-content;
+        max-width: 800px;
+        max-height: 80dvh;
     }
     #filters-content {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
         display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
         gap: 0.5rem;
-        width: 100%;
-        overflow: auto;
+        height: 100%;
+        flex-wrap: wrap;
+        align-items: stretch;
     }
     .filters-buttons-wrapper {
         display: flex;

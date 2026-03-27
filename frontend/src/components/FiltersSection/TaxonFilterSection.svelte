@@ -1,9 +1,9 @@
 <script lang="ts">
     import XIcon from '../../assets/XIcon.svelte';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
-    import type { SearchSuggestion } from '../../types/api';
+    import type { TaxonSearchSuggestion } from '../../types/api';
     import { isItalicizedRank } from '../../util/taxa';
-    import TaxaSearchSuggestBar from '../TaxaSearchSuggestBar.svelte';
+    import TaxaSearch from '../TaxaSearch.svelte';
 
     const taxaContext = getActiveTaxaContext();
 
@@ -20,7 +20,7 @@
         // This doesn't need to function in this case
     }
 
-    function handleSearchSelect(suggestion: SearchSuggestion) {
+    function handleSearchSelect(suggestion: TaxonSearchSuggestion) {
         if (!suggestion.taxonID) return;
 
         // Get info from current selection
@@ -37,10 +37,7 @@
     <div class="filters-section-header">Taxa</div>
     <div class="filters-section-content">
         <div class="taxa-search-wrapper">
-            <TaxaSearchSuggestBar
-                placeholder="Search by taxon..."
-                handleSelect={handleSearchSelect}
-            />
+            <TaxaSearch />
         </div>
 
         {#if !!taxaContext.taxonIDs.length}
@@ -80,7 +77,6 @@
 <style>
     .taxa-search-wrapper {
         height: 2.5rem;
-        max-width: 350px;
     }
     .italicized {
         font-style: italic;
@@ -91,6 +87,8 @@
         /* border-radius: 3px; */
         gap: 0.25rem;
         width: fit-content;
+        width: 100%;
+        box-sizing: border-box;
     }
     .filtered-taxon-name {
         display: flex;
@@ -101,6 +99,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        max-width: 350px;
     }
     .remove-taxon-icon {
         height: 1.5rem;
@@ -129,5 +128,7 @@
         align-items: center;
         height: 30px;
         border-radius: 3px;
+        width: 100%;
+        box-sizing: border-box;
     }
 </style>

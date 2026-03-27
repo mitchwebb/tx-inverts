@@ -64,6 +64,19 @@ export const stringCodec = (
     },
 });
 
+export const dateCodec = (
+    defaultValue: Date | null = null
+): ParamCodec<Date | null> => ({
+    toURL(value) {
+        if (value === null || value === defaultValue) return null; // omit defaults
+        return [value.toLocaleDateString()];
+    },
+    fromURL(values) {
+        if (!values || values.length === 0) return defaultValue;
+        return new Date(values[0]); // just take the first
+    },
+});
+
 export function taxaCodec(): ParamCodec<Record<number, ActiveTaxon>> {
     return {
         toURL: (taxa) => (taxa ? Object.keys(taxa).map(String) : null),

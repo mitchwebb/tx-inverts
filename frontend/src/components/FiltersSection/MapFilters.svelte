@@ -13,8 +13,8 @@
 
 <FiltersWrapper header={'Filter Occurrences'}>
     <INatFilterSection />
+    <DateFilterSection header="Date Range" />
     <DatasetFilterSection />
-    <DateFilterSection header="Observation Dates" />
 </FiltersWrapper>
 
 <style>

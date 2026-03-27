@@ -13,6 +13,7 @@ import type { Provider } from './mapLegendKeys';
 import type { ParamCodec, SyncedKeys } from '../types/router';
 import {
     booleanCodec,
+    dateCodec,
     stringArrayCodec,
     stringCodec,
     taxaCodec,
@@ -35,7 +36,7 @@ export const routerSyncedKeys = {
             includeINat: { param: 'inat', codec: booleanCodec(true) },
             dataProviders: {
                 param: 'source',
-                codec: stringArrayCodec() as ParamCodec<Provider[] | null>,
+                codec: stringArrayCodec() as ParamCodec<Provider[]>,
             },
             nSRanks: {
                 param: 'status',
@@ -45,8 +46,8 @@ export const routerSyncedKeys = {
                 param: 'rank',
                 codec: stringCodec() as ParamCodec<TaxonomicRank | null>,
             },
-            dateStart: { param: 'd1', codec: stringCodec() },
-            dateEnd: { param: 'd2', codec: stringCodec() },
+            dateStart: { param: 'd1', codec: dateCodec() },
+            dateEnd: { param: 'd2', codec: dateCodec() },
         }),
     },
 

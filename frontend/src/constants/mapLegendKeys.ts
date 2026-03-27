@@ -1,17 +1,6 @@
 // Keys for map features in ['name: color'] format for MapBox styling
 export type Color = string;
 
-export const TAXON_COLORS = [
-    '#e69f00',
-    '#56b4e9',
-    '#009e73',
-    '#cee028',
-    '#0072b2',
-    '#d55e00',
-    '#cc79a7',
-    '#000000',
-];
-
 // Level 3 Ecoregions Key
 export const l3EcoregionsLegend = {
     propName: 'US_L3NAME',

@@ -1,7 +1,7 @@
 <!-- Styled, reusable AirDatepicker Element for Svelte -->
 
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import AirDatepicker, {
         type AirDatepickerOptions,
         type AirDatepickerPositionCallback,
@@ -55,16 +55,20 @@
             : `${top + window.scrollY + height + margin}px`;
     };
 
+    // Sync prop value to selected value
     $effect(() => {
         if (!datepicker) return;
-
-        if (value) {
-            datepicker.selectDate(value);
-        } else {
+        const current = datepicker.selectedDates[0] ?? null;
+        // If no value provided but still currently selected date, clear date
+        if (!value && current) {
             datepicker.clear();
+        // Else if value is provided (but isn't currently selected), select it
+        } else if (value && current?.toDateString() !== new Date(value).toDateString()) {
+            datepicker.selectDate(value);
         }
     });
 
+    // Mount Datepicker
     onMount(() => {
         if (inputEl) {
             datepicker = new AirDatepicker(inputEl, {
@@ -98,6 +102,7 @@
         background-color: var(--container-back);
         border: 1px solid var(--border);
         border-radius: 3px;
+        min-width: 75px;
     }
     input:focus {
         outline: 1px solid var(--accent-color);

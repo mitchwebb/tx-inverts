@@ -32,6 +32,8 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
         TODO: Sort out typing and finish this docstring
     """
 
+    api_logger.info(params)
+
     filters = SingleTaxonOccurrenceFilter(
         taxon_id=params.taxon_ids,
         include_inat=params.include_inat,
@@ -51,13 +53,13 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
             if not ns_result:
                 return JSONResponse(content={'result': None}, status_code=200)
 
-            rank_query = psycopg.sql.SQL("""
+            rank_query = sql.SQL("""
                 SELECT {rank_col}
                     FROM tx_taxa
                 WHERE taxon_id = {taxon_id}
             """).format(
-                taxon_id=psycopg.sql.Literal(filters.taxon_id),
-                rank_col=psycopg.sql.Identifier(rank_col)
+                taxon_id=sql.Literal(filters.taxon_id),
+                rank_col=sql.Identifier(rank_col)
             )
 
             async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
@@ -102,7 +104,7 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
                 WITH region AS (
                     SELECT geometry
                     FROM {tx_table}
-                    WHERE name = 'Texas'
+                    WHERE state = 'Texas'
                 ),
                 hull AS (
                     SELECT ST_ConvexHull(ST_Collect(

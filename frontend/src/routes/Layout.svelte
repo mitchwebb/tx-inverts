@@ -53,22 +53,27 @@
         setMetricsContext,
         type MetricsParams,
     } from '../contexts/metricsParamsContext';
-    import { TAXON_COLORS, type Provider } from '../constants/mapLegendKeys';
+    import { type Provider } from '../constants/mapLegendKeys';
     import {
         initialRankingsState,
         setRankingsContext,
         type RankingsState,
     } from '../contexts/rankingsContext';
+    import { TAXON_COLORS } from '../constants/taxa';
 
     // Intialize contexts
     const taxaState: ActiveTaxaState = $state(initialActiveTaxaState);
     setActiveTaxaContext(taxaState);
 
-    function getNextColor(): string {
-        const usedColors = new Set(
-            Object.values(taxaState.taxa).map((t) => t.color)
+    // Logic for setting next color of active taxon (if all colors are used, will use least used color)
+    function getNextTaxonColor(): string {
+        const colorCounts = Object.fromEntries(TAXON_COLORS.map((c) => [c, 0]));
+        Object.values(taxaState.taxa).forEach((t) => {
+            if (t.color in colorCounts) colorCounts[t.color]++;
+        });
+        return TAXON_COLORS.reduce((least, c) =>
+            colorCounts[c] < colorCounts[least] ? c : least
         );
-        return TAXON_COLORS.find((c) => !usedColors.has(c)) ?? TAXON_COLORS[0];
     }
 
     function addActiveTaxon(taxonID: number, append = false) {
@@ -85,7 +90,7 @@
         taxaState.taxa[taxonID] = {
             ...initialTaxonState,
             taxonID,
-            color: getNextColor(),
+            color: getNextTaxonColor(),
         };
         taxaState.taxonIDs = [...taxaState.taxonIDs, taxonID];
         loadTaxonInfo(taxonID);
@@ -101,6 +106,7 @@
     taxaState.add = addActiveTaxon;
     taxaState.remove = removeActiveTaxon;
     taxaState.clear = clearTaxa;
+    taxaState.getNextColor = getNextTaxonColor;
     const taxaContext = getActiveTaxaContext();
 
     const filtersState: FiltersState = $state(initialFiltersState);
@@ -206,9 +212,9 @@
     async function loadNSValues(
         taxonID: number,
         includeINat: boolean,
-        dateStart: string | null,
-        dateEnd: string | null,
-        dataProviders: Provider[] | null
+        dateStart: Date | null,
+        dateEnd: Date | null,
+        dataProviders: Provider[]
     ) {
         const taxon = taxaContext.taxa[taxonID];
         if (!taxon) return;
@@ -271,8 +277,8 @@
                     taxon.providerCounts = providerCounts;
 
                     if (dateRange) {
-                        taxon.dateMin = dateRange?.minDate;
-                        taxon.dateMax = dateRange?.maxDate;
+                        taxon.dateMin = new Date(dateRange?.minDate);
+                        taxon.dateMax = new Date(dateRange?.maxDate);
                     }
                 } catch (error) {
                     console.error(error);

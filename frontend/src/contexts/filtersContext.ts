@@ -8,17 +8,17 @@ export const filtersStateKey = 'filters';
 export type FiltersState = {
     taxonRank: TaxonomicRank | null;
     includeINat: boolean;
-    dataProviders: Provider[] | null;
-    nSRanks: NSRank[] | null;
-    dateStart: string | null;
-    dateEnd: string | null;
+    dataProviders: Provider[];
+    nSRanks: NSRank[];
+    dateStart: Date | null;
+    dateEnd: Date | null;
 };
 
 export const initialFiltersState: FiltersState = {
     taxonRank: null,
     includeINat: true,
-    dataProviders: null,
-    nSRanks: null,
+    dataProviders: [],
+    nSRanks: [],
     dateStart: null,
     dateEnd: null,
 };

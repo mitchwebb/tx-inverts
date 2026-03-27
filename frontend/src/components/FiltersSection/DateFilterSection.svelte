@@ -10,36 +10,36 @@
         header?: string;
     };
 
-    const { header = 'Dates' }: DateFilterProps = $props();
+    const { header = 'Date Range' }: DateFilterProps = $props();
 
     const filtersContext = getFiltersContext();
     const taxonContext = getActiveTaxaContext();
 
-    function handleStartDate({ formattedDate }: AirDatepickerPayload) {
-        filtersContext.dateStart = (formattedDate as string) || null;
+    function handleStartDate({ date }: AirDatepickerPayload) {
+        const singleDate = Array.isArray(date) ? date[0] : date;
+        filtersContext.dateStart = singleDate || null;
     }
 
-    function handleEndDate({ formattedDate }: AirDatepickerPayload) {
-        filtersContext.dateEnd = (formattedDate as string) || null;
+    function handleEndDate({ date }: AirDatepickerPayload) {
+        const singleDate = Array.isArray(date) ? date[0] : date;
+        filtersContext.dateEnd = singleDate || null;
     }
 
+    // Get all min or max dates from activeTaxa, return Date[]
     function getTaxonDates(type: 'dateMin' | 'dateMax') {
         return Object.values(taxonContext.taxa)
             .map((t) => t[type])
-            .filter((d): d is string => d !== null)
-            .map((d) => new Date(d).getTime());
+            .filter((d): d is Date => d !== null);
     }
 
+    // Derive minDate using all activeTaxa minDates
     const minDate = $derived(
-        getTaxonDates('dateMin').length
-            ? new Date(Math.min(...getTaxonDates('dateMin')))
-            : undefined
+        getTaxonDates('dateMin').sort((a, b) => (a > b ? 1 : -1))[0]
     );
 
+    // Derive maxDate using all activeTaxa maxDates
     const maxDate = $derived(
-        getTaxonDates('dateMax').length
-            ? new Date(Math.max(...getTaxonDates('dateMax')))
-            : undefined
+        getTaxonDates('dateMax').sort((a, b) => (a < b ? 1 : -1))[0]
     );
 
     // TODO: Once we add mobile support, AirDatepicker has an isMobile arg
@@ -66,7 +66,7 @@
                     : 'Min Date'}
                 isMobile={$isMobile}
             />
-            <span> to </span>
+            <span>to</span>
             <DatePicker
                 onSelect={handleEndDate}
                 id="date-end-filter"
@@ -90,6 +90,11 @@
     .date-filters-wrapper {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+    :global(#date-start-filter), :global(#date-end-filter) {
+        max-width: 200px;
+        flex: 1 1 75px;
     }
 </style>

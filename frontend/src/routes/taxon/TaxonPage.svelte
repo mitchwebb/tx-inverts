@@ -295,6 +295,7 @@
                         ? node.ns_rank_state
                         : node.ns_rank_state_no_inat}
                 {@const italicized = isItalicizedRank(node.taxon_rank)}
+                {@const nextColor = taxaContext.getNextColor()}
 
                 <div
                     role="button"
@@ -345,17 +346,13 @@
                         </span>
                     </button>
                     <button
-                        class={`
-                            taxon-select-icon
-                            icon
-                            ${
-                                taxaContext.taxonIDs.some(
-                                    (taxonID) => taxonID == node.taxon_id
-                                )
-                                    ? 'active'
-                                    : null
-                            }
-                        `}
+                        class="taxon-select-icon icon"
+                        class:active={taxaContext.taxonIDs.some(
+                            (taxonID) => taxonID == node.taxon_id
+                        )}
+                        style:color={taxaContext.taxa[node.taxon_id]
+                            ? taxaContext.taxa[node.taxon_id].color
+                            : nextColor}
                         onclick={setActiveTaxon}
                     >
                         <MagnifyIcon />
@@ -418,15 +415,16 @@
         height: 1.5rem;
     }
     .taxon-select-icon {
-        color: transparent;
+        /* color: transparent; */
         background: transparent;
-        padding: 0;
+        padding: 0rem;
         margin-left: 0.5rem;
+        flex-shrink: 0;
+        visibility: hidden;
     }
     .taxon-node-wrapper:hover > .taxon-select-icon,
     .taxon-select-icon.active {
-        color: var(--fill-color);
-        /* border: 1px solid var(--accent-color); */
+        visibility: visible;
     }
     .spacer-row {
         height: 1rem;

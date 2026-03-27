@@ -15,8 +15,8 @@ export type ActiveTaxon = {
     info: TaxonInfo;
     nSValues: NSValues;
     providerCounts: Record<Provider, number> | null;
-    dateMin: string | null;
-    dateMax: string | null;
+    dateMin: Date | null;
+    dateMax: Date | null;
 };
 
 // Default state for nSValues
@@ -78,6 +78,7 @@ export type ActiveTaxaState = {
     clear: () => void;
     add: (taxonID: number, append?: boolean) => void;
     remove: (taxonID: number) => void;
+    getNextColor: () => string;
 };
 
 export const initialActiveTaxaState: ActiveTaxaState = {
@@ -86,6 +87,7 @@ export const initialActiveTaxaState: ActiveTaxaState = {
     clear: () => {},
     add: () => {},
     remove: () => {},
+    getNextColor: () => '',
 };
 
 export function setActiveTaxaContext(activeTaxaState: ActiveTaxaState) {

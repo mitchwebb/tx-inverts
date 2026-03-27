@@ -100,7 +100,21 @@ INDEX_DEFINITIONS = {
             CREATE INDEX idx_invasives_taxon_id
             ON us_invasives_checklist (taxon_id);
         '''
-    }
+    },
+    'idx_tx_parks_name': {
+        'table': 'tx_parks',
+        'create_sql': '''
+            CREATE INDEX idx_tx_parks_name
+            ON tx_parks (park_name);
+        '''
+    },
+    'idx_tx_counties_name': {
+        'table': 'tx_counties',
+        'create_sql': '''
+            CREATE INDEX idx_tx_counties_name
+            ON tx_counties (county);
+        '''
+    },
     # 'idx_taxon_tile_cache_tile_coords': {
     # 	'table': 'taxon_tile_cache',
     # 	'create_sql': '''

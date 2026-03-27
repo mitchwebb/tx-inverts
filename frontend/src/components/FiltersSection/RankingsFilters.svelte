@@ -6,9 +6,9 @@
 <script lang="ts">
     import DateFilterSection from './DateFilterSection.svelte';
     import FiltersWrapper from './FiltersWrapper.svelte';
+    import GeoFilterSection from './GeoFilterSection.svelte';
     import INatFilterSection from './INatFilterSection.svelte';
     import RankFilterSection from './RankFilterSection.svelte';
-    import TaxonFilterSection from './TaxonFilterSection.svelte';
     import './filtersSection.css';
 </script>
 
@@ -16,6 +16,7 @@
     <!-- <TaxonFilterSection /> -->
     <INatFilterSection />
     <RankFilterSection />
+    <GeoFilterSection/>
     <DateFilterSection header="Dates Present" />
 </FiltersWrapper>
 

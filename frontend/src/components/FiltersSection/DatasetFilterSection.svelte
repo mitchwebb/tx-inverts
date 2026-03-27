@@ -74,7 +74,7 @@
         {/if}
         <div class="filters-section-header">{header}</div>
         <div class="filters-section-content">
-            {#if !!providerCounts.length}
+            {#if !(Object.keys(providerCounts).length === 0)}
                 <form id="datasets-filter">
                     {#each Object.entries(providerCounts) as [institutionCode, count] (institutionCode)}
                         {@const institutionName =
@@ -147,7 +147,7 @@
     }
     .institution-name {
         align-self: left;
-        white-space: nowrap;
+        /* white-space: nowrap; */
         min-width: 0;
         text-overflow: ellipsis;
         overflow: hidden;

@@ -19,11 +19,18 @@ export function countActiveFilters(
         if (meta.count === false) continue;
 
         const value = filters[filterKey as keyof FiltersState];
+        // Check if value is default value (special case for arrays)
+        const isDefault = Array.isArray(value)
+            ? Array.isArray(meta.default) &&
+              value.length === (meta.default as any[]).length &&
+              value.every((v, i) => v === (meta.default as any[])[i])
+            : value === meta.default;
         if (
-            value !== meta.default &&
+            !isDefault &&
             (!domain || meta.domain.includes(domain)) && // Domain value check
             (!path || meta.path.includes(path)) // Path value check
         ) {
+            console.warn(value, filterKey);
             filterCount++;
         }
     }

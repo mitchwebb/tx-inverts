@@ -1,7 +1,7 @@
 // Types pertaining to API responses
 import type { TaxonomicRank, TaxonomicStatus } from './taxa';
 
-export type RawSearchSuggestion = {
+export type RawTaxonSearchSuggestion = {
     scientific_name: string;
     canonical_name: string;
     taxon_id: number;
@@ -10,7 +10,7 @@ export type RawSearchSuggestion = {
     taxonomic_status: TaxonomicStatus;
 };
 
-export type SearchSuggestion = {
+export type TaxonSearchSuggestion = {
     scientificName: string | null;
     canonicalName: string | null;
     taxonID: number | null;

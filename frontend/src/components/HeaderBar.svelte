@@ -4,20 +4,10 @@
         getRouterContext,
         type RouterPath,
     } from '../contexts/routerContext';
-    import type { SearchSuggestion } from '../types/api';
     import { capitalizeWords } from '../util/textHelpers';
-    import TaxaSearchSuggestBar from './TaxaSearchSuggestBar.svelte';
+    import TaxaSearch from './TaxaSearch.svelte';
 
     const routerContext = getRouterContext();
-    const taxaContext = getActiveTaxaContext();
-
-    // When selecting from searchbar, set taxonID in context
-    function handleSearchSelect(suggestion: SearchSuggestion) {
-        if (!suggestion.taxonID) return;
-
-        taxaContext.clear();
-        taxaContext.add(suggestion.taxonID);
-    }
 
     const currPath = $derived(routerContext.url.pathname);
 
@@ -68,10 +58,7 @@
         <div>INVERTS</div>
     </a>
     <div id="header-search-bar">
-        <TaxaSearchSuggestBar
-            placeholder="Search by taxon..."
-            handleSelect={handleSearchSelect}
-        />
+        <TaxaSearch replace={true}/>
     </div>
 
     <ul id="main-nav" class="nav-item">

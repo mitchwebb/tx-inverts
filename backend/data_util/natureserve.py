@@ -147,7 +147,7 @@ async def calculate_ns_values(
             WITH region AS (
                 SELECT geometry
                 FROM {tx_table}
-                WHERE name = 'Texas'
+                WHERE state = 'Texas'
             ),
             obs_points AS (
                 SELECT
@@ -198,7 +198,7 @@ async def calculate_ns_values(
 
             FROM hull h, region r, a4, a1
         """).format(
-            tx_table=sql.Literal(TEXAS_GEOMETRY_TABLE.name),
+            tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
             taxon_id=sql.Literal(filters.taxon_id),
             rank_col=sql.Identifier(rank_col),
             include_inat=sql.Literal(filters.include_inat),

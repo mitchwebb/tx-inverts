@@ -1,4 +1,7 @@
+from re import M
+
 from backend.core.exception_handler import InvalidTaxonRankError, TaxonNotFoundError
+from backend.db_schema.tx_taxa import TX_TAXA_TABLE
 from fastapi import Request, APIRouter, HTTPException
 from pydantic import BaseModel
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -39,10 +42,10 @@ async def get_taxon_rank(conn, taxon_id):
 
 # Provide search suggestions based on taxon search
 # Returns only accepted/doubtful taxa, resolving synonyms automatically
-@router.post("/search_suggest",)
-async def search(data: TextData, request: Request):
+@router.post("/taxon_search_suggest",)
+async def search_taxon(data: TextData, request: Request):
     search_term = data.text
-    query = '''
+    query = sql.SQL('''
         SELECT DISTINCT ON (COALESCE(a.taxon_id, t.taxon_id))
             COALESCE(a.scientific_name, t.scientific_name) AS scientific_name,
             COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
@@ -50,7 +53,7 @@ async def search(data: TextData, request: Request):
             COALESCE(a.taxon_rank, t.taxon_rank) AS taxon_rank,
             COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
             COALESCE(a.taxonomic_status, t.taxonomic_status) AS taxonomic_status
-        FROM tx_taxa t
+        FROM {tx_taxa} t
         LEFT JOIN tx_taxa a
             ON t.accepted_name_usage_id = a.taxon_id
         WHERE 
@@ -60,11 +63,14 @@ async def search(data: TextData, request: Request):
                 COALESCE(a.taxon_id, t.taxon_id),
             COALESCE(a.canonical_name, t.canonical_name)
         LIMIT 10;
-    '''
+    ''').format(
+        tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
+        search_term=sql.Literal('\\m' + search_term.lower())
+    )
     # start = time.time()
     try:
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, query, ('\\m' + search_term.lower(), ), 'all', dict_cursor=True) as results:
+            async with execute_psql_query(conn, query, (), 'all', dict_cursor=True) as results:
                 # end = time.time()
                 # api_logger.debug(f'Search suggest took {end-start} seconds)
                 results = [dict(row) for row in results]

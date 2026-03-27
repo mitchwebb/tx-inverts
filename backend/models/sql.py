@@ -1,5 +1,6 @@
 from typing import Optional, List
 from pydantic import computed_field, field_validator, BaseModel, model_validator
+import datetime
 
 
 class OccurrenceFilter(BaseModel):
@@ -30,9 +31,9 @@ class OccurrenceFilter(BaseModel):
 
     @field_validator('date_start', 'date_end', mode='before')
     def normalize_dates(cls, v):
-        if v in ('null', '', 'undefined'):
+        if v in ('null', '', 'undefined') or v is None:
             return None
-        return v
+        return datetime.fromisoformat(v).date()
 
 
 class SingleTaxonOccurrenceFilter(OccurrenceFilter):

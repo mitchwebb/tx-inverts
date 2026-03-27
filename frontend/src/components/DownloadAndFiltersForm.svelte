@@ -75,6 +75,7 @@
                 {bytesReceived}
             />
         {:else if loadingEstimate}
+            <span class="thin"> Getting Estimate </span>
             <div id="download-loading-icon" class="icon">
                 <LoadingIcon />
             </div>
@@ -94,6 +95,7 @@
         flex: 1;
         min-height: 0;
         width: 100%;
+        flex-wrap: wrap;
     }
     .button-and-metrics-wrapper {
         display: flex;
@@ -114,7 +116,8 @@
         display: flex;
         flex-direction: column;
         min-width: 200px;
-        max-width: 100%;
+        width: 90dvw;
+        max-width: 800px;
         max-height: 80dvh;
     }
     #download-form-header {

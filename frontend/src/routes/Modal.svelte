@@ -2,7 +2,7 @@
 <!-- But this feels more Svelte-ish and legacy-capable -->
 
 <script lang="ts">
-    import { fade } from 'svelte/transition';
+    import { fade, slide } from 'svelte/transition';
     import XIcon from '../assets/XIcon.svelte';
     import { getModalContext } from '../contexts/modalContext';
 
@@ -36,7 +36,7 @@
 </script>
 
 {#if modalContext.visible}
-    <div id="modal">
+    <div id="modal" transition:fade={{ duration: 50 }}>
         <div
             id="modal-overlay"
             onclick={handleModalClose}
@@ -93,8 +93,8 @@
 
     #modal-close-button {
         position: absolute;
-        top: 0rem;
-        right: 0rem;
+        top: .5rem;
+        right: .5rem;
         color: var(--text-default);
         cursor: pointer;
         padding: 0;
@@ -123,7 +123,7 @@
         z-index: 1001;
         pointer-events: none;
         height: 100%;
-        width: 100%;
+        /* width: 100%; */
     }
 
     #modal-content-wrapper {
@@ -147,7 +147,7 @@
     #modal-content {
         flex: 1 1 auto; /* grow to wrapper height */
         overflow-y: auto; /* scroll if content is tall */
-        width: 100%;
+        width: fit-content;
         display: block; /* remove flex centering to prevent clipping */
         color: var(--text-default);
         box-sizing: border-box;

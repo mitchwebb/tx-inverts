@@ -12,9 +12,7 @@
     } from '../../contexts/activeTaxaContext';
     import { getSidebarContext } from '../../contexts/sidebarContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
-    import TaxaSearchSuggestBar from '../TaxaSearchSuggestBar.svelte';
     import { countActiveFilters } from '../../lib/filters.svelte';
-    import type { SearchSuggestion } from '../../types/api';
     import FiltersButton from '../FiltersButton.svelte';
     import Filters from '../FiltersSection/MapFilters.svelte';
     import TaxonDisplay from './TaxonDisplay.svelte';
@@ -24,13 +22,13 @@
     } from '../../contexts/routerContext';
     import { getModalContext } from '../../contexts/modalContext';
     import AddTaxonButton from './AddTaxonButton.svelte';
-    import XIcon from '../../assets/XIcon.svelte';
     import MapFilters from '../FiltersSection/MapFilters.svelte';
     import RankingsFilters from '../FiltersSection/RankingsFilters.svelte';
     import Toggle from '../../common/Toggle.svelte';
     import ChevronUp from '../../assets/ChevronUp.svelte';
     import ChevronDown from '../../assets/ChevronDown.svelte';
     import { slide } from 'svelte/transition';
+    import TaxaSearch from '../TaxaSearch.svelte';
 
     type SidebarProps = {
         showTaxonDisplay?: boolean;
@@ -85,13 +83,6 @@
     //     window.addEventListener('mouseup', endResize);
     //     window.addEventListener('mousemove', resizeWindow);
     // }
-
-    function handleSearchSelect(suggestion: SearchSuggestion) {
-        if (!suggestion.taxonID) return;
-
-        taxaContext.clear();
-        taxaContext.add(suggestion.taxonID);
-    }
 
     // Handle click-to-close functionality for filters section
     function handleOutsidePointerDown(e: PointerEvent) {
@@ -189,9 +180,9 @@
                     </div>
                 {/if}
                 <div class="sidebar-search-wrapper">
-                    <TaxaSearchSuggestBar
+                    <TaxaSearch
+                        replace={true}
                         placeholder={'Search by taxon...'}
-                        handleSelect={handleSearchSelect}
                     />
                 </div>
                 <!-- {#if Object.keys(taxaContext.taxa).length}
