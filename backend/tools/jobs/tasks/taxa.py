@@ -18,7 +18,7 @@ import pandas as pd
 import psycopg
 from psycopg import sql, AsyncConnection
 from typing import List, Optional
-from backend.models.sql import OccurrenceFilter
+from backend.models.sql import OccurrenceFilter, SingleTaxonOccurrenceFilter
 
 
 # TODO: This might as well be included in taxonomic updates, given that if
@@ -351,7 +351,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         # Calculate values for taxa with inat observations and without
         for include_inat in [True, False]:
 
-            filters = OccurrenceFilter(
+            filters = SingleTaxonOccurrenceFilter(
                 taxon_id=taxon_id,
                 include_inat=include_inat,
             )

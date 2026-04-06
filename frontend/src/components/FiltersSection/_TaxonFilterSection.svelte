@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
     import XIcon from '../../assets/XIcon.svelte';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import type { TaxonSearchSuggestion } from '../../types/api';
@@ -131,4 +131,4 @@
         width: 100%;
         box-sizing: border-box;
     }
-</style>
+</style> -->

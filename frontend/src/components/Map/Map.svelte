@@ -190,7 +190,7 @@
             // Add dynamic layers (if IDs already in context)
             // This reloads ALL taxonLayers, which isn't the most
             // efficient thing in the world. But is it an issue in earnest?
-            for (const taxonID of taxaContext.taxonIDs) {
+            for (const taxonID of taxaContext.taxa.ids) {
                 if (taxonID in mapContext.taxonLayers) {
                     mapContext.taxonLayers[taxonID].loaded = false;
                 }
@@ -406,7 +406,9 @@
 
     // Set up each taxon layer bundle
     async function setupTaxonLayers(taxonID: number) {
-        const color = taxaContext.taxa[taxonID].color;
+        const taxon = taxaContext.taxa.get(taxonID);
+        if (!taxon) return;
+        const color = taxon.color;
         const includeINat = filtersContext.includeINat;
         const dataProviders = filtersContext.dataProviders?.length
             ? filtersContext.dataProviders
@@ -416,7 +418,7 @@
 
         if (!mapContext.taxonLayers[taxonID]) {
             mapContext.taxonLayers[taxonID] = {
-                color: taxaContext.taxa[taxonID].color,
+                color: color,
                 loaded: false,
                 layerIDs: [],
                 rangeExtentGeom: null,
@@ -484,7 +486,7 @@
             )) {
                 // Make sure taxon exists and is loaded
                 if (!mapContext.taxonLayers[taxonID].loaded) continue;
-                const taxon = taxaContext.taxa[taxonID];
+                const taxon = taxaContext.taxa.get(taxonID);
                 if (!taxon) continue; // taxon was removed
 
                 const sourceID = `observations-tiles-${taxonID}`;
@@ -507,15 +509,18 @@
 
     // Add and remove taxaLayers when they are toggled in context
     $effect(() => {
-        const currentIDs = new Set(taxaContext.taxonIDs);
+        const currentIDs = new Set(taxaContext.taxa.ids);
         if (!mapReady) return;
 
         untrack(() => {
             // Add new layers
             for (const taxonID of currentIDs) {
                 if (!(taxonID in mapContext.taxonLayers)) {
+                    const taxon = taxaContext.taxa.get(taxonID);
+                    if (!taxon) return;
+                    
                     mapContext.taxonLayers[taxonID] = {
-                        color: taxaContext.taxa[taxonID].color,
+                        color: taxon.color,
                         loaded: false,
                         layerIDs: [],
                         rangeExtentGeom: null,

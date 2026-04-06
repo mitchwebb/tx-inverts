@@ -5,7 +5,7 @@
     import DownloadAndFiltersForm from './DownloadAndFiltersForm.svelte';
     import INatFilterSection from './FiltersSection/INatFilterSection.svelte';
     import RankFilterSection from './FiltersSection/RankFilterSection.svelte';
-    import TaxonFilterSection from './FiltersSection/TaxonFilterSection.svelte';
+    // import TaxonFilterSection from './FiltersSection/_TaxonFilterSection.svelte';
 
     const filters = getFiltersContext();
     const taxaContext = getActiveTaxaContext();
@@ -14,7 +14,7 @@
         estimate: boolean,
         onProgress?: (received: number) => void
     ) {
-        const filteredTaxonIDs = taxaContext.taxonIDs;
+        const filteredTaxonIDs = taxaContext.taxa.ids;
         const response = await getTaxaDownload(
             filteredTaxonIDs,
             filters.includeINat,
@@ -33,7 +33,7 @@
         requestHandler={requestTaxaDownload}
     >
         <div id="taxa-download-filters">
-            <TaxonFilterSection />
+            <!-- <TaxonFilterSection /> -->
             <INatFilterSection />
             <RankFilterSection />
         </div>

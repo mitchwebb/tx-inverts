@@ -14,7 +14,7 @@
     const { taxonID }: TaxonDisplayProps = $props();
 
     const taxaContext = getActiveTaxaContext();
-    const taxon = $derived(taxaContext.taxa[taxonID]);
+    const taxon = $derived(taxaContext.taxa.get(taxonID)!);
 
     // Tie loading visuals to taxaContext.taxonLoading
     const isLoading = $derived(taxon.taxonLoading);
@@ -24,7 +24,7 @@
     );
 
     function handleTaxonClose() {
-        taxaContext.remove(taxonID);
+        taxaContext.taxa.remove(taxonID);
     }
 </script>
 
@@ -125,7 +125,7 @@
         flex-wrap: wrap;
         gap: 0.5rem;
         align-items: center;
-        line-height: 1.2rem;
+        line-height: 1.3rem;
         font-size: 1.4rem;
     }
     #sidebar-main-header {
@@ -192,7 +192,7 @@
         word-break: normal;
     }
     .scientific-authorship {
-        flex-shrink: 0;
+        flex-shrink: 1;
     }
     #taxon-rank {
         opacity: 0.7;

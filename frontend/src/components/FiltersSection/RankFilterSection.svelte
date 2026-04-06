@@ -4,6 +4,7 @@
     import { nSRankKey } from '../../constants/natureServe';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import type { NSRank } from '../../types/api';
+    import { toggleArrayValue } from '../../util/toggleArrayValue';
 
     const filtersContext = getFiltersContext();
 
@@ -12,12 +13,8 @@
         let currRanks = filtersContext.nSRanks || [];
         const value = payload.value as NSRank;
 
-        currRanks = payload.checked
-            ? [...new Set([...currRanks, value])] // If checked, add provided and dedupe list
-            : currRanks.filter((rank) => rank !== value); // Remove provider if unchecked
-
         // Set new list in state
-        filtersContext.nSRanks = currRanks;
+        filtersContext.nSRanks = toggleArrayValue(currRanks, value, payload.checked);
     }
 </script>
 

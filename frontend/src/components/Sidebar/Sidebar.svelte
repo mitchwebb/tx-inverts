@@ -14,7 +14,6 @@
     import { getFiltersContext } from '../../contexts/filtersContext';
     import { countActiveFilters } from '../../lib/filters.svelte';
     import FiltersButton from '../FiltersButton.svelte';
-    import Filters from '../FiltersSection/MapFilters.svelte';
     import TaxonDisplay from './TaxonDisplay.svelte';
     import {
         getRouterContext,
@@ -25,17 +24,13 @@
     import MapFilters from '../FiltersSection/MapFilters.svelte';
     import RankingsFilters from '../FiltersSection/RankingsFilters.svelte';
     import Toggle from '../../common/Toggle.svelte';
-    import ChevronUp from '../../assets/ChevronUp.svelte';
-    import ChevronDown from '../../assets/ChevronDown.svelte';
-    import { slide } from 'svelte/transition';
     import TaxaSearch from '../TaxaSearch.svelte';
 
     type SidebarProps = {
-        showTaxonDisplay?: boolean;
         showNSDisplay?: boolean;
     };
 
-    const { showTaxonDisplay = true, showNSDisplay = true }: SidebarProps =
+    const { showNSDisplay = true }: SidebarProps =
         $props();
 
     // Load relevant contexts
@@ -58,31 +53,6 @@
     let filtersButtonElement: HTMLElement;
 
     let filtersOpen = $state<boolean>(false);
-
-    // // Sidebar resizing logic
-    // function handleResize(e: MouseEvent) {
-    //     if (!e.currentTarget) return;
-
-    //     const origin = e.clientX;
-    //     const originalWidth = sidebarContext.width;
-
-    //     function resizeWindow(e: MouseEvent) {
-    //         let change = origin - e.clientX;
-
-    //         // Set new width, with max of 425px and min of 250px
-    //         sidebarContext.width = Math.max(
-    //             Math.min(originalWidth + change, 425),
-    //             250
-    //         );
-    //     }
-
-    //     function endResize() {
-    //         window.removeEventListener('mouseup', endResize);
-    //         window.removeEventListener('mousemove', resizeWindow);
-    //     }
-    //     window.addEventListener('mouseup', endResize);
-    //     window.addEventListener('mousemove', resizeWindow);
-    // }
 
     // Handle click-to-close functionality for filters section
     function handleOutsidePointerDown(e: PointerEvent) {
@@ -206,17 +176,19 @@
                     <DownloadIcon />
                 </button> -->
             </div>
-            {#if Object.keys(taxaContext.taxa).length && sidebarContext.open}
+            {#if taxaContext.taxa.items.length && sidebarContext.open}
                 <div id="sidebar-content" class="sidebar-section">
-                    {#each Object.keys(taxaContext.taxa).map(Number) as taxonID}
+                    {#each taxaContext.taxa.ids as taxonID}
                         <div id={`${taxonID}-sidebar-section`}>
-                            <TaxonDisplay {taxonID} />
+                            {#if taxaContext.taxa.get(taxonID)}
+                                <TaxonDisplay {taxonID} />
+                            {/if}
                             {#if taxonID && showNSDisplay}
                                 <div class="sidebar-body-wrapper">
                                     <div
                                         class="sidebar-body-overlay"
                                         style:background-color={taxaContext
-                                            .taxa[taxonID].color}
+                                            .taxa.get(taxonID)?.color}
                                     ></div>
                                     <NSSection {taxonID} />
                                 </div>
@@ -225,7 +197,7 @@
                     {/each}
                 </div>
             {/if}
-            {#if !!taxaContext.taxonIDs.length}
+            {#if taxaContext.taxa.ids.length}
                 <div class="sidebar-endcap">
                     <AddTaxonButton />
                 </div>

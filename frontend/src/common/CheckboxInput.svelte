@@ -10,7 +10,7 @@
     export type CheckboxPayload = {
         name: string;
         value: string;
-        checked?: boolean;
+        checked: boolean;
     };
 
     type CheckboxInputProps = {

@@ -77,9 +77,15 @@ export const dateCodec = (
     },
 });
 
-export function taxaCodec(): ParamCodec<Record<number, ActiveTaxon>> {
+// Codec to take a Record type, keyed by IDs, resulting in ID values for URL
+// These require special fromURL handling, and therefor return nothing in this codec
+export function iDObjectCodec(): ParamCodec<any> {
     return {
-        toURL: (taxa) => (taxa ? Object.keys(taxa).map(String) : null),
-        fromURL: (_values) => undefined, // No function, onMount handles this
+        toURL: (value) => {
+            if (!value) return null;
+            const keys = value.ids ?? Object.keys(value);
+            return keys.length ? keys.map(String) : null;
+        },
+        fromURL: (_values) => undefined,
     };
 }

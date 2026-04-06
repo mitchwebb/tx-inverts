@@ -29,7 +29,9 @@
     const mapContext = getMapContext();
 
     const taxaContext = getActiveTaxaContext();
-    const taxon = $derived(taxaContext.taxa[taxonID]);
+
+    // Assertion is safe, since this section will only receive active taxa
+    const taxon = $derived(taxaContext.taxa.get(taxonID)!);
     const nSValues = $derived(taxon.nSValues);
 
     const filtersContext = getFiltersContext();
@@ -48,8 +50,8 @@
 
     let aOOValue = $derived(
         metricsContext.aOOResolution == '4km2'
-            ? nSValues.areaOfOccupancy4Km2Bins
-            : nSValues.areaOfOccupancy1Km2Bins
+            ? nSValues?.areaOfOccupancy4Km2Bins
+            : nSValues?.areaOfOccupancy1Km2Bins
     );
 
     // Update nSRankLocal on nSValue changes
@@ -59,6 +61,7 @@
     // in this component
     function deriveLocalRank() {
         if (
+            taxon &&
             taxon.info.taxonRank &&
             ['species', 'subspecies'].includes(taxon.info.taxonRank)
         ) {

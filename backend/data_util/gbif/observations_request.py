@@ -11,12 +11,15 @@ def build_observations_request(
         test: bool = False) -> dict:
     """
     Creates a preformatted download request body for GBIF's 
-    download request API
+    download request API. This request will retrieve records with values in the
+    'modified' or 'last_interpreted' column which are more recent than the provided
+    min_date, as well as records with no value at all.
 
     Args:
+        min_date_type ('modified', 'last_interpreted'): Which GBIF column
+            compare to database dates
         min_date (str): Datetime in ISO 8601 format used to determine the
-            earliest lastInterpreted value for records. This is the column
-            GBIF uses to show when the record was last interpreted by GBIF.
+            earliest date value for records
         test (bool): Determines use of all datasets or single dataset for testing
 
     Returns:

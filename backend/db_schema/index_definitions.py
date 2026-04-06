@@ -19,6 +19,10 @@ INDEX_DEFINITIONS = {
         'table': 'gbif_observations',
         'create_sql': 'CREATE INDEX idx_gbif_observations_geom ON gbif_observations USING GIST (geometry)'
     },
+    'idx_gbif_observations_id': {
+        'table': 'gbif_observations',
+        'create_sql': 'CREATE INDEX idx_gbif_observations_id ON gbif_observations (gbif_id)'
+    },
     'idx_gbif_observations_geom_3857': {
         'table': 'gbif_observations',
         'create_sql': '''
@@ -105,7 +109,7 @@ INDEX_DEFINITIONS = {
         'table': 'tx_parks',
         'create_sql': '''
             CREATE INDEX idx_tx_parks_name
-            ON tx_parks (park_name);
+            ON tx_parks (prop_name);
         '''
     },
     'idx_tx_counties_name': {
@@ -203,6 +207,15 @@ MATERIALIZED_VIEWS = {
             WHERE publisher IS NOT NULL
 		''')
     },
+    'regions': {
+        'create_sql': sql.SQL('''
+            CREATE MATERIALIZED VIEW regions AS
+            SELECT id, 'county' AS region_type, county AS name, geometry FROM tx_counties
+            UNION ALL
+            SELECT id, 'park' AS region_type, prop_name AS name, geometry FROM tx_parks;
+            CREATE INDEX ON regions USING GIST(geometry);
+        ''')
+    }
     # 'taxon_descendant_cache': {
     # 	'create_sql': sql.SQL('''
     # 		CREATE MATERIALIZED VIEW taxon_descendant_cache AS

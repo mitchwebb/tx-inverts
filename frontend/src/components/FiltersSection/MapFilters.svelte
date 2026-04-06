@@ -12,10 +12,17 @@
 </script>
 
 <FiltersWrapper header={'Filter Occurrences'}>
-    <INatFilterSection />
-    <DateFilterSection header="Date Range" />
+    <div id='filters-top-section'>
+        <INatFilterSection />
+        <DateFilterSection header="Date Range" />
+    </div>
     <DatasetFilterSection />
 </FiltersWrapper>
 
 <style>
+    #filters-top-section {
+        display: flex;
+        gap: .5rem;
+        width: 100%;
+    }
 </style>

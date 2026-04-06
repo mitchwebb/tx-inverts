@@ -7,6 +7,7 @@ import {
 import {
     getFiltersContext,
     type FiltersState,
+    type GeoFilter,
 } from '../contexts/filtersContext';
 import type { NSRank } from '../types/api';
 import type { Provider } from './mapLegendKeys';
@@ -14,9 +15,9 @@ import type { ParamCodec, SyncedKeys } from '../types/router';
 import {
     booleanCodec,
     dateCodec,
+    iDObjectCodec,
     stringArrayCodec,
     stringCodec,
-    taxaCodec,
 } from '../util/router';
 import type { TaxonomicRank } from '../types/taxa';
 
@@ -40,7 +41,7 @@ export const routerSyncedKeys = {
             },
             nSRanks: {
                 param: 'status',
-                codec: stringArrayCodec() as ParamCodec<NSRank[] | null>,
+                codec: stringArrayCodec() as ParamCodec<NSRank[]>,
             },
             taxonRank: {
                 param: 'rank',
@@ -48,6 +49,14 @@ export const routerSyncedKeys = {
             },
             dateStart: { param: 'd1', codec: dateCodec() },
             dateEnd: { param: 'd2', codec: dateCodec() },
+            counties: {
+                param: 'county',
+                codec: iDObjectCodec(),
+            },
+            parks: {
+                param: 'park',
+                codec: iDObjectCodec(),
+            },
         }),
     },
 
@@ -55,7 +64,10 @@ export const routerSyncedKeys = {
     taxon: {
         getContext: getActiveTaxaContext,
         keys: makeSyncedKeys<ActiveTaxaState>({
-            taxa: { param: 'taxon', codec: taxaCodec() },
+            taxa: {
+                param: 'taxon',
+                codec: iDObjectCodec(),
+            },
         }),
     },
 

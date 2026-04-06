@@ -48,9 +48,8 @@ async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: 
     finally:
         await conn.commit()
 
+
 # Initialize all tables provided to ALL_TABLES constant
-
-
 async def initialize_all_tables(conn: Connection, *, verbose: bool = False, strict: bool = True):
     for table in ALL_TABLES:
         await initialize_table(conn, table, verbose, strict)

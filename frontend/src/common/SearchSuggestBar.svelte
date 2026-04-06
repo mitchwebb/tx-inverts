@@ -288,8 +288,10 @@
         </div>
     {/if}
     {#if !!inputText}
-        <button class="search-close-button icon" onclick={clearSearch}>
-            <XIcon />
+        <button class="search-close-button button" onclick={clearSearch}>
+            <div class="icon">
+                <XIcon />
+            </div>
         </button>
     {/if}
 </div>
@@ -302,15 +304,21 @@
         pointer-events: none;
     }
     .search-close-button {
-        padding: 0;
-        margin: 0 0.5rem;
-        background-color: unset;
-        color: unset;
-        border: unset;
+        cursor: pointer;
+        /* padding: 0; */
+        background-color: transparent;
+        border-radius: 3px;
+        height: 100%;
+        width: 2.25rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+        border: none;
     }
     .search-wrapper {
         min-width: 100px;
-        border-radius: 4px;
+        border-radius: 3px;
         border: 1px solid var(--border);
         color: var(--text-default);
         background-color: var(--container-back);
@@ -350,7 +358,6 @@
         box-sizing: border-box;
         text-overflow: ellipsis;
         overflow: hidden;
-        /* margin: 0; */
     }
     .autocomplete-suggestion {
         list-style-type: none;

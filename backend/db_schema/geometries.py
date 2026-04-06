@@ -5,7 +5,8 @@ class TexasGeometry(DBTable):
     name = 'tx_geometry'
     primary_key = 'state'
     columns = {
-        'state': 'TEXT PRIMARY KEY',
+        'id': 'uuid PRIMARY KEY',
+        'state': 'TEXT',
         'geometry': 'GEOMETRY(MultiPolygon, 4326)'
     }
 
@@ -17,9 +18,11 @@ class TexasParksTable(DBTable):
     name = 'tx_parks'
     primary_key = 'id'  # ParkName in file
     columns = {
-        'id': 'INT PRIMARY KEY',
-        'park_name': 'TEXT',
-        'prop_type': 'TEXT',
+        'id': 'uuid PRIMARY KEY',
+        'prop_name': 'TEXT',
+        'alt_prop_name': 'TEXT',
+        'prop_class': 'TEXT',
+        'owner': 'TEXT',
         'geometry': 'GEOMETRY(MultiPolygon, 4326)'
     }
 
@@ -31,7 +34,8 @@ class TexasCountiesTable(DBTable):
     name = 'tx_counties'
     primary_key = 'county'
     columns = {
-        'county': 'TEXT PRIMARY KEY',
+        'id': 'uuid PRIMARY KEY',
+        'county': 'TEXT',
         'geometry': 'GEOMETRY(MultiPolygon, 4326)'
     }
 

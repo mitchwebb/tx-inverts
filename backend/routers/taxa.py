@@ -54,28 +54,26 @@ async def search_taxon(data: TextData, request: Request):
             COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
             COALESCE(a.taxonomic_status, t.taxonomic_status) AS taxonomic_status
         FROM {tx_taxa} t
-        LEFT JOIN tx_taxa a
+        LEFT JOIN {tx_taxa} a
             ON t.accepted_name_usage_id = a.taxon_id
         WHERE 
-            t.canonical_name ~* %s
+            t.canonical_name ~* {search_term}
             AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'doubtful')
         ORDER BY
-                COALESCE(a.taxon_id, t.taxon_id),
+            COALESCE(a.taxon_id, t.taxon_id),
             COALESCE(a.canonical_name, t.canonical_name)
         LIMIT 10;
     ''').format(
         tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
         search_term=sql.Literal('\\m' + search_term.lower())
     )
-    # start = time.time()
     try:
         async with request.app.state.db_pool.connection() as conn:
             async with execute_psql_query(conn, query, (), 'all', dict_cursor=True) as results:
-                # end = time.time()
-                # api_logger.debug(f'Search suggest took {end-start} seconds)
                 results = [dict(row) for row in results]
                 return {'results': results}
     except Exception as e:
+        api_logger.error(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

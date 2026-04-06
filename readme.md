@@ -10,6 +10,8 @@
 - [ ] Store common names in DB
 - [x] List of invasives — Store in database
 - [ ] Handle 'indet.' species
+- [ ] Common Names!
+- [ ] Need a date_added column to allow rollback
 
 ### Map Layers
 

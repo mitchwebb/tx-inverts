@@ -7,6 +7,7 @@
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { dataProviders } from '../../contexts/DataProviders';
     import { getFiltersContext } from '../../contexts/filtersContext';
+    import { toggleArrayValue } from '../../util/toggleArrayValue';
 
     type DatasetFilterProps = {
         header?: string;
@@ -23,30 +24,20 @@
         // Get list of currently selected providers
         let currProviders = filtersContext.dataProviders ?? [];
 
-        if (checked) {
-            // Add only if not already present
-            if (!currProviders.includes(value as Provider)) {
-                currProviders = [...currProviders, value as Provider];
-            }
-        } else {
-            // Remove if present
-            currProviders = currProviders.filter((p) => p !== value);
-        }
-
         // Update reactive state
-        filtersContext.dataProviders = currProviders;
+        filtersContext.dataProviders = toggleArrayValue<Provider>(currProviders, value as Provider, checked);
     }
 
     // Determine if observationsMetrics are loading for any taxa
     const observationsMetricsLoading = $derived(
-        Object.values(taxonContext.taxa).some(
+        Object.values(taxonContext.taxa.items).some(
             (taxon) => taxon.observationMetricsLoading
         )
     );
 
     // Determine providerCounts added across all taxa
     let providerCounts = $derived(
-        Object.values(taxonContext.taxa).reduce(
+        Object.values(taxonContext.taxa.items).reduce(
             (acc, taxon) => {
                 if (!taxon.providerCounts) return acc;
                 for (const [provider, count] of Object.entries(

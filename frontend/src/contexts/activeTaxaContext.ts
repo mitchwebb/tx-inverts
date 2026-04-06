@@ -1,6 +1,7 @@
 import { getContext, setContext } from 'svelte';
 import type { NSValues, TaxonInfo } from '../types/api';
 import type { Provider } from '../constants/mapLegendKeys';
+import { makeIDCollection } from '../util/collection.svelte';
 
 export const activeTaxaStateKey = 'taxa';
 
@@ -11,7 +12,7 @@ export type ActiveTaxon = {
     observationMetricsLoading: boolean;
     nSValuesLoading: boolean;
     lastLoadedID: number | null;
-    taxonID: number | null;
+    taxonID: number;
     info: TaxonInfo;
     nSValues: NSValues;
     providerCounts: Record<Provider, number> | null;
@@ -52,13 +53,13 @@ export const EMPTY_TAXON_INFO: TaxonInfo = {
 };
 
 export const initialTaxonState: ActiveTaxon = {
+    taxonID: 0, // Placeholder
     color: 'orange',
     taxonLoading: false,
     taxonError: true,
     observationMetricsLoading: false,
     nSValuesLoading: false,
     lastLoadedID: null,
-    taxonID: null,
     info: EMPTY_TAXON_INFO, // Values retrieved from get_taxon_info call
     nSValues: {
         numberOfOccurrences: null,
@@ -73,20 +74,12 @@ export const initialTaxonState: ActiveTaxon = {
 };
 
 export type ActiveTaxaState = {
-    taxa: Record<number, ActiveTaxon>;
-    taxonIDs: number[];
-    clear: () => void;
-    add: (taxonID: number, append?: boolean) => void;
-    remove: (taxonID: number) => void;
+    taxa: ReturnType<typeof makeIDCollection<ActiveTaxon, number>>;
     getNextColor: () => string;
 };
 
 export const initialActiveTaxaState: ActiveTaxaState = {
-    taxa: {},
-    taxonIDs: [],
-    clear: () => {},
-    add: () => {},
-    remove: () => {},
+    taxa: makeIDCollection<ActiveTaxon, number>((t) => t.taxonID), // Dummy collection
     getNextColor: () => '',
 };
 

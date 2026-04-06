@@ -10,8 +10,8 @@ settings = get_settings()
 TEXAS_GEOJSON = os.path.join(
     settings.backend_root, 'static', 'shapefiles', 'tx.geojson')
 
-TEXAS_PARKS_GEOJSON = os.path.join(
-    settings.backend_root, 'static', 'shapefiles', 'tx_parks.geojson')
+TEXAS_PARKS_GDB = os.path.join(
+    settings.backend_root, 'static', 'shapefiles', 'LWRCRP.gdb')
 
 TEXAS_COUNTIES_GEOJSON = os.path.join(
     settings.backend_root, 'static', 'shapefiles', 'tx_counties.geojson')

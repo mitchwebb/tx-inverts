@@ -10,9 +10,9 @@
         EMPTY_TAXON_INFO,
         getActiveTaxaContext,
         initialActiveTaxaState,
-        initialTaxonState,
         setActiveTaxaContext,
         type ActiveTaxaState,
+        type ActiveTaxon,
     } from '../contexts/activeTaxaContext';
     import Router from './Router.svelte';
     import {
@@ -34,6 +34,7 @@
         initialFiltersState,
         setFiltersContext,
         type FiltersState,
+        type GeoFilter,
     } from '../contexts/filtersContext';
     import {
         normalizeAPIResponse,
@@ -47,28 +48,32 @@
         setSidebarContext,
         type SidebarState,
     } from '../contexts/sidebarContext';
-    import { onMount, untrack } from 'svelte';
+    import { untrack } from 'svelte';
     import {
         initialMetricsState,
         setMetricsContext,
         type MetricsParams,
     } from '../contexts/metricsParamsContext';
-    import { type Provider } from '../constants/mapLegendKeys';
     import {
         initialRankingsState,
         setRankingsContext,
         type RankingsState,
     } from '../contexts/rankingsContext';
     import { TAXON_COLORS } from '../constants/taxa';
+    import { makeIDCollection } from '../util/collection.svelte';
+
 
     // Intialize contexts
+
+    // Make taxa collection (easier way of managing our lists of objects reactively)
+    const taxaCollection = makeIDCollection<ActiveTaxon, number>(t=>t.taxonID, loadTaxonInfo);
     const taxaState: ActiveTaxaState = $state(initialActiveTaxaState);
-    setActiveTaxaContext(taxaState);
 
     // Logic for setting next color of active taxon (if all colors are used, will use least used color)
     function getNextTaxonColor(): string {
         const colorCounts = Object.fromEntries(TAXON_COLORS.map((c) => [c, 0]));
-        Object.values(taxaState.taxa).forEach((t) => {
+        console.log(colorCounts, taxaState)
+        taxaState.taxa.items.forEach((t) => {
             if (t.color in colorCounts) colorCounts[t.color]++;
         });
         return TAXON_COLORS.reduce((least, c) =>
@@ -76,40 +81,14 @@
         );
     }
 
-    function addActiveTaxon(taxonID: number, append = false) {
-        if (taxaState.taxa[taxonID]) return;
-        // If append is false, replace the latest taxon
-        if (!append) {
-            // Get latest taxonID in context
-            const lastID = taxaState.taxonIDs.slice(-1)[0];
-            if (lastID !== undefined) {
-                delete taxaState.taxa[lastID];
-                taxaState.taxonIDs.pop();
-            }
-        }
-        taxaState.taxa[taxonID] = {
-            ...initialTaxonState,
-            taxonID,
-            color: getNextTaxonColor(),
-        };
-        taxaState.taxonIDs = [...taxaState.taxonIDs, taxonID];
-        loadTaxonInfo(taxonID);
-    }
-    function removeActiveTaxon(taxonID: number) {
-        delete taxaState.taxa[taxonID];
-        taxaState.taxonIDs = taxaState.taxonIDs.filter((id) => id !== taxonID);
-    }
-    function clearTaxa() {
-        taxaContext.taxa = initialActiveTaxaState.taxa;
-        taxaContext.taxonIDs = initialActiveTaxaState.taxonIDs;
-    }
-    taxaState.add = addActiveTaxon;
-    taxaState.remove = removeActiveTaxon;
-    taxaState.clear = clearTaxa;
     taxaState.getNextColor = getNextTaxonColor;
+    taxaState.taxa = taxaCollection;
+    setActiveTaxaContext(taxaState);
     const taxaContext = getActiveTaxaContext();
 
     const filtersState: FiltersState = $state(initialFiltersState);
+    filtersState.counties = makeIDCollection<GeoFilter, string>(c => c.id);
+    filtersState.parks = makeIDCollection<GeoFilter, string>(p => p.id);
     setFiltersContext(filtersState);
     const filtersContext = getFiltersContext();
 
@@ -133,7 +112,7 @@
 
     // Retrieve and set taxon info in context
     async function loadTaxonInfo(taxonID: number) {
-        const taxon = taxaContext.taxa[taxonID];
+        const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon || taxon.taxonID === taxon.lastLoadedID) return;
 
         taxon.taxonLoading = true;
@@ -142,6 +121,7 @@
         // Clear taxonInfo and nSValues in context
         taxon.info = EMPTY_TAXON_INFO;
         taxon.nSValues = EMPTY_NS_VALUES;
+        taxon.color = taxaContext.getNextColor();
 
         try {
             const [rawTaxonInfo, commonNamesResult] = await Promise.all([
@@ -170,8 +150,8 @@
         const dataProviders = filtersContext.dataProviders;
 
         untrack(() => {
-            for (const taxonID of taxaContext.taxonIDs) {
-                const taxon = taxaContext.taxa[taxonID];
+            for (const taxonID of taxaContext.taxa.ids) {
+                const taxon = taxaContext.taxa.get(taxonID);
                 if (!taxon) continue;
                 loadNSValues(
                     taxonID,
@@ -186,11 +166,11 @@
 
     // Get NSValues for currently empty taxa on taxonIDs change
     $effect(() => {
-        const taxonIDs = taxaContext.taxonIDs;
+        const taxonIDs = taxaContext.taxa.ids;
 
         untrack(() => {
             for (const taxonID of taxonIDs) {
-                const taxon = taxaContext.taxa[taxonID];
+                const taxon = taxaContext.taxa.get(taxonID);
                 // Check to make sure taxon exists and that it doesn't already have values
                 if (!taxon || taxon.nSValues.numberOfOccurrences !== null)
                     continue;
@@ -211,12 +191,12 @@
 
     async function loadNSValues(
         taxonID: number,
-        includeINat: boolean,
-        dateStart: Date | null,
-        dateEnd: Date | null,
-        dataProviders: Provider[]
+        includeINat: FiltersState['includeINat'],
+        dateStart: FiltersState['dateStart'],
+        dateEnd: FiltersState['dateEnd'],
+        dataProviders: FiltersState['dataProviders']
     ) {
-        const taxon = taxaContext.taxa[taxonID];
+        const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
         taxon.nSValuesLoading = true;
         const abortController = new AbortController();
@@ -246,8 +226,10 @@
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
 
-        for (const taxonID of Object.keys(taxaContext.taxa).map(Number)) {
-            const taxon = taxaContext.taxa[taxonID];
+        for (const taxonID of taxaContext.taxa.ids) {
+            const taxon = taxaContext.taxa.get(taxonID);
+            if (!taxon) return;
+
             taxon.observationMetricsLoading = true;
 
             (async () => {
@@ -302,17 +284,16 @@
     #layout {
         height: 100%;
         min-height: 500px;
-        /* min-width: fit-content; */
         display: flex;
         flex-direction: column;
         position: relative;
         overflow: auto;
         width: 100%;
         min-width: 800px;
+        background-color: var(--container-shadow);
     }
     #page-body {
         height: 100%;
-        /* min-height: 500px; */
         overflow: auto;
     }
 </style>

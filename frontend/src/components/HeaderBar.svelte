@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
     import {
         getRouterContext,
         type RouterPath,

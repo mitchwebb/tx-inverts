@@ -166,172 +166,179 @@ async def get_observation_dates(params: ObservationsRequestParams, request: Requ
 
 @router.get('/tiles/{include_inat}/{taxon_id}/{data_providers}/{date_start}/{date_end}/{z}/{x}/{y}.mvt', response_class=Response)
 async def get_tile(include_inat: bool, taxon_id: int, data_providers: str, date_start: str, date_end: str, z: int, x: int, y: int, request: Request):
+    try:
+        filter_payload = SingleTaxonOccurrenceFilter(
+            taxon_id=taxon_id,
+            include_inat=include_inat,
+            data_providers=data_providers,
+            date_start=date_start,
+            date_end=date_end,
+        )
 
-    filter_payload = SingleTaxonOccurrenceFilter(
-        taxon_id=taxon_id,
-        include_inat=include_inat,
-        data_providers=data_providers,
-        date_start=date_start,
-        date_end=date_end,
-    )
+        occurrence_filter = create_occurrence_filter(filter_payload)
 
-    occurrence_filter = create_occurrence_filter(filter_payload)
+        # Map parameters for calculating base grids at a given zoom level
+        meters_per_pixel = map.meters_per_pixel(z)
+        grid_size = meters_per_pixel * map.PIXELS_PER_GRID
 
-    # Map parameters for calculating base grids at a given zoom level
-    meters_per_pixel = map.meters_per_pixel(z)
-    grid_size = meters_per_pixel * map.PIXELS_PER_GRID
-
-    async with request.app.state.db_pool.connection() as conn:
-
-        # async with execute_psql_query(conn, exists_query, {'species_ids': descendant_ids, 'z': z}, fetch='one', dict_cursor=True) as result:
-        # if result['exists']:
-        #     api_logger.info('Getting cached tiles...')
-        #     params = {
-        #         'include_inat': include_inat,
-        #         'taxon_id': taxon_id,
-        #         'x': x,
-        #         'y': y,
-        #         'z': z,
-        #         'grid_size': grid_size
-        #     }
-        #     cache_query = '''
-        #         WITH bbox AS (
-        #             SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
-        #         ),
-        #         bin_aggregates AS (
-        #             SELECT
-        #                 ST_MakeEnvelope(
-        #                     c.x_bin * {grid_size},
-        #                     c.y_bin * {grid_size},
-        #                     (c.x_bin + 1) * {grid_size},
-        #                     (c.y_bin + 1) * {grid_size},
-        #                     3857
-        #                 ) AS geom,
-        #                 SUM(c.observation_count)::integer AS observation_count
-        #             FROM taxon_tile_cache c
-        #             JOIN taxon_descendant_cache t
-        #                 ON t.descendant_key = c.taxon_id
-        #             WHERE t.ancestor_key = {taxon_id}
-        #                 AND c.zoom = {z}
-        #                 AND ({include_inat} OR c.publisher != 'iNaturalist')
-        #             GROUP BY c.x_bin, c.y_bin
-        #         ),
-        # 		mvt_geom AS (
-        # 			SELECT ST_AsMVTGeom(ba.geom, bbox.geom, 4096, 64, true) AS geom,
-        # 				ba.observation_count
-        # 			FROM bin_aggregates ba, bbox
-        # 			WHERE ST_Intersects(ba.geom, bbox.geom)
-        # 		)
-        # 		SELECT ST_AsMVT(mvt_geom, 'observations-tiles', 4096, 'geom')
-        # 		FROM mvt_geom;
-        #     '''
-
-        #     async with execute_psql_query(conn, cache_query, params, fetch='one', dict_cursor=False) as result:
-        #         tile = result[0] if result else None
-        #     return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
-
-        # If not in cache, fall back to raw generation of tiles
-        # else:
-        # Return binned results
-
-        start = time.time()
-        if z < 10:
-            api_logger.debug('Cache not found! Generating raw tiles (slow).')
-            # Calculate meters-per-pixel for binning
-            meters_per_pixel = map.meters_per_pixel(z)
-            grid_size = meters_per_pixel * map.PIXELS_PER_GRID
-            query = sql.SQL('''
-                    WITH
-                    bbox AS (
-                        SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
-                    ),
-                    obs AS (
-                        SELECT ST_Transform(geometry, 3857) AS geom
-                        FROM {occurrence_table}
-                        WHERE
-                            {occurrence_filter}
-                    ),
-                    bins AS (
-                        SELECT
-                            ST_SnapToGrid(obs.geom, {grid_size}) AS grid_geom,
-                            COUNT(*) AS count
-                        FROM obs
-                        GROUP BY grid_geom
-                    ),
-                    bins_geom AS (
-                        SELECT
-                            ST_SetSRID(
-                            ST_MakeEnvelope(
-                                ST_X(bins.grid_geom) - ({grid_size} / 2),
-                                ST_Y(bins.grid_geom) - ({grid_size} / 2),
-                                ST_X(bins.grid_geom) + ({grid_size} / 2),
-                                ST_Y(bins.grid_geom) + ({grid_size} / 2)
-                            ),
-                            3857
-                            ) AS geom,
-                            bins.count as observation_count
-                        FROM bins
-                    ),
-                    mvt_geom AS (
-                        SELECT
-                            ST_AsMVTGeom(bins_geom.geom, bbox.geom, 4096, 64, true) AS geom,
-                            bins_geom.observation_count
-                        FROM bins_geom, bbox
-                    )
-                    SELECT ST_AsMVT(mvt_geom, 'observations-heatmap', 4096, 'geom') FROM mvt_geom;
-                ''').format(
-                include_inat=sql.Literal(include_inat),
-                taxon_id=sql.Literal(taxon_id),
-                x=sql.Literal(x),
-                y=sql.Literal(y),
-                z=sql.Literal(z),
-                grid_size=sql.Literal(grid_size),
-                occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
-                occurrence_filter=occurrence_filter
-            )
-        # Return point observations if zoomed in
-        else:
-            query = sql.SQL('''
-                    WITH
-                    bbox AS (
-                        SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
-                    ),
-                    obs AS (
-                        SELECT 
-                            institution_code,
-                            "references",
-                            county,
-                            locality,
-                            decimal_latitude,
-                            decimal_longitude,
-                            accepted_scientific_name,
-                            gbif_id,
-                            collection_start_date,
-                            collection_end_date,
-                            ST_Transform(geometry, 3857) AS geom
-                        FROM {occurrence_table}
-                        WHERE
-                        {occurrence_filter}
-                    ),
-                    mvt_geom AS (
-                        SELECT ST_AsMVTGeom(obs.geom, bbox.geom, 4096, 64, true) AS geom,
-                            obs.*
-                        FROM obs, bbox
-                        WHERE ST_Intersects(obs.geom, bbox.geom)
-                    )
-                    SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
-                ''').format(
-                include_inat=sql.Literal(include_inat),
-                taxon_id=sql.Literal(taxon_id),
-                x=sql.Literal(x),
-                y=sql.Literal(y),
-                z=sql.Literal(z),
-                occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
-                occurrence_filter=occurrence_filter
-            )
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, query, fetch='one', dict_cursor=False) as result:
-                end = time.time()
-                api_logger.debug(f'Tile generation took {end-start} seconds')
-                tile = result[0] if result else None
-            return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
+
+            # async with execute_psql_query(conn, exists_query, {'species_ids': descendant_ids, 'z': z}, fetch='one', dict_cursor=True) as result:
+            # if result['exists']:
+            #     api_logger.info('Getting cached tiles...')
+            #     params = {
+            #         'include_inat': include_inat,
+            #         'taxon_id': taxon_id,
+            #         'x': x,
+            #         'y': y,
+            #         'z': z,
+            #         'grid_size': grid_size
+            #     }
+            #     cache_query = '''
+            #         WITH bbox AS (
+            #             SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
+            #         ),
+            #         bin_aggregates AS (
+            #             SELECT
+            #                 ST_MakeEnvelope(
+            #                     c.x_bin * {grid_size},
+            #                     c.y_bin * {grid_size},
+            #                     (c.x_bin + 1) * {grid_size},
+            #                     (c.y_bin + 1) * {grid_size},
+            #                     3857
+            #                 ) AS geom,
+            #                 SUM(c.observation_count)::integer AS observation_count
+            #             FROM taxon_tile_cache c
+            #             JOIN taxon_descendant_cache t
+            #                 ON t.descendant_key = c.taxon_id
+            #             WHERE t.ancestor_key = {taxon_id}
+            #                 AND c.zoom = {z}
+            #                 AND ({include_inat} OR c.publisher != 'iNaturalist')
+            #             GROUP BY c.x_bin, c.y_bin
+            #         ),
+            # 		mvt_geom AS (
+            # 			SELECT ST_AsMVTGeom(ba.geom, bbox.geom, 4096, 64, true) AS geom,
+            # 				ba.observation_count
+            # 			FROM bin_aggregates ba, bbox
+            # 			WHERE ST_Intersects(ba.geom, bbox.geom)
+            # 		)
+            # 		SELECT ST_AsMVT(mvt_geom, 'observations-tiles', 4096, 'geom')
+            # 		FROM mvt_geom;
+            #     '''
+
+            #     async with execute_psql_query(conn, cache_query, params, fetch='one', dict_cursor=False) as result:
+            #         tile = result[0] if result else None
+            #     return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
+
+            # If not in cache, fall back to raw generation of tiles
+            # else:
+            # Return binned results
+
+            start = time.time()
+            if z < 10:
+                api_logger.debug(
+                    'Cache not found! Generating raw tiles (slow).')
+                # Calculate meters-per-pixel for binning
+                meters_per_pixel = map.meters_per_pixel(z)
+                grid_size = meters_per_pixel * map.PIXELS_PER_GRID
+                query = sql.SQL('''
+                        WITH
+                        bbox AS (
+                            SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
+                        ),
+                        obs AS (
+                            SELECT ST_Transform(geometry, 3857) AS geom
+                            FROM {occurrence_table}
+                            WHERE
+                                {occurrence_filter}
+                        ),
+                        bins AS (
+                            SELECT
+                                ST_SnapToGrid(obs.geom, {grid_size}) AS grid_geom,
+                                COUNT(*) AS count
+                            FROM obs
+                            GROUP BY grid_geom
+                        ),
+                        bins_geom AS (
+                            SELECT
+                                ST_SetSRID(
+                                ST_MakeEnvelope(
+                                    ST_X(bins.grid_geom) - ({grid_size} / 2),
+                                    ST_Y(bins.grid_geom) - ({grid_size} / 2),
+                                    ST_X(bins.grid_geom) + ({grid_size} / 2),
+                                    ST_Y(bins.grid_geom) + ({grid_size} / 2)
+                                ),
+                                3857
+                                ) AS geom,
+                                bins.count as observation_count
+                            FROM bins
+                        ),
+                        mvt_geom AS (
+                            SELECT
+                                ST_AsMVTGeom(bins_geom.geom, bbox.geom, 4096, 64, true) AS geom,
+                                bins_geom.observation_count
+                            FROM bins_geom, bbox
+                        )
+                        SELECT ST_AsMVT(mvt_geom, 'observations-heatmap', 4096, 'geom') FROM mvt_geom;
+                    ''').format(
+                    include_inat=sql.Literal(include_inat),
+                    taxon_id=sql.Literal(taxon_id),
+                    x=sql.Literal(x),
+                    y=sql.Literal(y),
+                    z=sql.Literal(z),
+                    grid_size=sql.Literal(grid_size),
+                    occurrence_table=sql.Identifier(
+                        GBIF_OBSERVATIONS_TABLE.name),
+                    occurrence_filter=occurrence_filter
+                )
+            # Return point observations if zoomed in
+            else:
+                query = sql.SQL('''
+                        WITH
+                        bbox AS (
+                            SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
+                        ),
+                        obs AS (
+                            SELECT 
+                                institution_code,
+                                "references",
+                                county,
+                                locality,
+                                decimal_latitude,
+                                decimal_longitude,
+                                accepted_scientific_name,
+                                gbif_id,
+                                collection_start_date,
+                                collection_end_date,
+                                ST_Transform(geometry, 3857) AS geom
+                            FROM {occurrence_table}
+                            WHERE
+                            {occurrence_filter}
+                        ),
+                        mvt_geom AS (
+                            SELECT ST_AsMVTGeom(obs.geom, bbox.geom, 4096, 64, true) AS geom,
+                                obs.*
+                            FROM obs, bbox
+                            WHERE ST_Intersects(obs.geom, bbox.geom)
+                        )
+                        SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
+                    ''').format(
+                    include_inat=sql.Literal(include_inat),
+                    taxon_id=sql.Literal(taxon_id),
+                    x=sql.Literal(x),
+                    y=sql.Literal(y),
+                    z=sql.Literal(z),
+                    occurrence_table=sql.Identifier(
+                        GBIF_OBSERVATIONS_TABLE.name),
+                    occurrence_filter=occurrence_filter
+                )
+            async with request.app.state.db_pool.connection() as conn:
+                async with execute_psql_query(conn, query, fetch='one', dict_cursor=False) as result:
+                    end = time.time()
+                    api_logger.debug(
+                        f'Tile generation took {end-start} seconds')
+                    tile = result[0] if result else None
+                return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
+    except Exception as e:
+        api_logger.exception(e)
+        raise HTTPException(status_code=500, detail=str(e))

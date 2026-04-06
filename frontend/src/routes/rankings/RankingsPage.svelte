@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import { getActiveTaxaContext, initialTaxonState } from '../../contexts/activeTaxaContext';
     import { taxaTree } from '../../contexts/TaxaTree';
     import { type TaxonNodeType } from '../../types/api';
     import { isItalicizedRank } from '../../util/taxa';
@@ -50,11 +50,14 @@
         const targetInt = parseInt(targetID);
 
         // If taxon is already selected, deselect it
-        if (taxaContext.taxonIDs.includes(targetInt)) {
-            taxaContext.remove(targetInt);
+        if (taxaContext.taxa.ids.includes(targetInt)) {
+            taxaContext.taxa.remove(targetInt);
             // Otherwise, select it
         } else {
-            taxaContext.add(targetInt, true);
+            taxaContext.taxa.add({
+                ...initialTaxonState,
+                taxonID: targetInt, 
+            });
         }
     }
 
@@ -73,7 +76,7 @@
         scrollToTaxonID = null;
 
         // Behavior for
-        switch (taxaContext.taxonIDs.length) {
+        switch (taxaContext.taxa.ids.length) {
             // If no active taxonIDs, filter to Animalia
             case 0:
                 filterTaxaIDs = [1];
@@ -81,7 +84,7 @@
             // If only one active taxonID
             case 1: {
                 // If taxon is species or subspecies, skip filtering but scroll to taxon
-                const taxon = $taxaTree.get(taxaContext.taxonIDs[0]);
+                const taxon = $taxaTree.get(taxaContext.taxa.ids[0]);
                 if (
                     !taxon ||
                     ['species', 'subspecies'].includes(taxon.taxon_rank)
@@ -98,21 +101,21 @@
             default: {
                 // If they're all species or subspecies, skip filtering
                 if (
-                    taxaContext.taxonIDs.every((taxonID) => {
+                    taxaContext.taxa.ids.every((taxonID) => {
                         return ['species', 'subspecies', null].includes(
-                            taxaContext?.taxa[taxonID]?.info?.taxonRank || null
+                            taxaContext?.taxa.get(taxonID)?.info?.taxonRank || null
                         );
                     })
                 ) {
                     filterTaxaIDs = [1];
-                    console.log(taxaContext.taxonIDs.slice(-1)[0]);
-                    scrollToTaxonID = taxaContext.taxonIDs.slice(-1)[0];
+                    console.log(taxaContext.taxa.ids.slice(-1)[0]);
+                    scrollToTaxonID = taxaContext.taxa.ids.slice(-1)[0];
                     break;
                 }
                 // Else, filter to taxa
-                filterTaxaIDs = taxaContext.taxonIDs;
+                filterTaxaIDs = taxaContext.taxa.ids;
                 // If any taxa are species/subspecies, scroll to latest (last in list)
-                for (const taxonID of taxaContext.taxonIDs) {
+                for (const taxonID of taxaContext.taxa.ids) {
                     const taxonRank = $taxaTree.get(taxonID)?.taxon_rank;
                     if (
                         taxonRank &&
@@ -208,7 +211,7 @@
                         {@const italicized = isItalicizedRank(taxon.taxon_rank)}
                         {@const taxonID = taxon.taxon_id}
                         {@const activeTaxa = taxaContext.taxa}
-                        {@const activeTaxaIDs = taxaContext.taxonIDs}
+                        {@const activeTaxaIDs = taxaContext.taxa.ids}
                         {@const nextColor = taxaContext.getNextColor()}
                         <div class="taxon-icon-wrapper centered">
                             {#if taxon.us_invasive}
@@ -245,8 +248,8 @@
                                 class:active={activeTaxaIDs.some(
                                     (activeID) => activeID == taxonID
                                 )}
-                                style:color={activeTaxa[taxonID]
-                                    ? activeTaxa[taxonID].color
+                                style:color={activeTaxa.get(taxonID)
+                                    ? activeTaxa.get(taxonID)?.color
                                     : nextColor}
                                 onclick={handleTaxonSelect}
                                 data-taxon-id={taxonID.toString()}

@@ -19,7 +19,9 @@
     ) {
         // Get list of just taxonIDs from filtered taxa list
         const response = await getOccurrenceDownload(
-            taxaContext.taxonIDs || [1],
+        taxaContext.taxa.ids.length 
+            ? taxaContext.taxa.ids
+            : [1],
             filters.includeINat,
             filters.dateStart,
             filters.dateEnd,
@@ -48,7 +50,7 @@
                     <span>Selected Taxa:</span>
                 </div>
                 <ul class="selected-taxa-content">
-                    {#each Object.values(taxaContext.taxa) as taxon}
+                    {#each taxaContext.taxa.items as taxon}
                         <li>{taxon.info.canonicalName}</li>
                     {/each}
                 </ul>

@@ -27,7 +27,7 @@
 
     // Get all min or max dates from activeTaxa, return Date[]
     function getTaxonDates(type: 'dateMin' | 'dateMax') {
-        return Object.values(taxonContext.taxa)
+        return Object.values(taxonContext.taxa.items)
             .map((t) => t[type])
             .filter((d): d is Date => d !== null);
     }

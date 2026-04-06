@@ -38,7 +38,7 @@
 
 <style>
     #inat-filters-section {
-        flex-grow: 0;
+        /* flex-grow: 0; */
     }
     #inat-filter-section-header {
         display: flex;

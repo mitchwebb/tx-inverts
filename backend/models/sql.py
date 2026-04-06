@@ -1,6 +1,6 @@
 from typing import Optional, List
 from pydantic import computed_field, field_validator, BaseModel, model_validator
-import datetime
+from datetime import date, datetime
 
 
 class OccurrenceFilter(BaseModel):
@@ -8,8 +8,8 @@ class OccurrenceFilter(BaseModel):
     include_inat: bool = True
     data_providers: Optional[List[str]] = None
     exclude_invasive: bool = True
-    date_start: Optional[str] = None
-    date_end: Optional[str] = None
+    date_start: Optional[date] = None
+    date_end: Optional[date] = None
 
     @field_validator('taxon_ids', mode='before')
     def normalize_taxon_ids(cls, v):
@@ -33,6 +33,8 @@ class OccurrenceFilter(BaseModel):
     def normalize_dates(cls, v):
         if v in ('null', '', 'undefined') or v is None:
             return None
+        if isinstance(v, date):
+            return v  # already a date, pass through
         return datetime.fromisoformat(v).date()
 
 

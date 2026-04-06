@@ -118,7 +118,7 @@
         min-width: 200px;
         width: 90dvw;
         max-width: 800px;
-        max-height: 80dvh;
+        /* max-height: 80dvh; */
     }
     #download-form-header {
         padding: 0.5rem 1rem 1rem 1rem;

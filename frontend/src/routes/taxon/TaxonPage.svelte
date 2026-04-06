@@ -1,7 +1,7 @@
 <script lang="ts">
     import { type TaxonNodeType } from '../../types/api';
     import { taxaTree } from '../../contexts/TaxaTree';
-    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import { getActiveTaxaContext, initialTaxonState } from '../../contexts/activeTaxaContext';
     import NSCircle from '../../common/NSCircle.svelte';
     import ChevronDown from '../../assets/ChevronDown.svelte';
     import ChevronRight from '../../assets/ChevronRight.svelte';
@@ -88,11 +88,14 @@
         const targetInt = parseInt(parentNode.id);
 
         // If taxon is already selected, deselect it
-        if (taxaContext.taxonIDs.includes(targetInt)) {
-            taxaContext.remove(targetInt);
+        if (taxaContext.taxa.ids.includes(targetInt)) {
+            taxaContext.taxa.remove(targetInt);
             // Otherwise, select it
         } else {
-            taxaContext.add(targetInt, true);
+            taxaContext.taxa.add({
+                ...initialTaxonState,
+                taxonID: targetInt
+            });
         }
     }
 
@@ -214,7 +217,7 @@
 
     // If a new activeTaxonID is set or if the page was just loaded, open it in the tree
     $effect(() => {
-        const lastAddedID = taxaContext.taxonIDs.slice(-1)[0];
+        const lastAddedID = taxaContext.taxa.ids.slice(-1)[0];
         if (lastAddedID && $taxaTree) {
             openTaxon(lastAddedID);
         }
@@ -222,7 +225,7 @@
 
     // Check for active taxon node and scroll to it
     $effect(() => {
-        const lastAddedTaxonID = taxaContext.taxonIDs.slice(-1)[0];
+        const lastAddedTaxonID = taxaContext.taxa.ids.slice(-1)[0];
         if (
             lastAddedTaxonID &&
             !initialTaxonOpened &&
@@ -347,11 +350,11 @@
                     </button>
                     <button
                         class="taxon-select-icon icon"
-                        class:active={taxaContext.taxonIDs.some(
+                        class:active={taxaContext.taxa.ids.some(
                             (taxonID) => taxonID == node.taxon_id
                         )}
-                        style:color={taxaContext.taxa[node.taxon_id]
-                            ? taxaContext.taxa[node.taxon_id].color
+                        style:color={taxaContext.taxa.get(node.taxon_id)
+                            ? taxaContext.taxa.get(node.taxon_id)?.color
                             : nextColor}
                         onclick={setActiveTaxon}
                     >

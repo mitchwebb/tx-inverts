@@ -8,7 +8,7 @@
     import TaxonPage from './taxon/TaxonPage.svelte';
     import RankingPage from './rankings/RankingsPage.svelte';
     import { routerSyncedKeys } from '../constants/router';
-    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
+    import { getActiveTaxaContext, initialTaxonState } from '../contexts/activeTaxaContext';
 
     let routerContext = getRouterContext();
     let taxaContext = getActiveTaxaContext();
@@ -37,7 +37,7 @@
         {
             pathname: '/rankings',
             component: RankingPage,
-            relevantParams: ['taxon', 'inat', 'status', 'd1', 'd2'],
+            relevantParams: ['taxon', 'inat', 'status', 'd1', 'd2', 'county', 'park'],
         },
     ];
 
@@ -117,7 +117,13 @@
             .getAll('taxon')
             .map(Number)
             .filter(Boolean);
-        taxonParams.forEach((id) => taxaContext.add(id, true));
+        taxonParams.forEach((id) => taxaContext.taxa.add({
+            ...initialTaxonState,
+            taxonID: id
+        }));
+
+        // Special case for adding counties based on URL params
+        const countyParams = url.searchParams.getAll('county');
 
         // Set initial page component
         PageComponent = currentRoute.component;

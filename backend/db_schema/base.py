@@ -195,7 +195,7 @@ class DBTable:
         missing = allowed_cols - actual_cols
 
         if extra:
-            data_logger.info(f'Dropping unexpected columns from df: {extra}')
+            data_logger.info(f'Removing unwanted columns...')
             df = df[[col for col in df.columns if col in allowed_cols]]
 
         if missing:

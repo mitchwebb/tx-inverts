@@ -83,14 +83,16 @@ export async function getNSMetrics(
             include_inat: includeINat,
             date_start: dateStart?.toISOString(),
             date_end: dateEnd?.toISOString(),
-            data_providers: dataProviders,
+            data_providers: [...dataProviders],
         }),
     });
     const json = await response.json();
 
     if (!response.ok) {
         const detail = json?.detail ?? 'Unknown error';
-        throw new Error(detail);
+        throw new Error(
+            typeof detail === 'string' ? detail : JSON.stringify(detail)
+        );
     }
 
     return json.result as RawNSValues;

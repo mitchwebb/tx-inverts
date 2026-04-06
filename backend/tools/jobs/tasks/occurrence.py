@@ -32,7 +32,7 @@ async def update_observations(
     full_replace: bool = False,
     save_cleaned_data: bool = False,
     verbose: bool = False
-) -> Tuple[UpdateStatus, Optional[List[int]]]:
+) -> Tuple[UpdateStatus, Optional[List[int]], Optional[List[int]]]:
     '''
         Perform PARTIAL update of gbif_observations table
 
@@ -49,6 +49,10 @@ async def update_observations(
             full_replace (bool): If True, operation will replace observations table with new data
             save_cleaned_data (bool): If True, cleaned data will be saved in data/cleaned directory after processing,
             verbose (bool)
+
+        Returns:
+            (backboneUpdateRequired, new_row_keys, affected_observation_ids)
+
     '''
 
     settings = get_settings()
@@ -101,16 +105,20 @@ async def update_observations(
         )
         observations_fp = os.path.join(output_dir, 'occurrence.txt')
 
-    if full_replace:
-        db_logger.info(
-            'Full replace requested. Truncating observations table...')
-        async with conn.cursor() as cur:
-            await cur.execute(sql.SQL('TRUNCATE {}').format(
-                sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
-            ))
-        backboneUpdateRequired = True  # Probably true in this case, doesn't cost a lot
+    backboneUpdateRequired = False
+    affected_observation_ids = []
+    new_row_keys = []
 
     try:
+        if full_replace:
+            db_logger.info(
+                'Full replace requested. Truncating observations table...')
+            async with conn.cursor() as cur:
+                await cur.execute(sql.SQL('TRUNCATE {}').format(
+                    sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
+                ))
+            backboneUpdateRequired = True
+
         async with conn.cursor() as cur:
             # Create temp table to perform data update/merge
             temp_table_name = 'temp_' + GBIF_OBSERVATIONS_TABLE.name
@@ -274,14 +282,14 @@ async def update_observations(
             db_logger.info('Creating index on gbif_id...')
             # Index on gbif_id for insert
             await cur.execute(sql.SQL('''
-                CREATE INDEX idx_resolved_gbif ON resolved_keys(gbif_id);'''
-                                      ))
+                CREATE INDEX idx_resolved_gbif ON resolved_keys(gbif_id);
+            '''))
 
             db_logger.info('Writing lineages to temp_table...')
             # Apply lineages to temp table
             await cur.execute(sql.SQL('''
                 UPDATE {temp_table} t
-                SET 
+                SET
                     accepted_taxon_key = r.resolved_taxon_key,
                     kingdom_id = b.kingdom_id,
                     phylum_id = b.phylum_id,
@@ -303,17 +311,25 @@ async def update_observations(
         if full_replace:
             db_logger.info(
                 'Adding all accepted observations to observations table...')
-            async with conn.cursor() as cur:
+            async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
                 await cur.execute(sql.SQL('''
                     INSERT INTO {observations_table}
                     SELECT * FROM {temp_table}
                 ''').format(
                     observations_table=sql.Identifier(
                         GBIF_OBSERVATIONS_TABLE.name),
-                    temp_table=sql.Identifier(temp_table_name),
-                    cols=sql.SQL(', ').join(
-                        map(sql.Identifier, GBIF_OBSERVATIONS_TABLE.column_order()))
+                    temp_table=sql.Identifier(temp_table_name)
                 ))
+
+                # Update observation_regions table
+                db_logger.info('Getting altered occurrence ids...')
+                # Get list of new observation ids
+                await cur.execute(sql.SQL('''
+                    SELECT gbif_id FROM {temp_table}
+                ''').format(
+                    temp_table=sql.Identifier(temp_table_name)
+                ))
+                affected_observation_ids = [row['gbif_id'] for row in await cur.fetchall()]
 
         # Else, compare old and new rows, replacing only those with altered information
         else:
@@ -351,32 +367,61 @@ async def update_observations(
                 # Now update main table
                 db_logger.info(f'Rows to copy: {new_row_count}')
 
+                columns = GBIF_OBSERVATIONS_TABLE.column_order()
+                update_cols = [c for c in columns if c != 'gbif_id']
+
                 # Populate observations table with new rows from temp table
                 # Replace rows with matching gbif_ids
-
-                # Delete matching rows
-                await cur.execute(sql.SQL('''
-                    DELETE FROM {observations_table} o
-                    USING {temp_table} t
-                    WHERE o.gbif_id = t.gbif_id;
-                ''').format(
-                    observations_table=sql.Identifier(
-                        GBIF_OBSERVATIONS_TABLE.name),
-                    temp_table=sql.Identifier(temp_table_name)
-                ))
-
-                db_logger.info('Inserting new rows...')
-                # Insert all rows from temp table
+                db_logger.info(
+                    f'Replacing pre-existing rows and adding new to observations_table...')
                 await cur.execute(sql.SQL('''
                     INSERT INTO {observations_table}
                     SELECT * FROM {temp_table}
+                    ON CONFLICT (gbif_id) DO UPDATE SET {updates}
                 ''').format(
                     observations_table=sql.Identifier(
                         GBIF_OBSERVATIONS_TABLE.name),
                     temp_table=sql.Identifier(temp_table_name),
-                    cols=sql.SQL(', ').join(
-                        map(sql.Identifier, GBIF_OBSERVATIONS_TABLE.column_order()))
+                    updates=sql.SQL(', ').join(
+                        sql.SQL('{col} = EXCLUDED.{col}').format(
+                            col=sql.Identifier(c))
+                        for c in update_cols
+                    )
                 ))
+                # # Delete matching rows
+                # await cur.execute(sql.SQL('''
+                #     DELETE FROM {observations_table} o
+                #     USING {temp_table} t
+                #     WHERE o.gbif_id = t.gbif_id;
+                # ''').format(
+                #     observations_table=sql.Identifier(
+                #         GBIF_OBSERVATIONS_TABLE.name),
+                #     temp_table=sql.Identifier(temp_table_name)
+                # ))
+
+                # db_logger.info('Inserting new rows...')
+                # # Insert all rows from temp table
+                # await cur.execute(sql.SQL('''
+                #     INSERT INTO {observations_table}
+                #     SELECT * FROM {temp_table}
+                # ''').format(
+                #     observations_table=sql.Identifier(
+                #         GBIF_OBSERVATIONS_TABLE.name),
+                #     temp_table=sql.Identifier(temp_table_name),
+                #     cols=sql.SQL(', ').join(
+                #         map(sql.Identifier, GBIF_OBSERVATIONS_TABLE.column_order()))
+                # ))
+
+                # Update observation_regions table
+                db_logger.info('Getting altered occurrence ids...')
+                # Get list of new observation ids
+                await cur.execute(sql.SQL('''
+                    SELECT gbif_id FROM {temp_table}
+                ''').format(
+                    temp_table=sql.Identifier(temp_table_name)
+                ))
+
+                affected_observation_ids = [row['gbif_id'] for row in await cur.fetchall()]
 
         # Refresh materialized views
         db_logger.info('Refreshing materialized views...')
@@ -407,7 +452,7 @@ async def update_observations(
 
             await conn.commit()
 
-            return (backboneUpdateRequired, new_row_keys or None)
+            return (backboneUpdateRequired, new_row_keys or None, affected_observation_ids or None)
 
     except Exception as e:
         await conn.rollback()

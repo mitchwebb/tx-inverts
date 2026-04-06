@@ -1,19 +1,25 @@
-<script lang="ts">
-    import InvasiveIcon from "../common/InvasiveIcon.svelte";
+<!-- Middle component for extracting geographic search logic (for multiple API routes) -->
+<script lang="ts" generics="T">
+    import type { Snippet } from "svelte";
     import SearchSuggestBar from "../common/SearchSuggestBar.svelte";
-    import { getFiltersContext } from "../contexts/filtersContext";
 
     type GeoSearchProps = {
         placeholder?: string | null;
+        pathSuffix: 'parks' | 'counties';
+        parseJSON: (json: any) => T[];
+        suggestionRow: Snippet<[T, number]>;
+        handleSelect: (suggestion: T) => void;
     }
-    const { placeholder='Search for a region...' }: GeoSearchProps = $props();
-    
-    type CountySuggestion = Record<"county", string>;
-
-    const filtersContext = getFiltersContext();
+    const { 
+        placeholder='Search for a region...',
+        pathSuffix,
+        parseJSON,
+        suggestionRow,
+        handleSelect
+    }: GeoSearchProps = $props();
 
     let isLoading: boolean = $state(false);
-    let suggestions: CountySuggestion[] = $state([]);
+    let suggestions: T[] = $state([]);
 
     let abortController = new AbortController();
     // Submit current search and return 10 results (max)
@@ -24,7 +30,7 @@
         // Create new AbortController
         abortController = new AbortController();
         const signal = abortController.signal;
-        const url = '/server/map/search_counties';
+        const url = `/server/map/search_${pathSuffix}`;
         try {
             // Set is loading
             isLoading = true;
@@ -42,37 +48,33 @@
             // Ending loading
             isLoading = false;
             const json = await response.json();
-            console.log(json)
-            suggestions = json.results.map((result: CountySuggestion) => {
-                return {
-                    county: result.county
-                };
-            });
+            const parsedJSON = parseJSON(json.results);
+            suggestions = parsedJSON;
         } catch (error) {
             console.error(error);
         }
     }
 
-    function handleGeoSelect(suggestion: CountySuggestion) {
-        console.log(suggestion)
+    function handleGeoSelect(suggestion: T) {
+        handleSelect(suggestion);
     }
 </script>
 
-{#snippet row(suggestion: CountySuggestion)}
-    <div>
-        {suggestion.county}
-    </div>
-{/snippet}
+<div class='geo-searchbar'>
+    <SearchSuggestBar 
+        {placeholder}
+        handleSearchSuggest={handleSearchSuggest}
+        handleSelect={handleGeoSelect} 
+        suggestions={suggestions} 
+        row={suggestionRow} 
+        {isLoading} 
+    />
+</div>
 
-
-<SearchSuggestBar 
-    {placeholder}
-    handleSearchSuggest={handleSearchSuggest}
-    handleSelect={handleGeoSelect} 
-    suggestions={suggestions} 
-    {row} 
-    {isLoading} 
-/>
 
 <style>
+    .geo-searchbar {
+        height: 2rem;
+        width: 250px;
+    }
 </style>

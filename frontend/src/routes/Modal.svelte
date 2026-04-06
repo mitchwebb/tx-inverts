@@ -80,14 +80,20 @@
         position: fixed;
         inset: 0;
         z-index: 1000;
+        display: flex;
+        overflow-y: auto;
+        /* justify-content: center; */
+        /* align-items: center; */
     }
 
     #modal-overlay {
-        position: absolute;
+        position: fixed;
         inset: 0;
         background-color: var(--container-shadow);
         opacity: 0.75;
         user-select: none;
+        height: fit-content;
+        min-height: 100dvh;
         /* pointer-events: none; */
     }
 
@@ -115,15 +121,15 @@
     }
 
     #modal-content-positioner {
-        position: absolute;
         display: flex;
         justify-content: center;
-        align-items: center;
-        inset: 0;
-        z-index: 1001;
+        height: fit-content;
+        min-height: 100dvh;
+        width: 100%;
+        padding: 2.5dvh 0;
+        box-sizing: border-box;
         pointer-events: none;
-        height: 100%;
-        /* width: 100%; */
+        z-index: 1001;
     }
 
     #modal-content-wrapper {
@@ -131,17 +137,17 @@
         display: flex;
         flex-direction: column; /* stack content vertically */
         background-color: var(--container-back);
-        border-radius: 4px;
+        border-radius: 3px;
         min-width: 100px;
         max-width: 95dvw;
         min-height: 2rem;
-        max-height: 95dvh; /* constrain to viewport */
         outline: 1px solid var(--border);
         pointer-events: auto;
         z-index: 1002;
         box-sizing: border-box;
         overflow: hidden; /* keep scroll inside wrapper */
         padding: 0.5rem;
+        margin: auto;
     }
 
     #modal-content {

@@ -1,7 +1,7 @@
 <script lang="ts">
     import InvasiveIcon from "../common/InvasiveIcon.svelte";
     import SearchSuggestBar from "../common/SearchSuggestBar.svelte";
-    import { getActiveTaxaContext } from "../contexts/activeTaxaContext";
+    import { getActiveTaxaContext, initialActiveTaxaState, initialTaxonState } from "../contexts/activeTaxaContext";
     import type { RawTaxonSearchSuggestion, TaxonSearchSuggestion } from "../types/api";
     import { isItalicizedRank } from "../util/taxa";
 
@@ -13,7 +13,7 @@
         replace?: boolean;
     }
 
-    const { placeholder='Search for taxa...', handleBlur, autoFocus=false, append=false, replace=false }: TaxaSearchProps = $props();
+    const { placeholder='Search for taxa...', handleBlur, autoFocus=false, append=true, replace=false }: TaxaSearchProps = $props();
 
     const taxaContext = getActiveTaxaContext();
 
@@ -65,9 +65,12 @@
     function handleTaxonSelect(suggestion: TaxonSearchSuggestion) {
         if (!suggestion.taxonID) return;
 
-        if (replace) taxaContext.clear();
+        if (replace) taxaContext.taxa.clear();
 
-        taxaContext.add(suggestion.taxonID, append);
+        taxaContext.taxa.add({
+            ...initialTaxonState,
+            taxonID: suggestion.taxonID
+        });
     }
 </script>
 

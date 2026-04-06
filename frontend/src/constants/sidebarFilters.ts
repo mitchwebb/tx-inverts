@@ -60,6 +60,24 @@ export const SIDEBAR_FILTER_META: Record<
         domain: ['taxa'],
         count: true,
     },
+    counties: {
+        path: ['/rankings'],
+        default: FILTER_DEFAULTS.counties,
+        domain: ['taxa'],
+        count: false,
+    },
+    parks: {
+        path: ['/rankings'],
+        default: FILTER_DEFAULTS.parks,
+        domain: ['taxa'],
+        count: false,
+    },
+    region: {
+        path: ['/rankings'],
+        default: FILTER_DEFAULTS.region,
+        domain: ['taxa'],
+        count: false,
+    },
 } satisfies {
     [K in keyof FiltersState]: {
         path: RouterPath[];

@@ -62,6 +62,7 @@
         margin: 0.5rem;
         display: flex;
         justify-content: center;
+        user-select: none;
     }
     .filters-content-wrapper {
         color: var(--text-default);
@@ -73,7 +74,7 @@
         min-width: 200px;
         width: fit-content;
         max-width: 800px;
-        max-height: 80dvh;
+        /* max-height: 80dvh; */
     }
     #filters-content {
         overflow-y: auto;
