@@ -43,7 +43,7 @@
         const count = countActiveFilters(filtersContext, 'observations');
         return count > 0;
     });
-
+    
     const isMapPage: boolean = $derived(routerContext.url.pathname === '/map');
 
     let aOOGridSize = $derived(metricsContext.aOOResolution);
@@ -125,6 +125,7 @@
     label="Conservation Values"
     isLoading={taxon.nSValuesLoading}
     customClass="ns-section-wrapper"
+    active={filtersActive}
 >
     {#snippet closedDisplay()}
         {#if rank && !taxon.info.usInvasive}
@@ -132,7 +133,7 @@
         {/if}
     {/snippet}
     {#if filtersActive}
-        <div id="filter-warning">Filters Applied</div>
+        <div class="filter-warning">Filters Applied</div>
     {/if}
     <div class="ns-section">
         {#if rank && !taxon.info.usInvasive}
@@ -251,6 +252,11 @@
 </SidebarFoldout>
 
 <style>
+    .filter-warning {
+        background-color: var(--accent-color);
+        color: black;
+        font-size: 0.75rem;
+    }
     #ns-metrics-section {
         display: flex;
         flex-direction: column;
@@ -273,12 +279,6 @@
     }
     :global(.ns-section-wrapper > .sidebar-foldout-content) {
         padding: 0;
-    }
-    #filter-warning {
-        background-color: var(--accent-color);
-        color: black;
-        height: 1rem;
-        font-size: 0.75rem;
     }
     .ns-section {
         position: relative;

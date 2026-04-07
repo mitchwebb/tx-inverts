@@ -73,5 +73,6 @@
     }
     .ranking-text {
         pointer-events: none;
+        user-select: none;
     }
 </style>

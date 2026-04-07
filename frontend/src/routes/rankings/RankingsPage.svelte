@@ -27,7 +27,7 @@
     // Define headers/sort-keys for virtualized rankings table
     const tableHeaders = $derived([
         {
-            label: `${filtersContext.includeINat ? 'Rank' : 'Rank (no iNat)'}`,
+            label: `${filtersContext.includeINat ? 'Raw Rank' : '<div id="rank-header-no-inat"><span>Raw Rank</span><span id="no-inat-tag">Excl. iNat</span><div>'}`,
             info: 'The rankings in this column are precalculated using a 4km2 grid cell. Aside from toggling iNaturalist data, they do not respond to further filtering, and instead reflect all available data.',
             sortKey: filtersContext.includeINat
                 ? 'ns_rank_state'
@@ -283,6 +283,16 @@
 </DefaultPage>
 
 <style>
+    :global(#rank-header-no-inat) {
+        display: flex;
+        flex-direction: column;
+        font-size: .9rem;
+    }
+    :global(#no-inat-tag) {
+        font-size: .75rem;
+        font-style: italic;
+        font-weight: 500;
+    }
     .row-text {
         display: flex;
         /* align-items: center; */

@@ -87,8 +87,7 @@
     const taxaContext = getActiveTaxaContext();
 
     const filtersState: FiltersState = $state(initialFiltersState);
-    filtersState.counties = makeIDCollection<GeoFilter, string>(c => c.id);
-    filtersState.parks = makeIDCollection<GeoFilter, string>(p => p.id);
+    filtersState.region = makeIDCollection<GeoFilter, string>(c => c.id);
     setFiltersContext(filtersState);
     const filtersContext = getFiltersContext();
 

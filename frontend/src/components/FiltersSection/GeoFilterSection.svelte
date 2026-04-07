@@ -95,7 +95,7 @@
 <div
     class="geographic-filter filters-section"
 >
-    <div class="filters-section-header">Region Found</div>
+    <div class="filters-section-header">Regions Found</div>
     <div id="geo-filters" class="filters-section-content">
         <div class="geo-filters-item filters-section" class:active={filtersContext.region.items.some((r) => r.regionType === "county")}>
             <span> County </span>

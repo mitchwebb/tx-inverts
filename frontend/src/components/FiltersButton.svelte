@@ -55,7 +55,7 @@
         width: 100%;
     }
     .count-indicator {
-        background-color: var(--fill-color);
+        background-color: var(--accent-color);
         width: 1.3rem;
         height: 1.1rem;
         border-radius: 0.5rem;

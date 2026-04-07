@@ -50,7 +50,6 @@
 
     // Keep track of elements
     let filtersElement: HTMLElement | null = $state(null);
-    let filtersButtonElement: HTMLElement;
 
     let filtersOpen = $state<boolean>(false);
 
@@ -69,7 +68,6 @@
         // Don't react if click is on the filters element, button, or portal in general
         if (
             filtersElement?.contains(target) ||
-            filtersButtonElement?.contains(target) ||
             portal?.contains(target) ||
             datepickerContainer?.contains(target)
         )
@@ -140,7 +138,6 @@
                 {:else}
                     <div
                         id="filters-button-wrapper"
-                        bind:this={filtersButtonElement}
                     >
                         <FiltersButton
                             count={filtersCount}

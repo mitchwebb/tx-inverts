@@ -14,10 +14,10 @@
 
 <FiltersWrapper header={'Filter Visible Taxa'}>
     <!-- <TaxonFilterSection /> -->
-    <INatFilterSection />
+    <INatFilterSection/>
     <RankFilterSection />
     <GeoFilterSection/>
-    <DateFilterSection header="Dates Present" />
+    <DateFilterSection header="Dates Found" />
 </FiltersWrapper>
 
 <style>

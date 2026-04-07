@@ -3,6 +3,12 @@
     import Toggle from '../../common/Toggle.svelte';
     import { getFiltersContext } from '../../contexts/filtersContext';
 
+    type INatFilterProps = {
+        label?: string;
+    }
+
+    const {label='Include iNat Data'}: INatFilterProps = $props();
+
     const filtersContext = getFiltersContext();
 
     const active = $derived(filtersContext.includeINat);
@@ -31,15 +37,12 @@
                     offColor="darkred"
                 />
             </div>
-            <span class="inat-label">Include iNat Data</span>
+            <span class="inat-label">{label}</span>
         </div>
     </div>
 </div>
 
 <style>
-    #inat-filters-section {
-        /* flex-grow: 0; */
-    }
     #inat-filter-section-header {
         display: flex;
         gap: .25rem;
@@ -56,6 +59,7 @@
         stroke: var(--text-default);
     }
     .inat-label {
-        white-space: nowrap;
+        text-align: left;
+        /* white-space: nowrap; */
     }
 </style>

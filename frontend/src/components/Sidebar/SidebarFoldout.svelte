@@ -15,23 +15,23 @@
     type SidebarFoldoutProps = {
         id: string; // Required for setting foldoutState
         label: string;
-        activeFilters?: boolean;
         closedDisplay?: Snippet;
         children?: Snippet;
         defaultOpen?: boolean;
         isLoading?: boolean;
         customClass?: string;
+        active?: boolean;
     };
 
     let {
         id,
         label,
-        activeFilters = false,
         closedDisplay,
         children,
         defaultOpen = false,
         isLoading = false,
         customClass = '',
+        active = false,
     }: SidebarFoldoutProps = $props();
 
     let open = $derived(sidebarContext.foldoutStates[id] === true);
@@ -65,29 +65,31 @@
         role="button"
         tabindex="0"
         aria-expanded={open}
-        class={['sidebar-foldout-header sidebar-header', { open }]}
-        class:filters-active={activeFilters}
+        class={['sidebar-foldout-header', { open }]}
+        class:active={active}
         onclick={toggleFoldoutState}
         onkeydown={handleKey}
     >
-        <span class="sidebar-header-text">
-            {label}
-        </span>
-        <span class="sidebar-header-icons">
-            {#if closedDisplay && !open}
-                {@render closedDisplay()}
-            {/if}
-
-            <span class="sidebar-icon icon">
-                {#if isLoading}
-                    <LoadingIcon />
-                {:else if open}
-                    <ChevronUp />
-                {:else}
-                    <ChevronDown />
-                {/if}
+        <div class="foldout-header-main sidebar-header">
+            <span class="sidebar-header-text">
+                {label}
             </span>
-        </span>
+            <span class="sidebar-header-icons">
+                {#if closedDisplay && !open}
+                    {@render closedDisplay()}
+                {/if}
+
+                <span class="sidebar-icon icon">
+                    {#if isLoading}
+                        <LoadingIcon />
+                    {:else if open}
+                        <ChevronUp />
+                    {:else}
+                        <ChevronDown />
+                    {/if}
+                </span>
+            </span>
+        </div>
     </div>
     {#if open}
         <div class="sidebar-foldout-content" transition:slide>
@@ -97,6 +99,22 @@
 </div>
 
 <style>
+    .sidebar-foldout-header.active:not(.open) {
+        box-shadow: inset 2px 0 0 0 var(--accent-color);
+    }
+    .foldout-header-main {
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text-default);
+        background-color: transparent;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .foldout-header-banner {
+        width: 100%;
+    }
     .sidebar-foldout-header.filters-active {
         box-shadow: inset 3px 0px 0px 0px var(--accent-color);
     }
@@ -119,15 +137,10 @@
         flex-shrink: 0;
     }
     .sidebar-foldout-header {
-        text-align: left;
+        position: relative;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        line-height: 1;
-        color: var(--text-default);
-        background-color: transparent;
-        width: 100%;
-        box-sizing: border-box;
+        flex-direction: column;
+        /* border-bottom: 1px solid transparent; */
     }
     .sidebar-foldout-header.open {
         border-bottom: 1px solid var(--border);
