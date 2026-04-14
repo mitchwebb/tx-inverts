@@ -18,16 +18,18 @@
     const filtersContext = getFiltersContext();
     const taxonContext = getActiveTaxaContext();
 
-    function handleStartDate({ date }: AirDatepickerPayload) {
+    function handleStartDate({ date, datepicker }: AirDatepickerPayload) {
         const singleDate = Array.isArray(date) ? date[0] : date;
+        datepicker.hide();
         // Do not update context if date is identical
         if (singleDate?.getTime() === filtersContext.dateStart?.getTime())
             return;
         filtersContext.dateStart = singleDate || null;
     }
 
-    function handleEndDate({ date }: AirDatepickerPayload) {
+    function handleEndDate({ date, datepicker }: AirDatepickerPayload) {
         const singleDate = Array.isArray(date) ? date[0] : date;
+        datepicker.hide();
         // Do not update context if date is identical
         if (singleDate?.getTime() === filtersContext.dateEnd?.getTime()) return;
         filtersContext.dateEnd = singleDate || null;
@@ -75,6 +77,7 @@
                     : 'Min Date'}
                 isMobile={$isMobile}
                 position="bottom right"
+                buttons="clear"
             />
             <span>to</span>
             <DatePicker
@@ -88,6 +91,7 @@
                     : 'Max Date'}
                 isMobile={$isMobile}
                 position="bottom right"
+                buttons="clear"
             />
         </div>
     </div>

@@ -32,22 +32,63 @@
     }: DatePickerProps = $props();
 
     let datepicker: AirDatepicker | null = $state(null);
+    let inputValue = $state('');
+
+    function handleInput(e: Event) {
+        inputValue = (e.target as HTMLInputElement).value;
+    }
+
+    function commitInput() {
+        if (!datepicker) return;
+
+        const parsed = new Date(inputValue);
+
+        if (!inputValue) {
+            datepicker.clear();
+            return;
+        }
+
+        if (!isNaN(parsed.getTime())) {
+            datepicker.selectDate(parsed);
+        } else {
+            // invalid -> reset to picker value
+            const current = datepicker.selectedDates[0];
+            inputValue = current ? current.toLocaleDateString() : '';
+        }
+    }
+
+    function handleKeydown(e: KeyboardEvent) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            commitInput();
+            (e.target as HTMLInputElement).blur();
+        }
+    }
+
+    function handleBlur() {
+        setTimeout(() => {
+            const active = document.activeElement;
+
+            // if focus is inside calendar → ignore
+            if (datepicker?.visible) return;
+
+            commitInput();
+        }, 0);
+    }
 
     // Sync prop value to selected value
     $effect(() => {
-        console.log(value);
         if (!datepicker) return;
-        const current = datepicker.selectedDates[0] ?? null;
-        // If no value provided but still currently selected date, clear date
-        if (!value && current) {
-            console.log('helo');
-            datepicker.clear();
-            // Else if value is provided (but isn't currently selected), select it
-        } else if (
-            value &&
-            current?.toDateString() !== new Date(value).toDateString()
-        ) {
-            datepicker.selectDate(value);
+
+        if (value == null) {
+            inputValue = '';
+            return;
+        }
+
+        const d = new Date(value);
+
+        if (!isNaN(d.getTime())) {
+            inputValue = d.toLocaleDateString();
         }
     });
 
@@ -71,6 +112,10 @@
     bind:this={inputEl}
     class="datepicker"
     {placeholder}
+    value={inputValue}
+    oninput={handleInput}
+    onblur={handleBlur}
+    onkeydown={handleKeydown}
 />
 
 <style>
