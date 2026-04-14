@@ -1,13 +1,12 @@
 <!-- Styled, reusable AirDatepicker Element for Svelte -->
 
 <script lang="ts">
-    import { onMount, untrack } from 'svelte';
-    import AirDatepicker, {
-        type AirDatepickerOptions,
-        type AirDatepickerPositionCallback,
-    } from 'air-datepicker';
+    import { onMount } from 'svelte';
+    import AirDatepicker, { type AirDatepickerOptions } from 'air-datepicker';
     import localeEn from 'air-datepicker/locale/en';
     import 'air-datepicker/air-datepicker.css';
+
+    // TODO: Work on binding typed dates
 
     let inputEl: HTMLInputElement;
 
@@ -34,52 +33,35 @@
 
     let datepicker: AirDatepicker | null = $state(null);
 
-    const positionCalendar: AirDatepickerPositionCallback = ({
-        $datepicker,
-        $target,
-        // $pointer,
-        // done,
-    }) => {
-        const { top, left, height } = $target.getBoundingClientRect();
-        const dpHeight = $datepicker.clientHeight;
-
-        const margin = 10;
-
-        const spaceBelow = window.innerHeight - (top + height);
-        const spaceAbove = top;
-
-        // Place above if there is not enough room below (and there is more room)
-        const showAbove = (spaceBelow < dpHeight) && (spaceAbove > spaceBelow);
-
-        $datepicker.style.left = `${left + window.scrollX}px`;
-        $datepicker.style.top = showAbove
-            ? `${top + window.scrollY - (dpHeight + margin)}px`
-            : `${top + window.scrollY + height + margin}px`;
-    };
-
     // Sync prop value to selected value
     $effect(() => {
+        console.log(value);
         if (!datepicker) return;
         const current = datepicker.selectedDates[0] ?? null;
         // If no value provided but still currently selected date, clear date
         if (!value && current) {
+            console.log('helo');
             datepicker.clear();
-        // Else if value is provided (but isn't currently selected), select it
-        } else if (value && current?.toDateString() !== new Date(value).toDateString()) {
+            // Else if value is provided (but isn't currently selected), select it
+        } else if (
+            value &&
+            current?.toDateString() !== new Date(value).toDateString()
+        ) {
             datepicker.selectDate(value);
         }
     });
 
-    // Mount Datepicker
+    let cleanup: (() => void) | null = null;
+
     onMount(() => {
-        if (inputEl) {
-            datepicker = new AirDatepicker(inputEl, {
-                locale: localeEn,
-                position: positionCalendar,
-                ...props,
-            });
-        }
-        return;
+        if (!inputEl || !inputEl.parentElement) return;
+        datepicker = new AirDatepicker(inputEl, {
+            container: inputEl.parentElement,
+            locale: localeEn,
+            ...props,
+        });
+
+        return cleanup;
     });
 </script>
 
@@ -93,7 +75,7 @@
 
 <style>
     :global(#air-datepicker-global-container) {
-        z-index: 2000;
+        z-index: 10000;
     }
     .hidden-input {
         display: none;

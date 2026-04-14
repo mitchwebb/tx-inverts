@@ -69,12 +69,12 @@
                 id="date-start-filter"
                 startDate={minDate}
                 {minDate}
-                buttons={'clear'}
                 value={filtersContext.dateStart}
                 placeholder={minDate
                     ? `${minDate.toLocaleDateString()} (Min Date)`
                     : 'Min Date'}
                 isMobile={$isMobile}
+                position="bottom right"
             />
             <span>to</span>
             <DatePicker
@@ -82,12 +82,12 @@
                 id="date-end-filter"
                 startDate={maxDate}
                 {maxDate}
-                buttons={'clear'}
                 value={filtersContext.dateEnd}
                 placeholder={maxDate
                     ? `${maxDate.toLocaleDateString()} (Max Date)`
                     : 'Max Date'}
                 isMobile={$isMobile}
+                position="bottom right"
             />
         </div>
     </div>

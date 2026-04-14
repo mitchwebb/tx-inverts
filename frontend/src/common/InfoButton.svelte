@@ -79,8 +79,8 @@
     .info-icon-wrapper {
         cursor: pointer;
         position: relative;
-        z-index: 150;
-        height: .9rem;
+        z-index: 1;
+        height: 0.9rem;
         padding: 0;
         background-color: transparent;
         border: none;
