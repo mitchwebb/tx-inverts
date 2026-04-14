@@ -30,6 +30,13 @@
     --overlay: rgba(19, 26, 31, 0.8);
 }
 
+/* Help prevent auto-zoom on mobile */
+@supports (-webkit-overflow-scrolling: touch) {
+    input, textarea, select {
+        font-size: 16px;
+    }
+}
+
 :root {
     height: 100%;
     font-family: 'Inter', sans-serif;

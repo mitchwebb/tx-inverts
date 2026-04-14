@@ -40,7 +40,7 @@
     const currPath = $derived(routerContext.url.pathname as RouterPath);
 
     const filtersDomain = $derived.by(() => {
-        if (['/map', '/taxa'].includes(currPath)) {
+        if (['/map', '/backbone'].includes(currPath)) {
             return 'observations';
         } else {
             return 'taxa';
