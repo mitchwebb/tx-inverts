@@ -12,7 +12,7 @@
 </script>
 
 <FiltersWrapper header={'Filter Occurrences'}>
-    <div id="filters-top-section">
+    <div class="horizontal-filter-group">
         <TaxonFilterSection domain="observations" />
         <DateFilterSection header="Date Range" />
     </div>
@@ -20,9 +20,10 @@
 </FiltersWrapper>
 
 <style>
-    #filters-top-section {
+    .horizontal-filter-group {
         display: flex;
         gap: 0.5rem;
         width: 100%;
+        flex-wrap: wrap;
     }
 </style>

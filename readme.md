@@ -1,54 +1,13 @@
-## TODO
+# Source Code for Texas Inverts
 
-### Database
+This repo holds the source code for the Texas Inverts website. The site is built to provide preliminary, approximate conservation rankings for the invertebrate species of Texas to help in Texas Parks and Wildlife's effort to track Species of Greatest Conservation Need. This site is built on public data from the GBIF database and runs period downloads/updates for presentation and querying. All of the data is public.
 
-- [ ] Finalize and document schema
-- [x] Add `ns_rank_state` column
-- [x] Get to work on automatic update capabilities (observations)
-- [ ] Get to work on manual update pipeline (taxonomy)
-- [x] Index frequently queried fields (`taxon_id`, etc.)
-- [ ] Store common names in DB
-- [x] List of invasives — Store in database
-- [ ] Handle 'indet.' species
-- [ ] Common Names!
-- [ ] Need a date_added column to allow rollback
+## Implementation
 
-### Map Layers
+The site is written in TypeScript, Python, Svelte, and PostgreSQL. These tools were selected in part to mimic other related resources (https://github.com/ut-entomology/cavesite), as well as in an effort to make a clear, accessible, and maintainable product.
 
-- [x] Tiled observation layer via PostGIS
-- [ ] Add vector layer for user-submitted points
-- [x] Compute and display range extent
-- [x] Compute and display area of occupancy
-- [ ] Enable adding points by map click
-- [ ] Multiple Species
-- [ ] Adjustable occurrence radius
-- [ ] Adjustable AOO size
-- [ ] Change rankings verbiage
-- [ ] Note about not including thread/trends
-- [x] Layers key in foldout
-- [ ] GBIF Species Link
+As a note: while Svelte may not share the ubiquity of TypeScript, Python, or PostgreSQL, it was chosen as a cleaner, easier-to-learn alternative to React. Though there is still a learning curve, it should be easier to pick up for anyone interacting with this code who is new to front-end frameworks.
 
-### Testing & Dev UX
+## Installation
 
-- [ ] Testing in general
-
-### Functionality
-
-- [ ] Apply filters to ranking (re-run ranking)
-- [ ] Mobile
-- [ ] Improve date input functionality (min-max unclear in native components)
-- [ ] Variable AOO Bin Sizes (Requires server interaction to get values)
-
-### Documentation
-
-- [ ] Add usage instructions to README
-- [ ] Document DB schema
-- [ ] Add endpoint specs
-
-### Questions
-
-- [ ] How does range extent work when dealing with boundaries like states?
-
-### BUGS
-
-- [ ] Map width needs a minimum (minimum width for header bar)
+To install the site on a publicly available server, follow the instructions in the ~~installation manual~~ (coming soon).
