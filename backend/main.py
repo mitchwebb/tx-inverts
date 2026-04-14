@@ -3,11 +3,12 @@ from backend.core.exception_handler import global_exception_handler
 from backend.core.logging import setup_logging
 from fastapi import FastAPI
 from backend.core.logging import api_logger
-from backend.routers.occurrence import router as occurrence_router
-from backend.routers.map import router as maps_router
-from backend.routers.taxa import router as taxa_router
-from backend.routers.natureserve import router as natureserve_router
-from backend.routers.downloads import router as downloads_router
+from backend.routers.occurrence import occurrence_router
+from backend.routers.map import map_router
+from backend.routers.taxa import taxa_router
+from backend.routers.rankings import rankings_router
+from backend.routers.downloads import downloads_router
+from backend.routers.regions import regions_router
 from backend.config import get_settings
 from psycopg_pool import AsyncConnectionPool
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,13 +17,16 @@ from fastapi.middleware.cors import CORSMiddleware
 # Load environment variables from .env
 settings = get_settings()
 
+# Set up loggers
+setup_logging()
+api_logger.info("Started API logger...")
+
 
 # FastAPI new lifescycle management style
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
+    api_logger.info("Opening DB pool...")
     # Startup logic
-
     # Make database connection available to all routes (with dict_row factory)
     dsn = (
         f"dbname={settings.database.name} "
@@ -31,12 +35,15 @@ async def lifespan(app: FastAPI):
         f"host={settings.database.host} "
         f"port={settings.database.port}"
     )
+
     app.state.db_pool = AsyncConnectionPool(
         conninfo=dsn,
         min_size=5,
-        max_size=30
+        max_size=30,
+        open=False
     )
-    # await app.state.db_pool.open()
+    await app.state.db_pool.open(wait=True)
+    api_logger.info("DB pool opened successfully")
 
     yield
 
@@ -61,18 +68,14 @@ app.add_middleware(
 
 # Add routers
 app.include_router(occurrence_router, prefix='/occurrence')
-app.include_router(maps_router, prefix='/map')
+app.include_router(map_router, prefix='/map')
 app.include_router(taxa_router, prefix='/taxa')
-app.include_router(natureserve_router, prefix='/natureserve')
+app.include_router(rankings_router, prefix='/rankings')
 app.include_router(downloads_router, prefix='/downloads')
+app.include_router(regions_router, prefix='/regions')
 
 # Register exception handler
 app.add_exception_handler(Exception, global_exception_handler)
-
-# Set up loggers
-setup_logging()
-
-api_logger.info("Started API logger...")
 
 # Print routes (for debugging)
 api_logger.debug("Routes:")

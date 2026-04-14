@@ -15,10 +15,10 @@ import json
 import psycopg
 
 
-router = APIRouter()
+rankings_router = APIRouter()
 
 
-@router.post('/get_ns_metrics', response_class=Response)
+@rankings_router.post('/get_ns_metrics', response_class=Response)
 async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
     """
     Get NatureServe metrics (occurrences, range extent, and area of occupancy) 
@@ -31,8 +31,6 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
     Returns:
         TODO: Sort out typing and finish this docstring
     """
-
-    api_logger.info(params)
 
     filters = SingleTaxonOccurrenceFilter(
         taxon_id=params.taxon_ids,
@@ -83,7 +81,7 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
         raise
 
 
-@router.post('/get_range_extent_geom', response_class=Response)
+@rankings_router.post('/get_range_extent_geom', response_class=Response)
 async def get_range_extent_geom(params: ObservationsRequestParams, request: Request):
 
     filters = OccurrenceFilter(

@@ -7,10 +7,10 @@ from psycopg import sql
 import re
 
 
-router = APIRouter()
+map_router = APIRouter()
 
 
-@router.post("/search_counties")
+@map_router.post("/search_counties")
 async def search_counties(data: TextData, request: Request):
     search_term = data.text
     query = sql.SQL('''
@@ -32,7 +32,7 @@ async def search_counties(data: TextData, request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/search_parks")
+@map_router.post("/search_parks")
 async def search_parks(data: TextData, request: Request):
     search_term = data.text
     query = sql.SQL('''

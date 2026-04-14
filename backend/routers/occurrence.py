@@ -11,11 +11,11 @@ from backend.models.sql import OccurrenceFilter, SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 
 
-router = APIRouter()
+occurrence_router = APIRouter()
 
 
 # Get list of all data providers currently found in observations
-@router.get('/get_data_providers')
+@occurrence_router.get('/get_data_providers')
 async def get_data_providers(request: Request):
 
     query = sql.SQL('''
@@ -34,7 +34,7 @@ async def get_data_providers(request: Request):
             }
 
 
-@router.post('/get_provider_counts')
+@occurrence_router.post('/get_provider_counts')
 async def get_provider_counts(params: ObservationsRequestParams, request: Request):
     pool = request.app.state.db_pool
 
@@ -89,7 +89,7 @@ async def get_provider_counts(params: ObservationsRequestParams, request: Reques
                 return None
 
 
-@router.post('/get_observation_dates')
+@occurrence_router.post('/get_observation_dates')
 async def get_observation_dates(params: ObservationsRequestParams, request: Request):
     pool = request.app.state.db_pool
 
@@ -121,7 +121,7 @@ async def get_observation_dates(params: ObservationsRequestParams, request: Requ
                 return None
 
 
-# @router.post('/get_observations')
+# @occurrence_router.post('/get_observations')
 # async def get_observations(params: TaxaRequestParams, request: Request):
 #     taxon_id = params.taxon_id
 
@@ -164,7 +164,7 @@ async def get_observation_dates(params: ObservationsRequestParams, request: Requ
 #             }
 
 
-@router.get('/tiles/{include_inat}/{taxon_id}/{data_providers}/{date_start}/{date_end}/{z}/{x}/{y}.mvt', response_class=Response)
+@occurrence_router.get('/tiles/{include_inat}/{taxon_id}/{data_providers}/{date_start}/{date_end}/{z}/{x}/{y}.mvt', response_class=Response)
 async def get_tile(include_inat: bool, taxon_id: int, data_providers: str, date_start: str, date_end: str, z: int, x: int, y: int, request: Request):
     try:
         filter_payload = SingleTaxonOccurrenceFilter(

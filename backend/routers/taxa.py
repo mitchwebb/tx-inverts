@@ -1,17 +1,23 @@
 from re import M
+import time
 
 from backend.core.exception_handler import InvalidTaxonRankError, TaxonNotFoundError
+from backend.core.sql import create_occurrence_filter
+from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db_schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db_schema.tx_taxa import TX_TAXA_TABLE
+from backend.models.sql import OccurrenceFilter
+from backend.routers import occurrence
 from fastapi import Request, APIRouter, HTTPException
 from pydantic import BaseModel
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.models.api_types import TaxaRequestParams, TextData
+from backend.models.api_types import ObservationsRequestParams, TaxaRequestParams, TextData
 from typing import Literal
 from psycopg import sql
 from backend.core.logging import api_logger
 
 
-router = APIRouter()
+taxa_router = APIRouter()
 
 
 async def get_taxon_rank(conn, taxon_id):
@@ -42,7 +48,7 @@ async def get_taxon_rank(conn, taxon_id):
 
 # Provide search suggestions based on taxon search
 # Returns only accepted/doubtful taxa, resolving synonyms automatically
-@router.post("/taxon_search_suggest",)
+@taxa_router.post("/taxon_search_suggest",)
 async def search_taxon(data: TextData, request: Request):
     search_term = data.text
     query = sql.SQL('''
@@ -56,7 +62,7 @@ async def search_taxon(data: TextData, request: Request):
         FROM {tx_taxa} t
         LEFT JOIN {tx_taxa} a
             ON t.accepted_name_usage_id = a.taxon_id
-        WHERE 
+        WHERE
             t.canonical_name ~* {search_term}
             AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'doubtful')
         ORDER BY
@@ -77,7 +83,7 @@ async def search_taxon(data: TextData, request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/get_taxon_info")
+@taxa_router.post("/get_taxon_info")
 async def get_taxon_info(params: TaxaRequestParams, request: Request):
     taxon_id = params.taxon_ids
 
@@ -159,7 +165,7 @@ class TaxaChildrenRequest(BaseModel):
 
 
 # Get flat backbone for frontend (excludes synonyms)
-@router.get("/get_backbone")
+@taxa_router.get("/get_backbone")
 async def get_backbone(request: Request):
     query = '''
         SELECT
@@ -178,7 +184,7 @@ async def get_backbone(request: Request):
             "order",
             family,
             genus
-                FROM tx_taxa
+        FROM tx_taxa
         WHERE taxonomic_status IN ('accepted', 'doubtful')
                 ORDER BY taxon_rank, canonical_name
     '''
@@ -192,3 +198,56 @@ async def get_backbone(request: Request):
             return {
                 "taxa": tree
             }
+
+
+# Get list of qualified taxon_ids based on various filters
+@taxa_router.post("/get_qualified_taxa")
+async def get_qualified_taxa(params: ObservationsRequestParams, request: Request):
+
+    api_logger.info('Getting qualified taxa...')
+
+    try:
+        filter_payload = OccurrenceFilter(
+            taxon_ids=params.taxon_ids,
+            include_inat=params.include_inat,
+            date_start=params.date_start,
+            date_end=params.date_end,
+            data_providers=params.data_providers
+        )
+        occurrence_filter = create_occurrence_filter(filter_payload)
+
+        if params.regions:
+            region_literals = sql.SQL(', ').join(
+                sql.Literal(r) for r in params.regions)
+            region_join = sql.SQL('''
+                JOIN {presence_table} p ON {observations_table}.accepted_taxon_key = p.accepted_taxon_key
+                AND p.region_id IN ({regions})
+            ''').format(
+                presence_table=sql.Identifier(TAXON_PRESENCE_TABLE.name),
+                regions=region_literals,
+                observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
+            )
+        else:
+            region_join = sql.SQL('')
+
+        occurrence_query = sql.SQL('''
+            SELECT DISTINCT {observations_table}.accepted_taxon_key
+            FROM {observations_table}
+            {region_join}
+            WHERE {occurrence_filter}
+        ''').format(
+            observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+            occurrence_filter=occurrence_filter,
+            region_join=region_join
+        )
+
+        async with request.app.state.db_pool.connection() as conn:
+            print(occurrence_query.as_string(conn))
+            async with execute_psql_query(conn, occurrence_query, fetch='all') as result:
+                taxon_ids = set(r[0] for r in result)
+
+                return {"qualified_taxa": list(taxon_ids)}
+
+    except Exception as e:
+        api_logger.exception('Issue getting qualified taxa:', e)
+        raise HTTPException(status_code=500, detail=str(e))

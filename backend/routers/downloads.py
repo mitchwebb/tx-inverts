@@ -12,11 +12,11 @@ from backend.core.logging import api_logger
 import pandas as pd
 import io
 
-router = APIRouter()
+downloads_router = APIRouter()
 
 
 # # Downloads WILL include data for invasive species
-# @router.post('/get_occurrence_download')
+# @downloads_router.post('/get_occurrence_download')
 # async def get_occurrence_download(params: DownloadRequestParams, request: Request):
 #     taxon_ids = params.taxon_ids
 #     include_inat = params.include_inat
@@ -66,7 +66,7 @@ router = APIRouter()
 #         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post('/get_ranked_taxa_download')
+@downloads_router.post('/get_ranked_taxa_download')
 async def get_ranked_taxa_download(params: DownloadRequestParams, request: Request):
     taxon_ids = params.taxon_ids
     include_inat = params.include_inat
