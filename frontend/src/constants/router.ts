@@ -2,12 +2,10 @@ import { getMapContext, type MapState } from '../contexts/mapContext';
 import {
     getActiveTaxaContext,
     type ActiveTaxaState,
-    type ActiveTaxon,
 } from '../contexts/activeTaxaContext';
 import {
     getFiltersContext,
     type FiltersState,
-    type GeoFilter,
 } from '../contexts/filtersContext';
 import type { NSRank } from '../types/api';
 import type { Provider } from './mapLegendKeys';
@@ -49,12 +47,8 @@ export const routerSyncedKeys = {
             },
             dateStart: { param: 'd1', codec: dateCodec() },
             dateEnd: { param: 'd2', codec: dateCodec() },
-            counties: {
-                param: 'county',
-                codec: iDObjectCodec(),
-            },
-            parks: {
-                param: 'park',
+            region: {
+                param: 'region',
                 codec: iDObjectCodec(),
             },
         }),

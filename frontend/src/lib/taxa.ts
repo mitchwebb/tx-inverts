@@ -73,7 +73,7 @@ export async function getNSMetrics(
     if (abortController) abortController.abort();
     abortController = new AbortController();
 
-    const nSMetricsURL = '/server/natureserve/get_ns_metrics';
+    const nSMetricsURL = '/server/rankings/get_ns_metrics';
     const response = await fetch(nSMetricsURL, {
         signal,
         method: 'POST',
@@ -100,7 +100,7 @@ export async function getNSMetrics(
 
 // Logic for loading backbone structure into browser
 export async function loadBackbone() {
-    const url = `server/taxa/get_backbone`;
+    const url = 'server/taxa/get_backbone';
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -118,6 +118,40 @@ export async function loadBackbone() {
             taxaTree.set(taxaMap);
         }
         return;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
+// Get list of qualified taxon_ids from backend, given various taxa/observation filters
+export async function getQualifiedTaxa(
+    dateStart: FiltersState['dateStart'],
+    dateEnd: FiltersState['dateEnd'],
+    dataProviders: FiltersState['dataProviders'],
+    regionIDs: string[],
+    signal?: AbortSignal
+) {
+    const url = 'server/taxa/get_qualified_taxa';
+    if (!dateStart && !dateEnd && !dataProviders.length && !regionIDs.length)
+        return null;
+    try {
+        const response = await fetch(url, {
+            signal,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                date_start: dateStart?.toISOString(),
+                date_end: dateEnd?.toISOString(),
+                data_providers: [...dataProviders],
+                regions: regionIDs,
+            }),
+        });
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+        const json = await response.json();
+        return json.qualified_taxa;
     } catch (error) {
         console.error(error);
         return null;

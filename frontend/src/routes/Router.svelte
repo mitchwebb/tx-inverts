@@ -5,13 +5,21 @@
         getRouterContext,
         type RouterPath,
     } from '../contexts/routerContext';
-    import TaxonPage from './taxon/TaxonPage.svelte';
+    import TaxonPage from './Backbone/BackbonePage.svelte';
     import RankingPage from './rankings/RankingsPage.svelte';
     import { routerSyncedKeys } from '../constants/router';
-    import { getActiveTaxaContext, initialTaxonState } from '../contexts/activeTaxaContext';
+    import {
+        getActiveTaxaContext,
+        initialTaxonState,
+    } from '../contexts/activeTaxaContext';
+    import { getRegionInfo } from '../lib/regions';
+    import { getFiltersContext } from '../contexts/filtersContext';
+    import type { RawRegionInfo, RegionInfo } from '../types/api';
+    import BackbonePage from './Backbone/BackbonePage.svelte';
 
     let routerContext = getRouterContext();
     let taxaContext = getActiveTaxaContext();
+    let filtersContext = getFiltersContext();
 
     let PageComponent = $state<null | Component>(null);
 
@@ -30,14 +38,14 @@
             relevantParams: ['taxon', 'inat', 'source', 'd1', 'd2'],
         },
         {
-            pathname: '/taxa',
-            component: TaxonPage,
+            pathname: '/backbone',
+            component: BackbonePage,
             relevantParams: ['taxon', 'inat'],
         },
         {
             pathname: '/rankings',
             component: RankingPage,
-            relevantParams: ['taxon', 'inat', 'status', 'd1', 'd2', 'county', 'park'],
+            relevantParams: ['taxon', 'inat', 'status', 'd1', 'd2', 'region'],
         },
     ];
 
@@ -113,17 +121,24 @@
         }
 
         // Special case for adding taxa based on URL params
-        const taxonParams = url.searchParams
-            .getAll('taxon')
-            .map(Number)
-            .filter(Boolean);
-        taxonParams.forEach((id) => taxaContext.taxa.add({
-            ...initialTaxonState,
-            taxonID: id
-        }));
+        const taxonParams = new Set(
+            url.searchParams.getAll('taxon').map(Number).filter(Boolean)
+        );
+        taxonParams.forEach((id) =>
+            taxaContext.taxa.add({
+                ...initialTaxonState,
+                taxonID: id,
+            })
+        );
 
-        // Special case for adding counties based on URL params
-        const countyParams = url.searchParams.getAll('county');
+        // Special case for adding regions based on URL params
+        const regionParams = new Set(url.searchParams.getAll('region'));
+        regionParams.forEach(async (id) => {
+            const regionInfo: RegionInfo | null = await getRegionInfo(id);
+            if (regionInfo) {
+                filtersContext.region.add(regionInfo);
+            }
+        });
 
         // Set initial page component
         PageComponent = currentRoute.component;

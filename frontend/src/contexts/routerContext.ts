@@ -2,7 +2,7 @@ import { getContext, setContext } from 'svelte';
 
 export const routerStateKey = 'router';
 
-export type RouterPath = '/' | '/map' | '/taxa' | '/rankings';
+export type RouterPath = '/' | '/map' | '/backbone' | '/rankings';
 
 // Make type for possible active pages
 export type RouterState = {

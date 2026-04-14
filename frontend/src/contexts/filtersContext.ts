@@ -1,16 +1,10 @@
 import { getContext, setContext } from 'svelte';
-import type { NSRank } from '../types/api';
+import type { NSRank, RegionInfo } from '../types/api';
 import type { Provider } from '../constants/mapLegendKeys';
 import type { TaxonomicRank } from '../types/taxa';
 import { makeIDCollection } from '../util/collection.svelte';
 
 export const filtersStateKey = 'filters';
-
-export type GeoFilter = {
-    id: string; // uuid
-    name: string;
-    regionType: 'park' | 'county' | 'ecoregion';
-};
 
 export type FiltersState = {
     taxonRank: TaxonomicRank | null;
@@ -19,7 +13,8 @@ export type FiltersState = {
     nSRanks: NSRank[];
     dateStart: Date | null;
     dateEnd: Date | null;
-    region: ReturnType<typeof makeIDCollection<GeoFilter, string>>; // UUIDs for all selected regions
+    region: ReturnType<typeof makeIDCollection<RegionInfo, string>>; // UUIDs for all selected regions
+    filterTaxonIDs: number[];
 };
 
 export const initialFiltersState: FiltersState = {
@@ -29,7 +24,8 @@ export const initialFiltersState: FiltersState = {
     nSRanks: [],
     dateStart: null,
     dateEnd: null,
-    region: makeIDCollection<GeoFilter, string>((r) => r.id), // Dummy collection
+    region: makeIDCollection<RegionInfo, string>((r) => r.id), // Dummy collection
+    filterTaxonIDs: [],
 };
 
 export function setFiltersContext(taxonState: FiltersState) {
