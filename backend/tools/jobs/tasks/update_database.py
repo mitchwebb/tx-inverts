@@ -1,6 +1,7 @@
 from backend.config.data import DATA_OUT_PATH
 from backend.data_util.db import get_single_db_connection
 from backend.tools.jobs.tasks.database import update_indexes
+from backend.tools.jobs.tasks.initialize_db import initialize_all_tables
 from backend.tools.jobs.tasks.regions import update_observation_regions
 from backend.tools.jobs.tasks.taxa import update_backbone, update_ns_ranks
 from backend.tools.jobs.tasks.occurrence import update_observations
@@ -15,10 +16,15 @@ async def update_database():
 
     # Insert to database
     conn = await get_single_db_connection()
+
+    # Quick check to make sure tables are created
+    await initialize_all_tables(conn)
+
     # Make sure indexes are ready
     await update_indexes(conn)
     await conn.commit()
 
+    # Update observations, returning new taxon_keys and row_ids
     backbone_update_required, new_row_keys, new_row_ids = await update_observations(gbif_request_key="0076276-260226173443078")
 
     await update_observation_regions(conn, new_row_ids)
