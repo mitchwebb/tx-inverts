@@ -33,6 +33,11 @@
             document.body.style.overflow = '';
         };
     });
+
+    function handleOverlayScroll(e: Event) {
+        console.log(e)
+    }
+
 </script>
 
 {#if modalContext.visible}
@@ -41,6 +46,7 @@
             id="modal-overlay"
             onclick={handleModalClose}
             aria-hidden="true"
+            onscroll={handleOverlayScroll} // Don't block scroll when scrolling on overlay
             transition:fade={{ duration: 50 }}
         ></div>
         <div id="modal-content-positioner">
@@ -82,8 +88,6 @@
         z-index: 1000;
         display: flex;
         overflow-y: auto;
-        /* justify-content: center; */
-        /* align-items: center; */
     }
 
     #modal-overlay {

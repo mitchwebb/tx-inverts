@@ -41,17 +41,19 @@
         // done,
     }) => {
         const { top, left, height } = $target.getBoundingClientRect();
-        const dpHeight = $datepicker.offsetHeight;
+        const dpHeight = $datepicker.clientHeight;
 
         const margin = 10;
 
-        const spaceBelow = window.innerHeight - top - height;
+        const spaceBelow = window.innerHeight - (top + height);
         const spaceAbove = top;
-        const showAbove = spaceBelow < dpHeight && spaceAbove > spaceBelow;
+
+        // Place above if there is not enough room below (and there is more room)
+        const showAbove = (spaceBelow < dpHeight) && (spaceAbove > spaceBelow);
 
         $datepicker.style.left = `${left + window.scrollX}px`;
         $datepicker.style.top = showAbove
-            ? `${top + window.scrollY - dpHeight - margin}px`
+            ? `${top + window.scrollY - (dpHeight + margin)}px`
             : `${top + window.scrollY + height + margin}px`;
     };
 
