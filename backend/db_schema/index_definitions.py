@@ -1,3 +1,5 @@
+from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db_schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.routers.taxa import RANK_COLS
 from psycopg import sql
 
@@ -22,6 +24,18 @@ INDEX_DEFINITIONS = {
     'idx_gbif_observations_id': {
         'table': 'gbif_observations',
         'create_sql': 'CREATE INDEX idx_gbif_observations_id ON gbif_observations (gbif_id)'
+    },
+    'idx_gbif_observations_start_date': {
+        'table': 'gbif_observations',
+        'create_sql': 'CREATE INDEX idx_gbif_observations_start_date ON gbif_observations (gbif_id)'
+    },
+    'idx_gbif_observations_end_date': {
+        'table': 'gbif_observations',
+        'create_sql': 'CREATE INDEX idx_gbif_observations_end_date ON gbif_observations (gbif_id)'
+    },
+    'idx_gbif_observations_taxon_date_not_null': {
+        'table': 'gbif_observations',
+        'create_sql': 'CREATE INDEX idx_gbif_observations_taxon_date_not_null ON gbif_observations (accepted_taxon_key) WHERE collection_start_date IS NOT NULL'
     },
     'idx_gbif_observations_geom_3857': {
         'table': 'gbif_observations',
@@ -119,6 +133,34 @@ INDEX_DEFINITIONS = {
             ON tx_counties (county);
         '''
     },
+    'idx_regions_obs_id': {
+        'table': 'observation_regions',
+        'create_sql': '''
+            CREATE INDEX idx_regions_obs_id
+            ON observation_regions (observation_id);
+        '''
+    },
+    'idx_obs_regions_id': {
+        'table': 'observation_regions',
+        'create_sql': '''
+            CREATE INDEX idx_obs_regions_id
+            ON observation_regions (region_id);
+        '''
+    },
+    'idx_regions_geometry': {
+        'table': 'regions',
+        'create_sql': '''
+            CREATE INDEX idx_regions_geometry
+            ON regions USING GIST (geometry);
+        '''
+    },
+    'idx_taxon_presence_region_id': {
+        'table': 'taxon_region_presence',
+        'create_sql': '''
+            CREATE INDEX idx_taxon_presence_region_id
+            ON taxon_region_presence (region_id)
+        '''
+    }
     # 'idx_taxon_tile_cache_tile_coords': {
     # 	'table': 'taxon_tile_cache',
     # 	'create_sql': '''
@@ -213,9 +255,20 @@ MATERIALIZED_VIEWS = {
             SELECT id, 'county' AS region_type, county AS name, geometry FROM tx_counties
             UNION ALL
             SELECT id, 'park' AS region_type, prop_name AS name, geometry FROM tx_parks;
-            CREATE INDEX ON regions USING GIST(geometry);
+            CREATE INDEX idx_regions_geometry USING GIST(geometry);
         ''')
-    }
+    },
+    'taxon_region_presence': sql.SQL('''
+        CREATE MATERIALIZED VIEW taxon_region_presence AS
+        SELECT DISTINCT accepted_taxon_key, region_id
+        FROM {observations_table} o
+        JOIN {observation_regions_table} r ON r.observation_id = o.gbif_id
+        CREATE INDEX idx_taxon_presence_region_id (region_id)
+    ''').format(
+        observations_table=GBIF_OBSERVATIONS_TABLE.name,
+        observation_regions_table=OBSERVATION_REGIONS_TABLE.name
+    )
+
     # 'taxon_descendant_cache': {
     # 	'create_sql': sql.SQL('''
     # 		CREATE MATERIALIZED VIEW taxon_descendant_cache AS

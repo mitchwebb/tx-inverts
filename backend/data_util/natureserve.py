@@ -120,8 +120,8 @@ async def calculate_ns_values(
     taxon_rank: TaxonomicRank = 'species'
 ) -> dict | None:
     """
-        Fetch range extent area (km²), number of occurrences, 
-        total observation count, and area of occupancy bins (4km²) 
+        Fetch range extent area (km²), number of occurrences,
+        total observation count, and area of occupancy bins (4km²)
         for a requested taxon_id.
 
         Args:
@@ -130,83 +130,96 @@ async def calculate_ns_values(
             taxon_rank (TaxonomicRank): The rank of the queried taxon, defaults to 'species'
 
         Returns:
-            dict with keys 'range_extent_km2', 
-                           'number_of_occurrences', 
-                           'observation_count', 
+            dict with keys 'range_extent_km2',
+                           'number_of_occurrences',
+                           'observation_count',
                            'area_of_occupancy_4km2_bins',
                            'area_of_occupancy_1km2_bins'
             or None if no data found
     """
 
     try:
-        occurrence_filter = create_occurrence_filter(filters)
+        occurrence_filter = create_occurrence_filter(filters, skip_taxa=True)
 
-        rank_col = f'{taxon_rank}_id'
+        # Occurrences is only a useful metric for species and subspecies
+        # We'll include genus as well, because why not
+        compute_occurrences = taxon_rank in {"genus", "species", "subspecies"}
 
-        query = sql.SQL("""
-            WITH region AS (
+        if compute_occurrences:
+            obs_source = sql.SQL('''(
+                SELECT 
+                    geometry,
+                    geom_5070,
+                    ST_ClusterDBSCAN(geom_5070, eps := 1000, minpoints := 1) OVER () AS cluster_id
+                FROM filtered_obs
+            ) clustered''')
+            occ_expression = sql.SQL("COUNT(DISTINCT cluster_id)")
+        else:
+            obs_source = sql.SQL("filtered_obs")
+            occ_expression = sql.SQL("NULL::bigint")
+
+        query = sql.SQL('''
+            WITH matching_taxa AS MATERIALIZED (
+                SELECT accepted_taxon_key
+                FROM taxon_lineage
+                WHERE ancestor_id = {taxon_id}
+            ),
+            filtered_obs AS MATERIALIZED (
+                SELECT 
+                    {occurrence_table}.geometry, 
+                    ST_Transform({occurrence_table}.geometry, 5070) AS geom_5070,
+                    {occurrence_table}.accepted_taxon_key
+                FROM {occurrence_table}
+                JOIN matching_taxa t ON {occurrence_table}.accepted_taxon_key = t.accepted_taxon_key
+                WHERE {occurrence_filter}
+            ),
+            region AS (
                 SELECT geometry
                 FROM {tx_table}
                 WHERE state = 'Texas'
             ),
-            obs_points AS (
+            values AS (
                 SELECT
-                    ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326) AS geom,
-                    accepted_taxon_key,
-                    taxon_key,
-                    {rank_col}
-                FROM {occurrence_table}
-                WHERE
-                    {occurrence_filter}
-            ),
-            filtered_obs AS (
-                SELECT p.geom, p.accepted_taxon_key
-                FROM obs_points p, region r
-                WHERE (p.{rank_col} = {taxon_id})
-                    AND p.geom && r.geometry
-                    AND ST_Intersects(p.geom, r.geometry)
+                    COUNT(*) AS observation_count,
+                    {occ_expression} AS number_of_occurrences,
+                    COUNT(DISTINCT ST_SnapToGrid(geom_5070, 2000, 2000)) AS a4_cells,
+                    COUNT(DISTINCT ST_SnapToGrid(geom_5070, 1000, 1000)) AS a1_cells,
+                    ST_Collect(geometry) AS geom_collection
+                FROM {obs_source}
             ),
             hull AS (
-                SELECT
-                    ST_ConvexHull(ST_Collect(f.geom)) AS geom,
-                    COUNT(*) AS observation_count,
-                    COUNT(DISTINCT ROW(f.geom, f.accepted_taxon_key)) AS number_of_occurrences
-                FROM filtered_obs f
-            ),
-            a4 AS (
-                SELECT COUNT(DISTINCT ST_SnapToGrid(ST_Transform(f.geom, 5070), 2000, 2000)) AS num_cells
-                FROM filtered_obs f
-            ),
-            a1 AS (
-                SELECT COUNT(DISTINCT ST_SnapToGrid(ST_Transform(f.geom, 5070), 1000, 1000)) AS num_cells
-                FROM filtered_obs f
+                SELECT ST_ConvexHull(geom_collection) AS geometry
+                FROM values
             )
             SELECT
                 COALESCE(
                     ST_Area(
                         ST_Transform(
-                            ST_Intersection(h.geom, r.geometry),
+                            ST_Intersection(hull.geometry, region.geometry),
                             5070
                         )
                     ) / 1e6,
                     0
                 ) AS range_extent_km2,
-                h.observation_count,
-                h.number_of_occurrences,
-                a4.num_cells AS area_of_occupancy_4km2_bins,
-                a1.num_cells AS area_of_occupancy_1km2_bins
-
-            FROM hull h, region r, a4, a1
-        """).format(
+                values.observation_count,
+                values.number_of_occurrences,
+                values.a4_cells AS area_of_occupancy_4km2_bins,
+                values.a1_cells AS area_of_occupancy_1km2_bins
+            FROM values, hull, region
+        ''').format(
             tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
             taxon_id=sql.Literal(filters.taxon_id),
-            rank_col=sql.Identifier(rank_col),
             include_inat=sql.Literal(filters.include_inat),
             occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
-            occurrence_filter=occurrence_filter
+            occurrence_filter=occurrence_filter,
+            obs_source=obs_source,
+            occ_expression=occ_expression
         )
 
+        print(query.as_string(conn))
+
         async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+            await cur.execute("SET LOCAL work_mem = '256MB'")
             await cur.execute(query, ())
             result = await cur.fetchone()
             return result

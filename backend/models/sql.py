@@ -10,9 +10,13 @@ class OccurrenceFilter(BaseModel):
     exclude_invasive: bool = True
     date_start: Optional[date] = None
     date_end: Optional[date] = None
+    regions: Optional[List[str]] = None
 
     @field_validator('taxon_ids', mode='before')
     def normalize_taxon_ids(cls, v):
+        # Default to Animalia if taxon_ids not provided
+        if v is None:
+            return [1]
         if isinstance(v, int):
             return [v]
         if isinstance(v, str):
@@ -36,6 +40,14 @@ class OccurrenceFilter(BaseModel):
         if isinstance(v, date):
             return v  # already a date, pass through
         return datetime.fromisoformat(v).date()
+
+    @field_validator('regions', mode='before')
+    def normalize_regions(cls, v):
+        if v is None or v in ("null", "", "undefined"):
+            return []
+        if isinstance(v, str):
+            return [r for r in v.split(',') if r not in ("null", "", "undefined")]
+        return v
 
 
 class SingleTaxonOccurrenceFilter(OccurrenceFilter):

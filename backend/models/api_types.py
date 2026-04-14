@@ -7,7 +7,7 @@ NSRank = Literal['x', 'h', '1', '2', '3', '4', '5', 'u']
 
 # Params used to make queries for taxon information only
 class TaxaRequestParams(BaseModel):
-    taxon_ids: List[int] | int
+    taxon_ids: Optional[List[int] | int] = None
     taxon_rank: Optional[str] = None
     ns_ranks: Optional[List[NSRank]] = None
 
@@ -19,6 +19,8 @@ class ObservationsRequestParams(TaxaRequestParams):
     date_start: Optional[str] = None
     date_end: Optional[str] = None
     include_invasives: Optional[bool] = False
+    # List of UUIDs from the regions table
+    regions: Optional[List[str]] = None
 
 
 # Params used to make download request queries

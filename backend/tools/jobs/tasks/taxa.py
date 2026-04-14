@@ -201,6 +201,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
             # TODO: We should have a step that checks on/initializes all relevant indexes before this next step
 
             await refresh_materialized_view(conn, 'tx_taxa')
+            await refresh_materialized_view(conn, 'taxon_region_presence')
 
             await conn.commit()
 
@@ -247,6 +248,8 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
             # Refresh materialized view
             await refresh_materialized_view(conn, 'tx_taxa')
+            await refresh_materialized_view(conn, 'taxon_region_presence')
+
             await conn.commit()
 
             return UpdateStatus.ALL

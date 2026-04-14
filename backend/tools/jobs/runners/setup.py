@@ -11,6 +11,7 @@ from backend.tools.jobs.tasks.taxa import update_backbone, update_ns_ranks
 from backend.tools.jobs.tasks.occurrence import update_observations
 from backend.tools.jobs.tasks.taxa import create_invasives_table
 from backend.core.logging import setup_logging, db_logger
+from backend.tools.jobs.tasks.views import refresh_materialized_views
 from psycopg import sql
 
 
@@ -56,6 +57,9 @@ async def main():
             )
 
             await cur.execute(query)
+
+        await refresh_materialized_views(conn)
+
         await conn.commit()
         db_logger.info('Created observations_regions table')
 
