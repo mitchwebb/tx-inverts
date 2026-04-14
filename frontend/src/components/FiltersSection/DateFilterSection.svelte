@@ -5,23 +5,31 @@
         type AirDatepickerPayload,
     } from '../../common/DatePicker.svelte';
     import { isMobile } from '../../contexts/device';
+    import type { FilterDomain } from '../../constants/sidebarFilters';
 
     type DateFilterProps = {
+        domain?: FilterDomain; // Determines min/max behavior
         header?: string;
     };
 
-    const { header = 'Date Range' }: DateFilterProps = $props();
+    const { domain = 'observations', header = 'Date Range' }: DateFilterProps =
+        $props();
 
     const filtersContext = getFiltersContext();
     const taxonContext = getActiveTaxaContext();
 
     function handleStartDate({ date }: AirDatepickerPayload) {
         const singleDate = Array.isArray(date) ? date[0] : date;
+        // Do not update context if date is identical
+        if (singleDate?.getTime() === filtersContext.dateStart?.getTime())
+            return;
         filtersContext.dateStart = singleDate || null;
     }
 
     function handleEndDate({ date }: AirDatepickerPayload) {
         const singleDate = Array.isArray(date) ? date[0] : date;
+        // Do not update context if date is identical
+        if (singleDate?.getTime() === filtersContext.dateEnd?.getTime()) return;
         filtersContext.dateEnd = singleDate || null;
     }
 
@@ -33,14 +41,16 @@
     }
 
     // Derive minDate using all activeTaxa minDates
-    const minDate = $derived(
-        getTaxonDates('dateMin').sort((a, b) => (a > b ? 1 : -1))[0]
-    );
+    const minDate = $derived.by(() => {
+        if (domain === 'taxa') return undefined;
+        return getTaxonDates('dateMin').sort((a, b) => (a > b ? 1 : -1))[0];
+    });
 
     // Derive maxDate using all activeTaxa maxDates
-    const maxDate = $derived(
-        getTaxonDates('dateMax').sort((a, b) => (a < b ? 1 : -1))[0]
-    );
+    const maxDate = $derived.by(() => {
+        if (domain === 'taxa') return undefined;
+        return getTaxonDates('dateMax').sort((a, b) => (a < b ? 1 : -1))[0];
+    });
 
     // TODO: Once we add mobile support, AirDatepicker has an isMobile arg
 </script>
@@ -90,11 +100,16 @@
     .date-filters-wrapper {
         display: flex;
         align-items: center;
-        gap: .5rem;
+        gap: 0.5rem;
         flex-wrap: wrap;
     }
-    :global(#date-start-filter), :global(#date-end-filter) {
+    :global(#date-start-filter),
+    :global(#date-end-filter) {
         max-width: 200px;
         flex: 1 1 75px;
+    }
+    :global(.date-filters-wrapper input) {
+        height: 2.5rem;
+        box-sizing: border-box;
     }
 </style>

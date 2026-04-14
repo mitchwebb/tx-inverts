@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { CheckboxPayload } from '../../common/CheckboxInput.svelte';
     import CheckboxInput from '../../common/CheckboxInput.svelte';
+    import InfoButton from '../../common/InfoButton.svelte';
     import { nSRankKey } from '../../constants/natureServe';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import type { NSRank } from '../../types/api';
@@ -22,7 +23,10 @@
     class="conservation-rank-filter filters-section"
     class:active={!!filtersContext.nSRanks?.length}
 >
-    <div class="filters-section-header">Conservation Rank</div>
+    <div class="filters-section-header">
+        <span>Conservation Ranks (Unfiltered)</span>
+        &nbsp
+        <InfoButton hover={true} type="tooltip" htmlContent="This filter uses preliminary ranks determined using unfiltered data from our database"/></div>
     <div class="filters-section-content">
         {#each nSRankKey as rankItem}
             <CheckboxInput
@@ -46,4 +50,5 @@
         align-items: left;
         white-space: nowrap;
     }
+
 </style>

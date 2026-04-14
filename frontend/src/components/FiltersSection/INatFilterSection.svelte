@@ -1,4 +1,5 @@
 <script lang="ts">
+    import CheckboxInput from '../../common/CheckboxInput.svelte';
     import InfoButton from '../../common/InfoButton.svelte';
     import Toggle from '../../common/Toggle.svelte';
     import { getFiltersContext } from '../../contexts/filtersContext';
@@ -43,6 +44,11 @@
 </div>
 
 <style>
+    #inat-filters-section {
+        flex-grow: 0;
+        min-width: 14rem;
+        width: 100%;
+    }
     #inat-filter-section-header {
         display: flex;
         gap: .25rem;

@@ -10,7 +10,7 @@
 
     const currPath = $derived(routerContext.url.pathname);
 
-    const navRoutes: RouterPath[] = ['/map', '/taxa', '/rankings'];
+    const navRoutes: RouterPath[] = ['/map', '/backbone', '/rankings'];
 
     // Handle header bar page navigation
     function handleMenuSelect(e: MouseEvent | KeyboardEvent) {
@@ -57,7 +57,7 @@
         <div>INVERTS</div>
     </a>
     <div id="header-search-bar">
-        <TaxaSearch replace={true}/>
+        <TaxaSearch replace={true} />
     </div>
 
     <ul id="main-nav" class="nav-item">

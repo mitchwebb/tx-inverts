@@ -1,5 +1,8 @@
 <script lang="ts">
-    import { getActiveTaxaContext, initialTaxonState } from '../../contexts/activeTaxaContext';
+    import {
+        getActiveTaxaContext,
+        initialTaxonState,
+    } from '../../contexts/activeTaxaContext';
     import { taxaTree } from '../../contexts/TaxaTree';
     import { type TaxonNodeType } from '../../types/api';
     import { isItalicizedRank } from '../../util/taxa';
@@ -24,10 +27,14 @@
     // All taxa return from current filters, to be shown in list
     let filteredTaxa: TaxonNodeType[] = $state([]);
 
+    const ranksLoading: boolean = $derived(
+        rankingsContext.ranksLoading || !$taxaTree
+    );
+
     // Define headers/sort-keys for virtualized rankings table
     const tableHeaders = $derived([
         {
-            label: `${filtersContext.includeINat ? 'Raw Rank' : '<div id="rank-header-no-inat"><span>Raw Rank</span><span id="no-inat-tag">Excl. iNat</span><div>'}`,
+            label: iNatLabel,
             info: 'The rankings in this column are precalculated using a 4km2 grid cell. Aside from toggling iNaturalist data, they do not respond to further filtering, and instead reflect all available data.',
             sortKey: filtersContext.includeINat
                 ? 'ns_rank_state'
@@ -56,7 +63,7 @@
         } else {
             taxaContext.taxa.add({
                 ...initialTaxonState,
-                taxonID: targetInt, 
+                taxonID: targetInt,
             });
         }
     }
@@ -70,6 +77,16 @@
         if (!$taxaTree) {
             return;
         }
+
+        const qualifiedTaxonIDs = rankingsContext.qualifiedTaxonIDs;
+
+        // If there are no qualified taxa from data/region filtering, show nothing
+        if (qualifiedTaxonIDs && !qualifiedTaxonIDs.length) {
+            filteredTaxa = [];
+            return;
+        }
+
+        console.warn(qualifiedTaxonIDs);
 
         // List of taxonIDs to filter list to
         let filterTaxaIDs;
@@ -103,12 +120,12 @@
                 if (
                     taxaContext.taxa.ids.every((taxonID) => {
                         return ['species', 'subspecies', null].includes(
-                            taxaContext?.taxa.get(taxonID)?.info?.taxonRank || null
+                            taxaContext?.taxa.get(taxonID)?.info?.taxonRank ||
+                                null
                         );
                     })
                 ) {
                     filterTaxaIDs = [1];
-                    console.log(taxaContext.taxa.ids.slice(-1)[0]);
                     scrollToTaxonID = taxaContext.taxa.ids.slice(-1)[0];
                     break;
                 }
@@ -150,13 +167,23 @@
             }
         }
 
+        // Get new taxa nodes from filtereMap (only species)
         let newTaxa = Array.from(filteredMap.values()).filter((taxonNode) =>
             ['species'].includes(taxonNode.taxon_rank)
         );
 
+        // Filter to activeRanks
         if (activeRanks?.length) {
             newTaxa = newTaxa.filter((taxonNode) =>
                 activeRanks.includes(taxonNode[relevantRank])
+            );
+        }
+
+        // Filter to taxa retrieved using date/region filters
+        if (qualifiedTaxonIDs) {
+            const qualifiedSet = new Set(qualifiedTaxonIDs);
+            newTaxa = newTaxa.filter((taxonNode) =>
+                qualifiedSet.has(taxonNode.taxon_id)
             );
         }
 
@@ -180,10 +207,21 @@
     }
 </script>
 
+{#snippet iNatLabel()}
+    {#if filtersContext.includeINat}
+        <span>Raw Rank</span>
+    {:else}
+        <div id="rank-header-no-inat">
+            <span>Raw Rank</span>
+            <span id="no-inat-tag"> Excl. iNat </span>
+        </div>
+    {/if}
+{/snippet}
+
 <DefaultPage showSidebar={true}>
     <div id="rankings-page-body">
-        <div class="virtual-list-wrapper">
-            {#if !$taxaTree}
+        <div class="virtual-list-wrapper" class:loading-blink={ranksLoading}>
+            {#if ranksLoading}
                 <div class="icon rankings-loading">
                     <LoadingIcon />
                 </div>
@@ -283,13 +321,13 @@
 </DefaultPage>
 
 <style>
-    :global(#rank-header-no-inat) {
+    #rank-header-no-inat {
         display: flex;
         flex-direction: column;
-        font-size: .9rem;
+        font-size: 0.9rem;
     }
-    :global(#no-inat-tag) {
-        font-size: .75rem;
+    #no-inat-tag {
+        font-size: 0.75rem;
         font-style: italic;
         font-weight: 500;
     }

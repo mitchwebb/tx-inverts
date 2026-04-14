@@ -1,16 +1,22 @@
 <script lang="ts">
-    import type { Tracing } from 'trace_events';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import GeoSearch from '../GeoSearch.svelte';
-    import XIcon from '../../assets/XIcon.svelte';
     import SearchbarCard from '../../common/SearchbarCard.svelte';
+    import type { RegionInfo } from '../../types/api';
 
     const filtersContext = getFiltersContext();
 
-    type CountySuggestion = {
+    type GeoFiltersProps = {
+        header?: string;
+    };
+
+    const { header = 'Regions Present' }: GeoFiltersProps = $props();
+
+    type RawCountySuggestion = {
+        'county': string,
         'id': string,
-        'county': string
     }
+    type CountySuggestion = RegionInfo;
 
     // TODO: Make raw type
     type RawParkSuggestion = {
@@ -21,51 +27,38 @@
         'owner': string
     }
 
-    type ParkSuggestion = {
-        'id': string,
-        'propName': string,
+    type ParkSuggestion = RegionInfo & {
         'altPropName': string,
         'propClass': string,
         'owner': string
     }
 
-    function parseCounties(json: CountySuggestion[]) {
-        return json.map((result: CountySuggestion) => {
+    function parseCounties(json: RawCountySuggestion[]): CountySuggestion[] {
+        return json.map((suggestion) => {
             return {
-                id: result.id,
-                county: result.county
+                id: suggestion.id,
+                name: suggestion.county,
+                regionType: 'county'
             };
         });
-    }
-
-    function handleCountySelect(suggestion: CountySuggestion) {
-        if (!suggestion.id) return;
-        filtersContext.region.add({
-            id: suggestion.id,
-            name: suggestion.county,
-            regionType: 'county'
-        })
     }
 
     function parseParks(json: RawParkSuggestion[]): ParkSuggestion[] {
         return json.map((result: RawParkSuggestion) => {
             return {
                 id: result.id,
-                propName: result.prop_name,
+                name: result.prop_name,
                 altPropName: result.alt_prop_name, 
                 propClass: result.prop_class,
                 owner: result.owner,
+                regionType: 'park'
             }
         })
     }
 
-    function handleParksSelect(suggestion: ParkSuggestion) {
+    function handleRegionSelect(suggestion: RegionInfo) {
         if (!suggestion.id) return;
-        filtersContext.region.add({
-            id: suggestion.id,
-            name: suggestion.propName,
-            regionType: 'park'
-        })
+        filtersContext.region.add(suggestion)
     }
 
     function handleRemoveRegion(id: string | null) {
@@ -76,13 +69,13 @@
 
 {#snippet countyRow(suggestion: CountySuggestion)}
     <div>
-        {suggestion.county}
+        {suggestion.name}
     </div>
 {/snippet}
 
 {#snippet parkRow(suggestion: ParkSuggestion)}
     <div class='park-suggestion-row'>
-        <span class='prop-name'>{suggestion.propName}</span>
+        <span class='prop-name'>{suggestion.name}</span>
         <div class='alt-prop-text'>
             {#if suggestion.altPropName && suggestion.altPropName.trim()}
                 <span class='alt-prop-name thin'>{suggestion.altPropName}</span>
@@ -95,7 +88,7 @@
 <div
     class="geographic-filter filters-section"
 >
-    <div class="filters-section-header">Regions Found</div>
+    <div class="filters-section-header">{header}</div>
     <div id="geo-filters" class="filters-section-content">
         <div class="geo-filters-item filters-section" class:active={filtersContext.region.items.some((r) => r.regionType === "county")}>
             <span> County </span>
@@ -104,7 +97,7 @@
                 pathSuffix="counties"
                 parseJSON={parseCounties} 
                 suggestionRow={countyRow} 
-                handleSelect={handleCountySelect}/>
+                handleSelect={handleRegionSelect}/>
             <div class='county-cards'>
                 {#each filtersContext.region.items.filter((r) => r.regionType === 'county') as county}
                     <SearchbarCard label={county.name} value={county.id} handleRemoveCard={handleRemoveRegion}/>
@@ -118,7 +111,7 @@
                 pathSuffix="parks"
                 parseJSON={parseParks}
                 suggestionRow={parkRow}
-                handleSelect={handleParksSelect}
+                handleSelect={handleRegionSelect}
                 />
             <div class="parks-cards">
                 {#each filtersContext.region.items.filter((r) => r.regionType === 'park') as park}
@@ -135,7 +128,7 @@
         flex-direction: column;
         gap: .25rem;
         width: 100%;
-        max-width: 250px;
+        /* max-width: 250px; */
     }
     .prop-name {
         grid-row: 1;
@@ -181,6 +174,9 @@
         flex-direction: column;
         align-items: flex-start;
         gap: .5rem;
+        width: 100%;
+    }
+    .geographic-filter {
         width: 100%;
     }
 </style>

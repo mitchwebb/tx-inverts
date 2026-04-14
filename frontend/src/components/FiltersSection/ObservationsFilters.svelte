@@ -7,22 +7,22 @@
     import DatasetFilterSection from './DatasetFilterSection.svelte';
     import DateFilterSection from './DateFilterSection.svelte';
     import FiltersWrapper from './FiltersWrapper.svelte';
-    import INatFilterSection from './INatFilterSection.svelte';
+    import TaxonFilterSection from './TaxonFilterSection.svelte';
     import './filtersSection.css';
 </script>
 
 <FiltersWrapper header={'Filter Occurrences'}>
-    <div id='filters-top-section'>
-        <INatFilterSection />
+    <div id="filters-top-section">
+        <TaxonFilterSection domain="observations" />
         <DateFilterSection header="Date Range" />
     </div>
-    <DatasetFilterSection />
+    <DatasetFilterSection domain="observations" />
 </FiltersWrapper>
 
 <style>
     #filters-top-section {
         display: flex;
-        gap: .5rem;
+        gap: 0.5rem;
         width: 100%;
     }
 </style>

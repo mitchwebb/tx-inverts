@@ -19,9 +19,7 @@
     ) {
         // Get list of just taxonIDs from filtered taxa list
         const response = await getOccurrenceDownload(
-        taxaContext.taxa.ids.length 
-            ? taxaContext.taxa.ids
-            : [1],
+            taxaContext.taxa.ids.length ? taxaContext.taxa.ids : [1],
             filters.includeINat,
             filters.dateStart,
             filters.dateEnd,
@@ -77,7 +75,7 @@
             </div>
         </div>
 
-        <DatasetFilterSection />
+        <DatasetFilterSection domain="observations" />
         <DateFilterSection />
     </div>
 </DownloadAndFiltersForm>

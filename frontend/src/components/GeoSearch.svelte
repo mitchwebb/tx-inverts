@@ -74,7 +74,7 @@
 
 <style>
     .geo-searchbar {
-        height: 2rem;
-        width: 250px;
+        height: 2.5rem;
+        width: 100%;
     }
 </style>

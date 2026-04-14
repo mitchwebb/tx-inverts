@@ -115,6 +115,24 @@ export const TAXON_INFO_MAP = {
     ns_rank_state_no_inat: 'nSRankDBNoINat',
 } as const;
 
+export type RawRegionInfo = {
+    id: string;
+    name: string;
+    region_type: 'park' | 'county' | 'ecoregion';
+};
+
+export type RegionInfo = {
+    id: string; // uuid
+    name: string;
+    regionType: 'park' | 'county' | 'ecoregion';
+};
+
+export const REGION_INFO_MAP = {
+    id: 'id',
+    name: 'name',
+    region_type: 'regionType',
+} as const;
+
 // Function to map RAW API values to frontend values, replacing any missing values with null
 export function normalizeAPIResponse<T extends Record<string, any>>(
     data: Record<string, any> | null | undefined,

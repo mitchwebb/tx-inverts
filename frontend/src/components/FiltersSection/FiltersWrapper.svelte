@@ -9,6 +9,7 @@
         type FiltersState,
     } from '../../contexts/filtersContext';
     import { getModalContext } from '../../contexts/modalContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
 
     type FiltersWrapperProps = {
         header: string;
@@ -18,6 +19,7 @@
     const { header, children }: FiltersWrapperProps = $props();
 
     const modalContext = getModalContext();
+    const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
 
     function handleApplyFilters() {
@@ -26,8 +28,6 @@
         // modalContext.content = null;
     }
 
-    // This is fairly safe within SIDEBAR_FILTER_META, but ts doesn't like the union
-    // Still, I don't like manually ignoring the error.
     function handleClearFilters() {
         for (const filterKey of FILTER_KEYS as (keyof FiltersState)[]) {
             const meta = SIDEBAR_FILTER_META[filterKey];
@@ -35,6 +35,7 @@
             filtersContext[filterKey] =
                 meta.default as FiltersState[typeof filterKey];
         }
+        taxaContext.taxa.clear();
     }
 </script>
 
@@ -47,7 +48,7 @@
         <div class="filters-buttons-wrapper">
             <button
                 class="clear-filters-button button"
-                onclick={handleClearFilters}>Clear Filters</button
+                onclick={handleClearFilters}>Clear All</button
             >
             <button
                 class="apply-filters-button button"

@@ -1,9 +1,10 @@
 <script lang="ts">
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
-    import CheckboxInput, {
-        type CheckboxPayload,
-    } from '../../common/CheckboxInput.svelte';
+    import type { CheckboxPayload } from '../../common/CheckboxInput.svelte';
+    import CheckboxInput from '../../common/CheckboxInput.svelte';
+    import Toggle from '../../common/Toggle.svelte';
     import type { Provider } from '../../constants/mapLegendKeys';
+    import type { FilterDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { dataProviders } from '../../contexts/DataProviders';
     import { getFiltersContext } from '../../contexts/filtersContext';
@@ -11,21 +12,66 @@
 
     type DatasetFilterProps = {
         header?: string;
+        domain?: FilterDomain;
         showCounts?: boolean;
     };
 
-    const { header = 'Datasets', showCounts = true }: DatasetFilterProps =
-        $props();
+    const {
+        header = 'Datasets',
+        showCounts = true,
+        domain = 'observations',
+    }: DatasetFilterProps = $props();
 
     const filtersContext = getFiltersContext();
     const taxonContext = getActiveTaxaContext();
+
+    const iNatActive = $derived(filtersContext.includeINat);
+
+    // Derive a unified list of providers
+    const providerList = $derived.by(() => {
+        if (!$dataProviders) return [];
+        // If in observations domain and taxa selected,
+        // OR if in taxa domain and parent taxa selected
+        if (
+            (domain === 'observations' && taxonContext.taxa.ids.length) ||
+            (domain === 'taxa' && filtersContext.filterTaxonIDs.length)
+        ) {
+            // Filter to relevant providers
+            return Object.entries(providerCounts).map(([code, count]) => ({
+                institutionCode: code,
+                institutionName: $dataProviders?.[code]?.institutionName,
+                count,
+            }));
+        } else {
+            // Else, show all providers
+            return Object.entries($dataProviders).map(([code, info]) => ({
+                institutionCode: code,
+                institutionName: info.institutionName,
+                count: null,
+            }));
+        }
+    });
+
+    // Track show/hide state of list
+    let showAll = $state(false);
+    // Number of providers to show by default
+    const SHOW_LIMIT = 5;
+
+    // List of providers visible (given show/hide state)
+    const visibleProviders = $derived(
+        showAll ? providerList : providerList.slice(0, SHOW_LIMIT)
+    );
 
     function handleDataProvider({ value, checked }: CheckboxPayload) {
         // Get list of currently selected providers
         let currProviders = filtersContext.dataProviders ?? [];
 
         // Update reactive state
-        filtersContext.dataProviders = toggleArrayValue<Provider>(currProviders, value as Provider, checked);
+        filtersContext.dataProviders = toggleArrayValue<Provider>(
+            currProviders,
+            value as Provider,
+            checked
+        );
     }
 
     // Determine if observationsMetrics are loading for any taxa
@@ -50,6 +96,10 @@
             {} as Record<string, number>
         )
     );
+
+    function handleINatToggle(checked: boolean) {
+        filtersContext.includeINat = checked;
+    }
 </script>
 
 {#if $dataProviders}
@@ -58,20 +108,37 @@
         class:active={!!filtersContext.dataProviders?.length}
         class:loading-blink={observationsMetricsLoading}
     >
-        {#if observationsMetricsLoading}
-            <div class="loading-icon icon">
-                <LoadingIcon />
+        <div id="data-providers-header" class="filters-section-header">
+            {#if observationsMetricsLoading}
+                <div class="loading-icon icon">
+                    <LoadingIcon />
+                </div>
+            {:else}
+                <span>{header}</span>
+            {/if}
+            <div class="inat-toggle-wrapper">
+                <div class="inat-toggle">
+                    <Toggle
+                        handler={handleINatToggle}
+                        checked={iNatActive}
+                        onColor="darkgreen"
+                        offColor="darkred"
+                    />
+                </div>
+                <span class="inat-label">Include iNat Data</span>
             </div>
-        {/if}
-        <div class="filters-section-header">{header}</div>
-        <div class="filters-section-content">
-            {#if !(Object.keys(providerCounts).length === 0)}
-                <form id="datasets-filter">
-                    {#each Object.entries(providerCounts) as [institutionCode, count] (institutionCode)}
-                        {@const institutionName =
-                            $dataProviders?.[institutionCode]?.[
-                                'institutionName'
-                            ]}
+        </div>
+        <div class="filters-section-content providers-content">
+            {#if providerList.length === 0}
+                <div class="no-data-message">No Data for Given Filters</div>
+            {:else}
+                <form
+                    id="datasets-filter"
+                    class="providers-list"
+                    class:expanded={providerList.length <= SHOW_LIMIT ||
+                        showAll}
+                >
+                    {#each visibleProviders as { institutionCode, institutionName, count } (institutionCode)}
                         {@const disabled =
                             institutionName === 'iNaturalist.org' &&
                             !filtersContext.includeINat}
@@ -97,7 +164,7 @@
                                             {institutionCode}
                                         </div>
                                     </div>
-                                    {#if showCounts}
+                                    {#if showCounts && count !== null}
                                         <div class="institution-count">
                                             ({count})
                                         </div>
@@ -106,21 +173,92 @@
                             </CheckboxInput>
                         </div>
                     {/each}
+                    <!-- {#if providerList.length > SHOW_LIMIT && !showAll}
+                        <div class='blank-provider-item'>
+                            <div class="provider-label">
+                                <div class="institution-name-wrapper">
+                                    <div class="institution-name">...</div>
+                                    <div class="institution-code"></div>
+                                </div>
+                            </div>
+                        </div>
+                    {/if} -->
                 </form>
-            {:else}
-                <div class="no-data-message">No Data</div>
+                {#if providerList.length > SHOW_LIMIT}
+                    <div>
+                        <button
+                            onclick={() => (showAll = !showAll)}
+                            class="button show-providers-button"
+                        >
+                            {showAll
+                                ? 'Show Less'
+                                : `Show ${providerList.length - SHOW_LIMIT} More`}
+                        </button>
+                    </div>
+                {/if}
             {/if}
         </div>
     </div>
 {/if}
 
 <style>
+    .providers-list {
+        width: 100%;
+        position: relative;
+    }
+    .providers-list::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: linear-gradient(transparent, var(--container-highlight));
+        pointer-events: none;
+        display: block;
+    }
+    .providers-list.expanded::after {
+        display: none;
+    }
+    .providers-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .show-providers-button {
+        border: solid 1px var(--border);
+        width: fit-content;
+        background-color: var(--container-fore);
+    }
+    .show-providers-button:hover {
+        background-color: var(--container-mid);
+    }
+    .show-providers-button:active {
+        background-color: var(--container-back);
+    }
+    .inat-toggle-wrapper {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: left;
+        align-items: center;
+    }
+    .inat-toggle {
+        height: 1.5rem;
+        width: 1.5rem;
+        stroke: var(--text-default);
+    }
+    .inat-label {
+        text-align: left;
+        /* white-space: nowrap; */
+        font-size: 1rem;
+    }
+    #data-providers-header {
+        display: flex;
+        justify-content: space-between;
+    }
     .no-data-message {
         text-align: left;
-    }
-    .loading-icon {
-        position: absolute;
-        right: 1rem;
     }
     .provider-label {
         display: flex;
@@ -153,6 +291,8 @@
     .data-providers-section {
         display: flex;
         flex-direction: column;
+        min-width: 250px;
+        width: 100%;
     }
     .provider-item.disabled {
         font-style: italic;

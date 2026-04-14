@@ -1,19 +1,32 @@
 <script lang="ts">
-    import InvasiveIcon from "../common/InvasiveIcon.svelte";
-    import SearchSuggestBar from "../common/SearchSuggestBar.svelte";
-    import { getActiveTaxaContext, initialActiveTaxaState, initialTaxonState } from "../contexts/activeTaxaContext";
-    import type { RawTaxonSearchSuggestion, TaxonSearchSuggestion } from "../types/api";
-    import { isItalicizedRank } from "../util/taxa";
+    import InvasiveIcon from '../common/InvasiveIcon.svelte';
+    import SearchSuggestBar from '../common/SearchSuggestBar.svelte';
+    import {
+        getActiveTaxaContext,
+        initialActiveTaxaState,
+        initialTaxonState,
+    } from '../contexts/activeTaxaContext';
+    import type {
+        RawTaxonSearchSuggestion,
+        TaxonSearchSuggestion,
+    } from '../types/api';
+    import { isItalicizedRank } from '../util/taxa';
 
     type TaxaSearchProps = {
         placeholder?: string | null;
         handleBlur?: () => void;
         autoFocus?: boolean;
-        append?: boolean;
         replace?: boolean;
-    }
+        excludeSpecies?: boolean;
+    };
 
-    const { placeholder='Search for taxa...', handleBlur, autoFocus=false, append=true, replace=false }: TaxaSearchProps = $props();
+    const {
+        placeholder = 'Search for taxa...',
+        handleBlur,
+        autoFocus = false,
+        replace = false,
+        excludeSpecies = false,
+    }: TaxaSearchProps = $props();
 
     const taxaContext = getActiveTaxaContext();
 
@@ -39,7 +52,10 @@
                 signal,
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: inputText }),
+                body: JSON.stringify({
+                    text: inputText,
+                    exclude_species: excludeSpecies,
+                }),
             });
             // Error
             if (!response.ok) {
@@ -48,15 +64,17 @@
             // Ending loading
             isLoading = false;
             const json = await response.json();
-            suggestions = json.results.map((result: RawTaxonSearchSuggestion) => {
-                return {
-                    scientificName: result.scientific_name,
-                    canonicalName: result.canonical_name,
-                    taxonID: result.taxon_id,
-                    taxonRank: result.taxon_rank,
-                    usInvasive: result.us_invasive,
-                };
-            });
+            suggestions = json.results.map(
+                (result: RawTaxonSearchSuggestion) => {
+                    return {
+                        scientificName: result.scientific_name,
+                        canonicalName: result.canonical_name,
+                        taxonID: result.taxon_id,
+                        taxonRank: result.taxon_rank,
+                        usInvasive: result.us_invasive,
+                    };
+                }
+            );
         } catch (error) {
             console.error(error);
         }
@@ -69,23 +87,20 @@
 
         taxaContext.taxa.add({
             ...initialTaxonState,
-            taxonID: suggestion.taxonID
+            taxonID: suggestion.taxonID,
         });
     }
 </script>
 
 {#snippet row(suggestion: TaxonSearchSuggestion)}
     {@const italicized = isItalicizedRank(suggestion.taxonRank)}
-    <div class="taxon-suggestion-wrapper" class:invasive={suggestion.usInvasive}>
-        <div
-            title={suggestion.scientificName}
-            class="scientific-name-wrapper"
-        >
-            <span
-                class={[
-                    'scientific-name',
-                    { italicized },
-                ]}>{suggestion.scientificName}</span
+    <div
+        class="taxon-suggestion-wrapper"
+        class:invasive={suggestion.usInvasive}
+    >
+        <div title={suggestion.scientificName} class="scientific-name-wrapper">
+            <span class={['scientific-name', { italicized }]}
+                >{suggestion.scientificName}</span
             >
             {#if suggestion.usInvasive}
                 <div class="invasive-icon icon">
@@ -99,16 +114,15 @@
     </div>
 {/snippet}
 
-
-<SearchSuggestBar 
+<SearchSuggestBar
     {placeholder}
-    autoFocus={autoFocus}
-    handleBlur={handleBlur}
-    handleSearchSuggest={handleSearchSuggest}
-    handleSelect={handleTaxonSelect} 
-    suggestions={suggestions} 
-    {row} 
-    {isLoading} 
+    {autoFocus}
+    {handleBlur}
+    {handleSearchSuggest}
+    handleSelect={handleTaxonSelect}
+    {suggestions}
+    {row}
+    {isLoading}
 />
 
 <style>
@@ -117,6 +131,7 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
+        gap: 0.25rem;
     }
     .invasive-icon {
         display: inline-block;

@@ -21,7 +21,12 @@
         setRouterContext,
         type RouterState,
     } from '../contexts/routerContext';
-    import { getCommonNames, getNSMetrics, getTaxonInfo } from '../lib/taxa';
+    import {
+        getCommonNames,
+        getNSMetrics,
+        getQualifiedTaxa,
+        getTaxonInfo,
+    } from '../lib/taxa';
     import {
         initialModalState,
         setModalContext,
@@ -34,13 +39,13 @@
         initialFiltersState,
         setFiltersContext,
         type FiltersState,
-        type GeoFilter,
     } from '../contexts/filtersContext';
     import {
         normalizeAPIResponse,
         NS_VALUES_MAP,
         TAXON_INFO_MAP,
         type NSValues,
+        type RegionInfo,
         type TaxonInfo,
     } from '../types/api';
     import {
@@ -62,17 +67,18 @@
     import { TAXON_COLORS } from '../constants/taxa';
     import { makeIDCollection } from '../util/collection.svelte';
 
-
     // Intialize contexts
 
     // Make taxa collection (easier way of managing our lists of objects reactively)
-    const taxaCollection = makeIDCollection<ActiveTaxon, number>(t=>t.taxonID, loadTaxonInfo);
+    const taxaCollection = makeIDCollection<ActiveTaxon, number>(
+        (t) => t.taxonID,
+        loadTaxonInfo
+    );
     const taxaState: ActiveTaxaState = $state(initialActiveTaxaState);
 
     // Logic for setting next color of active taxon (if all colors are used, will use least used color)
     function getNextTaxonColor(): string {
         const colorCounts = Object.fromEntries(TAXON_COLORS.map((c) => [c, 0]));
-        console.log(colorCounts, taxaState)
         taxaState.taxa.items.forEach((t) => {
             if (t.color in colorCounts) colorCounts[t.color]++;
         });
@@ -87,7 +93,7 @@
     const taxaContext = getActiveTaxaContext();
 
     const filtersState: FiltersState = $state(initialFiltersState);
-    filtersState.region = makeIDCollection<GeoFilter, string>(c => c.id);
+    filtersState.region = makeIDCollection<RegionInfo, string>((c) => c.id);
     setFiltersContext(filtersState);
     const filtersContext = getFiltersContext();
 
@@ -108,6 +114,26 @@
 
     const rankingsState: RankingsState = $state(initialRankingsState);
     setRankingsContext(rankingsState);
+
+    // Get list of qualified taxonIDs given various filters (for rankings page)
+    $effect(() => {
+        const regionIDs = filtersContext.region.ids;
+        const dateStart = filtersContext.dateStart;
+        const dateEnd = filtersContext.dateEnd;
+        const dataProviders = filtersContext.dataProviders;
+
+        untrack(async () => {
+            rankingsState.ranksLoading = true;
+            const qualifiedTaxa = await getQualifiedTaxa(
+                dateStart,
+                dateEnd,
+                dataProviders,
+                regionIDs
+            );
+            rankingsState.qualifiedTaxonIDs = qualifiedTaxa;
+            rankingsState.ranksLoading = false;
+        });
+    });
 
     // Retrieve and set taxon info in context
     async function loadTaxonInfo(taxonID: number) {
@@ -268,6 +294,15 @@
                 }
             })();
         }
+    });
+
+    // Derive filterTaxonIDs from taxaContext.taxa ABOVE species rank
+    $effect(() => {
+        filtersContext.filterTaxonIDs = taxaContext.taxa.ids.filter((id) => {
+            const taxon = taxaContext.taxa.get(id);
+            const taxonRank = taxon?.info.taxonRank;
+            return taxonRank && !['species', 'subspecies'].includes(taxonRank);
+        });
     });
 </script>
 

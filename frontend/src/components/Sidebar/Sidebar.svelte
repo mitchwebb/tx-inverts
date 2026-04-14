@@ -6,10 +6,7 @@
 
 <script lang="ts">
     import NSSection from './NSSection.svelte';
-    import {
-        getActiveTaxaContext,
-        initialActiveTaxaState,
-    } from '../../contexts/activeTaxaContext';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { getSidebarContext } from '../../contexts/sidebarContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import { countActiveFilters } from '../../lib/filters.svelte';
@@ -21,17 +18,15 @@
     } from '../../contexts/routerContext';
     import { getModalContext } from '../../contexts/modalContext';
     import AddTaxonButton from './AddTaxonButton.svelte';
-    import MapFilters from '../FiltersSection/MapFilters.svelte';
-    import RankingsFilters from '../FiltersSection/RankingsFilters.svelte';
-    import Toggle from '../../common/Toggle.svelte';
     import TaxaSearch from '../TaxaSearch.svelte';
+    import ObservationsFilters from '../FiltersSection/ObservationsFilters.svelte';
+    import TaxaFilters from '../FiltersSection/TaxaFilters.svelte';
 
     type SidebarProps = {
         showNSDisplay?: boolean;
     };
 
-    const { showNSDisplay = true }: SidebarProps =
-        $props();
+    const { showNSDisplay = true }: SidebarProps = $props();
 
     // Load relevant contexts
     const taxaContext = getActiveTaxaContext();
@@ -44,8 +39,16 @@
     // Adding new routes in the future COULD cause issues
     const currPath = $derived(routerContext.url.pathname as RouterPath);
 
+    const filtersDomain = $derived.by(() => {
+        if (['/map', '/taxa'].includes(currPath)) {
+            return 'observations';
+        } else {
+            return 'taxa';
+        }
+    });
+
     let filtersCount = $derived<number>(
-        countActiveFilters(filtersContext, null, currPath)
+        countActiveFilters(filtersContext, filtersDomain)
     );
 
     // Keep track of elements
@@ -77,11 +80,11 @@
     }
 
     function handleFiltersButton() {
-        if (currPath === '/map') {
-            modalContext.content = MapFilters;
+        if (filtersDomain === 'observations') {
+            modalContext.content = ObservationsFilters;
             modalContext.visible = true;
-        } else if (currPath === '/rankings') {
-            modalContext.content = RankingsFilters;
+        } else if (filtersDomain === 'taxa') {
+            modalContext.content = TaxaFilters;
             modalContext.visible = true;
         }
     }
@@ -123,29 +126,13 @@
     <div id="sidebar">
         <div id="sidebar-content-wrapper" class:open={sidebarContext.open}>
             <div id="search-and-filter-section">
-                {#if currPath === '/taxa'}
-                    <div class="inat-toggle-section ns-metric-row">
-                        <span>iNat</span>
-                        <div class="inat-toggle icon">
-                            <Toggle
-                                handler={handleINatToggle}
-                                checked={filtersContext.includeINat !== false}
-                                onColor="darkgreen"
-                                offColor="darkred"
-                            />
-                        </div>
-                    </div>
-                {:else}
-                    <div
-                        id="filters-button-wrapper"
-                    >
-                        <FiltersButton
-                            count={filtersCount}
-                            open={filtersOpen}
-                            handler={handleFiltersButton}
-                        />
-                    </div>
-                {/if}
+                <div id="filters-button-wrapper">
+                    <FiltersButton
+                        count={filtersCount}
+                        open={filtersOpen}
+                        handler={handleFiltersButton}
+                    />
+                </div>
                 <div class="sidebar-search-wrapper">
                     <TaxaSearch
                         replace={true}
@@ -184,8 +171,9 @@
                                 <div class="sidebar-body-wrapper">
                                     <div
                                         class="sidebar-body-overlay"
-                                        style:background-color={taxaContext
-                                            .taxa.get(taxonID)?.color}
+                                        style:background-color={taxaContext.taxa.get(
+                                            taxonID
+                                        )?.color}
                                     ></div>
                                     <NSSection {taxonID} />
                                 </div>
