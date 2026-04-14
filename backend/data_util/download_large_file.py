@@ -28,7 +28,7 @@ def download_large_temp_file(url, chunk_size=1024*1024):
         # Automatic cleanup after context exits
 
 
-def download_large_file(url, output_fp=None, chunk_size=1024*1024):
+def download_large_file(url, output_fp=None, chunk_size=1024*1024, verbose=False):
     """
     Downloads a large file in chunks.
     Returns output filepath.
@@ -37,6 +37,7 @@ def download_large_file(url, output_fp=None, chunk_size=1024*1024):
         url (str): File URL.
         output_fp (str, optional): Output file path.
         chunk_size (int): Chunk size in bytes. Default is 1MB.
+        verbose (bool)
 
     Returns:
         output_fp (str): Path to the downloaded file.
@@ -49,7 +50,7 @@ def download_large_file(url, output_fp=None, chunk_size=1024*1024):
     return output_fp
 
 
-def _download_file(url, output_fp, chunk_size):
+def _download_file(url, output_fp, chunk_size, verbose=False):
     """
     Helper to handle streaming and saving of a file
     """
@@ -66,14 +67,16 @@ def _download_file(url, output_fp, chunk_size):
                         downloaded += len(chunk)
                         if total:
                             percent = (downloaded / total) * 100
-                            data_logger.debug(f"""\rDownloaded {downloaded / 1024 / 1024:.2f} MB
+                            if (verbose):
+                                data_logger.debug(f"""\rDownloaded {downloaded / 1024 / 1024:.2f} MB
                                               of {total / 1024 / 1024:.2f} MB
                                               ({percent:.2f}%)", end=''""")
                         else:
-                            data_logger.info(
-                                f"Downloaded {downloaded / 1024 / 1024:.2f} MB", end='')
+                            if (verbose):
+                                data_logger.info(
+                                    f"Downloaded {downloaded / 1024 / 1024:.2f} MB", end='')
 
-        data_logger.info("Download complete.")
+        data_logger.info(f"Download complete.")
 
     except Exception as e:
         data_logger.exception(f'Download failed: {e}')

@@ -105,7 +105,7 @@
 {#if $dataProviders}
     <div
         class="data-providers-section filters-section"
-        class:active={!!filtersContext.dataProviders?.length}
+        class:active={!!filtersContext.dataProviders?.length || !filtersContext.includeINat}
         class:loading-blink={observationsMetricsLoading}
     >
         <div id="data-providers-header" class="filters-section-header">

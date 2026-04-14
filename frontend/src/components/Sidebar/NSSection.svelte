@@ -169,8 +169,8 @@
         {/snippet}
 
         <div id="ns-metrics-section">
-            <div id="occurrences-section" class="ns-metric-row">
-                {#if nSValues.numberOfOccurrences}
+            {#if nSValues.numberOfOccurrences}
+                <div id="occurrences-section" class="ns-metric-row">
                     <div id="occurrences-text">
                         <span>Occurrences:</span>
                         <span class="thin">
@@ -182,8 +182,8 @@
                             />
                         </span>
                     </div>
-                {/if}
-            </div>
+                </div>
+            {/if}
             <div id="observations-section" class="ns-metric-row">
                 {#if nSValues.observationCount}
                     <div id="observations-text">

@@ -44,7 +44,8 @@ async def update_index(
             db_logger.info(
                 f'{index_name} does not yet exist, creating index...')
             await cur.execute(create_sql)
-
+        
+    await conn.commit()
     return
 
 

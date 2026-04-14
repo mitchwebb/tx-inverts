@@ -4,7 +4,7 @@ from backend.db_schema import ALL_TABLES
 from backend.db_schema.base import DBTable
 from backend.tools.jobs.tasks.database import update_indexes
 from backend.core.logging import db_logger
-
+from backend.tools.jobs.tasks.views import refresh_materialized_views
 
 # Check if table already exists (for readable erroring)
 async def table_exists(conn: Connection, table_name: str) -> bool:
@@ -54,4 +54,5 @@ async def initialize_all_tables(conn: Connection, *, verbose: bool = False, stri
     for table in ALL_TABLES:
         await initialize_table(conn, table, verbose, strict)
 
+    await refresh_materialized_views(conn)
     await update_indexes(conn)

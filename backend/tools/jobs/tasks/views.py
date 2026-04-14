@@ -41,6 +41,8 @@ async def refresh_materialized_view(
                     sql.Identifier(view_name))
             )
 
+    await conn.commit()
+
     db_logger.info(f'{view_name} refreshed.')
 
 

@@ -242,7 +242,6 @@ async def get_qualified_taxa(params: ObservationsRequestParams, request: Request
         )
 
         async with request.app.state.db_pool.connection() as conn:
-            print(occurrence_query.as_string(conn))
             async with execute_psql_query(conn, occurrence_query, fetch='all') as result:
                 taxon_ids = set(r[0] for r in result)
 

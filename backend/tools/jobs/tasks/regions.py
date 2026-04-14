@@ -97,7 +97,6 @@ async def update_observation_regions(conn, new_observation_ids=None, replace_all
                     OBSERVATION_REGIONS_TABLE.name),
                 observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
             )
-            print(query.as_string(conn))
         # Else, replace/add only those ids found in new_observation_ids
         else:
             db_logger.info(

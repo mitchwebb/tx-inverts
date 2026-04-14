@@ -160,7 +160,25 @@ INDEX_DEFINITIONS = {
             CREATE INDEX idx_taxon_presence_region_id
             ON taxon_region_presence (region_id)
         '''
-    }
+    },
+    'idx_taxon_lineage_ancestor_id': {
+        'table': 'taxon_lineage',
+        'create_sql': '''
+            CREATE INDEX ON taxon_lineage (accepted_taxon_key);
+        '''
+    },
+    'idx_taxon_lineage_taxon_key': {
+        'table': 'taxon_lineage',
+        'create_sql': '''
+            CREATE INDEX ON taxon_lineage (ancestor_id)
+        '''
+    },
+    'idx_taxon_lineage_ancestor_and_key': {
+        'table': 'taxon_lineage',
+        'create_sql': '''
+            CREATE INDEX ON taxon_lineage (ancestor_id, accepted_taxon_key);
+        '''
+    },
     # 'idx_taxon_tile_cache_tile_coords': {
     # 	'table': 'taxon_tile_cache',
     # 	'create_sql': '''
@@ -254,20 +272,30 @@ MATERIALIZED_VIEWS = {
             CREATE MATERIALIZED VIEW regions AS
             SELECT id, 'county' AS region_type, county AS name, geometry FROM tx_counties
             UNION ALL
-            SELECT id, 'park' AS region_type, prop_name AS name, geometry FROM tx_parks;
-            CREATE INDEX idx_regions_geometry USING GIST(geometry);
+            SELECT id, 'park' AS region_type, prop_name AS name, geometry FROM tx_parks
         ''')
     },
-    'taxon_region_presence': sql.SQL('''
-        CREATE MATERIALIZED VIEW taxon_region_presence AS
-        SELECT DISTINCT accepted_taxon_key, region_id
-        FROM {observations_table} o
-        JOIN {observation_regions_table} r ON r.observation_id = o.gbif_id
-        CREATE INDEX idx_taxon_presence_region_id (region_id)
-    ''').format(
-        observations_table=GBIF_OBSERVATIONS_TABLE.name,
-        observation_regions_table=OBSERVATION_REGIONS_TABLE.name
-    )
+    'taxon_region_presence': {
+        'create_sql': sql.SQL('''
+            CREATE MATERIALIZED VIEW taxon_region_presence AS
+            SELECT DISTINCT accepted_taxon_key, region_id
+            FROM {observations_table} o
+            JOIN {observation_regions_table} r 
+                ON r.observation_id = o.gbif_id
+        ''').format(
+            observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+            observation_regions_table=sql.Identifier(OBSERVATION_REGIONS_TABLE.name)
+        )
+    },
+    'taxon_lineage': {
+        'create_sql': sql.SQL('''
+            CREATE MATERIALIZED VIEW taxon_lineage AS
+            SELECT DISTINCT accepted_taxon_key,
+            unnest(ARRAY[accepted_taxon_key, kingdom_id, phylum_id, class_id, order_id, family_id, genus_id, species_id, subspecies_id]) AS ancestor_id
+            FROM gbif_observations
+            WHERE accepted_taxon_key IS NOT NULL;
+        ''')
+    },
 
     # 'taxon_descendant_cache': {
     # 	'create_sql': sql.SQL('''

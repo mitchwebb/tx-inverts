@@ -459,9 +459,6 @@ async def update_observations(
         data_logger.exception(f'Issue with observations update: {e}')
         raise
 
-    finally:
-        await conn.close()
-
 
 async def sync_observations_to_backbone():
     '''
