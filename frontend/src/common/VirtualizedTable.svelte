@@ -281,7 +281,7 @@
                 style:grid-template-columns={gridTemplateColumns}
                 bind:this={header}
             >
-                {#each headers as header, i (`${header.label}${i}`)}
+                {#each headers as header, i (i)}
                     <div
                         class="column-header-wrapper"
                         role="columnheader"
@@ -302,7 +302,11 @@
                         >
                             <div class="header-label-wrapper">
                                 <div class="header-label">
-                                    {@html header.label}
+                                    {#if typeof header.label === 'string'}
+                                        {header.label}
+                                    {:else}
+                                        {@render header.label()}
+                                    {/if}
                                 </div>
                                 {#if header.info}
                                     <div class="header-info">

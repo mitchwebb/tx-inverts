@@ -100,7 +100,7 @@
 
 <style>
     .sidebar-foldout-header.active:not(.open) {
-        box-shadow: inset 2px 0 0 0 var(--accent-color);
+        border-left: 3px solid var(--accent-color);
     }
     .foldout-header-main {
         text-align: left;

@@ -175,6 +175,21 @@
                         <span>Occurrences:</span>
                         <span class="thin">
                             {nSValues.numberOfOccurrences.toLocaleString()}
+                            <InfoButton 
+                                hover={true}
+                                type='tooltip' 
+                                htmlContent='For this tool, occurrences are populations separated by at least 1km.'
+                            />
+                        </span>
+                    </div>
+                {/if}
+            </div>
+            <div id="observations-section" class="ns-metric-row">
+                {#if nSValues.observationCount}
+                    <div id="observations-text">
+                        <span>Individual Observations:</span>
+                        <span class="thin">
+                            {nSValues.observationCount.toLocaleString()}
                         </span>
                     </div>
                     {#if isMapPage}
@@ -189,16 +204,6 @@
                             checkboxIcon={eyeIcon}
                         />
                     {/if}
-                {/if}
-            </div>
-            <div id="observations-section" class="ns-metric-row">
-                {#if nSValues.observationCount}
-                    <div id="observations-text">
-                        <span>Individual Observations:</span>
-                        <span class="thin">
-                            {nSValues.observationCount.toLocaleString()}
-                        </span>
-                    </div>
                 {/if}
             </div>
             <div id="range-extent-section" class="ns-metric-row">

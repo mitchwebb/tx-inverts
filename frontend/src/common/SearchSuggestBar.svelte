@@ -350,6 +350,7 @@
         height: 100%;
         min-width: 100px;
         width: 100%;
+        max-width: 350px;
         color: var(--text-default);
         background-color: transparent;
         border: unset;

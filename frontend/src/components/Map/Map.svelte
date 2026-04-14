@@ -367,20 +367,17 @@
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
 
-        const response = await fetch(
-            '/server/natureserve/get_range_extent_geom',
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    taxon_ids: taxonID,
-                    include_inat: includeINat,
-                    date_start: dateStart?.toISOString(),
-                    date_end: dateEnd?.toISOString(),
-                    data_providers: dataProviders,
-                }),
-            }
-        );
+        const response = await fetch('/server/rankings/get_range_extent_geom', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                taxon_ids: taxonID,
+                include_inat: includeINat,
+                date_start: dateStart?.toISOString(),
+                date_end: dateEnd?.toISOString(),
+                data_providers: dataProviders,
+            }),
+        });
 
         if (!response.ok) {
             const errData = await response.json();
@@ -518,7 +515,7 @@
                 if (!(taxonID in mapContext.taxonLayers)) {
                     const taxon = taxaContext.taxa.get(taxonID);
                     if (!taxon) return;
-                    
+
                     mapContext.taxonLayers[taxonID] = {
                         color: taxon.color,
                         loaded: false,

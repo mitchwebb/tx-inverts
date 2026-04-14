@@ -114,6 +114,7 @@
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
+        margin: .25rem;
     }
     .container input {
         position: relative;
@@ -121,6 +122,7 @@
         cursor: pointer;
         height: 1rem;
         width: 1rem;
+        margin: 0;
     }
     .checkmark {
         position: absolute;

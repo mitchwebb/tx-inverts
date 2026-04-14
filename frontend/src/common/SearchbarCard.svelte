@@ -20,7 +20,11 @@
 
 <div class="searchbar-card">
     <div class="card-label">
-        {@html label}
+        {#if typeof label === 'string'}
+            {label}
+        {:else}
+            {@render label()}
+        {/if}
     </div>
     <button
         class="remove-card-button button"

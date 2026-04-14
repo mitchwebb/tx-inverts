@@ -21,7 +21,6 @@
     const mapContext = getMapContext();
 
     function layerToggleHandler(payload: CheckboxPayload) {
-        console.log(payload.value);
         const layerID = payload.value as StaticMapLayerID | StaticLayerGroupID;
         const layerVisible = payload.checked as boolean;
         handleLayerToggle(mapContext, { layerID, layerVisible });
