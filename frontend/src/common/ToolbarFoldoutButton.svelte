@@ -59,15 +59,15 @@
         justify-content: center;
         z-index: 100;
         position: relative;
-        height: 1.5rem;
+        /* height: 1.5rem; */
     }
     .foldout-button {
-        background-color: var(--container-fore);
+        /* background-color: var(--container-fore); */
         border: 1px solid var(--border);
         color: var(--text-default);
         height: 100%;
         width: max-content;
-        padding: 5px 1rem;
+        padding: 0 0.5rem;
         margin: 0;
         flex-shrink: 0;
         box-sizing: border-box;

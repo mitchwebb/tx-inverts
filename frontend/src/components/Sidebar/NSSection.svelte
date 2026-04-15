@@ -43,7 +43,7 @@
         const count = countActiveFilters(filtersContext, 'observations');
         return count > 0;
     });
-    
+
     const isMapPage: boolean = $derived(routerContext.url.pathname === '/map');
 
     let aOOGridSize = $derived(metricsContext.aOOResolution);
@@ -175,10 +175,10 @@
                         <span>Occurrences:</span>
                         <span class="thin">
                             {nSValues.numberOfOccurrences.toLocaleString()}
-                            <InfoButton 
+                            <InfoButton
                                 hover={true}
-                                type='tooltip' 
-                                htmlContent='For this tool, occurrences are populations separated by at least 1km.'
+                                type="tooltip"
+                                htmlContent="For this tool, occurrences are populations separated by at least 1km."
                             />
                         </span>
                     </div>
@@ -247,7 +247,7 @@
                                 selected={aOOGridSize}
                                 onChange={aOOGridHandler}
                             />
-                            Grid Cells
+                            Grid
                         </span>
                     </div>
                 {/if}
@@ -296,6 +296,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        min-height: 1.5rem;
     }
     :global(.ns-metric-row .input-item-wrapper) {
         display: flex;

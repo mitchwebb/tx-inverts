@@ -11,6 +11,7 @@
         name: string;
         value: string;
         checked: boolean;
+        e: Event;
     };
 
     type CheckboxInputProps = {
@@ -34,12 +35,12 @@
     }: CheckboxInputProps = $props();
 
     function handleChange(e: Event) {
-        e.stopPropagation();
         const target = e.target as HTMLInputElement;
         handler?.({
             name,
             value,
             checked: target.checked,
+            e,
         });
     }
 </script>
@@ -49,6 +50,7 @@
     <input
         {checked}
         {name}
+        onclick={(e) => e.stopPropagation()}
         type="checkbox"
         class:hidden-checkbox={checkboxIcon}
         onchange={handleChange}
@@ -91,8 +93,8 @@
     .hidden-checkbox {
         position: absolute;
         opacity: 0;
-        width: 1em;
-        height: 1em;
+        width: 1.5rem;
+        height: 1.5rem;
         margin: 0;
         padding: 0;
         left: 0;
@@ -110,18 +112,19 @@
         cursor: pointer;
         display: flex;
         position: relative;
+        height: 1.5rem;
+        width: 1.5rem;
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
-        margin: .25rem;
     }
     .container input {
         position: relative;
         opacity: 0;
         cursor: pointer;
-        height: 1rem;
-        width: 1rem;
+        height: 1.5rem;
+        width: 1.5rem;
         margin: 0;
     }
     .checkmark {
@@ -132,6 +135,8 @@
         width: 1rem;
         background-color: var(--container-back);
         border: 1px solid var(--border);
+        box-sizing: border-box;
+        margin: 0.25rem;
     }
     .container:hover input ~ .checkmark {
         background-color: var(--container-mid);
@@ -145,17 +150,13 @@
         display: none;
     }
     .container input:checked ~ .checkmark:after {
-        display: block;
-    }
-    .container .checkmark:after {
-        left: 0.35rem;
-        top: 0.1rem;
-        width: 0.2rem;
-        height: 0.5rem;
-        border: solid black;
-        border-width: 0 3px 3px 0;
-        -webkit-transform: rotate(45deg);
-        -ms-transform: rotate(45deg);
-        transform: rotate(45deg);
+        content: '✓';
+        color: black;
+        font-weight: bold;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 </style>

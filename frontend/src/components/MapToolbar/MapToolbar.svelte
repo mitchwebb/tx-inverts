@@ -65,8 +65,8 @@
         pointer-events: all;
     }
     :global(#layers-menu) {
-        height: 33px;
-        width: 3.5rem;
+        height: 2rem;
+        width: fit-content;
         grid-row: 1/3;
         justify-content: left;
         pointer-events: none;

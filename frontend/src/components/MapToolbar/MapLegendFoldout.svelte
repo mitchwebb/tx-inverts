@@ -14,6 +14,8 @@
     import CheckboxInput from '../../common/CheckboxInput.svelte';
     import ChevronUp from '../../assets/ChevronUp.svelte';
     import ChevronDown from '../../assets/ChevronDown.svelte';
+    import { slide } from 'svelte/transition';
+    import { stopPropagation } from 'svelte/legacy';
 
     type MapLegendFoldoutProps = {
         label: string;
@@ -46,6 +48,7 @@
     );
 
     function handleClick(payload: CheckboxPayload) {
+        payload.e.stopPropagation();
         handler(payload);
     }
 
@@ -56,7 +59,8 @@
 </script>
 
 <div class={['map-key-foldout', { open }]}>
-    <button
+    <div
+        role="button"
         tabindex="0"
         aria-expanded={open}
         aria-controls="foldout-content-{layerID}"
@@ -66,13 +70,19 @@
             (e.key === 'Enter' || e.key === ' ') && (open = !open)}
     >
         <span class="map-key-header-left">
-            <CheckboxInput
-                name="layers"
-                value={layerID}
-                checked={layerActive}
-                handler={handleClick}
-            />
-            <span>{label}</span>
+            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+            <span
+                class="map-key-header-checkbox"
+                onclick={(e) => e.stopPropagation()}
+            >
+                <CheckboxInput
+                    name="layers"
+                    value={layerID}
+                    checked={layerActive}
+                    handler={handleClick}
+                />
+            </span>
+            <span> {label} </span>
         </span>
         {#if foldout}
             <span class="map-key-header-icons icon">
@@ -83,22 +93,28 @@
                 {/if}
             </span>
         {/if}
-    </button>
-    {#if foldout}
-        {#if open}
-            <div id="foldout-content-{layerID}" class="map-key-foldout-content">
-                {@render children?.()}
-            </div>
-        {/if}
+    </div>
+    {#if foldout && open}
+        <div
+            id="foldout-content-{layerID}"
+            class="map-key-foldout-content"
+            transition:slide
+        >
+            {@render children?.()}
+        </div>
     {/if}
 </div>
 
 <style>
+    .map-key-header-checkbox {
+        height: fit-content;
+        box-sizing: border-box;
+        pointer-events: none;
+    }
     .map-key-header-left {
         display: flex;
         gap: 0.5rem;
         align-items: center;
-        vertical-align: middle;
     }
     @keyframes loading-blink {
         0% {
@@ -137,6 +153,7 @@
         padding: 0.5rem;
         box-sizing: border-box;
         gap: 0.5rem;
+        min-height: 2.5rem;
     }
     .map-key-foldout:not(:last-child) > .map-key-foldout-header,
     .map-key-foldout.open > .map-key-foldout-header {

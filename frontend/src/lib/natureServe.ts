@@ -13,25 +13,28 @@ import type { NSRank } from '../types/api';
 export function calculateNSRank(
     occurrences: number,
     rangeExtent: number,
-    areaOfOccupancy: number
+    areaOfOccupancy?: number
 ): NSRank {
     // If all values are 0, species is data deficient
     // NatureServe doesn't actually have this ranking. This would be presumed extinct
     if (occurrences == 0 && rangeExtent == 0 && areaOfOccupancy == 0) {
         return 'u';
     }
-    // According to IUCN, rangeExtent should be AT LEAST equal to areaOfOccupancy
-    if (rangeExtent < areaOfOccupancy) {
+    // According to IUCN, rangeExtent should be AT LEAST equal to areaOfOccupancy (if provided)
+    if (areaOfOccupancy && rangeExtent < areaOfOccupancy) {
         rangeExtent = areaOfOccupancy;
     }
 
-    // If one of these values exists, all of them must at this point
-    if (occurrences == 0 || rangeExtent == 0 || areaOfOccupancy == 0) {
-        return 'u';
-    }
+    // // If one of these values exists, all of them must at this point
+    // if (occurrences == 0 || rangeExtent == 0 || areaOfOccupancy == 0) {
+    //     return 'u';
+    // }
 
     let points = 0.0;
-    let threeAverageScore = 0;
+    let totalWeight = 0;
+
+    // Occurrence count gets weight of one
+    totalWeight += 1;
 
     if (occurrences == 0) {
         // NatureServe Z Value
@@ -53,38 +56,8 @@ export function calculateNSRank(
         points += 5.5;
     }
 
-    // These point values are doubled, as NatureServe gives them a weight of 2
-    if (areaOfOccupancy == 0) {
-        // NatureServe Z Value
-        points += 0.0 * 2;
-    } else if (0 < areaOfOccupancy && areaOfOccupancy <= 1) {
-        // NatureServe A Value
-        points += 0.0 * 2;
-    } else if (1 < areaOfOccupancy && areaOfOccupancy <= 2) {
-        // NatureServe B Value
-        points += 0.69 * 2;
-    } else if (2 < areaOfOccupancy && areaOfOccupancy <= 5) {
-        // NatureServe C Value
-        points += 1.38 * 2;
-    } else if (5 < areaOfOccupancy && areaOfOccupancy <= 25) {
-        // NatureServe D Value
-        points += 2.06 * 2;
-    } else if (25 < areaOfOccupancy && areaOfOccupancy <= 125) {
-        // NatureServe E Value
-        points += 2.75 * 2;
-    } else if (125 < areaOfOccupancy && areaOfOccupancy <= 500) {
-        // NatureServe F Value
-        points += 3.44 * 2;
-    } else if (500 < areaOfOccupancy && areaOfOccupancy <= 2500) {
-        // NatureServe G Value
-        points += 4.13 * 2;
-    } else if (2500 < areaOfOccupancy && areaOfOccupancy <= 12500) {
-        // NatureServe H Value
-        points += 4.81 * 2;
-    } else if (12500 < areaOfOccupancy) {
-        // NatureServe I Value
-        points += 5.5 * 2;
-    }
+    // Range Extent gets weight of 1
+    totalWeight += 1;
 
     if (rangeExtent == 0) {
         // NatureServe Z Value
@@ -115,12 +88,55 @@ export function calculateNSRank(
         points += 5.5;
     }
 
-    threeAverageScore = points / 4;
+    if (areaOfOccupancy) {
+        // AOO gets weight of 2
+        totalWeight += 2;
 
-    // This is terminology taken from NatureServe ranking calculator
-    // In this case, 'range' refers to the difference between low/high
-    // ranking estimates.
-    // With our parameters, there is no estimate range, hence 'zero_range'
+        // These point values are doubled, as NatureServe gives them a weight of 2
+        if (areaOfOccupancy == 0) {
+            // NatureServe Z Value
+            points += 0.0 * 2;
+        } else if (0 < areaOfOccupancy && areaOfOccupancy <= 1) {
+            // NatureServe A Value
+            points += 0.0 * 2;
+        } else if (1 < areaOfOccupancy && areaOfOccupancy <= 2) {
+            // NatureServe B Value
+            points += 0.69 * 2;
+        } else if (2 < areaOfOccupancy && areaOfOccupancy <= 5) {
+            // NatureServe C Value
+            points += 1.38 * 2;
+        } else if (5 < areaOfOccupancy && areaOfOccupancy <= 25) {
+            // NatureServe D Value
+            points += 2.06 * 2;
+        } else if (25 < areaOfOccupancy && areaOfOccupancy <= 125) {
+            // NatureServe E Value
+            points += 2.75 * 2;
+        } else if (125 < areaOfOccupancy && areaOfOccupancy <= 500) {
+            // NatureServe F Value
+            points += 3.44 * 2;
+        } else if (500 < areaOfOccupancy && areaOfOccupancy <= 2500) {
+            // NatureServe G Value
+            points += 4.13 * 2;
+        } else if (2500 < areaOfOccupancy && areaOfOccupancy <= 12500) {
+            // NatureServe H Value
+            points += 4.81 * 2;
+        } else if (12500 < areaOfOccupancy) {
+            // NatureServe I Value
+            points += 5.5 * 2;
+        }
+    }
+
+    const rank = getZeroRangeRank(points / totalWeight);
+
+    return rank;
+}
+
+// This is terminology taken from NatureServe ranking calculator
+// In this case, 'range' refers to the difference between low/high
+// ranking estimates.
+// With our parameters, there is no estimate range, hence 'zero_range'
+
+function getZeroRangeRank(threeAverageScore: number) {
     let zeroRangeRank: NSRank = 'u';
 
     if (threeAverageScore <= 1.5) {

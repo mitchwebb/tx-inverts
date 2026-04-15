@@ -3,7 +3,7 @@
 
 <svg
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
+    viewBox="-4 -4 32 32"
     fill="none"
     stroke="currentColor"
     stroke-width="2"

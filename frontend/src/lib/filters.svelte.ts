@@ -35,7 +35,5 @@ export function countActiveFilters(
         }
     }
 
-    console.log(activeGroups);
-
     return activeGroups.size;
 }
