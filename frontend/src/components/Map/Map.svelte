@@ -426,8 +426,6 @@
             };
         }
 
-        console.warn(dateStart, dateEnd);
-
         const obsBundle = createObservationsBundle(taxonID, color);
         const rangeBundle = createRangeExtentBundle(taxonID, color);
 

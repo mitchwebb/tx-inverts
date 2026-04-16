@@ -5,9 +5,13 @@ export const rankingsStateKey = 'rankings';
 // Make type for possible active pages
 export type RankingsState = {
     ranksLoading: boolean;
-    qualifiedTaxonIDs: number[] | null; // List of ids from backend, filtered using rankings page filters
+    // List of ids from backend, filtered using rankings page filters
+    // This currently disregards ranks/parent taxa filters, which are applied later
+    qualifiedTaxonIDs: number[] | null;
     currSortKey: string | null;
     sortAscending: boolean | null;
+    // List of taxonIDs currently visible in table, used for downloads
+    visibleTaxonIDs: number[];
 };
 
 export const initialRankingsState: RankingsState = {
@@ -15,6 +19,7 @@ export const initialRankingsState: RankingsState = {
     qualifiedTaxonIDs: null,
     currSortKey: null,
     sortAscending: null,
+    visibleTaxonIDs: [],
 };
 
 export function setRankingsContext(rankingsState: RankingsState) {

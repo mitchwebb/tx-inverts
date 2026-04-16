@@ -25,7 +25,7 @@
     const rankingsContext = getRankingsContext();
 
     // All taxa return from current filters, to be shown in list
-    let filteredTaxa: TaxonNodeType[] = $state([]);
+    let filteredTaxaNodes: TaxonNodeType[] = $state([]);
 
     const ranksLoading: boolean = $derived(
         rankingsContext.ranksLoading || !$taxaTree
@@ -78,15 +78,14 @@
             return;
         }
 
+        // Get list of qualified taxa from data/region filtering
         const qualifiedTaxonIDs = rankingsContext.qualifiedTaxonIDs;
 
-        // If there are no qualified taxa from data/region filtering, show nothing
+        // If there are no qualified taxa, show nothing
         if (qualifiedTaxonIDs && !qualifiedTaxonIDs.length) {
-            filteredTaxa = [];
+            filteredTaxaNodes = [];
             return;
         }
-
-        console.warn(qualifiedTaxonIDs);
 
         // List of taxonIDs to filter list to
         let filterTaxaIDs;
@@ -187,7 +186,12 @@
             );
         }
 
-        filteredTaxa = newTaxa;
+        filteredTaxaNodes = newTaxa;
+
+        // Send ids to context to have a running list of table taxa
+        rankingsContext.visibleTaxonIDs = newTaxa.map(
+            (taxon) => taxon.taxon_id
+        );
     });
 
     function handleDownloadButton() {
@@ -225,13 +229,13 @@
                 <div class="icon rankings-loading">
                     <LoadingIcon />
                 </div>
-            {:else if !filteredTaxa.length}
+            {:else if !filteredTaxaNodes.length}
                 <div class="no-species-error">
                     No valid rankings found for selected taxon
                 </div>
-            {:else if filteredTaxa.length}
+            {:else if filteredTaxaNodes.length}
                 <VirtualizedTable
-                    items={[...filteredTaxa]}
+                    items={[...filteredTaxaNodes]}
                     rowHeight={30}
                     headers={tableHeaders}
                     scrollToID={scrollToTaxonID}

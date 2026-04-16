@@ -11,9 +11,15 @@
     import RankFilterSection from './RankFilterSection.svelte';
     import TaxonFilterSection from './TaxonFilterSection.svelte';
     import './filtersSection.css';
+
+    type TaxaFiltersProps = {
+        header?: string;
+    };
+
+    const { header = 'Filter Taxa' }: TaxaFiltersProps = $props();
 </script>
 
-<FiltersWrapper header={'Filter Rankings Table'}>
+<FiltersWrapper {header}>
     <div class="vertical-filter-group">
         <TaxonFilterSection
             domain="taxa"
@@ -34,10 +40,4 @@
 </FiltersWrapper>
 
 <style>
-    .vertical-filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        flex: 1 1;
-    }
 </style>

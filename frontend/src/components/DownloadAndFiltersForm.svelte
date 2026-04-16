@@ -6,7 +6,7 @@
     import LoadingIcon from '../assets/LoadingIcon.svelte';
 
     type DownloadFormProps = {
-        header: string;
+        header?: string;
         requestHandler: (
             estimate: boolean,
             onProgress?: (received: number) => void
@@ -53,9 +53,11 @@
 </script>
 
 <div id="download-form-wrapper">
-    <div id="download-form-header">
-        <span class="header"> {header} </span>
-    </div>
+    {#if header}
+        <div id="download-form-header">
+            <span class="header"> {header} </span>
+        </div>
+    {/if}
     <div id="download-form-content">
         {@render children?.()}
     </div>

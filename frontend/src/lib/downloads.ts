@@ -81,20 +81,15 @@ export async function getOccurrenceDownload(
 }
 
 export async function getTaxaDownload(
-    taxonIDs: number[],
-    includeINat: FiltersState['includeINat'],
-    nSRanks: FiltersState['nSRanks'],
+    filteredIDs: number[],
     estimate: boolean,
     onProgress?: (received: number) => void
 ) {
-    taxonIDs = taxonIDs.length > 0 ? taxonIDs : [1];
     return getDownload(
         'server/downloads/get_ranked_taxa_download',
         'taxa_download.tsv',
         {
-            taxon_ids: taxonIDs,
-            include_inat: includeINat,
-            ns_ranks: nSRanks,
+            taxon_ids: filteredIDs,
         },
         estimate,
         onProgress

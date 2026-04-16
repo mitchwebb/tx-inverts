@@ -33,11 +33,6 @@
             document.body.style.overflow = '';
         };
     });
-
-    function handleOverlayScroll(e: Event) {
-        console.log(e)
-    }
-
 </script>
 
 {#if modalContext.visible}
@@ -46,7 +41,6 @@
             id="modal-overlay"
             onclick={handleModalClose}
             aria-hidden="true"
-            onscroll={handleOverlayScroll} // Don't block scroll when scrolling on overlay
             transition:fade={{ duration: 50 }}
         ></div>
         <div id="modal-content-positioner">
@@ -103,8 +97,8 @@
 
     #modal-close-button {
         position: absolute;
-        top: .5rem;
-        right: .5rem;
+        top: 0.5rem;
+        right: 0.5rem;
         color: var(--text-default);
         cursor: pointer;
         padding: 0;

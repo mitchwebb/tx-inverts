@@ -2,6 +2,7 @@ from http.client import HTTPException
 from typing import Literal
 
 from backend.core.sql import DWC_OCCURRENCE_SELECT_CLAUSE, DWC_TAXA_SELECT_CLAUSE, create_occurrence_filter, create_occurrence_taxon_filter
+from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db_schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.api_types import DownloadRequestParams
 from backend.models.sql import OccurrenceFilter
@@ -69,45 +70,21 @@ downloads_router = APIRouter()
 @downloads_router.post('/get_ranked_taxa_download')
 async def get_ranked_taxa_download(params: DownloadRequestParams, request: Request):
     taxon_ids = params.taxon_ids
-    include_inat = params.include_inat
-    ns_ranks = params.ns_ranks
     estimate = params.estimate
 
     taxa_table = TX_TAXA_TABLE
 
-    rank_column = 'ns_rank_state' if include_inat else 'ns_rank_state_no_inat'
-
-    if ns_ranks:
-        rank_clause = sql.SQL('''
-            AND LOWER({rank_column}) = ANY({ns_ranks})
-        ''').format(
-            rank_column=sql.Identifier(rank_column),
-            ns_ranks=sql.Literal(ns_ranks)
-        )
-    else:
-        rank_clause = sql.SQL('')
-
     query = sql.SQL('''
         {dwc_taxa_select_clause}
-        WHERE (
+        WHERE
+            {taxa_table}.taxon_id = ANY({taxon_ids}) OR
             {taxa_table}.accepted_name_usage_id = ANY({taxon_ids})
-            OR {taxa_table}.kingdom_id         = ANY({taxon_ids})
-            OR {taxa_table}.phylum_id          = ANY({taxon_ids})
-            OR {taxa_table}.class_id           = ANY({taxon_ids})
-            OR {taxa_table}.order_id           = ANY({taxon_ids})
-            OR {taxa_table}.family_id          = ANY({taxon_ids})
-            OR {taxa_table}.genus_id           = ANY({taxon_ids})
-            OR {taxa_table}.species_id         = ANY({taxon_ids})
-            OR {taxa_table}.subspecies_id      = ANY({taxon_ids})
-        )
-        {rank_clause}
         AND
             taxon_rank IN ('species', 'subspecies')
     ''').format(
         dwc_taxa_select_clause=DWC_TAXA_SELECT_CLAUSE,
         taxa_table=sql.Identifier(taxa_table.name),
         taxon_ids=sql.Literal(taxon_ids),
-        rank_clause=rank_clause
     )
 
     try:
