@@ -93,7 +93,6 @@
 
 <style>
     .label-content {
-        width: 100%;
         text-align: left;
         display: inline;
         align-self: baseline;
@@ -135,7 +134,6 @@
     .checkbox-container {
         gap: 0.5rem;
         display: inline-flex;
-        width: 100%;
         position: relative;
         -webkit-user-select: none;
         -moz-user-select: none;
@@ -143,6 +141,7 @@
         user-select: none;
         vertical-align: middle;
         align-items: center;
+        width: 100%;
     }
     .checkbox-container input {
         cursor: pointer;

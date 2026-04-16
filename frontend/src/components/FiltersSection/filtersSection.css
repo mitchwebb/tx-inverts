@@ -22,3 +22,17 @@
 .filters-section-content {
     margin: 0 0.5rem;
 }
+
+.vertical-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1 1;
+}
+
+.horizontal-filter-group {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    flex-wrap: wrap;
+}

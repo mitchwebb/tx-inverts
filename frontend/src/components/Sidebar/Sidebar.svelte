@@ -39,6 +39,7 @@
     // Adding new routes in the future COULD cause issues
     const currPath = $derived(routerContext.url.pathname as RouterPath);
 
+    // Determine which filters menu to open from sidebar
     const filtersDomain = $derived.by(() => {
         if (['/map', '/backbone'].includes(currPath)) {
             return 'observations';
@@ -108,14 +109,6 @@
         };
     });
 
-    function handleOpenSidebar() {
-        sidebarContext.open = !sidebarContext.open;
-    }
-
-    function handleINatToggle(toggled: boolean) {
-        filtersContext.includeINat = toggled;
-    }
-
     // function handleOccDownloadButton() {
     //     modalContext.visible = true;
     //     modalContext.content = DownloadOccurrenceForm;
@@ -139,20 +132,6 @@
                         placeholder={'Search by taxon...'}
                     />
                 </div>
-                <!-- {#if Object.keys(taxaContext.taxa).length}
-                    <button
-                        id="sidebar-foldout-button"
-                        onclick={handleOpenSidebar}
-                    >
-                        <div id="sidebar-foldout-icon" class="icon">
-                            {#if sidebarContext.open}
-                                <ChevronUp />
-                            {:else}
-                                <ChevronDown />
-                            {/if}
-                        </div>
-                    </button>
-                {/if} -->
                 <!-- <button
                     class="download-button button"
                     onclick={handleOccDownloadButton}
@@ -196,26 +175,6 @@
         height: 100%;
         width: 100%;
     }
-    /* .inat-toggle-section {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        white-space: nowrap;
-        gap: 0.5rem;
-        background-color: var(--container-highlight);
-        border: 1px solid var(--border);
-        box-sizing: border-box;
-        height: 100%;
-        border-radius: 3px;
-        padding: 0 0.5rem;
-        width: 100px;
-        flex-shrink: 0;
-    }
-    .inat-toggle {
-        height: 1.5rem;
-        display: block;
-        stroke: var(--text-default);
-    } */
     #sidebar-foldout-icon {
         padding: 0;
         margin: 0;
@@ -269,7 +228,7 @@
         left: 0;
         height: 100%;
         width: 100%;
-        opacity: 0.05;
+        opacity: 0.1;
         pointer-events: none;
     }
     :global(.sidebar-section) {
@@ -301,7 +260,6 @@
         pointer-events: all;
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
-        /* box-shadow: -4px 3px 4px 0px var(--container-shadow); */
     }
     #search-and-filter-section {
         grid-row: 1;
@@ -330,7 +288,6 @@
     }
     :global(.sidebar-header) {
         line-height: 1.5rem;
-        /* margin-bottom: 0.1rem; */
         padding: 0.5rem;
         display: flex;
         justify-content: space-between;

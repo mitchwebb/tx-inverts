@@ -15,7 +15,11 @@
         const value = payload.value as NSRank;
 
         // Set new list in state
-        filtersContext.nSRanks = toggleArrayValue(currRanks, value, payload.checked);
+        filtersContext.nSRanks = toggleArrayValue(
+            currRanks,
+            value,
+            payload.checked
+        );
     }
 </script>
 
@@ -24,10 +28,15 @@
     class:active={!!filtersContext.nSRanks?.length}
 >
     <div class="filters-section-header">
-        <span>Conservation Ranks (Unfiltered)</span>
+        <span>Conservation Ranks</span>
         &nbsp
-        <InfoButton hover={true} type="tooltip" htmlContent="This filter uses preliminary ranks determined using unfiltered data from our database"/></div>
-    <div class="filters-section-content">
+        <InfoButton
+            hover={true}
+            type="tooltip"
+            htmlContent="This filter uses preliminary ranks determined using unfiltered data from our database"
+        />
+    </div>
+    <div class="filters-section-content rank-filter-list">
         {#each nSRankKey as rankItem}
             <CheckboxInput
                 value={rankItem.rank.toUpperCase()}
@@ -35,7 +44,7 @@
                 handler={handleRankSelect}
                 checked={!!filtersContext.nSRanks?.includes(rankItem.rank)}
             >
-                <span
+                <span class="rank-filter-label"
                     >{rankItem.rank.toUpperCase()} ({rankItem.description})</span
                 >
             </CheckboxInput>
@@ -44,11 +53,15 @@
 </div>
 
 <style>
-    .conservation-rank-filter {
+    .rank-filter-list {
         display: flex;
         flex-direction: column;
         align-items: left;
         white-space: nowrap;
+        width: fit-content;
+        gap: 0.25rem;
     }
-
+    .rank-filter-label {
+        width: fit-content;
+    }
 </style>

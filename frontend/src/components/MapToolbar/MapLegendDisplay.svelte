@@ -12,15 +12,14 @@
     } from '../../constants/mapLegendKeys';
     import { getMapContext } from '../../contexts/mapContext';
     import type {
-        MapLayerID,
-        MapLayerSource,
-        MapSourceLayer,
+        StaticMapLayerSource,
+        StaticMapSourceLayer,
     } from '../../lib/map/mapLayers';
 
     type MapLegendProps = {
         targetProp: LegendFeatureProperty;
-        source: MapLayerSource;
-        sourceLayer: MapSourceLayer;
+        source: StaticMapLayerSource;
+        sourceLayer: StaticMapSourceLayer;
         colorKey: [string, Color][];
     };
 

@@ -28,36 +28,40 @@
 </script>
 
 <div id="map-toolbar-wrapper">
-    <ToolbarFoldoutButton
-        id="layers-menu"
-        ariaLabel="Expand layers and legends menu"
-        ButtonLabel={LayersIcon}
-    >
-        <MapLegendFoldout
-            label="Counties"
-            layerID="counties-group"
-            handler={layerToggleHandler}
-            foldout={false}
-        ></MapLegendFoldout>
-        <EcoregionLegend />
-        <MapLegendFoldout
-            label="Parks"
-            layerID="parks"
-            handler={layerToggleHandler}
+    <div id="map-toolbar-left">
+        <ToolbarFoldoutButton
+            id="layers-menu"
+            ariaLabel="Expand layers and legends menu"
+            ButtonLabel={LayersIcon}
         >
-            <MapLegendDisplay
-                targetProp="LegendClass"
-                source="parks"
-                sourceLayer="texas_parks"
-                colorKey={TexasParksColorStops}
-            />
-        </MapLegendFoldout>
-    </ToolbarFoldoutButton>
-    {#if mapContext.loading}
-        <div id="map-loading-icon" class="icon">
-            <LoadingIcon />
-        </div>
-    {/if}
+            <MapLegendFoldout
+                label="Counties"
+                layerID="counties-group"
+                handler={layerToggleHandler}
+                foldout={false}
+            ></MapLegendFoldout>
+            <EcoregionLegend />
+            <MapLegendFoldout
+                label="Parks"
+                layerID="parks"
+                handler={layerToggleHandler}
+            >
+                <MapLegendDisplay
+                    targetProp="LegendClass"
+                    source="parks"
+                    sourceLayer="texas_parks"
+                    colorKey={TexasParksColorStops}
+                />
+            </MapLegendFoldout>
+        </ToolbarFoldoutButton>
+    </div>
+    <div id="map-toolbar-right">
+        {#if mapContext.loading}
+            <div id="map-loading-icon" class="icon loading-blink">
+                <LoadingIcon />
+            </div>
+        {/if}
+    </div>
 </div>
 
 <style>
@@ -83,6 +87,7 @@
         gap: 1rem;
         height: max-content;
         align-items: center;
+        justify-content: space-between;
     }
     #map-toolbar-wrapper > * {
         z-index: 50;

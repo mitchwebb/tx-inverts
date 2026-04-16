@@ -335,7 +335,10 @@
 
             // Monitor taxon layer events to trigger loading behavior
             map.on('sourcedata', (e) => {
-                if (e.sourceId?.startsWith('observations-tiles-')) {
+                if (
+                    e.sourceId?.startsWith('observations-tiles-') ||
+                    e.sourceId?.startsWith('range-extent-')
+                ) {
                     mapContext.loading = !e.isSourceLoaded;
                 }
             });

@@ -35,7 +35,7 @@
         pointer-events: none; /* Prevents the overlay from blocking mouse events */
         display: grid;
         grid-template-rows: 33px 1fr;
-        /* gap: 2px; */
+        gap: 0.5rem;
         position: relative;
         z-index: 2;
         box-sizing: border-box;

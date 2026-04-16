@@ -28,7 +28,9 @@
         </div>
         <RankFilterSection />
     </div>
-    <DatasetFilterSection domain="taxa" showCounts={false} />
+    <div class="horizontal-filter-group">
+        <DatasetFilterSection domain="taxa" showCounts={false} />
+    </div>
 </FiltersWrapper>
 
 <style>

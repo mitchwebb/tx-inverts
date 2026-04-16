@@ -12,11 +12,16 @@ export const italicizedRanks: ItalicizedRank[] = [
 ];
 
 export const TAXON_COLORS = [
-    '#e69f00',
-    '#56b4e9',
-    '#009e73',
-    '#bdce22',
-    '#0072b2',
-    '#d53c00',
-    '#cc79a7',
+    '#E58606',
+    '#5D69B1',
+    '#52BCA3',
+    '#99C945',
+    '#CC61B0',
+    '#24796C',
+    '#DAA51B',
+    '#2F8AC4',
+    '#764E9F',
+    '#ED645A',
+    '#CC3A8E',
+    '#A5AA99',
 ];
