@@ -196,7 +196,7 @@
         height: 100%;
         width: 100%;
     }
-    .inat-toggle-section {
+    /* .inat-toggle-section {
         display: flex;
         justify-content: center;
         align-items: center;
@@ -215,7 +215,7 @@
         height: 1.5rem;
         display: block;
         stroke: var(--text-default);
-    }
+    } */
     #sidebar-foldout-icon {
         padding: 0;
         margin: 0;

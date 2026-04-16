@@ -105,7 +105,8 @@
 {#if $dataProviders}
     <div
         class="data-providers-section filters-section"
-        class:active={!!filtersContext.dataProviders?.length || !filtersContext.includeINat}
+        class:active={!!filtersContext.dataProviders?.length ||
+            !filtersContext.includeINat}
         class:loading-blink={observationsMetricsLoading}
     >
         <div id="data-providers-header" class="filters-section-header">
@@ -205,6 +206,9 @@
     .providers-list {
         width: 100%;
         position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
     }
     .providers-list::after {
         content: '';

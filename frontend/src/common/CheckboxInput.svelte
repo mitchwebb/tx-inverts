@@ -22,6 +22,7 @@
         children?: Snippet;
         checkboxIcon?: Snippet<[checked: boolean]>;
         customClass?: string;
+        labelPosition?: 'left' | 'right';
     };
 
     let {
@@ -32,6 +33,7 @@
         children,
         checkboxIcon,
         customClass,
+        labelPosition = 'right',
     }: CheckboxInputProps = $props();
 
     function handleChange(e: Event) {
@@ -45,49 +47,73 @@
     }
 </script>
 
-<label class={`container ${customClass}`}>
+<label class={`checkbox-container ${customClass}`}>
     <!-- Normal checkbox (hidden if custom icon provided) -->
-    <input
-        {checked}
-        {name}
-        onclick={(e) => e.stopPropagation()}
-        type="checkbox"
-        class:hidden-checkbox={checkboxIcon}
-        onchange={handleChange}
-        value={String(value)}
-    />
-    <!-- Custom checkbox UI (optional) -->
-    {#if checkboxIcon}
-        <span class="checkbox-icon icon">
-            {@render checkboxIcon(checked!)}
-        </span>
-    {:else}
-        <span class="checkmark"></span>
-    {/if}
+    <div class="checkbox-icon-wrapper">
+        <input
+            {checked}
+            {name}
+            onclick={(e) => e.stopPropagation()}
+            type="checkbox"
+            class:hidden-checkbox={!!checkboxIcon}
+            onchange={handleChange}
+            value={String(value)}
+        />
+
+        {#if labelPosition === 'right'}
+            <!-- Custom checkbox UI (optional) -->
+            {#if checkboxIcon}
+                <div class="custom-checkbox">
+                    {@render checkboxIcon(checked!)}
+                </div>
+            {:else}
+                <span class="default-checkmark"></span>
+            {/if}
+        {/if}
+    </div>
+
     <!-- Label content snippet (provided as child) -->
     {#if children}
-        <span class="label-content">
+        <div class="label-content">
             {@render children?.()}
-        </span>
+        </div>
+    {/if}
+
+    {#if labelPosition === 'left'}
+        <!-- Custom checkbox UI (optional) -->
+        {#if checkboxIcon}
+            <div class="custom-checkbox">
+                {@render checkboxIcon(checked!)}
+            </div>
+        {:else}
+            <span class="default-checkmark"></span>
+        {/if}
     {/if}
 </label>
 
 <style>
     .label-content {
         width: 100%;
-        min-width: 0;
         text-align: left;
+        display: inline;
+        align-self: baseline;
     }
-    .checkbox-icon {
+    .checkbox-icon-wrapper {
+        position: relative;
+        flex-shrink: 0;
+        height: 1rem;
+        width: 1rem;
+        padding: 0;
+        margin: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        pointer-events: none; /* allow clicks to pass through to the hidden checkbox */
         color: var(--accent-color);
         transition: color 0.2s ease;
         z-index: 1;
+        box-sizing: border-box;
     }
-    .checkbox-icon:hover {
+    .checkbox-icon-wrapper:hover {
         cursor: pointer;
     }
     .hidden-checkbox {
@@ -106,51 +132,52 @@
     .checkbox-label input {
         padding: 0;
     }
-    .container {
-        display: flex;
+    .checkbox-container {
         gap: 0.5rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
+        display: inline-flex;
+        width: 100%;
         position: relative;
-        height: 1.5rem;
-        /* width: 1.5rem; */
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
+        vertical-align: middle;
+        align-items: center;
     }
-    .container input {
+    .checkbox-container input {
+        cursor: pointer;
         position: relative;
         opacity: 0;
-        cursor: pointer;
-        height: 1.5rem;
-        width: 1.5rem;
+        height: 100%;
+        width: 100%;
+        padding: 0;
         margin: 0;
     }
-    .checkmark {
+    .default-checkmark {
+        cursor: pointer;
         position: absolute;
         top: 0;
         left: 0;
-        height: 1rem;
-        width: 1rem;
+        height: 100%;
+        width: 100%;
         background-color: var(--container-back);
         border: 1px solid var(--border);
         box-sizing: border-box;
-        margin: 0.25rem;
+        padding: 0;
+        margin: 0;
+        align-self: baseline;
     }
-    .container:hover input ~ .checkmark {
+    .checkbox-container:hover
+        .checkbox-icon-wrapper
+        input:not(:checked)
+        ~ .default-checkmark {
         background-color: var(--container-mid);
     }
-    .container input:checked ~ .checkmark {
+
+    .checkbox-icon-wrapper input:checked ~ .default-checkmark {
         background-color: var(--accent-color);
     }
-    .checkmark:after {
-        content: '';
-        position: absolute;
-        display: none;
-    }
-    .container input:checked ~ .checkmark:after {
+    input:checked ~ .default-checkmark:after {
         content: '✓';
         color: black;
         font-weight: bold;

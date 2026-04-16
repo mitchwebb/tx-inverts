@@ -169,7 +169,7 @@
         {/snippet}
 
         <div id="ns-metrics-section">
-            {#if nSValues.numberOfOccurrences}
+            {#if nSValues.numberOfOccurrences != null}
                 <div id="occurrences-section" class="ns-metric-row">
                     <div id="occurrences-text">
                         <span>Occurrences:</span>
@@ -185,7 +185,7 @@
                 </div>
             {/if}
             <div id="observations-section" class="ns-metric-row">
-                {#if nSValues.observationCount}
+                {#if nSValues.observationCount != null}
                     <div id="observations-text">
                         <span>Individual Observations:</span>
                         <span class="thin">
@@ -193,16 +193,18 @@
                         </span>
                     </div>
                     {#if isMapPage}
-                        <CheckboxInput
-                            customClass="space-between"
-                            name="observations-checkbox"
-                            value={`observations-layer-group-${taxonID}`}
-                            handler={layerToggleHandler}
-                            checked={mapContext.isLayerGroupActive(
-                                `observations-layer-group-${taxonID}`
-                            )}
-                            checkboxIcon={eyeIcon}
-                        />
+                        <div class="ns-checkbox">
+                            <CheckboxInput
+                                customClass="space-between"
+                                name="observations-checkbox"
+                                value={`observations-layer-group-${taxonID}`}
+                                handler={layerToggleHandler}
+                                checked={mapContext.isLayerGroupActive(
+                                    `observations-layer-group-${taxonID}`
+                                )}
+                                checkboxIcon={eyeIcon}
+                            />
+                        </div>
                     {/if}
                 {/if}
             </div>
@@ -216,16 +218,18 @@
                         </span>
                     </div>
                     {#if isMapPage}
-                        <CheckboxInput
-                            customClass="space-between"
-                            name="extent-checkbox"
-                            value={`range-extent-layer-group-${taxonID}`}
-                            handler={layerToggleHandler}
-                            checked={mapContext.isLayerGroupActive(
-                                `range-extent-layer-group-${taxonID}`
-                            )}
-                            checkboxIcon={eyeIcon}
-                        />
+                        <div class="ns-checkbox">
+                            <CheckboxInput
+                                customClass="space-between"
+                                name="extent-checkbox"
+                                value={`range-extent-layer-group-${taxonID}`}
+                                handler={layerToggleHandler}
+                                checked={mapContext.isLayerGroupActive(
+                                    `range-extent-layer-group-${taxonID}`
+                                )}
+                                checkboxIcon={eyeIcon}
+                            />
+                        </div>
                     {/if}
                 {/if}
             </div>
@@ -297,6 +301,11 @@
         align-items: center;
         justify-content: space-between;
         min-height: 1.5rem;
+        width: 100%;
+    }
+    .ns-checkbox {
+        display: flex;
+        align-items: center;
     }
     :global(.ns-metric-row .input-item-wrapper) {
         display: flex;
