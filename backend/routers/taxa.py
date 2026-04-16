@@ -7,8 +7,7 @@ from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db_schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db_schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.sql import OccurrenceFilter
-from backend.routers import occurrence
-from fastapi import Request, APIRouter, HTTPException
+from fastapi import Request, APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.models.api_types import ObservationsRequestParams, TaxaRequestParams, TextData
@@ -49,8 +48,15 @@ async def get_taxon_rank(conn, taxon_id):
 # Provide search suggestions based on taxon search
 # Returns only accepted/doubtful taxa, resolving synonyms automatically
 @taxa_router.post("/taxon_search_suggest",)
-async def search_taxon(data: TextData, request: Request):
-    search_term = data.text
+async def search_taxon(request: Request, text: str = Body(...), exclude_species: bool = Body(...)):
+    search_term = text
+
+    exclude_species_section = sql.SQL('')
+    if exclude_species:
+        exclude_species_section = sql.SQL(
+            "AND COALESCE(a.taxon_rank, t.taxon_rank) NOT IN ('species', 'subspecies')"
+        )
+
     query = sql.SQL('''
         SELECT DISTINCT ON (COALESCE(a.taxon_id, t.taxon_id))
             COALESCE(a.scientific_name, t.scientific_name) AS scientific_name,
@@ -65,13 +71,15 @@ async def search_taxon(data: TextData, request: Request):
         WHERE
             t.canonical_name ~* {search_term}
             AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'doubtful')
+            {exclude_species_section}
         ORDER BY
             COALESCE(a.taxon_id, t.taxon_id),
             COALESCE(a.canonical_name, t.canonical_name)
         LIMIT 10;
     ''').format(
         tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
-        search_term=sql.Literal('\\m' + search_term.lower())
+        search_term=sql.Literal('\\m' + search_term.lower()),
+        exclude_species_section=exclude_species_section
     )
     try:
         async with request.app.state.db_pool.connection() as conn:
