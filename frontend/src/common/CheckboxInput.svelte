@@ -111,9 +111,10 @@
         gap: 0.5rem;
         cursor: pointer;
         display: flex;
+        align-items: center;
         position: relative;
         height: 1.5rem;
-        width: 1.5rem;
+        /* width: 1.5rem; */
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;

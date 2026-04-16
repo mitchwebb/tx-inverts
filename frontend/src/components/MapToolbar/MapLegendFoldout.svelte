@@ -65,6 +65,7 @@
         aria-expanded={open}
         aria-controls="foldout-content-{layerID}"
         class="map-key-foldout-header map-key-header map-key-section"
+        class:has-foldout={foldout}
         onclick={handleFoldout}
         onkeydown={(e) =>
             (e.key === 'Enter' || e.key === ' ') && (open = !open)}
@@ -159,12 +160,12 @@
     .map-key-foldout.open > .map-key-foldout-header {
         border-bottom: 1px solid var(--border);
     }
-    .map-key-foldout-header:hover {
+    .map-key-foldout-header.has-foldout:hover {
         cursor: pointer;
         background-color: var(--container-mid);
         user-select: none;
     }
-    .map-key-foldout-header:active {
+    .map-key-foldout-header.has-foldout:active {
         background-color: var(--container-mid);
     }
     .map-key-foldout {

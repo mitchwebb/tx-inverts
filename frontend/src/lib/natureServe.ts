@@ -135,7 +135,6 @@ export function calculateNSRank(
 // In this case, 'range' refers to the difference between low/high
 // ranking estimates.
 // With our parameters, there is no estimate range, hence 'zero_range'
-
 function getZeroRangeRank(threeAverageScore: number) {
     let zeroRangeRank: NSRank = 'u';
 

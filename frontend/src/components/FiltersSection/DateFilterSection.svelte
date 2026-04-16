@@ -78,6 +78,7 @@
                 isMobile={$isMobile}
                 position="bottom right"
                 buttons="clear"
+                dateFormat="yyyy-MM-dd"
             />
             <span>to</span>
             <DatePicker
@@ -92,6 +93,7 @@
                 isMobile={$isMobile}
                 position="bottom right"
                 buttons="clear"
+                dateFormat="yyyy-MM-dd"
             />
         </div>
     </div>
