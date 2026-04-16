@@ -96,6 +96,7 @@
         text-align: left;
         display: inline;
         align-self: baseline;
+        flex-grow: 1;
     }
     .checkbox-icon-wrapper {
         position: relative;
