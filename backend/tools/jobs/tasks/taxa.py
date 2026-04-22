@@ -167,7 +167,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
     df.to_csv(os.path.join(
         DATA_OUT_PATH, 'taxa_cleaned.csv'), sep="\t", index=False)
 
-    # Clear memory immediately
+    # Clear memory immediately (probably unnecessary)
     del df
     import gc
     gc.collect()
@@ -181,21 +181,20 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
         db_logger.info('Creating temp table for insertion...')
         # Create temp table without indexes/constraints for faster COPY
         await cur.execute(
-            sql.SQL('CREATE TEMP TABLE {} (LIKE {} INCLUDING DEFAULTS)').format(
-                sql.Identifier(temp_table_name),
-                sql.Identifier(GBIF_INVERTS_BACKBONE.name)
+            sql.SQL('CREATE TEMP TABLE {temp_table} (LIKE {backbone_table} INCLUDING DEFAULTS)').format(
+                temp_table=sql.Identifier(temp_table_name),
+                backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
             )
         )
 
         copy_sql = sql.SQL('''
-            COPY {} FROM STDIN 
+            COPY {temp_table} FROM STDIN 
             WITH (
                 FORMAT csv, 
                 DELIMITER E'\t', 
                 HEADER true, 
                 NULL '')
-        ''').format(sql.Identifier(temp_table_name)
-                    )
+        ''').format(temp_table=sql.Identifier(temp_table_name))
 
         # Copying to temp table
         with open(os.path.join(DATA_OUT_PATH, 'taxa_cleaned.csv'), "r", encoding="utf8") as f:
@@ -208,10 +207,14 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
         if force_refresh:
             db_logger.info(
                 'force_refresh is TRUE. Overwriting previous table...')
-            await cur.execute(sql.SQL("TRUNCATE TABLE {}").format(sql.Identifier(GBIF_INVERTS_BACKBONE.name)))
+            await cur.execute(sql.SQL("TRUNCATE TABLE {backbone_table}").format(
+                backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
+            ))
             await cur.execute(
-                sql.SQL('INSERT INTO {} SELECT * FROM {}')
-                .format(sql.Identifier(GBIF_INVERTS_BACKBONE.name), sql.Identifier(temp_table_name))
+                sql.SQL('INSERT INTO {backbone_table} SELECT * FROM {temp_table}').format(
+                    backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                    temp_table=sql.Identifier(temp_table_name)
+                )
             )
 
             # Update invasives column in backbone
@@ -224,8 +227,9 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
             await conn.commit()
 
-            return UpdateStatus.ALL
+            return True
 
+        # TODO: This isn't useful. It's simply slowing the process. However, if we can compare the tables BEFORE the lineage work is done, this would save time.
         # Check if temp differs from main table (EXCEPT)
         db_logger.info('Comparing new and old backbones...')
         await cur.execute(
@@ -248,19 +252,22 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
         )
         (changed,) = await cur.fetchone()
 
+        # If there are no changes, skip update
         if not changed:
             db_logger.info('No changes found, update skipped.')
             # No changes, skip update
-            return UpdateStatus.NONE
+            return False
 
         # Else if changes found, replace table
         else:
             db_logger.info('Changes found in backbone, replacing backbone...')
-            await cur.execute(sql.SQL('TRUNCATE TABLE {}').format(sql.Identifier(GBIF_INVERTS_BACKBONE.name)))
-            await cur.execute(
-                sql.SQL('INSERT INTO {} SELECT * FROM {}')
-                .format(sql.Identifier(GBIF_INVERTS_BACKBONE.name), sql.Identifier(temp_table_name))
-            )
+            await cur.execute(sql.SQL('TRUNCATE TABLE {backbone_table}').format(
+                backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
+            ))
+            await cur.execute(sql.SQL('INSERT INTO {backbone_table} SELECT * FROM {temp_table}').format(
+                backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                temp_table=sql.Identifier(temp_table_name)
+            ))
 
             # Update invasives column
             await update_invasives(conn)
@@ -271,7 +278,7 @@ async def update_backbone(fp=None, force_refresh: bool = False) -> UpdateStatus:
 
             await conn.commit()
 
-            return UpdateStatus.ALL
+            return True
 
 
 async def update_normalized_names(conn: AsyncConnection):
@@ -371,7 +378,8 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         for index, taxon_id in enumerate(taxa_to_update):
             # Update every 100 taxa or at the beginning and end
             if index % 100 == 0 or index == total - 1:
-                data_logger.info(f"Processing taxon {index + 1}/{total} (id={taxon_id})")
+                data_logger.info(
+                    f"Processing taxon {index + 1}/{total} (id={taxon_id})")
 
             ranks = []
 
@@ -408,7 +416,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
                     WHERE taxon_id = %s AND taxon_rank = 'species'
                 """).format(sql.Identifier(GBIF_INVERTS_BACKBONE.name)),
                 [(rank_with, rank_without, taxon_id)
-                for taxon_id, rank_with, rank_without in rank_assignments]
+                 for taxon_id, rank_with, rank_without in rank_assignments]
             )
 
         # Refreshing tx_taxa materialized view to add ranks from backbone_table

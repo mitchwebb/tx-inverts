@@ -39,7 +39,7 @@ LOGGING_CONFIG = {
             "level": "INFO",
         },
         "db": {
-            "handlers": ["file"],
+            "handlers": ["console", "file"],
             "level": "INFO",
         },
         "security": {

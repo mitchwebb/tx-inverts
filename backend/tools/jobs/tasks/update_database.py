@@ -25,12 +25,15 @@ async def update_database():
     await conn.commit()
 
     # Update observations, returning new taxon_keys and row_ids
-    backbone_update_required, new_row_keys, new_row_ids = await update_observations(gbif_request_key="0076276-260226173443078")
+    backbone_update_required, new_row_keys, new_row_ids = await update_observations()
 
     await update_observation_regions(conn, new_row_ids)
 
     if backbone_update_required:
-        await update_backbone()
+        updated = await update_backbone()
+        # A bit deceptive, but new_row_keys == None means update ALL rows
+        if updated:
+            new_row_keys = None
 
     try:
         # TODO: Bug with new_row_keys. These are under-represented with new observations

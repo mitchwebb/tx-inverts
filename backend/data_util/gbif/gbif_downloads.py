@@ -45,16 +45,6 @@ def gbif_download_request(request_body: str, pwd: None, username: None, test=Fal
             data_logger.info(
                 f'Find this download request at https://www.gbif.org/occurrence/download/{response.text}')
             return response.text
-        elif response.status_code == 400:
-            data_logger.error(f'Error: {response.status_code}: Invalid Query')
-            return None
-        elif response.status_code == 401:
-            data_logger.error(f'Error: Incorrect credentials.')
-            return None
-        elif response.status_code == 429:
-            data_logger.error(
-                f'Error: {response.status_code}: Too many concurrent downloads')
-            return None
         else:
             data_logger.error(f'Error: {response.status_code}: {response.text}')
             return None
@@ -64,7 +54,7 @@ def gbif_download_request(request_body: str, pwd: None, username: None, test=Fal
         return None
 
 
-async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, target_files=None, verbose=False):
+async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800, target_files=None, verbose=False):
     """
     Uses a GBIF download key to download and save a GBIF download to a local CSV
 
@@ -78,7 +68,7 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 1200, 
         key (str): GBIF API endpoint (ex: 'occurrence/download/request')
         output_fp (str): Desired filepath for resulting CSV (refer to GBIF documentation)
         time_to_wait (int, optional): The total amount of time to continue
-            pinging the GBIF api (default is 20 minutes)
+            pinging the GBIF api (default is 3 hours, as is GBIF high estimate)
         target_files (string, optional): Specific files to extract (useful for DWCA archives)
         verbose (bool): Controls GBIF retry/ping output messages
 

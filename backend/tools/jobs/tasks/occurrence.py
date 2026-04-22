@@ -3,6 +3,7 @@ import json
 import os
 import pandas as pd
 from backend.db_schema.geometries import TEXAS_GEOMETRY_TABLE
+from backend.db_schema.observation_regions import OBSERVATION_REGIONS_TABLE
 import psycopg
 import time
 
@@ -51,7 +52,7 @@ async def update_observations(
             verbose (bool)
 
         Returns:
-            (backboneUpdateRequired, new_row_keys, affected_observation_ids)
+            (backbone_update_required, new_row_keys, affected_observation_ids)
 
     '''
 
@@ -101,23 +102,27 @@ async def update_observations(
             key,
             output_fp=DATA_OUT_PATH,
             target_files=['occurrence.txt'],
-            time_to_wait=2400
         )
         observations_fp = os.path.join(output_dir, 'occurrence.txt')
 
-    backboneUpdateRequired = False
+    backbone_update_required = False
     affected_observation_ids = []
     new_row_keys = []
 
     try:
         if full_replace:
             db_logger.info(
-                'Full replace requested. Truncating observations table...')
+                'Full replace requested. Truncating observations (and observations_regions) table...')
             async with conn.cursor() as cur:
-                await cur.execute(sql.SQL('TRUNCATE {}').format(
-                    sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
+                await cur.execute(sql.SQL('''
+                    TRUNCATE {obs_table}, {obs_regions_table}
+                ''').format(
+                    obs_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+                    obs_regions_table=sql.Identifier(
+                        OBSERVATION_REGIONS_TABLE.name)
                 ))
-            backboneUpdateRequired = True
+
+            backbone_update_required = True
 
         async with conn.cursor() as cur:
             # Create temp table to perform data update/merge
@@ -355,9 +360,9 @@ async def update_observations(
                         ⚠ Detected {changed} observations with changed accepted_taxon_keys.
                         This suggests the backbone may be outdated and should be updated.
                     ''')
-                    backboneUpdateRequired = True
+                    backbone_update_required = True
                 else:
-                    backboneUpdateRequired = False
+                    backbone_update_required = False
 
                 await cur.execute(sql.SQL('''
                     SELECT COUNT(*) AS new_row_count FROM {temp_table}
@@ -452,7 +457,7 @@ async def update_observations(
 
             await conn.commit()
 
-            return (backboneUpdateRequired, new_row_keys or None, affected_observation_ids or None)
+            return (backbone_update_required, new_row_keys or None, affected_observation_ids or None)
 
     except Exception as e:
         await conn.rollback()
