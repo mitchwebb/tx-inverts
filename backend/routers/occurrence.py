@@ -52,25 +52,25 @@ async def get_provider_counts(params: ObservationsRequestParams, request: Reques
 
         query = sql.SQL('''
             WITH providers_with_taxon AS (
-                SELECT DISTINCT institution_code
+                SELECT DISTINCT dataset_key
                 FROM gbif_observations
                 WHERE {taxon_filter}
             ),
             counts AS (
                 SELECT
-                    institution_code,
+                    dataset_key,
                     COUNT(*) as COUNT
                 FROM {occurrence_table}
                 WHERE
                     {occurrence_filter}
-                GROUP BY institution_code
+                GROUP BY dataset_key
             )
             SELECT
-                p.institution_code,
+                p.dataset_key,
                 COALESCE(counts.count, 0) AS count
             FROM providers_with_taxon p
             LEFT JOIN counts
-                ON counts.institution_code = p.institution_code
+                ON counts.dataset_key = p.dataset_key
             ORDER BY count DESC;
         ''').format(
             occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
@@ -83,7 +83,7 @@ async def get_provider_counts(params: ObservationsRequestParams, request: Reques
         ) as result:
             if result:
                 institution_counts = {
-                    item['institution_code']: item['count'] for item in result}
+                    item['dataset_key']: item['count'] for item in result}
                 return institution_counts
             else:
                 return None
@@ -300,7 +300,7 @@ async def get_tile(include_inat: bool, taxon_id: int, data_providers: str, date_
                         ),
                         obs AS (
                             SELECT 
-                                institution_code,
+                                publisher,
                                 "references",
                                 county,
                                 locality,

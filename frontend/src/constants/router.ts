@@ -8,7 +8,6 @@ import {
     type FiltersState,
 } from '../contexts/filtersContext';
 import type { NSRank } from '../types/api';
-import type { Provider } from './mapLegendKeys';
 import type { ParamCodec, SyncedKeys } from '../types/router';
 import {
     booleanCodec,
@@ -35,7 +34,7 @@ export const routerSyncedKeys = {
             includeINat: { param: 'inat', codec: booleanCodec(true) },
             dataProviders: {
                 param: 'source',
-                codec: stringArrayCodec() as ParamCodec<Provider[]>,
+                codec: stringArrayCodec() as ParamCodec<string[]>,
             },
             nSRanks: {
                 param: 'status',

@@ -323,7 +323,7 @@
         position: relative;
         overflow: auto;
         width: 100%;
-        min-width: 800px;
+        min-width: 625px;
         background-color: var(--container-shadow);
     }
     #page-body {

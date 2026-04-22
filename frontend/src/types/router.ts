@@ -1,15 +1,3 @@
-// export interface RouteParamDefaults {
-//     include_inat: boolean | null;
-//     taxon_id: number | null;
-//     data_provider: Provider | Provider[] | null;
-//     ns_rank_state: NSRank | null;
-//     taxa_filter: number | null;
-// }
-
-// export type URLParam = keyof URLParamMap;
-
-// export type URLParamValue<K extends URLParam> = URLParamMap[K];
-
 export type ParamCodec<T> = {
     toURL(value: T): string[] | null;
     fromURL(values: string[]): T | null | undefined;

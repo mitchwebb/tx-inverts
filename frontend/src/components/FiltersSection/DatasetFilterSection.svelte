@@ -3,7 +3,6 @@
     import type { CheckboxPayload } from '../../common/CheckboxInput.svelte';
     import CheckboxInput from '../../common/CheckboxInput.svelte';
     import Toggle from '../../common/Toggle.svelte';
-    import type { Provider } from '../../constants/mapLegendKeys';
     import type { FilterDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { dataProviders } from '../../contexts/DataProviders';
@@ -37,15 +36,17 @@
             (domain === 'taxa' && filtersContext.filterTaxonIDs.length)
         ) {
             // Filter to relevant providers
-            return Object.entries(providerCounts).map(([code, count]) => ({
-                institutionCode: code,
-                institutionName: $dataProviders?.[code]?.institutionName,
+            return Object.entries(providerCounts).map(([key, count]) => ({
+                datasetKey: key,
+                institutionCode: $dataProviders?.[key]?.institutionCode,
+                institutionName: $dataProviders?.[key]?.institutionName,
                 count,
             }));
         } else {
             // Else, show all providers
-            return Object.entries($dataProviders).map(([code, info]) => ({
-                institutionCode: code,
+            return Object.entries($dataProviders).map(([key, info]) => ({
+                datasetKey: key,
+                institutionCode: info.institutionCode,
                 institutionName: info.institutionName,
                 count: null,
             }));
@@ -67,9 +68,9 @@
         let currProviders = filtersContext.dataProviders ?? [];
 
         // Update reactive state
-        filtersContext.dataProviders = toggleArrayValue<Provider>(
+        filtersContext.dataProviders = toggleArrayValue<string>(
             currProviders,
-            value as Provider,
+            value,
             checked
         );
     }
@@ -139,17 +140,17 @@
                     class:expanded={providerList.length <= SHOW_LIMIT ||
                         showAll}
                 >
-                    {#each visibleProviders as { institutionCode, institutionName, count } (institutionCode)}
+                    {#each visibleProviders as { datasetKey, institutionCode, institutionName, count } (datasetKey)}
                         {@const disabled =
                             institutionName === 'iNaturalist.org' &&
                             !filtersContext.includeINat}
                         <div class={['provider-item', { disabled }]}>
                             <CheckboxInput
                                 name="provider"
-                                value={institutionCode}
+                                value={datasetKey}
                                 handler={handleDataProvider}
                                 checked={filtersContext?.dataProviders?.includes(
-                                    institutionCode as Provider
+                                    datasetKey
                                 ) ?? false}
                             >
                                 <div class="provider-label">
@@ -161,9 +162,11 @@
                                         >
                                             {institutionName || institutionCode}
                                         </div>
-                                        <div class="institution-code">
-                                            {institutionCode}
-                                        </div>
+                                        {#if institutionCode}
+                                            <div class="institution-code">
+                                                {institutionCode}
+                                            </div>
+                                        {/if}
                                     </div>
                                     {#if showCounts && count !== null}
                                         <div class="institution-count">
@@ -174,16 +177,6 @@
                             </CheckboxInput>
                         </div>
                     {/each}
-                    <!-- {#if providerList.length > SHOW_LIMIT && !showAll}
-                        <div class='blank-provider-item'>
-                            <div class="provider-label">
-                                <div class="institution-name-wrapper">
-                                    <div class="institution-name">...</div>
-                                    <div class="institution-code"></div>
-                                </div>
-                            </div>
-                        </div>
-                    {/if} -->
                 </form>
                 {#if providerList.length > SHOW_LIMIT}
                     <div>
@@ -290,6 +283,7 @@
     }
     .institution-code {
         /* font-style: italic; */
+        text-align: right;
         font-weight: 200;
     }
     .data-providers-section {

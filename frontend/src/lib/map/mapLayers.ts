@@ -2,7 +2,6 @@ import type { Layer } from 'mapbox-gl';
 import {
     l3EcoregionsColorStops,
     l4EcoregionsColorStops,
-    providersColorStops,
     TexasParksColorStops,
 } from '../../constants/mapLegendKeys';
 
@@ -323,12 +322,6 @@ export function createObservationsBundle(taxonID: number, color: string) {
                         ['boolean', ['feature-state', 'hover'], false],
                         12,
                         8,
-                    ],
-                    'circle-stroke-color': [
-                        'match',
-                        ['get', 'institution_code'],
-                        ...providersColorStops.flat(),
-                        'white',
                     ],
                     'circle-stroke-width': 2,
                 },

@@ -51,6 +51,13 @@ INDEX_DEFINITIONS = {
      		ON gbif_observations(institution_code)
     	'''
     },
+    'idx_gbif_observations_dataset_key': {
+        'table': 'gbif_observations',
+        'create_sql': '''
+            CREATE INDEX idx_gbif_observations_dataset_key
+            ON gbif_observations(dataset_key)
+        '''
+    },
     'idx_inverts_backbone_taxon_id': {
         'table': 'gbif_inverts_backbone',
         'create_sql': '''
@@ -178,49 +185,7 @@ INDEX_DEFINITIONS = {
         'create_sql': '''
             CREATE INDEX ON taxon_lineage (ancestor_id, accepted_taxon_key);
         '''
-    },
-    # 'idx_taxon_tile_cache_tile_coords': {
-    # 	'table': 'taxon_tile_cache',
-    # 	'create_sql': '''
-    # 		CREATE INDEX idx_taxon_tile_cache_tile_coords
-    # 		ON taxon_tile_cache (zoom, x_bin, y_bin);
-    # 	'''
-    # },
-    # 'idx_taxon_tile_cache_zoom_taxon': {
-    # 	'table': 'taxon_tile_cache',
-    # 	'create_sql': '''
-    # 		CREATE INDEX idx_taxon_tile_cache_zoom_taxon
-    # 		ON taxon_tile_cache (zoom, taxon_id);
-    # 	'''
-    # },
-    # 'idx_taxon_tile_cache_geom': {
-    # 	'table': 'taxon_tile_cache',
-    # 	'create_sql': '''
-    # 		CREATE INDEX idx_taxon_tile_cache_geom
-    #  		ON taxon_tile_cache USING gist (geom);
-    #  	'''
-    # },
-    # 'idx_taxon_tile_cache_institution_code': {
-    # 	'table': 'taxon_tile_cache',
-    # 	'create_sql': '''
-    # 		CREATE INDEX idx_taxon_tile_cache_institution_code
-    #  		ON taxon_tile_cache (institution_code);
-    #  	'''
-    # },
-    # 'idx_taxon_descendant_cache_ancestor_key': {
-    # 	'table': 'taxon_descendant_cache',
-    # 	'create_sql': '''
-    # 		CREATE INDEX idx_taxon_descendant_cache_ancestor_key
-    # 		ON taxon_descendant_cache (ancestor_key);
-    # 	'''
-    # },
-    # 'idx_taxon_descendant_cache_descendant_key': {
-    # 	'table': 'taxon_descendant_cache',
-    # 	'create_sql': '''
-    # 		CREATE INDEX idx_taxon_descendant_cache_descendant_key
-    # 		ON taxon_descendant_cache (descendant_key);
-    # 	'''
-    # }
+    }
 }
 
 # Rank column indexes
@@ -284,7 +249,8 @@ MATERIALIZED_VIEWS = {
                 ON r.observation_id = o.gbif_id
         ''').format(
             observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
-            observation_regions_table=sql.Identifier(OBSERVATION_REGIONS_TABLE.name)
+            observation_regions_table=sql.Identifier(
+                OBSERVATION_REGIONS_TABLE.name)
         )
     },
     'taxon_lineage': {

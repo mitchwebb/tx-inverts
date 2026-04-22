@@ -30,7 +30,7 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
     else:
         provider_literals = sql.SQL(', ').join(
             sql.Literal(p) for p in filter.data_providers)
-        data_provider_clause = sql.SQL('AND institution_code IN ({providers})').format(
+        data_provider_clause = sql.SQL('AND dataset_key IN ({providers})').format(
             providers=provider_literals
         )
 

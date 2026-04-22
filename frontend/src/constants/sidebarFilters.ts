@@ -36,7 +36,7 @@ export const SIDEBAR_FILTER_META: Record<
     },
     dataProviders: {
         default: FILTER_DEFAULTS.dataProviders,
-        domain: ['observations'],
+        domain: ['observations', 'taxa'],
         count: true,
     },
     dateEnd: {

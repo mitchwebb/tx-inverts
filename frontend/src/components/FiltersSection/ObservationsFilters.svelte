@@ -20,10 +20,4 @@
 </FiltersWrapper>
 
 <style>
-    .horizontal-filter-group {
-        display: flex;
-        gap: 0.5rem;
-        width: 100%;
-        flex-wrap: wrap;
-    }
 </style>

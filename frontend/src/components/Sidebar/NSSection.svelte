@@ -129,11 +129,13 @@
 >
     {#snippet closedDisplay()}
         {#if rank && !taxon.info.usInvasive}
-            <NSCircle active={true} level="s" rank={rank ? rank : 'u'} />
+            <div>
+                <NSCircle active={true} level="s" rank={rank ? rank : 'u'} />
+            </div>
         {/if}
     {/snippet}
     {#if filtersActive}
-        <div class="filter-warning">Filters Applied</div>
+        <div class="filter-warning">Using Filtered Data</div>
     {/if}
     <div class="ns-section">
         {#if rank && !taxon.info.usInvasive}

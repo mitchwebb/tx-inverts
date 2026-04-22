@@ -1,6 +1,5 @@
 import { getContext, setContext } from 'svelte';
 import type { NSValues, TaxonInfo } from '../types/api';
-import type { Provider } from '../constants/mapLegendKeys';
 import { makeIDCollection } from '../util/collection.svelte';
 
 export const activeTaxaStateKey = 'taxa';
@@ -15,7 +14,7 @@ export type ActiveTaxon = {
     taxonID: number;
     info: TaxonInfo;
     nSValues: NSValues;
-    providerCounts: Record<Provider, number> | null;
+    providerCounts: Record<string, number> | null;
     dateMin: Date | null;
     dateMax: Date | null;
 };

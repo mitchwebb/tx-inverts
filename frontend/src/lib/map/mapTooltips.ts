@@ -71,7 +71,7 @@ export const targetFeatureFieldsMap: Partial<Record<string, MapHoverSection>> =
                         return `<span>${date_string}</span>`;
                     },
                 },
-                { label: 'Institution', property: 'institution_code' },
+                { label: 'Publisher', property: 'publisher' },
                 {
                     label: '',
                     property: 'gbif_id',

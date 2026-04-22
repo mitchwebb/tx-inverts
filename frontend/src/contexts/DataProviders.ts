@@ -1,13 +1,13 @@
 import { writable } from 'svelte/store';
 
-export type InstitutionCode = string;
+export type DatasetKey = string;
 
 export type DataProviderInfo = {
     institutionName: string;
-    datasetKey: string;
+    institutionCode: string | null;
 };
 
 export const dataProviders = writable<Record<
-    InstitutionCode,
+    DatasetKey,
     DataProviderInfo
 > | null>(null);

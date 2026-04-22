@@ -198,43 +198,17 @@ export const TexasParksColorStops = Object.entries(
     texasParksLegend.colorMap
 ) as [string, string][];
 
-// Data Providers Key
-export const providersLegend = {
-    propName: 'institution_code',
-    colorMap: {
-        iNaturalist: '#86a91c',
-        UTIC: '#ff9a17',
-        UTEP: '#0f2752',
-        TTU: '#c70f27',
-        USNM: '#ffd51e',
-        TAMU: '#500001',
-        KU: '#0052b8',
-    },
-} as const;
-
-export type ProviderCode = string;
-export type ProviderName = string;
-
-// TODO: This key should PROBABLY be derived from the database
-export type Provider = keyof typeof providersLegend.colorMap;
-export const providersColorStops = Object.entries(providersLegend.colorMap) as [
-    string,
-    string,
-][];
-
 // Layer feature properties used by map legends
 export type LegendFeatureProperty =
     | typeof l4EcoregionsLegend.propName
     | typeof l3EcoregionsLegend.propName
-    | typeof texasParksLegend.propName
-    | typeof providersLegend.propName;
+    | typeof texasParksLegend.propName;
 
 // Layer feature property values used by map legends
 export type LegendFeatureValue =
     | L3Ecoregion
     | L4Ecoregion
-    | TexasParkClassification
-    | ProviderCode;
+    | TexasParkClassification;
 
 // type HoverablePropertyDef = {
 //     propName: LegendFeatureProperty;

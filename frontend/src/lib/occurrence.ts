@@ -49,17 +49,21 @@ export async function loadDataProviders() {
         type RawDataProvider = {
             dataset_key: string;
             publisher: string;
-            institution_code: string;
+            institution_code: string | null;
         };
 
         const result: RawDataProvider[] = json.data_providers;
         if (result) {
             const map = Object.fromEntries(
                 result.map((d) => [
-                    d.institution_code,
+                    d.dataset_key,
                     {
                         institutionName: d.publisher,
-                        datasetKey: d.dataset_key,
+                        // TODO: Fix these null values in the database
+                        institutionCode:
+                            d.institution_code === 'null'
+                                ? null
+                                : (d.institution_code ?? null),
                     },
                 ])
             );

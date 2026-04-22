@@ -66,7 +66,7 @@
         tabindex="0"
         aria-expanded={open}
         class={['sidebar-foldout-header', { open }]}
-        class:active={active}
+        class:active
         onclick={toggleFoldoutState}
         onkeydown={handleKey}
     >
@@ -100,7 +100,7 @@
 
 <style>
     .sidebar-foldout-header.active:not(.open) {
-        border-left: 3px solid var(--accent-color);
+        box-shadow: inset 0px 3px 0px 0px var(--accent-color);
     }
     .foldout-header-main {
         text-align: left;

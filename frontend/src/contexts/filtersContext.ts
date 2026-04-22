@@ -1,6 +1,5 @@
 import { getContext, setContext } from 'svelte';
 import type { NSRank, RegionInfo } from '../types/api';
-import type { Provider } from '../constants/mapLegendKeys';
 import type { TaxonomicRank } from '../types/taxa';
 import { makeIDCollection } from '../util/collection.svelte';
 
@@ -9,7 +8,7 @@ export const filtersStateKey = 'filters';
 export type FiltersState = {
     taxonRank: TaxonomicRank | null;
     includeINat: boolean;
-    dataProviders: Provider[];
+    dataProviders: string[];
     nSRanks: NSRank[];
     dateStart: Date | null;
     dateEnd: Date | null;
