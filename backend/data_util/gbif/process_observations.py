@@ -9,8 +9,6 @@ import pandas as pd
 import csv
 import re
 
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-
 
 ### Constants for date processing ###
 
@@ -299,6 +297,7 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
         # Drop missing coordinates
         chunk = chunk.dropna(subset=['decimalLongitude', 'decimalLatitude'])
 
+        # TODO: At this point, this is probably not helpful (we're doing it GBIF-side)
         # Filter to Texas bounding box (fine filtering is performed later in SQL)
         df = chunk[
             (chunk['decimalLongitude'].between(min_lon, max_lon)) &

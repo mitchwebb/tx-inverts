@@ -1,6 +1,7 @@
 import time
 import backend.constants.map as map
 
+from backend.db_schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -9,33 +10,39 @@ from backend.models.api_types import ObservationsRequestParams
 from backend.core.sql import create_occurrence_filter, create_occurrence_taxon_filter
 from backend.models.sql import OccurrenceFilter, SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
+import re
 
 
 occurrence_router = APIRouter()
 
 
-# Get list of all data providers currently found in observations
-@occurrence_router.get('/get_data_providers')
-async def get_data_providers(request: Request):
+# Get list of all datasets currently found in observations
+@occurrence_router.get('/get_datasets')
+async def get_datasets(request: Request):
+    try:
+        query = sql.SQL('''
+            SELECT * FROM {dataset_table}
+        ''').format(dataset_table=sql.Identifier(GBIF_DATASET_META.name))
 
-    query = sql.SQL('''
-        SELECT * FROM data_providers
-    ''')
+        async with request.app.state.db_pool.connection() as conn:
+            async with execute_psql_query(conn, query, fetch='all', dict_cursor=True) as result:
+                if not result:
+                    raise HTTPException(
+                        status_code=404, detail='Dataset information not retrieved')
 
-    async with request.app.state.db_pool.connection() as conn:
-        async with execute_psql_query(conn, query, fetch='all', dict_cursor=True) as result:
-            if not result:
-                raise HTTPException(
-                    status_code=404, detail='Publisher information not retrieved')
+                datasets = result
 
-            data_providers = result
-            return {
-                'data_providers': data_providers
-            }
+                return {
+                    'datasets': datasets
+                }
+
+    except Exception as e:
+        api_logger.exception(e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@occurrence_router.post('/get_provider_counts')
-async def get_provider_counts(params: ObservationsRequestParams, request: Request):
+@occurrence_router.post('/get_dataset_counts')
+async def get_dataset_counts(params: ObservationsRequestParams, request: Request):
     pool = request.app.state.db_pool
 
     async with pool.connection() as conn:
@@ -51,7 +58,7 @@ async def get_provider_counts(params: ObservationsRequestParams, request: Reques
         occurrence_filter = create_occurrence_filter(filter_payload)
 
         query = sql.SQL('''
-            WITH providers_with_taxon AS (
+            WITH datasets_with_taxon AS (
                 SELECT DISTINCT dataset_key
                 FROM gbif_observations
                 WHERE {taxon_filter}
@@ -68,7 +75,7 @@ async def get_provider_counts(params: ObservationsRequestParams, request: Reques
             SELECT
                 p.dataset_key,
                 COALESCE(counts.count, 0) AS count
-            FROM providers_with_taxon p
+            FROM datasets_with_taxon p
             LEFT JOIN counts
                 ON counts.dataset_key = p.dataset_key
             ORDER BY count DESC;
@@ -164,13 +171,13 @@ async def get_observation_dates(params: ObservationsRequestParams, request: Requ
 #             }
 
 
-@occurrence_router.get('/tiles/{include_inat}/{taxon_id}/{data_providers}/{date_start}/{date_end}/{z}/{x}/{y}.mvt', response_class=Response)
-async def get_tile(include_inat: bool, taxon_id: int, data_providers: str, date_start: str, date_end: str, z: int, x: int, y: int, request: Request):
+@occurrence_router.get('/tiles/{include_inat}/{taxon_id}/{datasets}/{date_start}/{date_end}/{z}/{x}/{y}.mvt', response_class=Response)
+async def get_tile(include_inat: bool, taxon_id: int, datasets: str, date_start: str, date_end: str, z: int, x: int, y: int, request: Request):
     try:
         filter_payload = SingleTaxonOccurrenceFilter(
             taxon_id=taxon_id,
             include_inat=include_inat,
-            data_providers=data_providers,
+            datasets=datasets,
             date_start=date_start,
             date_end=date_end,
         )

@@ -10,7 +10,12 @@
 
     const currPath = $derived(routerContext.url.pathname);
 
-    const navRoutes: RouterPath[] = ['/map', '/backbone', '/rankings'];
+    const navRoutes: RouterPath[] = [
+        '/map',
+        '/backbone',
+        '/rankings',
+        '/about',
+    ];
 
     // Handle header bar page navigation
     function handleMenuSelect(e: MouseEvent | KeyboardEvent) {
@@ -117,8 +122,8 @@
         background-color: var(--container-fore);
         display: flex;
         align-items: center;
-        width: fit-content;
-        min-width: 100%;
+        /* width: fit-content; */
+        width: 100%;
         padding: 0 2rem;
         gap: 2rem;
         z-index: 100;
@@ -128,6 +133,7 @@
         position: sticky;
         top: 0;
         box-sizing: border-box;
+        overflow: clip;
     }
     .logo {
         color: var(--text-default);

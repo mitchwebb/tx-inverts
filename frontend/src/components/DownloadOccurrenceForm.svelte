@@ -23,7 +23,7 @@
             filters.includeINat,
             filters.dateStart,
             filters.dateEnd,
-            filters.dataProviders,
+            filters.datasets,
             includeInvasives,
             estimate,
             onProgress

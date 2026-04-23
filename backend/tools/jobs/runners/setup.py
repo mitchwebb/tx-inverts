@@ -5,6 +5,7 @@ from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db_schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.tools.jobs.runners.run_async import run_async
 from backend.tools.jobs.tasks.database import update_indexes
+from backend.tools.jobs.tasks.datasets import fill_dataset_table
 from backend.tools.jobs.tasks.initialize_db import initialize_all_tables
 from backend.tools.jobs.tasks.regions import fill_all_geometry_tables
 from backend.tools.jobs.tasks.taxa import update_backbone, update_ns_ranks
@@ -25,6 +26,9 @@ async def main():
         # Initialize all tables (including mat views) and associated indexes
         await initialize_all_tables(conn, verbose=True, strict=True)
 
+        # Fill dataset metadata table (provides correct names for datasets)
+        await fill_dataset_table(conn)
+
         # Fill geometry tables with information from geojson and GDB files (mapped to new names)
         await fill_all_geometry_tables(conn, truncate=True)
 
@@ -39,7 +43,7 @@ async def main():
 
         # Refresh taxon_lineage view to help with ns_ranks speed
         await refresh_materialized_view(conn, 'taxon_lineage')
-        
+
         await update_indexes(conn)
 
         # Update ranks stored in db

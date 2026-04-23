@@ -6,7 +6,7 @@ from datetime import date, datetime
 class OccurrenceFilter(BaseModel):
     taxon_ids: List[int]
     include_inat: bool = True
-    data_providers: Optional[List[str]] = None
+    datasets: Optional[List[str]] = None
     exclude_invasive: bool = True
     date_start: Optional[date] = None
     date_end: Optional[date] = None
@@ -24,8 +24,8 @@ class OccurrenceFilter(BaseModel):
         return v
 
     # These validators are really only necessary with our tile request, as nulls are passed as 'null'
-    @field_validator('data_providers', mode='before')
-    def normalize_providers(cls, v):
+    @field_validator('datasets', mode='before')
+    def normalize_datasets(cls, v):
         if v is None or v in ("null", "", "undefined"):
             return []
         # If it's a comma-separated string, convert to list

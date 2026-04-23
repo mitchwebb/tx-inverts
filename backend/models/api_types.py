@@ -15,7 +15,7 @@ class TaxaRequestParams(BaseModel):
 # Params used to make queries which rely on filtered observation data
 class ObservationsRequestParams(TaxaRequestParams):
     include_inat: Optional[bool] = True
-    data_providers: Optional[List[str]] | None = None
+    datasets: Optional[List[str]] | None = None
     date_start: Optional[str] = None
     date_end: Optional[str] = None
     include_invasives: Optional[bool] = False

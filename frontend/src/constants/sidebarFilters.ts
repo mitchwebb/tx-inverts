@@ -34,8 +34,8 @@ export const SIDEBAR_FILTER_META: Record<
         domain: ['taxa'],
         count: true,
     },
-    dataProviders: {
-        default: FILTER_DEFAULTS.dataProviders,
+    datasets: {
+        default: FILTER_DEFAULTS.datasets,
         domain: ['observations', 'taxa'],
         count: true,
     },

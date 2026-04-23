@@ -14,7 +14,7 @@ export type ActiveTaxon = {
     taxonID: number;
     info: TaxonInfo;
     nSValues: NSValues;
-    providerCounts: Record<string, number> | null;
+    datasetCounts: Record<string, number> | null;
     dateMin: Date | null;
     dateMax: Date | null;
 };
@@ -67,7 +67,7 @@ export const initialTaxonState: ActiveTaxon = {
         rangeExtentKm2: null,
         observationCount: null,
     }, // Values retrieved get_ns_metrics call
-    providerCounts: null,
+    datasetCounts: null,
     dateMin: null, // Minimum obs date in db
     dateMax: null, // Max obs date in db
 };

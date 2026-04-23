@@ -5,7 +5,7 @@
     import Toggle from '../../common/Toggle.svelte';
     import type { FilterDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
-    import { dataProviders } from '../../contexts/DataProviders';
+    import { datasets } from '../../contexts/Datasets';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import { toggleArrayValue } from '../../util/toggleArrayValue';
 
@@ -26,28 +26,42 @@
 
     const iNatActive = $derived(filtersContext.includeINat);
 
-    // Derive a unified list of providers
-    const providerList = $derived.by(() => {
-        if (!$dataProviders) return [];
+    // Determine datasetCounts added across all taxa
+    let datasetCounts = $derived(
+        Object.values(taxonContext.taxa.items).reduce(
+            (acc, taxon) => {
+                if (!taxon.datasetCounts) return acc;
+                for (const [dataset, count] of Object.entries(
+                    taxon.datasetCounts
+                )) {
+                    acc[dataset] = (acc[dataset] ?? 0) + count;
+                }
+                return acc;
+            },
+            {} as Record<string, number>
+        )
+    );
+
+    // Derive a unified list of datasets
+    const datasetList = $derived.by(() => {
+        if (!$datasets) return [];
         // If in observations domain and taxa selected,
         // OR if in taxa domain and parent taxa selected
         if (
             (domain === 'observations' && taxonContext.taxa.ids.length) ||
             (domain === 'taxa' && filtersContext.filterTaxonIDs.length)
         ) {
-            // Filter to relevant providers
-            return Object.entries(providerCounts).map(([key, count]) => ({
+            // Filter to relevant datasets
+            return Object.entries(datasetCounts).map(([key, count]) => ({
                 datasetKey: key,
-                institutionCode: $dataProviders?.[key]?.institutionCode,
-                institutionName: $dataProviders?.[key]?.institutionName,
+                datasetTitle: $datasets?.[key]?.datasetTitle,
                 count,
             }));
         } else {
-            // Else, show all providers
-            return Object.entries($dataProviders).map(([key, info]) => ({
+            // Else, show all datasets
+            return Object.entries($datasets).map(([key, info]) => ({
                 datasetKey: key,
-                institutionCode: info.institutionCode,
-                institutionName: info.institutionName,
+                datasetTitle: info.datasetTitle,
                 count: null,
             }));
         }
@@ -55,21 +69,21 @@
 
     // Track show/hide state of list
     let showAll = $state(false);
-    // Number of providers to show by default
+    // Number of datasets to show by default
     const SHOW_LIMIT = 5;
 
-    // List of providers visible (given show/hide state)
-    const visibleProviders = $derived(
-        showAll ? providerList : providerList.slice(0, SHOW_LIMIT)
+    // List of datasets visible (given show/hide state)
+    const visibleDatasets = $derived(
+        showAll ? datasetList : datasetList.slice(0, SHOW_LIMIT)
     );
 
-    function handleDataProvider({ value, checked }: CheckboxPayload) {
-        // Get list of currently selected providers
-        let currProviders = filtersContext.dataProviders ?? [];
+    function handleDataDataset({ value, checked }: CheckboxPayload) {
+        // Get list of currently selected datasets
+        let currDatasets = filtersContext.datasets ?? [];
 
         // Update reactive state
-        filtersContext.dataProviders = toggleArrayValue<string>(
-            currProviders,
+        filtersContext.datasets = toggleArrayValue<string>(
+            currDatasets,
             value,
             checked
         );
@@ -82,35 +96,19 @@
         )
     );
 
-    // Determine providerCounts added across all taxa
-    let providerCounts = $derived(
-        Object.values(taxonContext.taxa.items).reduce(
-            (acc, taxon) => {
-                if (!taxon.providerCounts) return acc;
-                for (const [provider, count] of Object.entries(
-                    taxon.providerCounts
-                )) {
-                    acc[provider] = (acc[provider] ?? 0) + count;
-                }
-                return acc;
-            },
-            {} as Record<string, number>
-        )
-    );
-
     function handleINatToggle(checked: boolean) {
         filtersContext.includeINat = checked;
     }
 </script>
 
-{#if $dataProviders}
+{#if $datasets}
     <div
-        class="data-providers-section filters-section"
-        class:active={!!filtersContext.dataProviders?.length ||
+        class="data-datasets-section filters-section"
+        class:active={!!filtersContext.datasets?.length ||
             !filtersContext.includeINat}
         class:loading-blink={observationsMetricsLoading}
     >
-        <div id="data-providers-header" class="filters-section-header">
+        <div id="data-datasets-header" class="filters-section-header">
             {#if observationsMetricsLoading}
                 <div class="loading-icon icon">
                     <LoadingIcon />
@@ -130,43 +128,37 @@
                 <span class="inat-label">Include iNat Data</span>
             </div>
         </div>
-        <div class="filters-section-content providers-content">
-            {#if providerList.length === 0}
+        <div class="filters-section-content datasets-content">
+            {#if datasetList.length === 0}
                 <div class="no-data-message">No Data for Given Filters</div>
             {:else}
                 <form
                     id="datasets-filter"
-                    class="providers-list"
-                    class:expanded={providerList.length <= SHOW_LIMIT ||
-                        showAll}
+                    class="datasets-list"
+                    class:expanded={datasetList.length <= SHOW_LIMIT || showAll}
                 >
-                    {#each visibleProviders as { datasetKey, institutionCode, institutionName, count } (datasetKey)}
+                    {#each visibleDatasets as { datasetKey, datasetTitle, count } (datasetKey)}
                         {@const disabled =
-                            institutionName === 'iNaturalist.org' &&
+                            datasetTitle ===
+                                'iNaturalist Research-grade Observations' &&
                             !filtersContext.includeINat}
-                        <div class={['provider-item', { disabled }]}>
+                        <div class={['dataset-item', { disabled }]}>
                             <CheckboxInput
-                                name="provider"
+                                name="dataset"
                                 value={datasetKey}
-                                handler={handleDataProvider}
-                                checked={filtersContext?.dataProviders?.includes(
+                                handler={handleDataDataset}
+                                checked={filtersContext?.datasets?.includes(
                                     datasetKey
                                 ) ?? false}
                             >
-                                <div class="provider-label">
+                                <div class="dataset-label">
                                     <div class="institution-name-wrapper">
                                         <div
                                             class="institution-name"
-                                            title={institutionName ||
-                                                institutionCode}
+                                            title={datasetTitle}
                                         >
-                                            {institutionName || institutionCode}
+                                            {datasetTitle}
                                         </div>
-                                        {#if institutionCode}
-                                            <div class="institution-code">
-                                                {institutionCode}
-                                            </div>
-                                        {/if}
                                     </div>
                                     {#if showCounts && count !== null}
                                         <div class="institution-count">
@@ -178,15 +170,15 @@
                         </div>
                     {/each}
                 </form>
-                {#if providerList.length > SHOW_LIMIT}
+                {#if datasetList.length > SHOW_LIMIT}
                     <div>
                         <button
                             onclick={() => (showAll = !showAll)}
-                            class="button show-providers-button"
+                            class="button show-datasets-button"
                         >
                             {showAll
                                 ? 'Show Less'
-                                : `Show ${providerList.length - SHOW_LIMIT} More`}
+                                : `Show ${datasetList.length - SHOW_LIMIT} More`}
                         </button>
                     </div>
                 {/if}
@@ -196,14 +188,14 @@
 {/if}
 
 <style>
-    .providers-list {
+    .datasets-list {
         width: 100%;
         position: relative;
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
     }
-    .providers-list::after {
+    .datasets-list::after {
         content: '';
         position: absolute;
         bottom: 0;
@@ -214,24 +206,24 @@
         pointer-events: none;
         display: block;
     }
-    .providers-list.expanded::after {
+    .datasets-list.expanded::after {
         display: none;
     }
-    .providers-content {
+    .datasets-content {
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
         align-items: center;
     }
-    .show-providers-button {
+    .show-datasets-button {
         border: solid 1px var(--border);
         width: fit-content;
         background-color: var(--container-fore);
     }
-    .show-providers-button:hover {
+    .show-datasets-button:hover {
         background-color: var(--container-mid);
     }
-    .show-providers-button:active {
+    .show-datasets-button:active {
         background-color: var(--container-back);
     }
     .inat-toggle-wrapper {
@@ -250,14 +242,14 @@
         /* white-space: nowrap; */
         font-size: 1rem;
     }
-    #data-providers-header {
+    #data-datasets-header {
         display: flex;
         justify-content: space-between;
     }
     .no-data-message {
         text-align: left;
     }
-    .provider-label {
+    .dataset-label {
         display: flex;
         justify-content: space-between;
         width: 100%;
@@ -286,13 +278,13 @@
         text-align: right;
         font-weight: 200;
     }
-    .data-providers-section {
+    .data-datasets-section {
         display: flex;
         flex-direction: column;
         min-width: 250px;
         width: 100%;
     }
-    .provider-item.disabled {
+    .dataset-item.disabled {
         font-style: italic;
         opacity: 0.5;
         pointer-events: none;

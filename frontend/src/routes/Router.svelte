@@ -16,6 +16,7 @@
     import { getFiltersContext } from '../contexts/filtersContext';
     import type { RawRegionInfo, RegionInfo } from '../types/api';
     import BackbonePage from './Backbone/BackbonePage.svelte';
+    import AboutPage from './AboutPage.svelte';
 
     let routerContext = getRouterContext();
     let taxaContext = getActiveTaxaContext();
@@ -46,6 +47,11 @@
             pathname: '/rankings',
             component: RankingPage,
             relevantParams: ['taxon', 'inat', 'status', 'd1', 'd2', 'region'],
+        },
+        {
+            pathname: '/about',
+            component: AboutPage,
+            relevantParams: [],
         },
     ];
 

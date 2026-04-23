@@ -18,6 +18,7 @@
     import DownloadTaxaForm from '../../components/DownloadTaxaForm.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import { getRankingsContext } from '../../contexts/rankingsContext';
+    import { openModal } from '../../lib/modal.svelte';
 
     const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
@@ -195,8 +196,7 @@
     });
 
     function handleDownloadButton() {
-        modalContext.visible = true;
-        modalContext.content = DownloadTaxaForm;
+        openModal(modalContext, downloadTaxaForm);
     }
 
     // Handle sort form virtualized table (preserving sort across pages)
@@ -210,6 +210,10 @@
         }
     }
 </script>
+
+{#snippet downloadTaxaForm()}
+    <DownloadTaxaForm />
+{/snippet}
 
 {#snippet iNatLabel()}
     {#if filtersContext.includeINat}

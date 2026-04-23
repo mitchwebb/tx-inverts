@@ -364,8 +364,8 @@
     // This needs to be done when observations change (from filtering)
     async function fetchRangeExtentGeom(taxonID: number) {
         const includeINat = filtersContext.includeINat;
-        const dataProviders = filtersContext.dataProviders?.length
-            ? filtersContext.dataProviders
+        const datasets = filtersContext.datasets?.length
+            ? filtersContext.datasets
             : null;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
@@ -378,7 +378,7 @@
                 include_inat: includeINat,
                 date_start: dateStart?.toISOString(),
                 date_end: dateEnd?.toISOString(),
-                data_providers: dataProviders,
+                datasets: datasets,
             }),
         });
 
@@ -410,8 +410,8 @@
         if (!taxon) return;
         const color = taxon.color;
         const includeINat = filtersContext.includeINat;
-        const dataProviders = filtersContext.dataProviders?.length
-            ? filtersContext.dataProviders
+        const dataDatasets = filtersContext.datasets?.length
+            ? filtersContext.datasets
             : null;
         const dateStart = filtersContext.dateStart?.toISOString();
         const dateEnd = filtersContext.dateEnd?.toISOString();
@@ -433,7 +433,7 @@
         map.addSource(obsBundle.id, {
             ...obsBundle.source,
             tiles: [
-                `${window.location.origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${dataProviders}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
+                `${window.location.origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${dataDatasets}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
             ],
         });
         obsBundle.layers.forEach((layer) => map.addLayer(layer));
@@ -469,8 +469,8 @@
     // Update select map layers which depend on activeSpecies changes
     $effect(() => {
         const includeINat = filtersContext.includeINat;
-        const dataProviders = filtersContext?.dataProviders?.length
-            ? filtersContext.dataProviders
+        const dataDatasets = filtersContext?.datasets?.length
+            ? filtersContext.datasets
             : null;
         const dateStart = filtersContext.dateStart?.toISOString();
         const dateEnd = filtersContext.dateEnd?.toISOString();
@@ -493,7 +493,7 @@
                 ) as mapboxgl.VectorTileSource;
                 if (source) {
                     source.setTiles([
-                        `${window.location.origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${dataProviders}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
+                        `${window.location.origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${dataDatasets}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
                     ]);
                 }
                 fetchRangeExtentGeom(taxonID);

@@ -21,6 +21,7 @@
     import TaxaSearch from '../TaxaSearch.svelte';
     import ObservationsFilters from '../FiltersSection/ObservationsFilters.svelte';
     import TaxaFilters from '../FiltersSection/TaxaFilters.svelte';
+    import { openModal } from '../../lib/modal.svelte';
 
     type SidebarProps = {
         showNSDisplay?: boolean;
@@ -81,13 +82,7 @@
     }
 
     function handleFiltersButton() {
-        if (filtersDomain === 'observations') {
-            modalContext.content = ObservationsFilters;
-            modalContext.visible = true;
-        } else if (filtersDomain === 'taxa') {
-            modalContext.content = TaxaFilters;
-            modalContext.visible = true;
-        }
+        openModal(modalContext, filters);
     }
 
     // Register click-to-close functionality for filters section
@@ -114,6 +109,14 @@
     //     modalContext.content = DownloadOccurrenceForm;
     // }
 </script>
+
+{#snippet filters()}
+    {#if filtersDomain === 'observations'}
+        <ObservationsFilters />
+    {:else if filtersDomain === 'taxa'}
+        <TaxaFilters />
+    {/if}
+{/snippet}
 
 <div id="sidebar-wrapper" class="space-between">
     <div id="sidebar">

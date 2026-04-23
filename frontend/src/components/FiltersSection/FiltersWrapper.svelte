@@ -23,9 +23,7 @@
     const filtersContext = getFiltersContext();
 
     function handleApplyFilters() {
-        // filtersOpen = false;
         modalContext.visible = false;
-        // modalContext.content = null;
     }
 
     function handleClearFilters() {

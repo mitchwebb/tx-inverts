@@ -24,14 +24,14 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
         filter.taxon_ids, include_invasives)
     observations_table = GBIF_OBSERVATIONS_TABLE
 
-    # If no individual data providers are selected
-    if not filter.data_providers:
-        data_provider_clause = sql.SQL('')  # empty condition
+    # If no individual datasets are selected
+    if not filter.datasets:
+        datasets_clause = sql.SQL('')  # empty condition
     else:
-        provider_literals = sql.SQL(', ').join(
-            sql.Literal(p) for p in filter.data_providers)
-        data_provider_clause = sql.SQL('AND dataset_key IN ({providers})').format(
-            providers=provider_literals
+        dataset_literals = sql.SQL(', ').join(
+            sql.Literal(p) for p in filter.datasets)
+        datasets_clause = sql.SQL('AND dataset_key IN ({datasets})').format(
+            datasets=dataset_literals
         )
 
     if not filter.date_start:
@@ -68,14 +68,14 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
     occurrence_filter = sql.SQL('''
         {taxon_filter}
         AND ({include_inat} OR {observations_table}.institution_code != 'iNaturalist')
-        {data_provider_clause}
+        {datasets_clause}
         AND (collection_start_date) IS NOT NULL
         {date_start_clause}
         {date_end_clause}
         {region_clause}
     ''').format(
         include_inat=sql.Literal(filter.include_inat),
-        data_provider_clause=data_provider_clause,
+        datasets_clause=datasets_clause,
         date_start_clause=date_start_clause,
         date_end_clause=date_end_clause,
         region_clause=region_clause,

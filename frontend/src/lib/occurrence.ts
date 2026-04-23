@@ -1,17 +1,17 @@
-import { dataProviders } from '../contexts/DataProviders';
+import { datasets } from '../contexts/Datasets';
 import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawDateRange } from '../types/api';
 
-// Get observation counts for each provider for current taxon
-export async function getProviderCounts(
+// Get observation counts for each dataset for current taxon
+export async function getDatasetCounts(
     activeTaxonID: ActiveTaxon['taxonID'],
     includeINat: FiltersState['includeINat'],
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd']
 ) {
     try {
-        const response = await fetch('/server/occurrence/get_provider_counts', {
+        const response = await fetch('/server/occurrence/get_dataset_counts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -25,7 +25,7 @@ export async function getProviderCounts(
             throw new Error(`Response status: ${response.status}`);
         }
         const json = await response.json();
-        const result: ActiveTaxon['providerCounts'] = json;
+        const result: ActiveTaxon['datasetCounts'] = json;
         return result;
     } catch (error) {
         console.error(error);
@@ -33,9 +33,9 @@ export async function getProviderCounts(
     }
 }
 
-// Logic for loading data providers structure into browser
-export async function loadDataProviders() {
-    const url = `server/occurrence/get_data_providers`;
+// Logic for loading data datasets structure into browser
+export async function loadDatasets() {
+    const url = `server/occurrence/get_datasets`;
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -46,28 +46,22 @@ export async function loadDataProviders() {
         }
         const json = await response.json();
 
-        type RawDataProvider = {
+        type RawDataset = {
             dataset_key: string;
-            publisher: string;
-            institution_code: string | null;
+            dataset_title: string;
         };
 
-        const result: RawDataProvider[] = json.data_providers;
+        const result: RawDataset[] = json.datasets;
         if (result) {
             const map = Object.fromEntries(
                 result.map((d) => [
                     d.dataset_key,
                     {
-                        institutionName: d.publisher,
-                        // TODO: Fix these null values in the database
-                        institutionCode:
-                            d.institution_code === 'null'
-                                ? null
-                                : (d.institution_code ?? null),
+                        datasetTitle: d.dataset_title,
                     },
                 ])
             );
-            dataProviders.set(map);
+            datasets.set(map);
         }
         return;
     } catch (error) {

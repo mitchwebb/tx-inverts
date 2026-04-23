@@ -1,5 +1,6 @@
 # Registry for all tables
 
+from backend.db_schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.db_schema.observation_regions import OBSERVATION_REGIONS_TABLE, ObservationRegions
 
 from .gbif_observations import GBIF_OBSERVATIONS_TABLE
@@ -13,4 +14,5 @@ from .base import DBTable
 ALL_TABLES: DBTable = [
     GBIF_OBSERVATIONS_TABLE,
     GBIF_INVERTS_BACKBONE,
+    GBIF_DATASET_META,
 ] + GEOMETRY_TABLES + [OBSERVATION_REGIONS_TABLE]

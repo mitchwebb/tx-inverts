@@ -59,7 +59,7 @@ export async function getOccurrenceDownload(
     includeINat: FiltersState['includeINat'],
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd'],
-    dataProviders: FiltersState['dataProviders'],
+    datasets: FiltersState['datasets'],
     includeInvasives: boolean,
     estimate: boolean,
     onProgress?: (received: number) => void
@@ -72,7 +72,7 @@ export async function getOccurrenceDownload(
             include_inat: includeINat,
             date_start: dateStart?.toISOString(),
             date_end: dateEnd?.toISOString(),
-            data_providers: dataProviders,
+            datasets: datasets,
             include_invasives: includeInvasives,
         },
         estimate,

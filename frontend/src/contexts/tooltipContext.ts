@@ -1,10 +1,10 @@
-import { getContext, setContext, type Snippet } from 'svelte';
+import { getContext, setContext, type Component, type Snippet } from 'svelte';
 
 export const tooltipStateKey = 'tooltip';
 
 export type TooltipState = {
     visible: boolean;
-    content: string | null;
+    content: string | Snippet | null;
     target: HTMLElement | null;
     backgroundColor: string | null;
 };

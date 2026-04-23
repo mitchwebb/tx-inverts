@@ -33,7 +33,7 @@
         type ModalState,
     } from '../contexts/modalContext';
     import Modal from './Modal.svelte';
-    import { getObservationDates, getProviderCounts } from '../lib/occurrence';
+    import { getObservationDates, getDatasetCounts } from '../lib/occurrence';
     import {
         getFiltersContext,
         initialFiltersState,
@@ -120,14 +120,14 @@
         const regionIDs = filtersContext.region.ids;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
-        const dataProviders = filtersContext.dataProviders;
+        const datasets = filtersContext.datasets;
 
         untrack(async () => {
             rankingsState.ranksLoading = true;
             const qualifiedTaxa = await getQualifiedTaxa(
                 dateStart,
                 dateEnd,
-                dataProviders,
+                datasets,
                 regionIDs
             );
             rankingsState.qualifiedTaxonIDs = qualifiedTaxa;
@@ -172,7 +172,7 @@
         const includeINat = filtersContext.includeINat !== false;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
-        const dataProviders = filtersContext.dataProviders;
+        const datasets = filtersContext.datasets;
 
         untrack(() => {
             for (const taxonID of taxaContext.taxa.ids) {
@@ -183,7 +183,7 @@
                     includeINat,
                     dateStart,
                     dateEnd,
-                    dataProviders
+                    datasets
                 );
             }
         });
@@ -202,13 +202,13 @@
                 const includeINat = filtersContext.includeINat !== false;
                 const dateStart = filtersContext.dateStart;
                 const dateEnd = filtersContext.dateEnd;
-                const dataProviders = filtersContext.dataProviders;
+                const datasets = filtersContext.datasets;
                 loadNSValues(
                     taxonID,
                     includeINat,
                     dateStart,
                     dateEnd,
-                    dataProviders
+                    datasets
                 );
             }
         });
@@ -219,7 +219,7 @@
         includeINat: FiltersState['includeINat'],
         dateStart: FiltersState['dateStart'],
         dateEnd: FiltersState['dateEnd'],
-        dataProviders: FiltersState['dataProviders']
+        datasets: FiltersState['datasets']
     ) {
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
@@ -231,7 +231,7 @@
                 includeINat,
                 dateStart,
                 dateEnd,
-                dataProviders,
+                datasets,
                 abortController.signal
             );
             taxon.nSValues = normalizeAPIResponse<NSValues>(
@@ -260,8 +260,8 @@
             (async () => {
                 try {
                     // Run both async calls concurrently
-                    const [providerCounts, dateRange] = await Promise.all([
-                        getProviderCounts(
+                    const [datasetCounts, dateRange] = await Promise.all([
+                        getDatasetCounts(
                             taxonID,
                             includeINat,
                             dateStart,
@@ -270,18 +270,18 @@
                         getObservationDates(taxonID, includeINat),
                     ]);
                     // If publishers are already selected, but they do not have this taxon,
-                    // make sure to include them in the provider counts with a value of 0
-                    if (filtersContext.dataProviders && providerCounts) {
-                        const existingProviders = new Set(
-                            Object.keys(providerCounts)
+                    // make sure to include them in the dataset counts with a value of 0
+                    if (filtersContext.datasets && datasetCounts) {
+                        const existingDatasets = new Set(
+                            Object.keys(datasetCounts)
                         );
-                        for (const provider of filtersContext.dataProviders) {
-                            if (!existingProviders.has(provider)) {
-                                providerCounts[provider] = 0;
+                        for (const dataset of filtersContext.datasets) {
+                            if (!existingDatasets.has(dataset)) {
+                                datasetCounts[dataset] = 0;
                             }
                         }
                     }
-                    taxon.providerCounts = providerCounts;
+                    taxon.datasetCounts = datasetCounts;
 
                     if (dateRange) {
                         taxon.dateMin = new Date(dateRange?.minDate);

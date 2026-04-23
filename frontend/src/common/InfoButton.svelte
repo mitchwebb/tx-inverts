@@ -5,24 +5,21 @@
     - Can be used to trigger tooltip or modal messages
 -->
 <script lang="ts">
-    import { onDestroy } from 'svelte';
+    import { onDestroy, type Component, type Snippet } from 'svelte';
     import InfoIcon from '../assets/InfoIcon.svelte';
     import { getModalContext } from '../contexts/modalContext';
     import { getTooltipContext } from '../contexts/tooltipContext';
+    import { openModal } from '../lib/modal.svelte';
 
     let infoButton: HTMLElement;
 
     type InfoButtonProps = {
         type: 'modal' | 'tooltip';
-        htmlContent: string;
+        children: Snippet;
         hover?: boolean; // If tooltip and hover, tooltip activates on hover
     };
 
-    let {
-        type = 'modal',
-        htmlContent,
-        hover = false,
-    }: InfoButtonProps = $props();
+    let { type = 'modal', children, hover = false }: InfoButtonProps = $props();
 
     const tooltipContext = getTooltipContext();
     const modalContext = getModalContext();
@@ -42,7 +39,7 @@
     }
 
     function showTooltip() {
-        tooltipContext.content = htmlContent;
+        tooltipContext.content = children;
         tooltipContext.target = infoButton;
         tooltipContext.visible = true;
     }
@@ -54,8 +51,7 @@
     // Handle click functionality
     function handleInfoClick() {
         if (type === 'modal') {
-            modalContext.visible = true;
-            modalContext.content = htmlContent;
+            openModal(modalContext, children);
         } else if (type === 'tooltip' && infoButton && !hover) {
             showTooltip();
         }

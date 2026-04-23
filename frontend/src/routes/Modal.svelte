@@ -2,7 +2,7 @@
 <!-- But this feels more Svelte-ish and legacy-capable -->
 
 <script lang="ts">
-    import { fade, slide } from 'svelte/transition';
+    import { fade } from 'svelte/transition';
     import XIcon from '../assets/XIcon.svelte';
     import { getModalContext } from '../contexts/modalContext';
 
@@ -53,16 +53,17 @@
                 onclick={(e) => e.stopPropagation()}
                 onkeydown={handleKeyPress}
             >
-                <div id="modal-content">
-                    {#if typeof modalContext.content === 'string'}
-                        <div class="modal-string">
-                            {@html modalContext.content}
-                        </div>
-                    {:else}
-                        {@const Component = modalContext.content}
-                        <Component />
-                    {/if}
-                </div>
+                {#if modalContext.content}
+                    <div id="modal-content">
+                        {#if typeof modalContext.content === 'string'}
+                            <div class="modal-string">
+                                {@html modalContext.content}
+                            </div>
+                        {:else}
+                            {@render modalContext.content()}
+                        {/if}
+                    </div>
+                {/if}
                 <button
                     id="modal-close-button"
                     class="button"

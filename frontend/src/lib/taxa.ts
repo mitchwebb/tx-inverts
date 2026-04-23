@@ -66,7 +66,7 @@ export async function getNSMetrics(
     includeINat: FiltersState['includeINat'],
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd'],
-    dataProviders: FiltersState['dataProviders'],
+    datasets: FiltersState['datasets'],
     signal?: AbortSignal
 ) {
     // Cancel previous request if necessary
@@ -83,7 +83,7 @@ export async function getNSMetrics(
             include_inat: includeINat,
             date_start: dateStart?.toISOString(),
             date_end: dateEnd?.toISOString(),
-            data_providers: [...dataProviders],
+            datasets: [...datasets],
         }),
     });
     const json = await response.json();
@@ -128,12 +128,12 @@ export async function loadBackbone() {
 export async function getQualifiedTaxa(
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd'],
-    dataProviders: FiltersState['dataProviders'],
+    datasets: FiltersState['datasets'],
     regionIDs: string[],
     signal?: AbortSignal
 ) {
     const url = 'server/taxa/get_qualified_taxa';
-    if (!dateStart && !dateEnd && !dataProviders.length && !regionIDs.length)
+    if (!dateStart && !dateEnd && !datasets.length && !regionIDs.length)
         return null;
     try {
         const response = await fetch(url, {
@@ -143,7 +143,7 @@ export async function getQualifiedTaxa(
             body: JSON.stringify({
                 date_start: dateStart?.toISOString(),
                 date_end: dateEnd?.toISOString(),
-                data_providers: [...dataProviders],
+                datasets: [...datasets],
                 regions: regionIDs,
             }),
         });

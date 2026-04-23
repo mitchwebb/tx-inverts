@@ -220,7 +220,7 @@ async def get_qualified_taxa(params: ObservationsRequestParams, request: Request
             include_inat=params.include_inat,
             date_start=params.date_start,
             date_end=params.date_end,
-            data_providers=params.data_providers
+            datasets=params.datasets
         )
         occurrence_filter = create_occurrence_filter(filter_payload)
 

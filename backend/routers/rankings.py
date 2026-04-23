@@ -37,7 +37,7 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
         include_inat=params.include_inat,
         date_start=params.date_start,
         date_end=params.date_end,
-        data_providers=params.data_providers
+        datasets=params.datasets
     )
 
     rank_col = 'ns_rank_state' if filters.include_inat else 'ns_rank_state_no_inat'
@@ -89,7 +89,7 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
         include_inat=params.include_inat,
         date_end=params.date_end,
         date_start=params.date_start,
-        data_providers=params.data_providers
+        datasets=params.datasets
     )
 
     occurrence_filter = create_occurrence_filter(filters)

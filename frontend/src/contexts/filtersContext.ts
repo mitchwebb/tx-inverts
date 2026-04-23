@@ -8,7 +8,7 @@ export const filtersStateKey = 'filters';
 export type FiltersState = {
     taxonRank: TaxonomicRank | null;
     includeINat: boolean;
-    dataProviders: string[];
+    datasets: string[];
     nSRanks: NSRank[];
     dateStart: Date | null;
     dateEnd: Date | null;
@@ -19,7 +19,7 @@ export type FiltersState = {
 export const initialFiltersState: FiltersState = {
     taxonRank: null,
     includeINat: true,
-    dataProviders: [],
+    datasets: [],
     nSRanks: [],
     dateStart: null,
     dateEnd: null,

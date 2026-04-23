@@ -32,8 +32,8 @@ export const routerSyncedKeys = {
         getContext: getFiltersContext,
         keys: makeSyncedKeys<FiltersState>({
             includeINat: { param: 'inat', codec: booleanCodec(true) },
-            dataProviders: {
-                param: 'source',
+            datasets: {
+                param: 'dataset',
                 codec: stringArrayCodec() as ParamCodec<string[]>,
             },
             nSRanks: {

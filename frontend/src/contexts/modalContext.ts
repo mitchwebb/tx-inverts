@@ -4,7 +4,7 @@ export const ModalStateKey = 'modal';
 
 export type ModalState = {
     visible: boolean;
-    content: string | Component | null;
+    content: string | Snippet | null;
 };
 
 export const initialModalState: ModalState = {

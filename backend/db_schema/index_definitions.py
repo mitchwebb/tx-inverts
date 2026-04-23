@@ -40,16 +40,16 @@ INDEX_DEFINITIONS = {
     'idx_gbif_observations_geom_3857': {
         'table': 'gbif_observations',
         'create_sql': '''
-  			CREATE INDEX idx_gbif_observations_geom_3857 
-     		ON gbif_observations USING GIST(ST_Transform(geometry, 3857))
-    	'''
+            CREATE INDEX idx_gbif_observations_geom_3857 
+            ON gbif_observations USING GIST(ST_Transform(geometry, 3857))
+        '''
     },
     'idx_gbif_observations_institution_code': {
         'table': 'gbif_observations',
         'create_sql': '''
-  			CREATE INDEX idx_gbif_observations_institution_code
-     		ON gbif_observations(institution_code)
-    	'''
+            CREATE INDEX idx_gbif_observations_institution_code
+            ON gbif_observations(institution_code)
+        '''
     },
     'idx_gbif_observations_dataset_key': {
         'table': 'gbif_observations',
@@ -61,30 +61,30 @@ INDEX_DEFINITIONS = {
     'idx_inverts_backbone_taxon_id': {
         'table': 'gbif_inverts_backbone',
         'create_sql': '''
-  			CREATE INDEX idx_inverts_backbone_taxon_id 
-     		ON gbif_inverts_backbone(taxon_id)
+            CREATE INDEX idx_inverts_backbone_taxon_id 
+            ON gbif_inverts_backbone(taxon_id)
        '''
     },
     'idx_inverts_backbone_taxon_rank': {
         'table': 'gbif_inverts_backbone',
         'create_sql': '''
-  			CREATE INDEX idx_inverts_backbone_taxon_rank
-  			ON gbif_inverts_backbone(taxon_rank)
+            CREATE INDEX idx_inverts_backbone_taxon_rank
+            ON gbif_inverts_backbone(taxon_rank)
     '''
     },
     'idx_inverts_backbone_normalized_name': {
         'table': 'gbif_inverts_backbone',
         'create_sql': '''
-			CREATE INDEX idx_inverts_backbone_normalized_name
-			ON gbif_inverts_backbone (LOWER(canonical_name) text_pattern_ops);
-  		'''
+            CREATE INDEX idx_inverts_backbone_normalized_name
+            ON gbif_inverts_backbone (LOWER(canonical_name) text_pattern_ops);
+        '''
     },
     'idx_inverts_backbone_accepted_name_usage_id': {
         'table': 'gbif_inverts_backbone',
         'create_sql': '''
-			CREATE INDEX idx_inverts_backbone_accepted_name_usage_id
-			ON gbif_inverts_backbone (accepted_name_usage_id);
-  		'''
+            CREATE INDEX idx_inverts_backbone_accepted_name_usage_id
+            ON gbif_inverts_backbone (accepted_name_usage_id);
+          '''
     },
     'idx_tx_taxa_normalized_name': {
         'table': 'tx_taxa',
@@ -101,23 +101,23 @@ INDEX_DEFINITIONS = {
     'idx_tx_taxa_parent_rank_status_name': {
         'table': 'tx_taxa',
         'create_sql': '''
-  			CREATE INDEX idx_tx_taxa_parent_rank_status_name
-			ON tx_taxa (parent_name_usage_id, taxon_rank, taxonomic_status, canonical_name);
+            CREATE INDEX idx_tx_taxa_parent_rank_status_name
+            ON tx_taxa (parent_name_usage_id, taxon_rank, taxonomic_status, canonical_name);
         '''
     },
     'idx_tx_taxa_us_invasive': {
         'table': 'tx_taxa',
         'create_sql': '''
-			CREATE INDEX idx_tx_taxa_us_invasive
-			ON tx_taxa (us_invasive)
-    	'''
+            CREATE INDEX idx_tx_taxa_us_invasive
+            ON tx_taxa (us_invasive)
+        '''
     },
     'idx_inverts_backbone_us_invasive': {
         'table': 'gbif_inverts_backbone',
         'create_sql': '''
-			CREATE INDEX idx_inverts_backbone_us_invasive
-			ON gbif_inverts_backbone (us_invasive);
-    	'''
+            CREATE INDEX idx_inverts_backbone_us_invasive
+            ON gbif_inverts_backbone (us_invasive);
+        '''
     },
     'idx_invasives_taxon_id': {
         'table': 'us_invasives_checklist',
@@ -202,35 +202,27 @@ for rank in RANK_COLS:
 MATERIALIZED_VIEWS = {
     'tx_taxa': {
         'create_sql': sql.SQL('''
-			CREATE MATERIALIZED VIEW tx_taxa AS
-			WITH RECURSIVE ancestors AS (
-				SELECT backbone.*
-				FROM gbif_inverts_backbone backbone
-				WHERE backbone.taxon_id IN (
-					SELECT DISTINCT taxon_key FROM gbif_observations
-				)
-				
-    			UNION ALL
-				
-    			SELECT parent.*
-				FROM gbif_inverts_backbone parent
-				JOIN ancestors child 
-					ON parent.taxon_id IN (
-         				child.parent_name_usage_id, 
-             			child.accepted_name_usage_id
-            		)
-			)
-			SELECT DISTINCT *
-				FROM ancestors
-		''')
-    },
-    'data_providers': {
-        'create_sql': sql.SQL('''
-            CREATE MATERIALIZED VIEW data_providers AS
-            SELECT DISTINCT(dataset_key), publisher, institution_code
-            FROM gbif_observations
-            WHERE publisher IS NOT NULL
-		''')
+            CREATE MATERIALIZED VIEW tx_taxa AS
+            WITH RECURSIVE ancestors AS (
+                SELECT backbone.*
+                FROM gbif_inverts_backbone backbone
+                WHERE backbone.taxon_id IN (
+                    SELECT DISTINCT taxon_key FROM gbif_observations
+                )
+
+                UNION ALL
+
+                SELECT parent.*
+                FROM gbif_inverts_backbone parent
+                JOIN ancestors child 
+                    ON parent.taxon_id IN (
+                        child.parent_name_usage_id, 
+                        child.accepted_name_usage_id
+                    )
+            )
+            SELECT DISTINCT *
+                FROM ancestors
+        ''')
     },
     'regions': {
         'create_sql': sql.SQL('''

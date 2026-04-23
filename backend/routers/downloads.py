@@ -23,14 +23,14 @@ downloads_router = APIRouter()
 #     include_inat = params.include_inat
 #     date_start = params.date_start
 #     date_end = params.date_end
-#     data_providers = params.data_providers
+#     datasets = params.datasets
 #     include_invasives = params.include_invasives
 #     estimate = params.estimate
 
 #     filter_payload = OccurrenceFilter(
 #         taxon_ids=taxon_ids,
 #         include_inat=include_inat,
-#         data_providers=data_providers,
+#         datasets=datasets,
 #         date_start=date_start,
 #         date_end=date_end
 #     )
