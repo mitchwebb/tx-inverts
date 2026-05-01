@@ -104,9 +104,16 @@
     role="tooltip"
     aria-hidden={!tooltipContext.visible}
 >
-    <div class="tooltip-content">
-        {@html tooltipContext.content}
-    </div>
+    {#if tooltipContext.content}
+        {@const content = tooltipContext.content}
+        <div class="tooltip-content">
+            {#if typeof content === 'string'}
+                {content}
+            {:else}
+                {@render content()}
+            {/if}
+        </div>
+    {/if}
     <div
         class="tooltip-arrow {verticalFlip ? 'flipped' : ''}"
         style:border-top-color={verticalFlip

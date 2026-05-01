@@ -139,21 +139,23 @@
     {/if}
     <div class="ns-section">
         {#if rank && !taxon.info.usInvasive}
-            <div id="rank-text" class="centered-text subheader">
-                <span
-                    >{nSRankKey.find((item) => item.rank === rank)
-                        ?.description}</span
-                >
+            <div id="rank-text" class="centered-text">
+                <span>
+                    {nSRankKey.find((item) => item.rank === rank)?.description}
+                </span>
                 <div class="info-button">
-                    <InfoButton
-                        type="tooltip"
-                        hover={true}
-                        htmlContent={'<div>The rankings made on this site are programmatically derived using public data. These are preliminary rankings meant for exploration and do not represent official rankings made by experts.</div>'}
-                    />
+                    <InfoButton type="tooltip" hover={true}>
+                        <div>
+                            The rankings made on this site are programmatically
+                            derived using public data. These are preliminary
+                            rankings meant for exploration and do not represent
+                            official rankings.
+                        </div>
+                    </InfoButton>
                 </div>
             </div>
             <div class="rank-scale">
-                <NSScale level="s" {rank} />
+                <NSScale level="s" activeRank={rank} />
             </div>
         {/if}
 
@@ -177,11 +179,12 @@
                         <span>Occurrences:</span>
                         <span class="thin">
                             {nSValues.numberOfOccurrences.toLocaleString()}
-                            <InfoButton
-                                hover={true}
-                                type="tooltip"
-                                htmlContent="For this tool, occurrences are populations separated by at least 1km."
-                            />
+                            <InfoButton hover={true} type="tooltip">
+                                <div>
+                                    For this tool, occurrences are populations
+                                    separated by at least 1km.
+                                </div>
+                            </InfoButton>
                         </span>
                     </div>
                 </div>
@@ -318,6 +321,7 @@
         display: flex;
         gap: 0.25rem;
         justify-content: center;
+        font-size: 1.2rem;
     }
     .rank-scale {
         display: flex;

@@ -54,9 +54,9 @@
 
 <div id="download-form-wrapper">
     {#if header}
-        <div id="download-form-header">
-            <span class="header"> {header} </span>
-        </div>
+        <h3 id="download-form-header">
+            {header}
+        </h3>
     {/if}
     <div id="download-form-content">
         {@render children?.()}
@@ -122,7 +122,7 @@
         max-width: 800px;
         /* max-height: 80dvh; */
     }
-    #download-form-header {
+    /* #download-form-header {
         padding: 0.5rem 1rem 1rem 1rem;
-    }
+    } */
 </style>

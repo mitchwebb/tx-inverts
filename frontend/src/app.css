@@ -180,6 +180,11 @@ h3 {
     padding: 2em;
 }
 
+p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
 #app {
     display: flex;
     flex-direction: column;
@@ -230,12 +235,6 @@ button:focus-visible {
 
 .centered-text {
     text-align: center;
-}
-.header {
-    font-size: 1.4rem;
-}
-.subheader {
-    font-size: 1.2rem;
 }
 .thin {
     font-weight: 200;

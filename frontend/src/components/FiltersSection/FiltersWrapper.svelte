@@ -38,7 +38,7 @@
 </script>
 
 <div class="filters-content-wrapper">
-    <div class="filters-header header">{header}</div>
+    <h3 class="filters-header">{header}</h3>
     <div id="filters-content">
         {@render children?.()}
     </div>

@@ -22,6 +22,8 @@
     import ObservationsFilters from '../FiltersSection/ObservationsFilters.svelte';
     import TaxaFilters from '../FiltersSection/TaxaFilters.svelte';
     import { openModal } from '../../lib/modal.svelte';
+    import DownloadOccurrenceForm from '../DownloadOccurrenceForm.svelte';
+    import DownloadIcon from '../../assets/DownloadIcon.svelte';
 
     type SidebarProps = {
         showNSDisplay?: boolean;
@@ -106,9 +108,13 @@
 
     // function handleOccDownloadButton() {
     //     modalContext.visible = true;
-    //     modalContext.content = DownloadOccurrenceForm;
+    //     modalContext.content = occurrenceDownloadForm;
     // }
 </script>
+
+<!-- {#snippet occurrenceDownloadForm()}
+    <DownloadOccurrenceForm />
+{/snippet} -->
 
 {#snippet filters()}
     {#if filtersDomain === 'observations'}

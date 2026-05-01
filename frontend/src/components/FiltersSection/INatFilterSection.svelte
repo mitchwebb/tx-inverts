@@ -6,9 +6,9 @@
 
     type INatFilterProps = {
         label?: string;
-    }
+    };
 
-    const {label='Include iNat Data'}: INatFilterProps = $props();
+    const { label = 'Include iNat Data' }: INatFilterProps = $props();
 
     const filtersContext = getFiltersContext();
 
@@ -19,14 +19,20 @@
     }
 </script>
 
-<div id="inat-filters-section" class="filters-section" class:active={!filtersContext.includeINat}>
+<div
+    id="inat-filters-section"
+    class="filters-section"
+    class:active={!filtersContext.includeINat}
+>
     <div id="inat-filter-section-header" class="filters-section-header">
         <span>iNaturalist</span>
-        <InfoButton
-            type="tooltip"
-            htmlContent="<span>By default, our site includes iNaturalist Research Grade Observations in our preliminary conservation rankings. These may be toggled on or off as desired.</span>"
-            hover={true}
-        />
+        <InfoButton type="tooltip" hover={true}>
+            <span>
+                By default, our site includes iNaturalist Research Grade
+                Observations in our preliminary conservation rankings. These may
+                be toggled on or off as desired.
+            </span>
+        </InfoButton>
     </div>
     <div class="filters-section-content">
         <div class="inat-toggle-wrapper">
@@ -51,7 +57,7 @@
     }
     #inat-filter-section-header {
         display: flex;
-        gap: .25rem;
+        gap: 0.25rem;
     }
     .inat-toggle-wrapper {
         display: flex;

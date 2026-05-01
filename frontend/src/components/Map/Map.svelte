@@ -170,6 +170,12 @@
             cooperativeGestures: $isMobile ? true : false,
         });
 
+        // Creates a new scale control to measure the map
+        const scale = new mapboxgl.ScaleControl({
+            maxWidth: 120,
+            unit: 'metric',
+        });
+
         map.on('load', () => {
             mapReady = true;
             map.dragRotate.disable();
@@ -180,6 +186,8 @@
                     map.addLayer(layer);
                 });
             }
+
+            map.addControl(scale);
 
             // Set visibility of static layers
             for (const layerID of staticMapLayerIDs) {

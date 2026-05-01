@@ -30,11 +30,12 @@
     <div class="filters-section-header">
         <span>Conservation Ranks</span>
         &nbsp
-        <InfoButton
-            hover={true}
-            type="tooltip"
-            htmlContent="This filter uses preliminary ranks determined using unfiltered data from our database"
-        />
+        <InfoButton hover={true} type="tooltip">
+            <div>
+                This filter uses preliminary ranks determined using unfiltered
+                data from our database
+            </div>
+        </InfoButton>
     </div>
     <div class="filters-section-content rank-filter-list">
         {#each nSRankKey as rankItem}

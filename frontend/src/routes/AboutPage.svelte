@@ -1,46 +1,47 @@
 <script lang="ts">
-    import InfoButton from '../common/InfoButton.svelte';
-    import { datasets } from '../contexts/Datasets';
+    import type { Snippet } from 'svelte';
+    import DatasetsModal from '../common/Modals/DatasetsModal.svelte';
+    import OccurrencesModal from '../common/Modals/OccurrencesModal.svelte';
+    import NSScale from '../common/NSScale.svelte';
+    import TaxonPyramid from '../common/TaxonPyramid.svelte';
     import { getModalContext } from '../contexts/modalContext';
+    import { getRouterContext } from '../contexts/routerContext';
     import { openModal } from '../lib/modal.svelte';
+    import RangeExtentModal from '../common/Modals/RangeExtentModal.svelte';
 
     const modalContext = getModalContext();
+    const routerContext = getRouterContext();
 
-    function showDatasetsModal() {
-        openModal(modalContext, datasetsModal);
+    function showModal(snippet: Snippet) {
+        openModal(modalContext, snippet);
+    }
+
+    function handlePageLink(e: Event) {
+        // Prevent full reloading (normal navigation)
+        e.preventDefault();
+
+        const target = e.currentTarget as HTMLAnchorElement;
+        const pathname = target.getAttribute('href');
+
+        if (!pathname) return;
+
+        // Navigate to page (ignoring same-page clicks)
+        if (pathname !== window.location.pathname) {
+            routerContext.navigate(pathname, true);
+        }
     }
 </script>
 
 {#snippet datasetsModal()}
-    {#if $datasets}
-        <!-- Get list of keys sorted by dataset title -->
-        {@const sortedKeys = Object.keys($datasets).sort((a, b) =>
-            $datasets[a].datasetTitle.localeCompare($datasets[b].datasetTitle)
-        )}
-        <div id="datasets-modal">
-            <h3>Included Datasets</h3>
-            <div id="datasets-modal-body">
-                <p id="datasets-blurb">
-                    Our included datasets are selected from a list of datasets
-                    on GBIF containing invertebrate data within Texas. To help
-                    with data quality, we've filtered to institutions and
-                    universities, excluding most citizen science sources.
-                </p>
-                <ul class="dataset-list">
-                    {#each sortedKeys as datasetKey}
-                        <li class="dataset-name">
-                            <a
-                                href={`https://www.gbif.org/dataset/${datasetKey}`}
-                                target="_blank"
-                            >
-                                {$datasets[datasetKey]['datasetTitle']}
-                            </a>
-                        </li>
-                    {/each}
-                </ul>
-            </div>
-        </div>
-    {/if}
+    <DatasetsModal />
+{/snippet}
+
+{#snippet occurrencesModal()}
+    <OccurrencesModal />
+{/snippet}
+
+{#snippet rangeExtentModal()}
+    <RangeExtentModal />
 {/snippet}
 
 <div id="about-page-wrapper">
@@ -66,8 +67,64 @@
                 wildlife and plants across Texas.
             </p>
         </div>
+        <div>
+            <h3 class="about-page-subheader">Rankings</h3>
+            <div class="ns-ranks-scale">
+                <NSScale level="s" />
+            </div>
+            <p>
+                The main goal of this tool is to provide preliminary
+                conservation rankings for our invertebrate species in Texas.
+                These rankings, like those on the
+                <a href="https://www.iucnredlist.org/" target="_blank">
+                    IUCN Red List
+                </a>
+                or those produced by
+                <a href="https://www.natureserve.org/" target="_blank">
+                    NatureServe
+                </a>, are not typically made en masse—and for good reason. The
+                data and expertise needed to justifiably produce these rankings
+                aren't available for many species, with invertebrates being
+                especially underrepresented. With 30,000+ species in Texas
+                alone, many species are difficult to find, difficult to
+                identify, or altogether ignored.
+            </p>
+            <p>
+                With this in mind, the rankings on this site are fundamentally
+                approximate and imperfect. They are not meant to be taken as
+                final rankings but are instead made to be used as a starting
+                point when considering the ranking process for any given
+                species. For Texas Parks and Wildlife, this means being able to
+                make a more informed start when determining which species to
+                examine more closely.
+            </p>
+            <p>
+                For this tool, there are two metrics that are used to calculate
+                these preliminary rankings:
+            </p>
+            <ul>
+                <li>
+                    <button
+                        onclick={() => showModal(occurrencesModal)}
+                        id="datasets-modal-button"
+                        class="modal-button"
+                    >
+                        Occurrences
+                    </button>
+                </li>
+                <li>
+                    <button
+                        onclick={() => showModal(rangeExtentModal)}
+                        id="datasets-modal-button"
+                        class="modal-button"
+                    >
+                        Range Extent
+                    </button>
+                </li>
+            </ul>
+        </div>
         <div class="about-page-section">
-            <h3 class="about-page-subheader">Observation Data</h3>
+            <h3 class="about-page-subheader">Our Data</h3>
             <p>
                 Texas Inverts was built upon public observation data collected
                 by universities and institutions in the US, as well as data from
@@ -78,58 +135,94 @@
             <p>Our observation dataset begins with these requirements:</p>
             <ul id="data-parameter-list">
                 <li>Invertebrate Species</li>
-                <li>Non-Chordate Animalia</li>
-                <li>Chordate Invertebrates</li>
                 <ul>
-                    <li>Thaliacea</li>
-                    <li>Ascidiacea</li>
-                    <li>Appendicularia</li>
-                    <li>Leptocardii</li>
+                    <li>Non-Chordate Animalia</li>
+                </ul>
+                <ul>
+                    <li>Chordate Invertebrates</li>
+                    <ul>
+                        <li>Thaliacea</li>
+                        <li>Ascidiacea</li>
+                        <li>Appendicularia</li>
+                        <li>Leptocardii</li>
+                    </ul>
                 </ul>
                 <li>Occurrence Status: Present</li>
                 <li>
+                    Found Within
                     <button
-                        onclick={showDatasetsModal}
+                        onclick={() => showModal(datasetsModal)}
                         id="datasets-modal-button"
+                        class="modal-button"
                     >
-                        Within Approved Datasets
+                        Approved Datasets
                     </button>
                 </li>
-                <li>Within a Simple Texas Bounding Box</li>
+                <li>Located Within Texas Bounding Box</li>
             </ul>
             <p>
-                From here, our data is processed a bit further. Records without
-                valid collection dates are examined, unambiguous dates are
-                assigned when available, and those that remain are filtered out.
-                The records are then filtered to a Texas boundary shapefile
-                (from TxDOT), and entered into our database.
+                After this preliminary filter, records without valid collection
+                dates are examined, unambiguous dates are assigned when
+                available, and those that remain are filtered out. The records
+                are then filtered to a Texas boundary shapefile (sourced from
+                TxDOT) and entered into our database.
             </p>
         </div>
         <div class="about-page-section">
-            <h3 class="about-page-subheader">Taxonomic Backbone:</h3>
+            <h3 class="about-page-subheader">Our Taxonomic Backbone</h3>
+            <div id="about-taxa-diagram">
+                <TaxonPyramid />
+            </div>
             <p>
-                Our taxonomic backbone is sourced from the
+                Our taxonomic backbone, the foundation for how we classify and
+                structure the relationships between species on this site, is
+                sourced from the
                 <a
                     href="https://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c"
                     target="_blank"
                 >
                     GBIF Taxonomic Backbone
-                </a>, before being filtered down to those species with
-                occurrence records within Texas. See the
-                <a href="/backbone">Backbone page</a> to browse the structure.
+                </a>
+                before being filtered down to those species with occurrence records
+                within Texas. See the
+                <a
+                    class="page-link"
+                    href={'/backbone'}
+                    onclick={handlePageLink}
+                    onkeydown={handlePageLink}
+                >
+                    Backbone Page
+                </a>
+                to browse the structure.
+            </p>
+            <p>
+                There is no universally accepted taxonomic tree, and taxonomic
+                relationships are constantly in flux as we learn new information
+                and discover new species. In the interest of keeping our
+                occurrence data consistent with our taxonomy, this project bases
+                both on GBIF's conventions.
             </p>
         </div>
     </div>
 </div>
 
 <style>
+    #about-taxa-diagram {
+        height: 250px;
+    }
+    .ns-ranks-scale {
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
     #data-parameter-list {
         display: flex;
         flex-direction: column;
         /* gap: 0.5rem; */
     }
-
-    #datasets-modal-button {
+    .modal-button {
         user-select: none;
         background-color: transparent;
         padding: 0;
@@ -138,28 +231,6 @@
     }
     #datasets-modal-button:hover {
         filter: brightness(0.8);
-    }
-    #datasets-modal {
-        display: flex;
-        flex-direction: column;
-        max-width: 750px;
-        padding: 1rem;
-    }
-    #datasets-blurb {
-        text-align: left;
-    }
-    #datasets-modal-body {
-        padding: 0 1rem;
-    }
-    .dataset-list {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        /* padding-left: 1rem; */
-        list-style: none;
-    }
-    .dataset-name {
-        text-align: left;
     }
     #about-page-wrapper {
         width: 100%;
@@ -189,6 +260,7 @@
     .about-page-subheader {
         padding: 1rem 0;
         margin: 0;
+        margin-bottom: 1rem;
         border-bottom: 1px solid var(--border);
         width: 100%;
     }

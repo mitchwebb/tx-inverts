@@ -10,18 +10,18 @@
 
     type NSScaleProps = {
         level: NSLevel;
-        rank: NSRank;
+        activeRank?: NSRank;
     };
 
-    let { level, rank }: NSScaleProps = $props();
+    let { level, activeRank = null }: NSScaleProps = $props();
 
-    const fullRanking = $derived(`${level}${rank}`);
+    const fullRanking = $derived(`${level}${activeRank}`);
 </script>
 
 <div class="nature-serve-scale">
     {#each nSRankKey as { rank }}
         <!-- Element is active if fullRanking is equal to current rank -->
-        {@const active = fullRanking == `${level}${rank}`}
+        {@const active = fullRanking == `${level}${rank}` || !activeRank}
         <NSCircle {active} {level} {rank} />
     {/each}
 </div>
