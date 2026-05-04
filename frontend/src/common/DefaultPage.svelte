@@ -41,7 +41,7 @@
         gap: 0.5rem;
         padding: 0.5rem;
         overflow: hidden;
-        max-height: 100vh;
+        max-height: 100dvh;
     }
     .body-wrapper {
         height: 100%;
