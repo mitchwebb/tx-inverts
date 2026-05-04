@@ -1,7 +1,7 @@
 <script lang="ts">
 </script>
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" width="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 0 720 420" width="100%">
     <!-- Clip paths to separate pyramid sections -->
     <defs>
         <clipPath id="cp0"

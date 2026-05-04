@@ -275,7 +275,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        background-color: var(--container-back);
+        /* background-color: var(--container-back); */
         gap: 0.5rem;
         z-index: 100;
         height: 2.5rem;
@@ -310,7 +310,7 @@
         top: 0;
         grid-column: 2;
         grid-row: 1 / 4;
-        width: 350px;
+        width: 100%;
         max-width: 95dvw;
         height: 100%;
         /* max-height: 100%; */

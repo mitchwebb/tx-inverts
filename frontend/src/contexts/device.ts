@@ -8,3 +8,14 @@ export const isMobile = readable(false, (set) => {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
 });
+
+export const isNarrowView = readable(false, (set) => {
+    if (typeof window === 'undefined') return; // SSR guard
+
+    const mq = window.matchMedia('(max-width: 768px)');
+    set(mq.matches);
+
+    const handler = (e: MediaQueryListEvent) => set(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+});

@@ -66,6 +66,8 @@
     } from '../contexts/rankingsContext';
     import { TAXON_COLORS } from '../constants/taxa';
     import { makeIDCollection } from '../util/collection.svelte';
+    import { isNarrowView } from '../contexts/device';
+    import MobileSidebar from '../components/Sidebar/MobileSidebar.svelte';
 
     // Intialize contexts
 
@@ -306,28 +308,48 @@
     });
 </script>
 
-<div id="layout">
+<div id="layout" class:mobile={$isNarrowView}>
     <Modal />
     <HeaderBar />
     <div id="page-body">
         <Router />
+        {#if $isNarrowView}
+            <MobileSidebar />
+            <div id="mobile-sidebar-buffer"></div>
+        {/if}
     </div>
 </div>
 
 <style>
+    #mobile-sidebar-buffer {
+        height: 55px;
+        width: 100%;
+        flex-shrink: 0;
+        padding: 0.5rem;
+        box-sizing: border-box;
+    }
+    #layout.mobile {
+        overflow: hidden;
+        height: 100dvh;
+    }
     #layout {
         height: 100%;
-        min-height: 500px;
         display: flex;
         flex-direction: column;
         position: relative;
-        overflow: auto;
+        /* overflow: auto; */
         width: 100%;
-        min-width: 625px;
+        min-width: 320px;
         background-color: var(--container-shadow);
     }
     #page-body {
         height: 100%;
         overflow: auto;
+        box-sizing: border-box;
+        flex-grow: 0;
+        flex-shrink: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
     }
 </style>

@@ -7,18 +7,22 @@
     import Sidebar from '../Sidebar/Sidebar.svelte';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import MapToolbar from '../MapToolbar/MapToolbar.svelte';
+    import { isNarrowView } from '../../contexts/device';
+    import MobileSidebar from '../Sidebar/MobileSidebar.svelte';
 
     const taxaContext = getActiveTaxaContext();
 </script>
 
 <div id="map-overlay-wrapper">
     <MapToolbar />
-    <!-- Sidebar only visible if taxon selected -->
-    <div id="map-sidebar-positioner">
-        <div id="map-sidebar-wrapper">
-            <Sidebar />
+    <!-- Sidebar only visible if taxon selected and not narrowScreen-->
+    {#if !$isNarrowView}
+        <div id="map-sidebar-positioner">
+            <div id="map-sidebar-wrapper">
+                <Sidebar />
+            </div>
         </div>
-    </div>
+    {/if}
     <!-- {#if mapHoverContext.lnglat}
         <div id="lnglat-display-wrapper">
             <div id="lnglat-display">{mapHoverContext.lnglat.join(', ')}</div>
@@ -43,13 +47,15 @@
     #map-sidebar-positioner {
         height: 100%;
         grid-row: 1/3;
-        box-sizing: border-box;
+        /* box-sizing: border-box; */
         display: flex;
         flex-direction: column;
     }
+    /* TODO: The sizing consistency between here and default page isn't great */
+    /* Should I just place it in a portal? */
     #map-sidebar-wrapper {
-        /* height: fit-content; */
         flex-shrink: 1;
+        width: calc(350px + 1rem);
         max-height: 100%;
         border-radius: 3px;
         background-color: var(--container-back);

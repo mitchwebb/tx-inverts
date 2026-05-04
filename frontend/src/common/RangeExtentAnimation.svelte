@@ -81,7 +81,7 @@
         stroke-linecap: round;
         stroke-linejoin: round;
         stroke-width: 2px;
-        transition: all 0.1s ease-in-out;
+        transition: all 0.5s ease-in-out;
     }
     circle {
         transition:
@@ -93,7 +93,7 @@
         top: 0;
         width: 200px;
         height: 100px;
-        transition: all 0.1s ease-in-out;
+        transition: all 0.5s ease-in-out;
         opacity: 0.2;
     }
 </style>

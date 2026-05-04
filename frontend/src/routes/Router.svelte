@@ -5,7 +5,6 @@
         getRouterContext,
         type RouterPath,
     } from '../contexts/routerContext';
-    import TaxonPage from './Backbone/BackbonePage.svelte';
     import RankingPage from './rankings/RankingsPage.svelte';
     import { routerSyncedKeys } from '../constants/router';
     import {
@@ -194,7 +193,7 @@
     #page-not-found {
         text-align: center;
         margin-top: 50px;
-        font-size: 24px;
+        font-size: 2rem;
         color: var(--text-default);
     }
 </style>

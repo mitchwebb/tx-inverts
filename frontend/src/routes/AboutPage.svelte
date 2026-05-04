@@ -209,6 +209,7 @@
 <style>
     #about-taxa-diagram {
         height: 250px;
+        max-width: 100%;
     }
     .ns-ranks-scale {
         padding: 1rem;
@@ -234,15 +235,13 @@
     }
     #about-page-wrapper {
         width: 100%;
-        min-height: 100%;
         background-color: var(--container-back);
-        padding: 3rem;
+        padding: 1.5rem;
         box-sizing: border-box;
         color: var(--text-default);
         display: flex;
         flex-direction: column;
         align-items: center;
-        /* gap: 0.5rem; */
     }
     .about-page-body {
         max-width: 800px;

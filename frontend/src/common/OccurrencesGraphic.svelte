@@ -76,7 +76,7 @@
             cy 0.5s ease-in-out;
     }
     text {
-        font-size: 16px;
+        font-size: 1rem;
         text-anchor: middle;
         /* stroke-width: 0.5; */
         /* stroke: var(--border); */

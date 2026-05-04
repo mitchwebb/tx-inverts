@@ -147,24 +147,27 @@
     }
 
     // Handle user resizing table columns
-    function resizeColumn(e: MouseEvent) {
+    function resizeColumn(e: PointerEvent) {
         const target = e.target as HTMLElement;
         const targetIndex = target?.dataset?.columnIndex;
-        if (targetIndex != null) {
-            let startX = e.clientX;
-            let startWidth = target.parentElement!.offsetWidth;
-            function resizeColumn(e: MouseEvent) {
-                const dx = e.clientX - startX;
-                const newWidth = Math.max(startWidth + dx, 10);
-                columnWidths[Number(targetIndex)] = `${newWidth}px`;
-            }
-            function stopResize() {
-                window.removeEventListener('mousemove', resizeColumn);
-                window.removeEventListener('mouseup', stopResize);
-            }
-            window.addEventListener('mousemove', resizeColumn);
-            window.addEventListener('mouseup', stopResize);
+        if (targetIndex == null) return;
+
+        let startX = e.clientX;
+        let startWidth = target.parentElement!.offsetWidth;
+
+        target.setPointerCapture(e.pointerId);
+
+        function resizeColumn(e: PointerEvent) {
+            const dx = e.clientX - startX;
+            const newWidth = Math.max(startWidth + dx, 10);
+            columnWidths[Number(targetIndex)] = `${newWidth}px`;
         }
+        function stopResize() {
+            window.removeEventListener('pointermove', resizeColumn);
+            window.removeEventListener('pointerup', stopResize);
+        }
+        window.addEventListener('pointermove', resizeColumn);
+        window.addEventListener('pointerup', stopResize);
     }
 
     // Attempt to determine reasonable column widths given headers and first row
@@ -310,11 +313,9 @@
                                 </div>
                                 {#if header.info}
                                     <div class="header-info">
-                                        <InfoButton
-                                            type="tooltip"
-                                            hover={true}
-                                            htmlContent={header.info}
-                                        />
+                                        <InfoButton type="tooltip" hover={true}>
+                                            <div>{header.info}</div>
+                                        </InfoButton>
                                     </div>
                                 {/if}
                             </div>
@@ -330,7 +331,7 @@
                         </button>
                         <button
                             data-column-index={i}
-                            onmousedown={resizeColumn}
+                            onpointerdown={resizeColumn}
                             class="resize-handle"
                             aria-label="Resize handle"
                         >
@@ -369,23 +370,23 @@
         background-color: var(--container-fore);
     }
     .header-info {
-        height: 1.5rem;
         margin-left: 0.2rem;
         flex-shrink: 0;
         pointer-events: auto;
     }
     .resize-handle {
         position: absolute;
-        width: 10px;
+        width: 20px;
         height: 100%;
         top: 0;
-        right: -5px;
+        right: -10px;
         background-color: unset;
         z-index: 100;
         opacity: 0.5;
         margin: unset;
         padding: unset;
         border: unset;
+        box-sizing: border-box;
     }
     .resize-handle:hover {
         background-color: var(--container-fore);
@@ -443,7 +444,7 @@
         overflow-x: hidden;
         flex-shrink: 0;
         box-sizing: border-box;
-        height: 45px;
+        height: fit-content;
     }
     button.column-header {
         margin: unset;
@@ -453,11 +454,10 @@
     }
     .column-header-wrapper {
         position: relative;
-        height: 100%;
+        /* height: 100%; */
         width: 100%;
         box-sizing: border-box;
         border-right: 1px solid var(--container-shadow);
-        overflow: hidden;
     }
     .column-header {
         display: flex;
@@ -467,7 +467,7 @@
         box-sizing: border-box;
         align-items: center;
         width: 100%;
-        height: 100%;
+        /* height: 100%; */
         padding: 1rem 0.5rem 0.5rem 0.5rem;
     }
     .column-header:focus {

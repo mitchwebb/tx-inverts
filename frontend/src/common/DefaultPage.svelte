@@ -6,7 +6,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import Sidebar from '../components/Sidebar/Sidebar.svelte';
-
+    import { isNarrowView } from '../contexts/device';
     type DefaultPageProps = {
         showSidebar?: boolean;
         children: Snippet;
@@ -19,7 +19,7 @@
     <div class="body-wrapper">
         {@render children?.()}
     </div>
-    {#if showSidebar}
+    {#if showSidebar && !$isNarrowView}
         <div id="default-sidebar-wrapper">
             <Sidebar />
         </div>
@@ -29,6 +29,8 @@
 <style>
     #default-sidebar-wrapper {
         position: relative;
+        width: 350px;
+        flex-shrink: 0;
     }
     .page-wrapper {
         height: 100%;
@@ -38,6 +40,8 @@
         box-sizing: border-box;
         gap: 0.5rem;
         padding: 0.5rem;
+        overflow: hidden;
+        max-height: 100vh;
     }
     .body-wrapper {
         height: 100%;
