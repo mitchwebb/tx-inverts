@@ -313,7 +313,7 @@
     <HeaderBar />
     <div id="page-body">
         <Router />
-        {#if $isNarrowView}
+        {#if $isNarrowView && routerState.url.pathname !== '/about'}
             <MobileSidebar />
             <div id="mobile-sidebar-buffer"></div>
         {/if}

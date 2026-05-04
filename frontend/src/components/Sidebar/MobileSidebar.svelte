@@ -15,6 +15,10 @@
     const POSITION_THRESHOLD = 0.4; // 40% of screen
     const MIN_PEEK = 60;
 
+    // TODO: Fix this hard-code
+    // Leave some room for the header
+    const MAX_TOP = 70;
+
     onMount(() => {
         screenHeight = window.innerHeight;
     });
@@ -23,7 +27,7 @@
         isOpen = true;
         wrapper.style.transition =
             'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-        wrapper.style.transform = `translateY(0)`;
+        wrapper.style.transform = `translateY(${MAX_TOP}px)`;
     }
 
     function closeSheet() {
@@ -73,13 +77,13 @@
                 return; // Scroll
             }
         }
-        const baseY = isOpen ? 0 : screenHeight - MIN_PEEK;
+        const baseY = isOpen ? MAX_TOP : screenHeight - MIN_PEEK;
 
         let delta: number;
         if (isOpen) {
             // Dragging down: allow freely
             // Dragging past top: rubber-band
-            delta = rawDelta < 0 ? rawDelta * 0.15 : rawDelta;
+            delta = rawDelta < MAX_TOP ? rawDelta * 0.15 : rawDelta;
         } else {
             // Dragging up: allow freely
             // Dragging past bottom: rubber-band
@@ -87,7 +91,7 @@
             delta =
                 rawDelta < -maxUp
                     ? -maxUp + (rawDelta + maxUp) * 0.15
-                    : rawDelta > 0
+                    : rawDelta > MAX_TOP
                       ? rawDelta * 0.15
                       : rawDelta;
         }
@@ -135,15 +139,16 @@
     aria-modal={isOpen}
     tabindex="-1"
     style="transform: translateY(calc(100% - {MIN_PEEK}px))"
-    on:pointerdown={onPointerDown}
-    on:pointermove={onPointerMove}
-    on:pointerup={onPointerUp}
-    on:pointercancel={onPointerUp}
+    onpointerdown={onPointerDown}
+    onpointermove={onPointerMove}
+    onpointerup={onPointerUp}
+    onpointercancel={onPointerUp}
 >
     <button
         id="mobile-sidebar-tab"
         aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
         aria-expanded={isOpen}
+        onclick={() => (isOpen ? closeSheet() : openSheet())}
     >
         <div id="mobile-sidebar-button">
             <GrabLine />
@@ -169,7 +174,9 @@
         flex-direction: column;
         align-items: center;
         will-change: transform;
-        z-index: 9999;
+        z-index: 900;
+        touch-action: none;
+        overscroll-behavior: none;
     }
 
     #mobile-sidebar-tab {

@@ -5,7 +5,6 @@
     import { portal } from '../common/Portal.svelte';
     import { onMount, tick, type Snippet } from 'svelte';
 
-
     type SearchSuggestProps = {
         suggestions: T[] | null;
         row: Snippet<[T, number]>;
@@ -58,7 +57,7 @@
     }
 
     function selectSuggestion(suggestion: T) {
-        handleSelect(suggestion)
+        handleSelect(suggestion);
         currentSelection = suggestion;
         suggestionsVisible = false;
     }
@@ -69,10 +68,7 @@
     }
 
     // Handler for keypress on suggestion
-    function handleSuggestionKeydown(
-        e: KeyboardEvent,
-        suggestion: T
-    ) {
+    function handleSuggestionKeydown(e: KeyboardEvent, suggestion: T) {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             handleSelect(suggestion);
@@ -181,7 +177,7 @@
 
         portalStyle = {
             top: `${top}px`,
-            left: `${left}px`,
+            left: `${Math.max(left, 0)}px`,
             width: `${dropdownWidth}px`,
             maxHeight: `${maxHeight}px`,
         };
@@ -389,7 +385,7 @@
         overflow: visible;
         /* border-radius: 4px; */
         width: fit-content;
-        max-width: 350px;
+        max-width: min(350px, 90dvw);
         overflow-y: scroll;
         border: 1px solid var(--container-shadow);
         box-shadow: 0px 3px 10px 1px var(--container-shadow);

@@ -165,9 +165,11 @@
         function stopResize() {
             window.removeEventListener('pointermove', resizeColumn);
             window.removeEventListener('pointerup', stopResize);
+            window.removeEventListener('pointercancel', stopResize);
         }
         window.addEventListener('pointermove', resizeColumn);
         window.addEventListener('pointerup', stopResize);
+        window.addEventListener('pointercancel', stopResize);
     }
 
     // Attempt to determine reasonable column widths given headers and first row
