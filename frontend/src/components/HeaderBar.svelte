@@ -8,6 +8,7 @@
     } from '../contexts/routerContext';
     import { capitalizeWords } from '../util/textHelpers';
     import TaxaSearch from './TaxaSearch.svelte';
+    import { onDestroy, onMount } from 'svelte';
 
     const routerContext = getRouterContext();
 
@@ -45,6 +46,22 @@
     }
 
     let showMenu: boolean = $state(false);
+
+    function handleOutsideMenuClick(e: MouseEvent) {
+        if (!showMenu) return;
+        const target = e.target as HTMLElement;
+        if (
+            !target.closest('#main-nav-foldout') &&
+            !target.closest('#menu-foldout-button')
+        ) {
+            showMenu = false;
+        }
+    }
+
+    onMount(() => document.addEventListener('click', handleOutsideMenuClick));
+    onDestroy(() =>
+        document.removeEventListener('click', handleOutsideMenuClick)
+    );
 </script>
 
 <!-- Snippet for click-to-navigate header links -->
@@ -74,7 +91,13 @@
         </div>
 
         {#if $isNarrowView}
-            <button class="menu-button" onclick={() => (showMenu = !showMenu)}>
+            <button
+                class="menu-foldout-button"
+                onclick={(e) => {
+                    e.stopPropagation();
+                    showMenu = !showMenu;
+                }}
+            >
                 <MenuIcon />
             </button>
         {:else}
@@ -99,9 +122,9 @@
 </div>
 
 <style>
-    .menu-button {
+    .menu-foldout-button {
         background-color: transparent;
-        padding: 0;
+        /* padding: 0; */
     }
     #main-nav-foldout {
         position: absolute;
