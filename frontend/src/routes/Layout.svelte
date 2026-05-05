@@ -316,6 +316,7 @@
     <HeaderBar />
     <div id="page-body">
         <Router />
+        <!-- TODO: This could be moved now that sidebar is unified -->
         {#if $isNarrowView && routerState.url.pathname !== '/about'}
             <MobileSidebar />
             <div id="mobile-sidebar-buffer"></div>

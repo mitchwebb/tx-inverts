@@ -415,4 +415,15 @@
     .taxon-authorship {
         font-weight: 200;
     }
+    /* Never hide icons when on mobile device */
+    @media (hover: none) {
+        .taxon-select-icon {
+            visibility: visible;
+        }
+        /* Force a default color for mobile device icon */
+        .taxon-select-icon:not(.active) {
+            color: var(--text-default) !important;
+            opacity: 0.25;
+        }
+    }
 </style>

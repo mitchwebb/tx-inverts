@@ -448,7 +448,7 @@
         /* Force a default color for mobile device icon */
         .taxon-select-icon:not(.active) {
             color: var(--text-default) !important;
-            opacity: 0.5;
+            opacity: 0.25;
         }
     }
     .spacer-row {
