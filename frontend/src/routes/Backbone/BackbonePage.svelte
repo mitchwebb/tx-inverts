@@ -1,7 +1,10 @@
 <script lang="ts">
     import { type TaxonNodeType } from '../../types/api';
     import { taxaTree } from '../../contexts/TaxaTree';
-    import { getActiveTaxaContext, initialTaxonState } from '../../contexts/activeTaxaContext';
+    import {
+        getActiveTaxaContext,
+        initialTaxonState,
+    } from '../../contexts/activeTaxaContext';
     import NSCircle from '../../common/NSCircle.svelte';
     import ChevronDown from '../../assets/ChevronDown.svelte';
     import ChevronRight from '../../assets/ChevronRight.svelte';
@@ -94,7 +97,7 @@
         } else {
             taxaContext.taxa.add({
                 ...initialTaxonState,
-                taxonID: targetInt
+                taxonID: targetInt,
             });
         }
     }
@@ -126,7 +129,7 @@
         if (el) {
             const nodeRect = el.getBoundingClientRect();
             // Find position of node in scrollable container
-            const container = document.getElementById('taxon-page-body');
+            const container = document.getElementById('backbone-page-body');
             const containerRect = container?.getBoundingClientRect();
 
             if (!containerRect || !container) return;
@@ -150,10 +153,10 @@
         }
     }
 
-    function handleWindowDrag(e: MouseEvent) {
-        const container = document.getElementById('taxon-page-body');
+    function handleWindowDrag(e: PointerEvent) {
+        const container = document.getElementById('backbone-page-body');
 
-        if (!e.currentTarget || !container) return;
+        if (!e.currentTarget || !container || e.pointerType === 'touch') return;
 
         isDragging = false;
 
@@ -169,7 +172,7 @@
             left: container?.scrollLeft,
         };
 
-        function dragToScroll(e: MouseEvent) {
+        function dragToScroll(e: PointerEvent) {
             const coordChange = {
                 x: e.clientX - origin.x,
                 y: e.clientY - origin.y,
@@ -190,13 +193,16 @@
         }
 
         function endWindowDrag() {
-            // isDragging = false;
-            window.removeEventListener('mousemove', dragToScroll);
-            window.removeEventListener('mouseup', endWindowDrag);
+            window.removeEventListener('pointermove', dragToScroll);
+            window.removeEventListener('pointerup', endWindowDrag);
+            // Reset after click handlers have fired
+            setTimeout(() => {
+                isDragging = false;
+            }, 0);
         }
 
-        window.addEventListener('mouseup', endWindowDrag);
-        window.addEventListener('mousemove', dragToScroll);
+        window.addEventListener('pointerup', endWindowDrag);
+        window.addEventListener('pointermove', dragToScroll);
     }
 
     // Determine if passed taxonID is a parent node in the taxaTree
@@ -215,12 +221,17 @@
         }
     });
 
-    // If a new activeTaxonID is set or if the page was just loaded, open it in the tree
+    // Track previous ids to enable automatic opening when new taxon is selected from an outside source
+    // TODO: This feels sloppy, but it prevents issues with closing latest taxon
+    let prevTaxaIds: Set<number> = new Set();
+
     $effect(() => {
-        const lastAddedID = taxaContext.taxa.ids.slice(-1)[0];
-        if (lastAddedID && $taxaTree) {
+        const ids = taxaContext.taxa.ids;
+        const lastAddedID = ids.slice(-1)[0];
+        if (lastAddedID && !prevTaxaIds.has(lastAddedID) && $taxaTree) {
             openTaxon(lastAddedID);
         }
+        prevTaxaIds = new Set(ids);
     });
 
     // Check for active taxon node and scroll to it
@@ -247,13 +258,13 @@
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <DefaultPage>
     <div
-        id="taxon-page-body"
+        id="backbone-page-body"
         role="application"
         class={[{ loading: !$taxaTree }]}
         tabindex="0"
-        aria-label="Taxon navigation viewport"
+        aria-label="Backbone navigation viewport"
         style:grid-template-columns={gridCols}
-        onmousedown={handleWindowDrag}
+        onpointerdown={handleWindowDrag}
         onkeydown={null}
     >
         {#each rankColumns as rank, i}
@@ -411,7 +422,7 @@
         padding: 0.5rem;
         color: var(--fill-color);
     }
-    #taxon-page-body.loading {
+    #backbone-page-body.loading {
         cursor: wait;
     }
     .filler-row {
@@ -428,6 +439,17 @@
     .taxon-node-wrapper:hover > .taxon-select-icon,
     .taxon-select-icon.active {
         visibility: visible;
+    }
+    /* Never hide icons when on mobile device */
+    @media (hover: none) {
+        .taxon-select-icon {
+            visibility: visible;
+        }
+        /* Force a default color for mobile device icon */
+        .taxon-select-icon:not(.active) {
+            color: var(--text-default) !important;
+            opacity: 0.5;
+        }
     }
     .spacer-row {
         height: 1rem;
@@ -486,7 +508,7 @@
     .taxon-rank-header:not(.last) {
         border-right: 1px solid var(--container-shadow);
     }
-    #taxon-page-body {
+    #backbone-page-body {
         height: 100%;
         display: grid;
         background-color: var(--container-mid);
