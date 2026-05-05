@@ -201,21 +201,26 @@
     #mobile-sidebar-tab {
         color: var(--text-default);
         height: 0.75rem;
-        width: 2.5rem;
+        width: 3rem;
         background-color: var(--container-fore);
         border: none;
         cursor: grab;
         touch-action: none;
         flex-shrink: 0;
         position: absolute;
-        left: calc(50% - 1.25rem);
+        left: calc(50% - 1.5rem);
         bottom: 100%;
         border: 1px solid var(--border);
         border-bottom: none;
         border-top-right-radius: 3px;
         border-top-left-radius: 3px;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
         padding: 0;
         padding-top: 0.2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     #mobile-sidebar-tab:active {
@@ -224,7 +229,7 @@
 
     #mobile-sidebar-button {
         color: var(--text-default);
-        width: 100%;
+        width: 2.5rem;
         padding: 0 0.5rem;
         background-color: transparent;
         box-sizing: border-box;
