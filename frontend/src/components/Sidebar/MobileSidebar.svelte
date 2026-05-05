@@ -1,15 +1,18 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import GrabLine from '../../assets/GrabLine.svelte';
     import Sidebar from './Sidebar.svelte';
+    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+
+    const taxaContext = getActiveTaxaContext();
 
     let wrapper: HTMLElement;
-    let isOpen = false;
-    let isDragging = false;
-    let startY = 0;
-    let currentY = 0;
-    let screenHeight = 0;
-    let samples: { y: number; t: number }[] = [];
+    let isOpen = $state(false);
+    let isDragging = $state(false);
+    let startY = $state(0);
+    let currentY = $state(0);
+    let screenHeight = $state(0);
+    let samples: { y: number; t: number }[] = $state([]);
 
     const FLICK_VELOCITY = 0.5; // px/ms
     const POSITION_THRESHOLD = 0.4; // 40% of screen
@@ -21,6 +24,7 @@
 
     onMount(() => {
         screenHeight = window.innerHeight;
+        closeSheet();
     });
 
     function openSheet() {
@@ -130,15 +134,30 @@
             shouldOpen ? openSheet() : closeSheet();
         }
     }
+
+    let bouncing = $state(false);
+
+    // Bounce sidebar on taxa changes
+    $effect(() => {
+        const activeTaxa = taxaContext.taxa.items;
+
+        untrack(() => {
+            if (!activeTaxa || !wrapper || isOpen) return;
+            bouncing = true;
+            setTimeout(() => {
+                bouncing = false;
+            }, 500);
+        });
+    });
 </script>
 
 <div
     id="mobile-sidebar-wrapper"
+    class:bouncing
     bind:this={wrapper}
     role="dialog"
     aria-modal={isOpen}
     tabindex="-1"
-    style="transform: translateY(calc(100% - {MIN_PEEK}px))"
     onpointerdown={onPointerDown}
     onpointermove={onPointerMove}
     onpointerup={onPointerUp}
@@ -165,7 +184,7 @@
         width: 100%;
         height: 100dvh;
         box-sizing: border-box;
-        padding: 0 0.5rem;
+        padding: 0.5rem;
         background-color: var(--container-fore);
         border-top-right-radius: 0.5rem;
         border-top-left-radius: 0.5rem;
@@ -181,13 +200,22 @@
 
     #mobile-sidebar-tab {
         color: var(--text-default);
-        width: 1.5rem;
-        padding: 0;
-        background-color: transparent;
+        height: 0.75rem;
+        width: 2.5rem;
+        background-color: var(--container-fore);
         border: none;
         cursor: grab;
         touch-action: none;
         flex-shrink: 0;
+        position: absolute;
+        left: calc(50% - 1.25rem);
+        bottom: 100%;
+        border: 1px solid var(--border);
+        border-bottom: none;
+        border-top-right-radius: 3px;
+        border-top-left-radius: 3px;
+        padding: 0;
+        padding-top: 0.2rem;
     }
 
     #mobile-sidebar-tab:active {
@@ -196,8 +224,38 @@
 
     #mobile-sidebar-button {
         color: var(--text-default);
-        padding: 0;
+        width: 100%;
+        padding: 0 0.5rem;
         background-color: transparent;
         box-sizing: border-box;
+    }
+
+    .bouncing {
+        animation: sidebar-bounce 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    /* Global allows us to use this name inline */
+    @keyframes sidebar-bounce {
+        0% {
+            transform: translateY(calc(100% - 60px));
+        }
+        30% {
+            transform: translateY(calc(100% - 90px));
+        }
+        50% {
+            transform: translateY(calc(100% - 60px));
+        }
+        70% {
+            transform: translateY(calc(100% - 78px));
+        }
+        85% {
+            transform: translateY(calc(100% - 60px));
+        }
+        93% {
+            transform: translateY(calc(100% - 68px));
+        }
+        100% {
+            transform: translateY(calc(100% - 60px));
+        }
     }
 </style>
