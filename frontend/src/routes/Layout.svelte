@@ -198,9 +198,11 @@
         untrack(() => {
             for (const taxonID of taxonIDs) {
                 const taxon = taxaContext.taxa.get(taxonID);
+
                 // Check to make sure taxon exists and that it doesn't already have values
-                if (!taxon || taxon.nSValues.numberOfOccurrences !== null)
-                    continue;
+                // observationCount is the easiest to grab
+                if (!taxon || taxon.nSValues.observationCount !== null) return;
+
                 const includeINat = filtersContext.includeINat !== false;
                 const dateStart = filtersContext.dateStart;
                 const dateEnd = filtersContext.dateEnd;
@@ -223,6 +225,7 @@
         dateEnd: FiltersState['dateEnd'],
         datasets: FiltersState['datasets']
     ) {
+        console.log('hello');
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
         taxon.nSValuesLoading = true;
