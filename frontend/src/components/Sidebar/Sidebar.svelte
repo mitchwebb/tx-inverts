@@ -311,9 +311,7 @@
         grid-column: 2;
         grid-row: 1 / 4;
         width: 100%;
-        /* max-width: 95dvw; */
         height: 100%;
-        /* max-height: 100%; */
         flex-shrink: 0;
         z-index: 2;
         display: flex;
@@ -323,6 +321,7 @@
         hyphens: manual;
         border-radius: 3px;
         box-sizing: border-box;
+        height: 100%;
     }
     #sidebar {
         position: relative;

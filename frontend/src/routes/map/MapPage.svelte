@@ -20,7 +20,6 @@
 
 <style>
     #map-page {
-        min-height: 450px;
         height: 100%;
         width: 100%;
         position: relative;

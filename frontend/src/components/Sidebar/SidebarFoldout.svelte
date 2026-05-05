@@ -20,7 +20,6 @@
         defaultOpen?: boolean;
         isLoading?: boolean;
         customClass?: string;
-        active?: boolean;
     };
 
     let {
@@ -31,7 +30,6 @@
         defaultOpen = false,
         isLoading = false,
         customClass = '',
-        active = false,
     }: SidebarFoldoutProps = $props();
 
     let open = $derived(sidebarContext.foldoutStates[id] === true);
@@ -66,7 +64,6 @@
         tabindex="0"
         aria-expanded={open}
         class={['sidebar-foldout-header', { open }]}
-        class:active
         onclick={toggleFoldoutState}
         onkeydown={handleKey}
     >
@@ -99,9 +96,6 @@
 </div>
 
 <style>
-    .sidebar-foldout-header.active:not(.open) {
-        box-shadow: inset 0px 3px 0px 0px var(--accent-color);
-    }
     .foldout-header-main {
         text-align: left;
         display: flex;
@@ -114,9 +108,6 @@
     }
     .foldout-header-banner {
         width: 100%;
-    }
-    .sidebar-foldout-header.filters-active {
-        box-shadow: inset 3px 0px 0px 0px var(--accent-color);
     }
     .sidebar-header-text {
         font-size: 1.2rem;

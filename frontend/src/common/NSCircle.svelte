@@ -9,12 +9,13 @@
     import { getTextColor } from '../util/colors';
 
     type CircleProps = {
+        activeFilters?: boolean;
         active: boolean;
         level: NSLevel;
         rank: NSRank;
     };
 
-    let { active, level, rank }: CircleProps = $props();
+    let { active, level, rank, activeFilters }: CircleProps = $props();
 
     type NSRankKeyItem = (typeof nSRankKey)[number];
 
@@ -48,7 +49,9 @@
             fill={active ? 'var(--fill-color)' : 'none'}
         />
         <circle r={10.5} cx={12} cy={12} fill={active ? color : 'grey'}>
-            <title>{description}</title>
+            <title
+                >{description} {activeFilters ? ' (Filters Active)' : ''}</title
+            >
         </circle>
         <text
             class="ranking-text"
@@ -62,10 +65,20 @@
             <!-- {level.toUpperCase()} -->
             {rank?.toUpperCase()}
         </text>
+        <!-- Little marker to indicate when filters are active -->
+        {#if activeFilters}
+            <text class="filters-alert" x={15} y={14}>*</text>
+        {/if}
     </g>
 </svg>
 
 <style>
+    .filters-alert {
+        font-size: 18px;
+        stroke-width: 0.5px;
+        stroke: var(--accent-color);
+        fill: var(--fill-color);
+    }
     .ns-circle {
         height: 100%;
         width: 100%;

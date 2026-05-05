@@ -4,25 +4,15 @@
     - Includes map toolbar and sidebar
 -->
 <script lang="ts">
-    import Sidebar from '../Sidebar/Sidebar.svelte';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import MapToolbar from '../MapToolbar/MapToolbar.svelte';
-    import { isNarrowView } from '../../contexts/device';
-    import MobileSidebar from '../Sidebar/MobileSidebar.svelte';
-
-    const taxaContext = getActiveTaxaContext();
+    import DefaultPage from '../../common/DefaultPage.svelte';
 </script>
 
 <div id="map-overlay-wrapper">
-    <MapToolbar />
-    <!-- Sidebar only visible if taxon selected and not narrowScreen-->
-    {#if !$isNarrowView}
-        <div id="map-sidebar-positioner">
-            <div id="map-sidebar-wrapper">
-                <Sidebar />
-            </div>
-        </div>
-    {/if}
+    <DefaultPage overlay={true}>
+        <MapToolbar />
+    </DefaultPage>
     <!-- {#if mapHoverContext.lnglat}
         <div id="lnglat-display-wrapper">
             <div id="lnglat-display">{mapHoverContext.lnglat.join(', ')}</div>
@@ -32,34 +22,10 @@
 
 <style>
     #map-overlay-wrapper {
-        grid-template-columns: 1fr auto;
-        transition: background-color 0.5s;
-        height: 100%;
-        padding: 0.5rem 0.5rem 20px 0.5rem;
         pointer-events: none; /* Prevents the overlay from blocking mouse events */
-        display: grid;
-        grid-template-rows: 33px 1fr;
-        gap: 0.5rem;
         position: relative;
         z-index: 2;
         box-sizing: border-box;
-    }
-    #map-sidebar-positioner {
         height: 100%;
-        grid-row: 1/3;
-        /* box-sizing: border-box; */
-        display: flex;
-        flex-direction: column;
-    }
-    /* TODO: The sizing consistency between here and default page isn't great */
-    /* Should I just place it in a portal? */
-    #map-sidebar-wrapper {
-        flex-shrink: 1;
-        width: calc(350px + 1rem);
-        max-height: 100%;
-        border-radius: 3px;
-        background-color: var(--container-back);
-        padding: 0.5rem;
-        box-sizing: border-box;
     }
 </style>

@@ -125,12 +125,16 @@
     label="Conservation Values"
     isLoading={taxon.nSValuesLoading}
     customClass="ns-section-wrapper"
-    active={filtersActive}
 >
     {#snippet closedDisplay()}
         {#if rank && !taxon.info.usInvasive}
             <div>
-                <NSCircle active={true} level="s" rank={rank ? rank : 'u'} />
+                <NSCircle
+                    activeFilters={filtersActive}
+                    active={true}
+                    level="s"
+                    rank={rank ? rank : 'u'}
+                />
             </div>
         {/if}
     {/snippet}

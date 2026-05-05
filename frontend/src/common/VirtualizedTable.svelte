@@ -469,8 +469,8 @@
         box-sizing: border-box;
         align-items: center;
         width: 100%;
-        /* height: 100%; */
-        padding: 1rem 0.5rem 0.5rem 0.5rem;
+        height: 3rem;
+        align-items: flex-end;
     }
     .column-header:focus {
         outline: none;

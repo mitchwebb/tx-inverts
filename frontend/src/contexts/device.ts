@@ -12,7 +12,7 @@ export const isMobile = readable(false, (set) => {
 export const isNarrowView = readable(false, (set) => {
     if (typeof window === 'undefined') return; // SSR guard
 
-    const mq = window.matchMedia('(max-width: 768px)');
+    const mq = window.matchMedia('(max-width: 640px)');
     set(mq.matches);
 
     const handler = (e: MediaQueryListEvent) => set(e.matches);

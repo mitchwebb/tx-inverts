@@ -500,10 +500,14 @@
         color: var(--text-default);
         text-align: left;
         background-color: var(--container-highlight);
-        padding: 1rem 0.5rem 0.5rem 0.5rem;
         border-bottom: 1px solid var(--container-shadow);
         font-weight: 600;
         user-select: none;
+        display: flex;
+        height: 3rem;
+        align-items: flex-end;
+        padding: 0.5rem;
+        box-sizing: border-box;
     }
     .taxon-rank-header:not(.last) {
         border-right: 1px solid var(--container-shadow);
