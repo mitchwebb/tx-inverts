@@ -178,7 +178,13 @@
 
         map.on('load', () => {
             mapReady = true;
+
+            // Disable map rotation using right click + drag
             map.dragRotate.disable();
+
+            // Disable map rotation using touch rotation gesture
+            map.touchZoomRotate.disableRotation();
+
             // Iterate through staticMapLayers and add them to the map
             for (const layerBundle of staticMapLayers as LayerBundle[]) {
                 map.addSource(layerBundle.id, layerBundle.source);
