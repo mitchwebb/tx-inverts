@@ -7,7 +7,6 @@
     import { nSRankKey } from '../../constants/natureServe';
     import { handleLayerToggle } from '../../util/handleMapLayerToggle';
     import NSCircle from '../../common/NSCircle.svelte';
-    import SidebarFoldout from './SidebarFoldout.svelte';
     import { getRouterContext } from '../../contexts/routerContext';
     import { toLocaleRounded } from '../../util/textHelpers';
     import { getFiltersContext } from '../../contexts/filtersContext';
@@ -19,6 +18,8 @@
     import { calculateNSRank } from '../../lib/natureServe';
     import { getMetricsContext } from '../../contexts/metricsParamsContext';
     import Dropdown from '../../common/Dropdown.svelte';
+    import Foldout from '../../common/Foldout.svelte';
+    import { getSidebarContext } from '../../contexts/sidebarContext';
 
     type NSSectionProps = {
         taxonID: number;
@@ -117,14 +118,22 @@
         const layerVisible = payload.checked as boolean;
         handleLayerToggle(mapContext, { layerID, layerVisible });
     }
+
+    const sidebarContext = getSidebarContext();
+
+    function handleSidebarFoldout(id: string | undefined, open: boolean) {
+        if (!id) return;
+        sidebarContext.foldoutStates[id] = open;
+    }
 </script>
 
-<SidebarFoldout
+<Foldout
     id={`${taxonID}-ns-section`}
-    defaultOpen={false}
+    defaultOpen={sidebarContext.foldoutStates[`${taxonID}-ns-section`]}
     label="Conservation Values"
     isLoading={taxon.nSValuesLoading}
     customClass="ns-section-wrapper"
+    openCallback={handleSidebarFoldout}
 >
     {#snippet closedDisplay()}
         {#if rank && !taxon.info.usInvasive}
@@ -267,7 +276,7 @@
             </div>
         </div>
     </div>
-</SidebarFoldout>
+</Foldout>
 
 <style>
     .filter-warning {
@@ -303,7 +312,6 @@
         text-align: left;
         display: flex;
         flex-direction: column;
-        padding: 0.75rem;
     }
     .ns-metric-row {
         display: flex;

@@ -4,7 +4,7 @@
         setMapContext,
         type MapState,
     } from '../contexts/mapContext';
-    import HeaderBar from '../components/HeaderBar.svelte';
+    import HeaderBar from '../components/Header/HeaderBar.svelte';
     import {
         EMPTY_NS_VALUES,
         EMPTY_TAXON_INFO,
