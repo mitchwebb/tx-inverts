@@ -317,7 +317,7 @@
     <div id="page-body">
         <Router />
         <!-- TODO: This could be moved now that sidebar is unified -->
-        {#if $isNarrowView && routerState.url.pathname !== '/about'}
+        {#if $isNarrowView && !['/about/txinverts', '/about/walkthrough'].includes(routerState.url.pathname)}
             <MobileSidebar />
             <div id="mobile-sidebar-buffer"></div>
         {/if}

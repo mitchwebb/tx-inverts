@@ -205,14 +205,6 @@
     .page-anchor:hover {
         color: var(--accent-color);
     }
-    .taxa-search-example {
-        display: inline-block;
-        width: 11rem;
-        user-select: none;
-        pointer-events: none;
-        line-height: 1rem;
-        vertical-align: bottom;
-    }
     #about-sidebar-positioner {
         display: flex;
         align-items: center;
@@ -223,7 +215,7 @@
         padding: 0.5rem;
         border: 1px solid var(--border);
         border-radius: 3px;
-        width: 350px;
+        max-width: 350px;
         box-shadow: 0px 0px 10px 0px var(--container-shadow);
     }
     .modal-button {
