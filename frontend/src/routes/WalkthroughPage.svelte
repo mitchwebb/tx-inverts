@@ -42,12 +42,9 @@
         <div class="about-page-section">
             <h3 class="about-page-subheader">General</h3>
             <p>
-                The first thing you might notice is the
-                <span class="taxa-search-example">
-                    <TaxaSearch />
-                </span>
-                bar at the top of each page. Use this search bar to search for Texas
-                invertebrates by scientific name! Selecting a species while on this
+                The first thing you might notice is the search bar at the top of
+                each page! Use this search bar to search for Texas invertebrates
+                by scientific name. Selecting a species while on this
                 walkthrough page will take you to the
                 <a href="#map-page-section">map page</a> with your species selected.
             </p>
@@ -223,7 +220,11 @@
         margin: 1rem 0;
     }
     #about-sidebar {
+        padding: 0.5rem;
+        border: 1px solid var(--border);
+        border-radius: 3px;
         width: 350px;
+        box-shadow: 0px 0px 10px 0px var(--container-shadow);
     }
     .modal-button {
         user-select: none;
