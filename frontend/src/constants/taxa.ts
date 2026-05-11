@@ -1,3 +1,4 @@
+import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { TaxonomicRank } from '../types/taxa';
 
 export type ItalicizedRank = Extract<
@@ -25,3 +26,44 @@ export const TAXON_COLORS = [
     '#cc3a8e',
     '#a5aa99',
 ];
+
+export const DUMMY_TAXON: ActiveTaxon = {
+    color: TAXON_COLORS[0],
+    taxonLoading: false,
+    taxonError: false,
+    observationMetricsLoading: false,
+    nSValuesLoading: false,
+    lastLoadedID: 1025719,
+    taxonID: 1025719,
+    info: {
+        acceptedTaxonID: 1025719,
+        canonicalName: 'Archispirostreptus gigas',
+        taxonRank: 'species',
+        scientificNameAuthorship: '(Peters, 1855)',
+        kingdom: 'Animalia',
+        phylum: 'Arthropoda',
+        class: 'Diplopoda',
+        order: 'Spirostreptida',
+        superfamily: null,
+        family: 'Spirostreptidae',
+        subfamily: null,
+        genus: 'Archispirostreptus',
+        species: 'gigas',
+        subspecies: null,
+        usInvasive: false,
+        taxonomicStatus: 'accepted',
+        commonNames: ['Giant African Millipede', 'Shongololo'],
+        nSRankDB: null,
+        nSRankDBNoINat: null,
+    },
+    nSValues: {
+        numberOfOccurrences: 40,
+        rangeExtentKm2: 8093446,
+        areaOfOccupancy1Km2Bins: 40,
+        areaOfOccupancy4Km2Bins: 39,
+        observationCount: 41,
+    },
+    datasetCounts: { 'iNaturalist Research-grade Observations': 15 },
+    dateMin: null,
+    dateMax: null,
+};

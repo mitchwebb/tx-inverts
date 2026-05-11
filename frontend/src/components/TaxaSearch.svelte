@@ -3,7 +3,6 @@
     import SearchSuggestBar from '../common/SearchSuggestBar.svelte';
     import {
         getActiveTaxaContext,
-        initialActiveTaxaState,
         initialTaxonState,
     } from '../contexts/activeTaxaContext';
     import type {
@@ -18,6 +17,7 @@
         autoFocus?: boolean;
         replace?: boolean;
         excludeSpecies?: boolean;
+        onSelect?: () => void;
     };
 
     const {
@@ -26,6 +26,7 @@
         autoFocus = false,
         replace = false,
         excludeSpecies = false,
+        onSelect,
     }: TaxaSearchProps = $props();
 
     const taxaContext = getActiveTaxaContext();
@@ -89,6 +90,10 @@
             ...initialTaxonState,
             taxonID: suggestion.taxonID,
         });
+
+        if (onSelect) {
+            onSelect();
+        }
     }
 </script>
 

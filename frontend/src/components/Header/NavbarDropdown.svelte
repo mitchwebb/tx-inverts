@@ -4,6 +4,7 @@
     import type { NavItem } from '../../types/nav';
     import ChevronDown from '../../assets/ChevronDown.svelte';
     import './header.css';
+    import type { RouterPath } from '../../types/router';
 
     type NavDropdownProps = {
         item: NavItem;
@@ -54,7 +55,9 @@
 
     // Determine if any children are selected
     const parentActive = $derived(
-        item.children?.map((child) => child.href).includes(currPath)
+        item.children
+            ?.map((child) => child.href)
+            .includes(currPath as RouterPath)
     );
 
     onMount(() =>

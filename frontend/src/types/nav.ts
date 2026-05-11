@@ -1,5 +1,7 @@
+import type { RouterPath } from './router';
+
 export type NavItem = {
     label: string;
-    href: string;
-    children?: { label: string; href: string }[];
+    href: RouterPath;
+    children?: NavItem[];
 };

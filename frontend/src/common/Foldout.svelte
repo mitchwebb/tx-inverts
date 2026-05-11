@@ -19,6 +19,7 @@
         defaultOpen?: boolean;
         isLoading?: boolean;
         customClass?: string;
+        bannerText?: string;
     };
 
     let {
@@ -30,6 +31,7 @@
         defaultOpen = false,
         isLoading = false,
         customClass = '',
+        bannerText,
     }: FoldoutProps = $props();
 
     let open = $derived(defaultOpen);
@@ -87,15 +89,26 @@
         </span>
     </div>
     {#if open}
-        <div class="foldout-content" transition:slide>
-            {@render children?.()}
+        <div class="foldout-content-wrapper" transition:slide>
+            {#if bannerText}
+                <div class="banner-text">{bannerText}</div>
+            {/if}
+            <div class="foldout-content">
+                {@render children?.()}
+            </div>
         </div>
     {/if}
 </div>
 
 <style>
-    .foldout-header-banner {
+    .banner-text {
+        background-color: var(--accent-color);
+        color: black;
+        font-size: 0.75rem;
         width: 100%;
+        display: flex;
+        justify-content: center;
+        height: 1rem;
     }
     .foldout-header-text {
         font-size: 1.2rem;
@@ -148,7 +161,8 @@
     }
     .foldout-content {
         display: block;
-        background-color: var(--container-fore);
+        /* background-color: var(--container-fore); */
         padding: 0.75rem;
+        position: relative;
     }
 </style>

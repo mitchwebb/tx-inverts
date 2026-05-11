@@ -3,67 +3,71 @@
     import XIcon from '../../assets/XIcon.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
-    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import {
+        getActiveTaxaContext,
+        type ActiveTaxon,
+    } from '../../contexts/activeTaxaContext';
     import { isItalicizedRank } from '../../util/taxa';
     import { capitalizeWords } from '../../util/textHelpers';
 
     type TaxonDisplayProps = {
-        taxonID: number;
+        activeTaxon: ActiveTaxon;
     };
 
-    const { taxonID }: TaxonDisplayProps = $props();
+    const { activeTaxon }: TaxonDisplayProps = $props();
 
     const taxaContext = getActiveTaxaContext();
-    const taxon = $derived(taxaContext.taxa.get(taxonID)!);
 
     // Tie loading visuals to taxaContext.taxonLoading
-    const isLoading = $derived(taxon.taxonLoading);
+    const isLoading = $derived(activeTaxon.taxonLoading);
 
     const taxonNotAccepted = $derived(
-        taxon.info.taxonomicStatus !== 'accepted'
+        activeTaxon.info.taxonomicStatus !== 'accepted'
     );
 
     function handleTaxonClose() {
-        taxaContext.taxa.remove(taxonID);
+        taxaContext.taxa.remove(activeTaxon.taxonID);
     }
 </script>
 
 <div id="sidebar-main-header" class="sidebar-header header">
     <div
         class="taxon-display-overlay"
-        style:background-color={taxon.color}
+        style:background-color={activeTaxon.color}
     ></div>
     <div
         id="main-header-top"
-        class:invasive={taxon.info.usInvasive}
+        class:invasive={activeTaxon.info.usInvasive}
         class:loading-blink={isLoading}
     >
-        {#if taxon.taxonError}
+        {#if activeTaxon.taxonError}
             <div id="taxon-error">Requested Taxon Not Found</div>
         {/if}
         <div id="main-header-name">
-            {#if taxon.info.usInvasive}
+            {#if activeTaxon.info.usInvasive}
                 <div class="invasive-icon">
                     <InvasiveIcon />
                 </div>
             {/if}
-            {#if taxon.info.canonicalName}
+            {#if activeTaxon.info.canonicalName}
                 <span
                     class={'scientific-name'}
-                    class:italicized={isItalicizedRank(taxon.info.taxonRank)}
+                    class:italicized={isItalicizedRank(
+                        activeTaxon.info.taxonRank
+                    )}
                 >
-                    {taxon.info.canonicalName}
+                    {activeTaxon.info.canonicalName}
                 </span>
             {/if}
-            {#if taxon.info.scientificNameAuthorship}
+            {#if activeTaxon.info.scientificNameAuthorship}
                 <span class="scientific-authorship thin">
-                    {taxon.info.scientificNameAuthorship}
+                    {activeTaxon.info.scientificNameAuthorship}
                 </span>
             {/if}
-            {#if taxon.info.canonicalName}
+            {#if activeTaxon.info.canonicalName}
                 <div class="gbif-link-button">
                     <LinkButton
-                        href={`https://www.gbif.org/species/${taxon.taxonID}`}
+                        href={`https://www.gbif.org/species/${activeTaxon.taxonID}`}
                         target="_blank"
                     />
                 </div>
@@ -78,27 +82,31 @@
             <XIcon />
         </button>
     </div>
-    {#if taxon.info.commonNames && taxon.info.commonNames?.length > 0}
+    {#if activeTaxon.info.commonNames && activeTaxon.info.commonNames?.length > 0}
         <div id="common-names" class="thin">
-            {(capitalizeWords(taxon.info.commonNames) as string[]).join(', ')}
+            {(capitalizeWords(activeTaxon.info.commonNames) as string[]).join(
+                ', '
+            )}
         </div>
     {/if}
     <div id="aux-taxon-text">
-        {#if taxon.info.taxonomicStatus && taxonNotAccepted}
+        {#if activeTaxon.info.taxonomicStatus && taxonNotAccepted}
             <div id="taxonomic-status-text" class={'thin dubious-taxon'}>
                 <span>
-                    Taxon Status: {capitalizeWords(taxon.info.taxonomicStatus)}
+                    Taxon Status: {capitalizeWords(
+                        activeTaxon.info.taxonomicStatus
+                    )}
                 </span>
-                {#if taxon.info.taxonomicStatus.includes('synonym')}
+                {#if activeTaxon.info.taxonomicStatus.includes('synonym')}
                     <div>
-                        Accepted Taxon ID: {taxon.info.acceptedTaxonID}
+                        Accepted Taxon ID: {activeTaxon.info.acceptedTaxonID}
                     </div>
                 {/if}
             </div>
         {/if}
-        {#if taxon.info.taxonRank}
+        {#if activeTaxon.info.taxonRank}
             <span id="taxon-rank" class="thin">
-                {taxon.info.taxonRank}
+                {activeTaxon.info.taxonRank}
             </span>
         {/if}
     </div>

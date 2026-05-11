@@ -15,10 +15,10 @@
         { label: 'Rankings', href: '/rankings' },
         {
             label: 'About',
-            href: '/about',
+            href: '/about/txinverts',
             children: [
-                { label: 'About Us', href: '/about' },
-                { label: 'How To', href: '/walkthrough' },
+                { label: 'Texas Inverts', href: '/about/txinverts' },
+                { label: 'Walkthrough', href: '/about/walkthrough' },
             ],
         },
     ];
@@ -26,6 +26,13 @@
     const routerContext = getRouterContext();
 
     let showMenu: boolean = $state(false);
+
+    // If searching for taxa on a page without the sidebar, swap to map page
+    function handleTaxonSearch() {
+        if (!document.querySelector('#sidebar')) {
+            routerContext.navigate('/map');
+        }
+    }
 
     $effect(() => {
         const currPath = routerContext.url.pathname;
@@ -43,7 +50,7 @@
             <div>INVERTS</div>
         </a>
         <div id="header-search-bar">
-            <TaxaSearch replace={true} />
+            <TaxaSearch replace={true} onSelect={handleTaxonSearch} />
         </div>
 
         {#if $isNarrowView}

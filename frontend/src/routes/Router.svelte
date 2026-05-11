@@ -1,10 +1,7 @@
 <script lang="ts">
     import { onMount, type Component } from 'svelte';
     import MapPage from './map/MapPage.svelte';
-    import {
-        getRouterContext,
-        type RouterPath,
-    } from '../contexts/routerContext';
+    import { getRouterContext } from '../contexts/routerContext';
     import RankingPage from './rankings/RankingsPage.svelte';
     import { routerSyncedKeys } from '../constants/router';
     import {
@@ -16,6 +13,8 @@
     import type { RawRegionInfo, RegionInfo } from '../types/api';
     import BackbonePage from './Backbone/BackbonePage.svelte';
     import AboutPage from './AboutPage.svelte';
+    import WalkthroughPage from './WalkthroughPage.svelte';
+    import type { RouterPath } from '../types/router';
 
     let routerContext = getRouterContext();
     let taxaContext = getActiveTaxaContext();
@@ -48,8 +47,13 @@
             relevantParams: ['taxon', 'inat', 'status', 'd1', 'd2', 'region'],
         },
         {
-            pathname: '/about',
+            pathname: '/about/txinverts',
             component: AboutPage,
+            relevantParams: [],
+        },
+        {
+            pathname: '/about/walkthrough',
+            component: WalkthroughPage,
             relevantParams: [],
         },
     ];

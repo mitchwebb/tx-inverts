@@ -76,7 +76,7 @@
         /* max-height: 80dvh; */
     }
     #filters-content {
-        overflow-y: auto;
+        /* overflow-y: auto; */
         flex: 1;
         min-height: 0;
         display: flex;

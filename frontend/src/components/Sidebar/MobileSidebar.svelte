@@ -173,7 +173,7 @@
             <GrabLine />
         </div>
     </button>
-    <Sidebar />
+    <Sidebar activeTaxa={taxaContext.taxa.items} />
 </div>
 
 <style>

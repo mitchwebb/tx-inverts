@@ -95,9 +95,8 @@
     let cleanup: (() => void) | null = null;
 
     onMount(() => {
-        if (!inputEl || !inputEl.parentElement) return;
+        if (!inputEl) return;
         datepicker = new AirDatepicker(inputEl, {
-            container: inputEl.parentElement,
             locale: localeEn,
             ...props,
         });

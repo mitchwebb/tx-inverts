@@ -144,14 +144,12 @@
         pointer-events: auto;
         z-index: 1002;
         box-sizing: border-box;
-        overflow: hidden; /* keep scroll inside wrapper */
         padding: 0.5rem;
         margin: auto;
     }
 
     #modal-content {
         flex: 1 1 auto; /* grow to wrapper height */
-        overflow-y: auto; /* scroll if content is tall */
         width: fit-content;
         display: block; /* remove flex centering to prevent clipping */
         color: var(--text-default);

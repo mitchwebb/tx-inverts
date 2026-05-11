@@ -13,3 +13,12 @@ export type SyncedKey<ContextKey, P extends string = string> = {
 export type SyncedKeys<Context> = {
     [K in keyof Context]?: SyncedKey<Context[K]>;
 };
+
+// Possible pathnames for the router
+export type RouterPath =
+    | '/'
+    | '/map'
+    | '/backbone'
+    | '/rankings'
+    | '/about/txinverts'
+    | '/about/walkthrough';

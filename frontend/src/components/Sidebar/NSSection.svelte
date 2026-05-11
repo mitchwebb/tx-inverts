@@ -3,7 +3,10 @@
     import EyeOn from '../../assets/EyeOn.svelte';
     import NSScale from '../../common/NSScale.svelte';
     import { getMapContext } from '../../contexts/mapContext';
-    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import {
+        getActiveTaxaContext,
+        type ActiveTaxon,
+    } from '../../contexts/activeTaxaContext';
     import { nSRankKey } from '../../constants/natureServe';
     import { handleLayerToggle } from '../../util/handleMapLayerToggle';
     import NSCircle from '../../common/NSCircle.svelte';
@@ -22,18 +25,16 @@
     import { getSidebarContext } from '../../contexts/sidebarContext';
 
     type NSSectionProps = {
-        taxonID: number;
+        activeTaxon: ActiveTaxon;
+        defaultOpen?: boolean;
     };
 
-    const { taxonID }: NSSectionProps = $props();
+    const { activeTaxon, defaultOpen = false }: NSSectionProps = $props();
 
     const mapContext = getMapContext();
 
-    const taxaContext = getActiveTaxaContext();
-
     // Assertion is safe, since this section will only receive active taxa
-    const taxon = $derived(taxaContext.taxa.get(taxonID)!);
-    const nSValues = $derived(taxon.nSValues);
+    const nSValues = $derived(activeTaxon.nSValues);
 
     const filtersContext = getFiltersContext();
     const routerContext = getRouterContext();
@@ -62,9 +63,9 @@
     // in this component
     function deriveLocalRank() {
         if (
-            taxon &&
-            taxon.info.taxonRank &&
-            ['species', 'subspecies'].includes(taxon.info.taxonRank)
+            activeTaxon &&
+            activeTaxon.info.taxonRank &&
+            ['species', 'subspecies'].includes(activeTaxon.info.taxonRank)
         ) {
             if (
                 aOOValue !== null &&
@@ -90,8 +91,8 @@
     const rank = $derived(
         localRank ||
             (filtersContext.includeINat
-                ? taxon.info.nSRankDB
-                : taxon.info.nSRankDBNoINat)
+                ? activeTaxon.info.nSRankDB
+                : activeTaxon.info.nSRankDBNoINat)
     );
 
     // According to IUCN, rangeExtent should be at LEAST areaOfOccupancy,
@@ -128,15 +129,18 @@
 </script>
 
 <Foldout
-    id={`${taxonID}-ns-section`}
-    defaultOpen={sidebarContext.foldoutStates[`${taxonID}-ns-section`]}
+    id={`${activeTaxon.taxonID}-ns-section`}
+    defaultOpen={sidebarContext.foldoutStates[
+        `${activeTaxon.taxonID}-ns-section`
+    ] || defaultOpen}
     label="Conservation Values"
-    isLoading={taxon.nSValuesLoading}
+    isLoading={activeTaxon.nSValuesLoading}
     customClass="ns-section-wrapper"
     openCallback={handleSidebarFoldout}
+    bannerText={filtersActive ? 'Using Filtered Data' : undefined}
 >
     {#snippet closedDisplay()}
-        {#if rank && !taxon.info.usInvasive}
+        {#if rank && !activeTaxon.info.usInvasive}
             <div>
                 <NSCircle
                     activeFilters={filtersActive}
@@ -147,11 +151,8 @@
             </div>
         {/if}
     {/snippet}
-    {#if filtersActive}
-        <div class="filter-warning">Using Filtered Data</div>
-    {/if}
     <div class="ns-section">
-        {#if rank && !taxon.info.usInvasive}
+        {#if rank && !activeTaxon.info.usInvasive}
             <div id="rank-text" class="centered-text">
                 <span>
                     {nSRankKey.find((item) => item.rank === rank)?.description}
@@ -215,10 +216,10 @@
                             <CheckboxInput
                                 customClass="space-between"
                                 name="observations-checkbox"
-                                value={`observations-layer-group-${taxonID}`}
+                                value={`observations-layer-group-${activeTaxon.taxonID}`}
                                 handler={layerToggleHandler}
                                 checked={mapContext.isLayerGroupActive(
-                                    `observations-layer-group-${taxonID}`
+                                    `observations-layer-group-${activeTaxon.taxonID}`
                                 )}
                                 checkboxIcon={eyeIcon}
                             />
@@ -240,10 +241,10 @@
                             <CheckboxInput
                                 customClass="space-between"
                                 name="extent-checkbox"
-                                value={`range-extent-layer-group-${taxonID}`}
+                                value={`range-extent-layer-group-${activeTaxon.taxonID}`}
                                 handler={layerToggleHandler}
                                 checked={mapContext.isLayerGroupActive(
-                                    `range-extent-layer-group-${taxonID}`
+                                    `range-extent-layer-group-${activeTaxon.taxonID}`
                                 )}
                                 checkboxIcon={eyeIcon}
                             />
@@ -279,11 +280,6 @@
 </Foldout>
 
 <style>
-    .filter-warning {
-        background-color: var(--accent-color);
-        color: black;
-        font-size: 0.75rem;
-    }
     #ns-metrics-section {
         display: flex;
         flex-direction: column;

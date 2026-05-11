@@ -6,31 +6,37 @@
 
 <script lang="ts">
     import NSSection from './NSSection.svelte';
-    import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import {
+        getActiveTaxaContext,
+        type ActiveTaxon,
+    } from '../../contexts/activeTaxaContext';
     import { getSidebarContext } from '../../contexts/sidebarContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import { countActiveFilters } from '../../lib/filters.svelte';
     import FiltersButton from '../FiltersButton.svelte';
     import TaxonDisplay from './TaxonDisplay.svelte';
-    import {
-        getRouterContext,
-        type RouterPath,
-    } from '../../contexts/routerContext';
+    import { getRouterContext } from '../../contexts/routerContext';
     import { getModalContext } from '../../contexts/modalContext';
     import AddTaxonButton from './AddTaxonButton.svelte';
     import TaxaSearch from '../TaxaSearch.svelte';
     import ObservationsFilters from '../FiltersSection/ObservationsFilters.svelte';
     import TaxaFilters from '../FiltersSection/TaxaFilters.svelte';
     import { openModal } from '../../lib/modal.svelte';
+    import type { RouterPath } from '../../types/router';
 
     type SidebarProps = {
+        activeTaxa: ActiveTaxon[];
         showNSDisplay?: boolean;
+        demo?: boolean;
     };
 
-    const { showNSDisplay = true }: SidebarProps = $props();
+    const {
+        activeTaxa,
+        showNSDisplay = true,
+        demo = false,
+    }: SidebarProps = $props();
 
     // Load relevant contexts
-    const taxaContext = getActiveTaxaContext();
     const sidebarContext = getSidebarContext();
     const filtersContext = getFiltersContext();
     const routerContext = getRouterContext();
@@ -42,7 +48,7 @@
 
     // Determine which filters menu to open from sidebar
     const filtersDomain = $derived.by(() => {
-        if (['/map', '/backbone'].includes(currPath)) {
+        if (['/map', '/backbone', '/about/walkthrough'].includes(currPath)) {
             return 'observations';
         } else {
             return 'taxa';
@@ -146,29 +152,28 @@
                     <DownloadIcon />
                 </button> -->
             </div>
-            {#if taxaContext.taxa.items.length && sidebarContext.open}
+            {#if activeTaxa.length && sidebarContext.open}
                 <div id="sidebar-content" class="sidebar-section">
-                    {#each taxaContext.taxa.ids as taxonID}
-                        <div id={`${taxonID}-sidebar-section`}>
-                            {#if taxaContext.taxa.get(taxonID)}
-                                <TaxonDisplay {taxonID} />
-                            {/if}
-                            {#if taxonID && showNSDisplay}
+                    {#each activeTaxa as activeTaxon}
+                        <div id={`${activeTaxon.taxonID}-sidebar-section`}>
+                            <TaxonDisplay {activeTaxon} />
+                            {#if activeTaxon.taxonID && showNSDisplay}
                                 <div class="sidebar-body-wrapper">
                                     <div
                                         class="sidebar-body-overlay"
-                                        style:background-color={taxaContext.taxa.get(
-                                            taxonID
-                                        )?.color}
+                                        style:background-color={activeTaxon.color}
                                     ></div>
-                                    <NSSection {taxonID} />
+                                    <NSSection
+                                        {activeTaxon}
+                                        defaultOpen={demo}
+                                    />
                                 </div>
                             {/if}
                         </div>
                     {/each}
                 </div>
             {/if}
-            {#if taxaContext.taxa.ids.length}
+            {#if activeTaxa.length && !demo}
                 <div class="sidebar-endcap">
                     <AddTaxonButton />
                 </div>

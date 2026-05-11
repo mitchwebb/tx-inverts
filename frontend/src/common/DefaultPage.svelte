@@ -7,6 +7,7 @@
     import type { Snippet } from 'svelte';
     import Sidebar from '../components/Sidebar/Sidebar.svelte';
     import { isNarrowView } from '../contexts/device';
+    import { getActiveTaxaContext } from '../contexts/activeTaxaContext';
     type DefaultPageProps = {
         overlay?: boolean;
         showSidebar?: boolean;
@@ -18,6 +19,8 @@
         overlay = false,
         showSidebar = true,
     }: DefaultPageProps = $props();
+
+    const taxaContext = getActiveTaxaContext();
 </script>
 
 <div class="page-wrapper" class:overlay>
@@ -28,7 +31,7 @@
         {#if showSidebar && !$isNarrowView}
             <div id="default-sidebar-positioner">
                 <div id="default-sidebar-wrapper">
-                    <Sidebar />
+                    <Sidebar activeTaxa={taxaContext.taxa.items} />
                 </div>
             </div>
         {/if}

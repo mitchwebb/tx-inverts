@@ -108,6 +108,7 @@
         align-items: center;
         gap: 0.5rem;
         flex-wrap: wrap;
+        position: relative;
     }
     :global(#date-start-filter),
     :global(#date-end-filter) {
