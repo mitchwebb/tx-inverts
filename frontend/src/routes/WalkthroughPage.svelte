@@ -62,16 +62,36 @@
                     <Sidebar activeTaxa={[DUMMY_TAXON]} demo={true} />
                 </div>
             </div>
+            <p>
+                At the top you'll see a filters button along with another taxon
+                search bar. By clicking the filters button, you'll be presented
+                with optional filters, which are dependent on your current page
+                and currently selected taxa—in this case, you'll see filters for
+                observation data. On the Rankings page, you will see filters for
+                taxa instead. The search bar operates in the same way as the
+                header search bar.
+            </p>
+            <p>
+                Below this toolbar is the display for a sample taxon. The top
+                section displays the scientific name, a few common names (if
+                available), taxonomic rank, and a link to the GBIF page for this
+                taxon. Below that, in the Conservation Values foldout, you'll
+                see the proposed conservation rank for this species, followed by
+                the values used to make this preliminary rank. These values are
+                derived from the currently available public data.
+            </p>
         </div>
         <div class="about-page-section">
             <h3 class="about-page-subheader">
-                <a id="map-page-section" class="page-anchor">Map Page</a>
+                <a id="map-page-section" class="page-anchor" href="/map"
+                    >Map Page</a
+                >
             </h3>
             <p>
                 The map page allows you to view observation data for your
                 selected species. Each species selected in the sidebar will show
-                up as a different color on the map, matched to their color in
-                the sidebar. The individual points of data are surrounded by a
+                up as a different color on the map, matched to its color in the
+                sidebar. The individual points of data are surrounded by a
                 larger, filled-in polygon of the same color: a visualization of
                 that species'
                 <button
@@ -82,8 +102,13 @@
                     range extent
                 </button>.
             </p>
+            <img
+                id="map-screenshot"
+                alt="A sample of observation points grouped on a map"
+                src="../static/map-screenshot.png"
+            />
             <p>
-                When zoomed out, observations points are grouped into squares as
+                When zoomed out, observation points are grouped into squares as
                 a heatmap. If you zoom in far enough, the groupings resolve to
                 individual points—by clicking on these points, you'll find more
                 information about each observation, as well as a link to their
@@ -96,8 +121,10 @@
         </div>
         <div class="about-page-section">
             <h3 class="about-page-subheader">
-                <a id="backbone-page-section" class="page-anchor"
-                    >Backbone Page</a
+                <a
+                    id="backbone-page-section"
+                    class="page-anchor"
+                    href="/backbone">Backbone Page</a
                 >
             </h3>
             <p>
@@ -110,24 +137,91 @@
                     ><MagnifyIcon />
                 </span> icon that appears next to it.
             </p>
+            <div id="backbone-screenshot-wrapper">
+                <img
+                    id="backbone-screenshot"
+                    alt="A sample of a taxonomic tree on the backbone page"
+                    src="../static/backbone-screenshot.png"
+                />
+            </div>
         </div>
         <div class="about-page-section">
             <h3 class="about-page-subheader">
-                <a id="rankings-page-section" class="page-anchor"
-                    >Rankings Page</a
+                <a
+                    id="rankings-page-section"
+                    class="page-anchor"
+                    href="/rankings">Rankings Page</a
                 >
             </h3>
-            <p>This page hosts all of our ranked species (and subspecies)!</p>
+            <img
+                id="rankings-screenshot"
+                alt="A sample of the rankings page with a list of Camponotus species and their rankings"
+                src="../static/rankings-screenshot.png"
+            />
+            <p>This page hosts all of our species (and subspecies) rankings!</p>
             <p>
-                You might notice that the sidebar filters are different on this
-                page. That's because this page filters taxa as opposed to
-                observation data.
+                You'll find that the sidebar filters are different on this page.
+                As mentioned above, the filters on this page filter taxa as
+                opposed to observation data. Along with these filters, you can
+                filter the list of taxa shown on this page by searching for a
+                parent taxon of genus or higher taxonomic rank.
+            </p>
+            <p>
+                As an important note, the suggested rankings found on this site
+                are fundamentally approximate and imperfect. They are not meant
+                to be taken as final rankings but are instead made to be used as
+                a starting point when considering the ranking process for any
+                given species. For Texas Parks and Wildlife, this means being
+                able to make a more informed start when determining which
+                species to examine more closely. Check out the <a
+                    href="/about/txinverts"
+                >
+                    about page
+                </a> for more info on the data used to make these preliminary rankings.
+            </p>
+            <p>
+                The rankings shown in the leftmost column of this table are
+                rankings made with no additional filters to our data. These
+                rankings update when toggling iNaturalist data on or off, but do
+                not otherwise take any filtering into account. By clicking on a
+                column header, you can sort the list by the selected column. You
+                can also use this page to select species in the sidebar by
+                hovering on a name and clicking the <span
+                    class="icon magnify-dummy-icon"
+                    ><MagnifyIcon />
+                </span> icon that appears next to it.
             </p>
         </div>
     </div>
 </div>
 
 <style>
+    #rankings-screenshot {
+        float: left;
+        object-fit: cover;
+        height: 300px;
+        margin-right: 1rem;
+    }
+    #backbone-screenshot-wrapper {
+        display: flex;
+        justify-content: center;
+    }
+    img {
+        border-radius: 3px;
+        border: 1px solid var(--border);
+    }
+    #backbone-screenshot {
+        margin: 0;
+        width: 500px;
+        height: 134px;
+        object-fit: cover;
+    }
+    #map-screenshot {
+        width: 306px;
+        height: 134px;
+        float: right;
+        margin-left: 1rem;
+    }
     .magnify-dummy-icon {
         color: var(--accent-color);
         display: inline-block;
@@ -137,6 +231,10 @@
     }
     .page-anchor {
         all: unset;
+        cursor: pointer;
+    }
+    .page-anchor:hover {
+        color: var(--accent-color);
     }
     .taxa-search-example {
         display: inline-block;
@@ -154,22 +252,6 @@
     }
     #about-sidebar {
         width: 350px;
-    }
-    #about-taxa-diagram {
-        height: 250px;
-        max-width: 100%;
-    }
-    .ns-ranks-scale {
-        padding: 1rem;
-        display: flex;
-        justify-content: center;
-        width: 100%;
-        box-sizing: border-box;
-    }
-    #data-parameter-list {
-        display: flex;
-        flex-direction: column;
-        /* gap: 0.5rem; */
     }
     .modal-button {
         user-select: none;
@@ -199,10 +281,7 @@
         gap: 1rem;
     }
     .about-page-section {
-        /* padding: 1rem; */
-        /* border: 1px solid var(--border); */
         box-sizing: border-box;
-        /* border-radius: 3px; */
     }
     .about-page-subheader {
         padding: 1rem 0;
