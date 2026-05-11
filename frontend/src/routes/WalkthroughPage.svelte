@@ -83,8 +83,12 @@
         </div>
         <div class="about-page-section">
             <h3 class="about-page-subheader">
-                <a id="map-page-section" class="page-anchor" href="/map"
-                    >Map Page</a
+                <a
+                    id="map-page-section"
+                    class="page-anchor"
+                    href="/map"
+                    onclick={handlePageLink}
+                    onkeydown={handlePageLink}>Map Page</a
                 >
             </h3>
             <p>
@@ -102,11 +106,6 @@
                     range extent
                 </button>.
             </p>
-            <img
-                id="map-screenshot"
-                alt="A sample of observation points grouped on a map"
-                src="../static/map-screenshot.png"
-            />
             <p>
                 When zoomed out, observation points are grouped into squares as
                 a heatmap. If you zoom in far enough, the groupings resolve to
@@ -124,7 +123,9 @@
                 <a
                     id="backbone-page-section"
                     class="page-anchor"
-                    href="/backbone">Backbone Page</a
+                    href="/backbone"
+                    onclick={handlePageLink}
+                    onkeydown={handlePageLink}>Backbone Page</a
                 >
             </h3>
             <p>
@@ -137,27 +138,17 @@
                     ><MagnifyIcon />
                 </span> icon that appears next to it.
             </p>
-            <div id="backbone-screenshot-wrapper">
-                <img
-                    id="backbone-screenshot"
-                    alt="A sample of a taxonomic tree on the backbone page"
-                    src="../static/backbone-screenshot.png"
-                />
-            </div>
         </div>
         <div class="about-page-section">
             <h3 class="about-page-subheader">
                 <a
                     id="rankings-page-section"
                     class="page-anchor"
-                    href="/rankings">Rankings Page</a
+                    href="/rankings"
+                    onclick={handlePageLink}
+                    onkeydown={handlePageLink}>Rankings Page</a
                 >
             </h3>
-            <img
-                id="rankings-screenshot"
-                alt="A sample of the rankings page with a list of Camponotus species and their rankings"
-                src="../static/rankings-screenshot.png"
-            />
             <p>This page hosts all of our species (and subspecies) rankings!</p>
             <p>
                 You'll find that the sidebar filters are different on this page.
@@ -192,35 +183,16 @@
                 </span> icon that appears next to it.
             </p>
         </div>
+
+        <p class="progress-alert">
+            This page is still in progress. Thank you for your patience!
+        </p>
     </div>
 </div>
 
 <style>
-    #rankings-screenshot {
-        float: left;
-        object-fit: cover;
-        height: 300px;
-        margin-right: 1rem;
-    }
-    #backbone-screenshot-wrapper {
-        display: flex;
-        justify-content: center;
-    }
-    img {
-        border-radius: 3px;
-        border: 1px solid var(--border);
-    }
-    #backbone-screenshot {
-        margin: 0;
-        width: 500px;
-        height: 134px;
-        object-fit: cover;
-    }
-    #map-screenshot {
-        width: 306px;
-        height: 134px;
-        float: right;
-        margin-left: 1rem;
+    .progress-alert {
+        color: var(--accent-color);
     }
     .magnify-dummy-icon {
         color: var(--accent-color);
