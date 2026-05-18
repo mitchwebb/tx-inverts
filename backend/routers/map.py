@@ -1,5 +1,5 @@
 from http.client import HTTPException
-from backend.db_schema.geometries import TEXAS_COUNTIES_TABLE, TEXAS_PARKS_TABLE
+from backend.db.schema.geometries import TEXAS_COUNTIES_TABLE, TEXAS_PARKS_TABLE
 from backend.models.api_types import TextData
 from fastapi import APIRouter, Request
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -25,9 +25,9 @@ async def search_counties(data: TextData, request: Request):
 
     try:
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, query, (), 'all', dict_cursor=True) as results:
-                results = [dict(row) for row in results]
-                return {'results': results}
+            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+            results = [dict(row) for row in results]
+            return {'results': results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -47,9 +47,9 @@ async def search_parks(data: TextData, request: Request):
 
     try:
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, query, (), 'all', dict_cursor=True) as results:
-                results = [format_park(dict(row)) for row in results]
-                return {'results': results}
+            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+            results = [format_park(dict(row)) for row in results]
+            return {'results': results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

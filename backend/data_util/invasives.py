@@ -1,37 +1,18 @@
 import json
 import os
 import csv
-import requests
 import pandas as pd
-
-from backend.config.data import DATA_OUT_PATH, settings
-from backend.data_util.gbif import gbif_downloads
-from backend.db_schema.us_invasives_checklist import US_INVASIVES_TABLE
-from backend.core.logging import data_logger
-
-
-def get_invasive_status(taxon_key, test=False):
-    # Global Register of Introduced and Invasive Species - United States
-    dataset_key = '32ad19ed-6b89-447a-9242-795c0897f345'
-
-    # Construct the request URL
-    url = f"https://api.gbif.org/v1/occurrence/count?datasetKey={dataset_key}&taxonKey={taxon_key}"
-
-    # Make the GET request
-    response = requests.get(url)
-
-    # Check the response status
-    if response.status_code == 200:
-        is_invasive = response.json()
-        return False if is_invasive == 0 else True
-    else:
-        data_logger.error(
-            f"Request failed with status code: {response.status_code}")
+from backend.config import get_settings
+from backend.constants.paths import DATA_OUT_PATH
+from backend.data_util.gbif.gbif_downloads import gbif_download_request, get_gbif_download
+from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
 
 
 async def get_invasives_dataset():
     # Global Register of Introduced and Invasive Species - United States
     dataset_key = '32ad19ed-6b89-447a-9242-795c0897f345'
+
+    settings = get_settings()
 
     # Request a GBIF download
     request_body = {
@@ -49,13 +30,13 @@ async def get_invasives_dataset():
         }
     }
 
-    key = gbif_downloads.gbif_download_request(
+    key = gbif_download_request(
         request_body=json.dumps(request_body),
         pwd=settings.gbif.password,
         username=settings.gbif.user
     )
 
-    output_dir = await gbif_downloads.get_gbif_download(key, output_fp=DATA_OUT_PATH, target_files=['occurrence.txt'])
+    output_dir = await get_gbif_download(key, output_fp=DATA_OUT_PATH, target_files=['occurrence.txt'])
 
     observations_fp = os.path.join(output_dir, 'occurrence.txt')
 

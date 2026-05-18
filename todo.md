@@ -12,6 +12,7 @@
 - [ ] Handle 'indet.' species
 - [ ] Common Names!
 - [ ] Need a date_added column to allow rollback
+- [ ] Differences in handling conn (get_single)
 
 ### Map Layers
 

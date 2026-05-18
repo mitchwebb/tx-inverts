@@ -9,19 +9,21 @@ from backend.data_util.extract_zip import extract_zip_files
 from backend.core.logging import data_logger
 
 
-def gbif_download_request(request_body: str, pwd: None, username: None, test=False):
+async def gbif_download_request(request_body: str, pwd: str, username: str, test=False):
     """
     Creates a download request using GBIF's API
 
-    This will kick off a data download request on GBIF's end, which can take 
+    This will kick off a data download request on GBIF's end, which can take
     anywhere from 1 minute to 30+ minutes, depending on the complexity of the
     query as well as the current status of GBIF's download API.
 
-    This function is designed to be used in conjuction with the 
+    This function is designed to be used in conjuction with the
     get_GBIF_download function.
 
     Args:
         request_body (str): GBIF request body (refer to GBIF documentation)
+        pwd (str): GBIF password
+        username (str): GBIF username
         test (bool, optional): Determines use of GBIF test API for testing
 
     Returns:
@@ -33,39 +35,46 @@ def gbif_download_request(request_body: str, pwd: None, username: None, test=Fal
     }
 
     if test:
-        GBIF_url = "http://api.gbif-uat.org/v1/occurrence/download/request"
+        GBIF_url = "https://api.gbif-uat.org/v1/occurrence/download/request"
     else:
-        GBIF_url = "http://api.gbif.org/v1/occurrence/download/request"
+        GBIF_url = "https://api.gbif.org/v1/occurrence/download/request"
 
     try:
-        response = requests.post(GBIF_url, data=request_body, auth=(
-            username, pwd), headers=headers)
-        if response.status_code == 201:
-            data_logger.info('Download request submitted successfully.')
-            data_logger.info(
-                f'Find this download request at https://www.gbif.org/occurrence/download/{response.text}')
-            return response.text
-        else:
-            data_logger.error(f'Error: {response.status_code}: {response.text}')
-            return None
-
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                GBIF_url,
+                data=request_body,
+                auth=aiohttp.BasicAuth(username, pwd),
+                headers=headers
+            ) as response:
+                if response.status == 201:
+                    data_logger.info('Download request submitted successfully.')
+                    key = await response.text()
+                    data_logger.info(
+                        f'Find this download request at https://www.gbif.org/occurrence/download/{key}')
+                    return key
+                else:
+                    text = await response.text()
+                    raise RuntimeError(
+                        f'Download request failed: {response.status}: {text}'
+                    )
     except Exception as e:
         data_logger.exception(f"Request failed: {e}")
-        return None
+        raise
 
 
-async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800, target_files=None, verbose=False):
+async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800, target_files: list[str] | None = None, verbose=False):
     """
     Uses a GBIF download key to download and save a GBIF download to a local CSV
 
     This function will attempt to download the provided GBIF download every
     ten seconds for a given time (time_to_wait)
 
-    This function can be used in conjuction with the 
+    This function can be used in conjuction with the
     GBIF_download_request function.
 
     Args:
-        key (str): GBIF API endpoint (ex: 'occurrence/download/request')
+        key (str): GBIF download key
         output_fp (str): Desired filepath for resulting CSV (refer to GBIF documentation)
         time_to_wait (int, optional): The total amount of time to continue
             pinging the GBIF api (default is 3 hours, as is GBIF high estimate)
@@ -86,21 +95,18 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
     data_logger.info(
         f'Waiting for GBIF download to be ready (will try for {time_to_wait/60} minutes)...')
 
-    while time.time() < end_time:
-        try:
-            # This is how long the session will stay open for downloading/unzipping the file
-            session_timeout = aiohttp.ClientTimeout(total=100000)
-            async with aiohttp.ClientSession(timeout=session_timeout) as session:
-                async with session.get(f'http://api.gbif.org/v1/occurrence/download/request/{key}', allow_redirects=True) as response:
-                    if response.status == 302:
-                        body = await response.text()
-                        data_logger.info(f'Download found. {body}')
-                        return None
+    # This is how long the session will stay open for downloading/unzipping the file
+    session_timeout = aiohttp.ClientTimeout(total=100000)
+    async with aiohttp.ClientSession(timeout=session_timeout) as session:
+        while time.time() < end_time:
+            try:
+                async with session.get(f'https://api.gbif.org/v1/occurrence/download/request/{key}', allow_redirects=True) as response:
                     # If the download is found
                     if response.status == 200:
                         chunk_size = 1024 * 1024
                         downloaded = 0
                         zip_fp = os.path.join(output_fp, f'{key}.zip')
+                        # TODO: I don't believe GBIF returns this. Also it's being chunked now.
                         # Get content length if available
                         total_size = int(
                             response.headers.get("Content-Length", 0))
@@ -114,7 +120,7 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                                 f.write(chunk)
                                 downloaded += len(chunk)
                                 # Log download progress in 50MB chunks
-                                if total_size and downloaded % (50 * 1024 * 1024) < chunk_size:
+                                if downloaded % (50 * 1024 * 1024) < chunk_size:
                                     data_logger.info(
                                         f"Downloaded {downloaded / (1024*1024):.0f} / {total_size / (1024*1024):.0f} MB")
                         data_logger.info(f'Download complete: {zip_fp}')
@@ -129,19 +135,17 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                             data_logger.warning(
                                 f"No response for that key. Download is likely still being processed in GBIF's system. Trying again in {waiting_interval} seconds.")
                     elif response.status == 410:
-                        data_logger.error(
-                            'Occurrence download file was erased and no longer exists.')
-                        return None
+                        raise FileNotFoundError(
+                            f'GBIF download {key} has been deleted.')
                     else:
-                        data_logger.error(
-                            f'Attempt failed. Status code: {response.status}.')
-                        return None
-        except Exception as e:
-            data_logger.exception(f'Error occurred: {e}')
-            return
+                        raise RuntimeError(
+                            f'Unexpected status code: {response.status}')
+            except Exception as e:
+                data_logger.exception(f'Error occurred: {e}')
+                raise
 
-        # asyncio so the server doesn't get hung up waiting
-        await asyncio.sleep(waiting_interval)
+            # asyncio so the server doesn't get hung up waiting
+            await asyncio.sleep(waiting_interval)
 
     # If failed within provided time, give up
     raise TimeoutError(

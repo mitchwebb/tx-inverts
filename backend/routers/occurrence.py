@@ -1,13 +1,13 @@
 import time
 import backend.constants.map as map
 
-from backend.db_schema.gbif_dataset_metadata import GBIF_DATASET_META
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
 from backend.models.api_types import ObservationsRequestParams
-from backend.core.sql import create_occurrence_filter, create_occurrence_taxon_filter
+from backend.db.queries.occurrence import create_occurrence_filter, create_occurrence_taxon_filter
 from backend.models.sql import OccurrenceFilter, SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 import re
@@ -25,16 +25,16 @@ async def get_datasets(request: Request):
         ''').format(dataset_table=sql.Identifier(GBIF_DATASET_META.name))
 
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, query, fetch='all', dict_cursor=True) as result:
-                if not result:
-                    raise HTTPException(
-                        status_code=404, detail='Dataset information not retrieved')
+            result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+            if not result:
+                raise HTTPException(
+                    status_code=404, detail='Dataset information not retrieved')
 
-                datasets = result
+            datasets = result
 
-                return {
-                    'datasets': datasets
-                }
+            return {
+                'datasets': datasets
+            }
 
     except Exception as e:
         api_logger.exception(e)
@@ -85,15 +85,13 @@ async def get_dataset_counts(params: ObservationsRequestParams, request: Request
             taxon_filter=taxon_filter
         )
 
-        async with execute_psql_query(
-            conn, query, (), fetch='all', dict_cursor=True
-        ) as result:
-            if result:
-                institution_counts = {
-                    item['dataset_key']: item['count'] for item in result}
-                return institution_counts
-            else:
-                return None
+        result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+        if result:
+            institution_counts = {
+                item['dataset_key']: item['count'] for item in result}
+            return institution_counts
+        else:
+            return None
 
 
 @occurrence_router.post('/get_observation_dates')
@@ -119,13 +117,12 @@ async def get_observation_dates(params: ObservationsRequestParams, request: Requ
             occurrence_filter=occurrence_filter
         )
 
-        async with execute_psql_query(
-            conn, query, (), fetch='one', dict_cursor=True
-        ) as result:
-            if result:
-                return result
-            else:
-                return None
+        result = await execute_psql_query(
+            conn, query, fetch='one', dict_cursor=True)
+        if result:
+            return result
+        else:
+            return None
 
 
 # @occurrence_router.post('/get_observations')
@@ -163,12 +160,12 @@ async def get_observation_dates(params: ObservationsRequestParams, request: Requ
 #         FROM joined;
 #         '''
 #     async with request.app.state.db_pool.connection() as conn:
-#         async with execute_psql_query(
+#         result = await execute_psql_query(
 #             conn, query, [taxon_id, taxon_id], fetch='one'
-#         ) as result:
-#             return result[0] if result else {
-#                 'type': 'FeatureCollection', 'features': []
-#             }
+#         )
+#         return result[0] if result else {
+#             'type': 'FeatureCollection', 'features': []
+#         }
 
 
 @occurrence_router.get('/tiles/{include_inat}/{taxon_id}/{datasets}/{date_start}/{date_end}/{z}/{x}/{y}.mvt', response_class=Response)
@@ -184,13 +181,12 @@ async def get_tile(include_inat: bool, taxon_id: int, datasets: str, date_start:
 
         occurrence_filter = create_occurrence_filter(filter_payload)
 
-        # Map parameters for calculating base grids at a given zoom level
-        meters_per_pixel = map.meters_per_pixel(z)
-        grid_size = meters_per_pixel * map.PIXELS_PER_GRID
+        # Get grid size in meters at a given zoom level
+        grid_size = map.get_meters_per_pixel(z) * map.PIXELS_PER_GRID
 
         async with request.app.state.db_pool.connection() as conn:
 
-            # async with execute_psql_query(conn, exists_query, {'species_ids': descendant_ids, 'z': z}, fetch='one', dict_cursor=True) as result:
+            # result = await execute_psql_query(conn, exists_query, {'species_ids': descendant_ids, 'z': z}, fetch='one', dict_cursor=True)
             # if result['exists']:
             #     api_logger.info('Getting cached tiles...')
             #     params = {
@@ -233,7 +229,7 @@ async def get_tile(include_inat: bool, taxon_id: int, datasets: str, date_start:
             # 		FROM mvt_geom;
             #     '''
 
-            #     async with execute_psql_query(conn, cache_query, params, fetch='one', dict_cursor=False) as result:
+            #     result = await execute_psql_query(conn, cache_query, params, fetch='one', dict_cursor=False)
             #         tile = result[0] if result else None
             #     return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
 
@@ -241,13 +237,9 @@ async def get_tile(include_inat: bool, taxon_id: int, datasets: str, date_start:
             # else:
             # Return binned results
 
-            start = time.time()
             if z < 10:
                 api_logger.debug(
                     'Cache not found! Generating raw tiles (slow).')
-                # Calculate meters-per-pixel for binning
-                meters_per_pixel = map.meters_per_pixel(z)
-                grid_size = meters_per_pixel * map.PIXELS_PER_GRID
                 query = sql.SQL('''
                         WITH
                         bbox AS (
@@ -340,11 +332,8 @@ async def get_tile(include_inat: bool, taxon_id: int, datasets: str, date_start:
                     occurrence_filter=occurrence_filter
                 )
             async with request.app.state.db_pool.connection() as conn:
-                async with execute_psql_query(conn, query, fetch='one', dict_cursor=False) as result:
-                    end = time.time()
-                    api_logger.debug(
-                        f'Tile generation took {end-start} seconds')
-                    tile = result[0] if result else None
+                result = await execute_psql_query(conn, query, fetch='one', dict_cursor=False)
+                tile = result[0] if result else None
                 return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
     except Exception as e:
         api_logger.exception(e)

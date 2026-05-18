@@ -1,4 +1,4 @@
-from fastapi.exceptions import RequestValidationError
+# Exception handlers for general api use
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 import logging

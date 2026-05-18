@@ -1,23 +1,22 @@
 import numpy as np
+from backend.data_util.execute_psql_query import execute_psql_query
 from backend.routers.taxa import RANK_ORDER, TaxonomicRank, RANK_COLS
 from collections import deque, defaultdict
 import pandas as pd
 from typing import List
-from psycopg import Connection
+from psycopg import Connection, sql
 from backend.core.logging import data_logger
 
 
 async def get_observation_count(conn: Connection, taxon_ids: int | List[int]):
-    query = '''
+    query = sql.SQL('''
         SELECT COUNT(*)
         FROM gbif_observations
-        WHERE taxon_key = ANY(%s)
-    '''
+        WHERE taxon_key = ANY({taxon_ids})
+    ''').format(taxon_ids=sql.Literal(taxon_ids))
 
-    async with conn.cursor() as cur:
-        await cur.execute(query, (taxon_ids, ))
-        result = await cur.fetchone()
-        return result[0]
+    result = await execute_psql_query(conn, query, fetch='one')
+    return result[0]
 
 
 # Pandas version of lineage building for backbone

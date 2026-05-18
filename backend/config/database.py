@@ -1,4 +1,4 @@
-from pydantic import Field
+# PostgreSQL settings class
 from pydantic_settings import BaseSettings
 
 

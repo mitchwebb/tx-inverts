@@ -1,23 +1,24 @@
-from psycopg import Connection
+from backend.data_util.execute_psql_query import execute_psql_query
+from psycopg import Connection, sql
 from psycopg.errors import Error as PsycopgError
-from backend.db_schema import ALL_TABLES
-from backend.db_schema.base import DBTable
+from backend.db.schema import ALL_TABLES
+from backend.db.schema.base import DBTable
 from backend.tools.jobs.tasks.database import update_indexes
 from backend.core.logging import db_logger
 from backend.tools.jobs.tasks.views import refresh_materialized_views
 
+
 # Check if table already exists (for readable erroring)
 async def table_exists(conn: Connection, table_name: str) -> bool:
-    async with conn.cursor() as cur:
-        await cur.execute('''
-                SELECT EXISTS (
-                        SELECT 1
-                        FROM information_schema.tables
-                        WHERE table_schema = 'public' AND table_name = %s
-                )
-        ''', (table_name,))
-        row = await cur.fetchone()
-        return row[0] if row else False
+    exists_query = sql.SQL('''
+        SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = {table_name}
+        )
+    ''').format(table_name=sql.Literal(table_name))
+    result = await execute_psql_query(conn, exists_query, fetch='one')
+    return result[0] if result else False
 
 
 async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: bool = True):
@@ -29,8 +30,7 @@ async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: 
             return
 
         create_sql = table.create_table_query()
-        async with conn.cursor() as cur:
-            await cur.execute(create_sql)
+        await execute_psql_query(conn, create_sql)
         if verbose:
             db_logger.info(f'Created table: {table.name}')
 

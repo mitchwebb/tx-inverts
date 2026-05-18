@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from backend.db_schema.regions import REGIONS_VIEW
+from backend.db.schema.regions import REGIONS_VIEW
 from fastapi import APIRouter, Request, HTTPException
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
@@ -17,7 +17,6 @@ class RegionParams(BaseModel):
 async def get_region_info(data: RegionParams, request: Request):
     try:
         region_id = data.region_id
-        print(region_id)
         query = sql.SQL('''
             SELECT id, region_type, name
             FROM {regions_view}
@@ -28,8 +27,11 @@ async def get_region_info(data: RegionParams, request: Request):
         )
 
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, query, (), 'one', dict_cursor=True) as results:
-                return results
+            results = await execute_psql_query(conn, query, fetch='one', dict_cursor=True)
+        if results is None:
+            raise HTTPException(
+                status_code=404, detail=f'Region {region_id} not found')
+        return results
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))

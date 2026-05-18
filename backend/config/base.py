@@ -1,3 +1,4 @@
+# Base app setting management
 from backend.config.cors import CORSSettings
 from pathlib import Path
 from pydantic import Field
@@ -6,7 +7,7 @@ from .database import PostgresSettings
 from .gbif import GBIFSettings
 
 
-# Calculate backend root
+# Determine backend root
 DEFAULT_BACKEND_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -21,8 +22,8 @@ class BaseAppSettings(BaseSettings):
     cors: CORSSettings
 
     class Config:
-        env_file = '.env'  # fallback for common variables
-        env_nested_delimiter = '__'  # for nested settings
+        env_file = '.env'  # Fallback for common variables
+        env_nested_delimiter = '__'  # For nested settings
 
 
 # Choose the settings class based on the environment

@@ -1,4 +1,4 @@
-# Logic for processing/filtering GBIF observations downloads
+# Logic for processing/filtering GBIF observations downloads in darwincore format
 from typing import Generator
 from backend.core.logging import data_logger
 from pandas import DataFrame
@@ -42,9 +42,9 @@ MONTH_NAMES = "|".join(re.escape(m) for m in MONTH_LOOKUP.keys())
 
 AMBIGUOUS_DMY_PATTERN_REGEX = re.compile(
     rf'(?<!\d)'
-    # optional day
+    # Optional day
     r'(?:(?P<day>0?[1-9]|[12][0-9]|3[01])(?P<daySuffix>st|nd|rd|th)?[-/\s,]+)?'
-    # month always required
+    # Month always required
     rf'(?:(?P<monthNumber>0?[1-9]|1[0-2])|(?P<monthText>{MONTH_NAMES}))'
     r'[\s\-/.,]+'
     r'(?P<year>\d{4})'
@@ -56,11 +56,14 @@ AMBIGUOUS_MDY_PATTERN_REGEX = re.compile(
     rf'(?<!\d)'
     # Either number or text
     rf'(?:(?P<monthNumber>0?[1-9]|1[0-2])|(?P<monthText>{MONTH_NAMES}))'
-    r'[\s\-/.,]+'                               # Separator
-    # optional day
+    # Separator
+    r'[\s\-/.,]+'
+    # Optional day
     r'(?:(?P<day>0?[1-9]|[12][0-9]|3[01])(?P<daySuffix>st|nd|rd|th)?[-/\s,]+)?'
-    r'(?P<year>\d{4})'                          # Year
-    r'(?!\d)',                                  # No trailing digits
+    # Year
+    r'(?P<year>\d{4})'
+    # No trailing digits
+    r'(?!\d)',
     re.IGNORECASE
 )
 
@@ -104,7 +107,7 @@ def _parse_ambiguous_match(match: re.Match[str]) -> dict[str, int | None] | None
             parts['day'] = int(day)
     elif month_number:
         # Numeric month is unambiguous if day is missing or day is unambiguous
-        if not day or day_suffix or (day and int(day) > 12):
+        if not day or day_suffix or (int(day) > 12):
             parts['month'] = int(month_number)
         # Day is unambiguous if day_suffix or day > 12
         if day and (day_suffix or int(day) > 12):
@@ -210,9 +213,8 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         end_date = start_date
 
         # eventRemarks will often store event endDates as '; ended <date>' string
-        if row.eventRemarks and not start_date:
-            match = EVENT_REMARKS_DATE_REGEX.search(row.eventRemarks)
-            if match and match.group('keyword'):
+        if row.eventRemarks and (not start_date or not end_date):
+            for match in EVENT_REMARKS_DATE_REGEX.finditer(row.eventRemarks):
                 keyword = match.group('keyword')
                 matched_date = None
                 if match.group('year'):
@@ -221,10 +223,12 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
                         matched_date += f"-{match.group('month').zfill(2)}"
                         if match.group('day'):
                             matched_date += f"-{match.group('day').zfill(2)}"
-                if keyword == 'dated' or keyword == 'started':
+                if not start_date and (keyword == 'dated' or keyword == 'started'):
                     start_date = matched_date
-                elif keyword == 'ended':
+                elif not end_date and keyword == 'ended':
                     end_date = matched_date
+                if start_date and end_date:
+                    break
 
         # Next we'll check for date strings in verbatimEventDate
         # A&M's eventDates end up here in M(M)/dd/yyyy hh:mm:ss format
@@ -277,10 +281,6 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
         Generator[Dataframe]: Processed DataFrame chunk ready for database insertion.
     """
 
-    # filtered_chunks = []
-
-    observation_count = 0
-
     # Use approximate bounding box for Texas to perform preliminary boundary filter
     min_lon, max_lon = -106.65, -93.5
     min_lat, max_lat = 25.8, 36.5
@@ -297,7 +297,10 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
         # Drop missing coordinates
         chunk = chunk.dropna(subset=['decimalLongitude', 'decimalLatitude'])
 
-        # TODO: At this point, this is probably not helpful (we're doing it GBIF-side)
+        # Note: Bounding box filter is also applied GBIF-side in our pipeline,
+        # but is kept here for the sake of processing gbif data retrieved
+        # without this parameter
+
         # Filter to Texas bounding box (fine filtering is performed later in SQL)
         df = chunk[
             (chunk['decimalLongitude'].between(min_lon, max_lon)) &

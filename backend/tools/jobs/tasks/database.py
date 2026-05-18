@@ -1,4 +1,5 @@
-from backend.db_schema.index_definitions import INDEX_DEFINITIONS
+from backend.data_util.execute_psql_query import execute_psql_query
+from backend.db.schema.index_definitions import INDEX_DEFINITIONS
 from backend.core.logging import db_logger
 import psycopg
 from psycopg import sql
@@ -16,49 +17,38 @@ async def update_index(
     table_name = index_def['table']
     create_sql = index_def['create_sql']
 
-    async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-        # Check if index exists
-        await cur.execute(
-            '''
-            SELECT 1 FROM pg_indexes
-            WHERE tablename = %s AND indexname = %s
-            ''',
-            (table_name, index_name)
-        )
-        exists = await cur.fetchone()
+    # Check if index exists
+    exists_query = sql.SQL('''
+        SELECT 1 FROM pg_indexes
+        WHERE tablename = {table_name} AND indexname = {index_name}
+    ''').format(
+        table_name=sql.Literal(table_name),
+        index_name=sql.Literal(index_name)
+    )
+    exists = await execute_psql_query(conn, exists_query, fetch='one')
 
-        # If index exists and reindex == True, reindex
-        if exists:
-            if reindex:
-                db_logger.info(f'{index_name} already exists, reindexing...')
-                await cur.execute(
-                    sql.SQL('REINDEX INDEX {}').format(
-                        sql.Identifier(index_name))
-                )
-            # If index exists and reindex == False, skip
-            else:
-                db_logger.info(f'{index_name} already exists, skipping...')
-                return
-        # Else run create_index_query (if provided)
+    # If index exists and reindex == True, reindex
+    if exists:
+        if reindex:
+            db_logger.info(f'{index_name} already exists, reindexing...')
+            reindex_query = sql.SQL('REINDEX INDEX {}').format(
+                sql.Identifier(index_name))
+            await execute_psql_query(conn, reindex_query)
+
+        # If index exists and reindex == False, skip
         else:
-            db_logger.info(
-                f'{index_name} does not yet exist, creating index...')
-            await cur.execute(create_sql)
-        
+            db_logger.info(f'{index_name} already exists, skipping...')
+            return
+    # Else run create_index_query (if provided)
+    else:
+        db_logger.info(
+            f'{index_name} does not yet exist, creating index...')
+        await execute_psql_query(conn, create_sql)
+
     await conn.commit()
-    return
 
 
-async def update_indexes(
-    conn: psycopg.AsyncConnection,
-    reindex: bool = False
-):
-
+async def update_indexes(conn: psycopg.AsyncConnection, reindex: bool = False):
     for index_name in INDEX_DEFINITIONS.keys():
-        await update_index(
-            conn,
-            index_name,
-            reindex
-        )
-
-    return
+        await update_index(conn, index_name, reindex)
+    db_logger.info(f'Finished updating {len(INDEX_DEFINITIONS)} indexes.')

@@ -1,10 +1,11 @@
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db_schema.geometries import TEXAS_GEOMETRY_TABLE
+from backend.data_util.execute_psql_query import execute_psql_query
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.models.api_types import NSRank
 from psycopg import Connection, sql
 from backend.routers.taxa import TaxonomicRank
 import psycopg
-from backend.core.sql import create_occurrence_filter
+from backend.db.queries.occurrence import create_occurrence_filter
 from backend.models.sql import SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 
@@ -216,9 +217,10 @@ async def calculate_ns_values(
             occ_expression=occ_expression
         )
 
+        # Using raw cursor for setting local work mem
         async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
             await cur.execute("SET LOCAL work_mem = '256MB'")
-            await cur.execute(query, ())
+            await cur.execute(query)
             result = await cur.fetchone()
             return result
     except Exception as e:

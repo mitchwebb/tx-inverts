@@ -225,7 +225,6 @@
         dateEnd: FiltersState['dateEnd'],
         datasets: FiltersState['datasets']
     ) {
-        console.log('hello');
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
         taxon.nSValuesLoading = true;

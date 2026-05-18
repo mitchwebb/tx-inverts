@@ -1,4 +1,4 @@
-from backend.db_schema.base import DBTable
+from backend.db.schema.base import DBTable
 from backend.models.api_types import ObservationsRequestParams
 
 

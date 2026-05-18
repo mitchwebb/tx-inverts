@@ -1,8 +1,9 @@
 # General script for initial Texas Inverts backend setup
 
 from backend.data_util.db import get_single_db_connection
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db_schema.observation_regions import OBSERVATION_REGIONS_TABLE
+from backend.data_util.execute_psql_query import execute_psql_query
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.tools.jobs.runners.run_async import run_async
 from backend.tools.jobs.tasks.database import update_indexes
 from backend.tools.jobs.tasks.datasets import fill_dataset_table
@@ -20,9 +21,10 @@ from psycopg import sql
 async def main():
     setup_logging()
 
-    conn = await get_single_db_connection()
+    conn = None
 
     try:
+        conn = await get_single_db_connection()
         # Initialize all tables (including mat views) and associated indexes
         await initialize_all_tables(conn, verbose=True, strict=True)
 
@@ -52,19 +54,17 @@ async def main():
         # Fill observation_regions table!
         # TODO: Extract to separate task
         db_logger.info('Filling observations_regions table...')
-        async with conn.cursor() as cur:
-            query = sql.SQL('''
-                INSERT INTO {observation_regions_table}(observation_id, region_id, region_type)
-                SELECT o.gbif_id, r.id, r.region_type
-                FROM {observations_table} o
-                JOIN regions r ON ST_Intersects(o.geometry, r.geometry)
-            ''').format(
-                observation_regions_table=sql.Identifier(
-                    OBSERVATION_REGIONS_TABLE.name),
-                observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
-            )
-
-            await cur.execute(query)
+        insert_statement = sql.SQL('''
+            INSERT INTO {observation_regions_table}(observation_id, region_id, region_type)
+            SELECT o.gbif_id, r.id, r.region_type
+            FROM {observations_table} o
+            JOIN regions r ON ST_Intersects(o.geometry, r.geometry)
+        ''').format(
+            observation_regions_table=sql.Identifier(
+                OBSERVATION_REGIONS_TABLE.name),
+            observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
+        )
+        await execute_psql_query(conn, insert_statement)
 
         await conn.commit()
         db_logger.info('Created observations_regions table')
@@ -72,12 +72,13 @@ async def main():
         # Refresh materialized views now that they're filled
         await refresh_materialized_views(conn)
 
-        # This step could be easier if provided local files
     except Exception as e:
         db_logger.exception(f'Database initialization failed. Exiting. {e}')
-        await conn.rollback()
+        if conn is not None:
+            await conn.rollback()
     finally:
-        await conn.close()
+        if conn is not None:
+            await conn.close()
 
 if __name__ == '__main__':
     run_async(main())

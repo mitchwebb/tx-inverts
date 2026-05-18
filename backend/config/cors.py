@@ -1,3 +1,4 @@
+# CORS settings class
 from pydantic_settings import BaseSettings
 
 

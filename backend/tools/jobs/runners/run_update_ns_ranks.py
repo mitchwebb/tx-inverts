@@ -5,15 +5,22 @@ from backend.data_util.db import get_single_db_connection
 
 
 async def main():
-    setup_logging()
+    conn = None
+    try:
+        setup_logging()
+        tasks_logger.info("Starting update_ns_ranks...")
+        conn = await get_single_db_connection()
 
-    tasks_logger.info("Starting update_ns_ranks...")
+        await update_ns_ranks(conn)
 
-    conn = await get_single_db_connection()
-
-    await update_ns_ranks(conn)
-
-    tasks_logger.info("update_ns_ranks finished")
+        tasks_logger.info("update_ns_ranks finished")
+    except Exception as e:
+        tasks_logger.exception(f'Update NS ranks task failed. Exiting. {e}')
+        if conn is not None:
+            await conn.rollback()
+    finally:
+        if conn is not None:
+            await conn.close()
 
 if __name__ == "__main__":
     run_async(main())

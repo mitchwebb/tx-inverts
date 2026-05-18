@@ -1,5 +1,5 @@
 # This is a MATERIALIZED VIEW for easy region info lookup via ID
-from backend.db_schema.base import DBTable
+from backend.db.schema.base import DBTable
 
 
 class Regions(DBTable):

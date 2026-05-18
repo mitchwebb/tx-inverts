@@ -1,5 +1,5 @@
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db_schema.geometries import TEXAS_GEOMETRY_TABLE
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -7,7 +7,7 @@ from backend.routers.occurrence import ObservationsRequestParams
 from backend.data_util.natureserve import calculate_ns_values
 from backend.routers.taxa import get_taxon_rank
 from psycopg import sql
-from backend.core.sql import create_occurrence_filter
+from backend.db.queries.occurrence import create_occurrence_filter
 from backend.models.sql import OccurrenceFilter, SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 
@@ -51,18 +51,15 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
             if not ns_result:
                 return JSONResponse(content={'result': None}, status_code=200)
 
-            rank_query = sql.SQL("""
+            rank_query = sql.SQL('''
                 SELECT {rank_col}
                     FROM tx_taxa
                 WHERE taxon_id = {taxon_id}
-            """).format(
+            ''').format(
                 taxon_id=sql.Literal(filters.taxon_id),
                 rank_col=sql.Identifier(rank_col)
             )
-
-            async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-                await cur.execute(rank_query, ())
-                rank_result = await cur.fetchone()
+            rank_result = await execute_psql_query(conn, rank_query, fetch='one', dict_cursor=True)
 
             api_logger.info(f'Retrieved NS values {ns_result}')
             return JSONResponse(content={
@@ -125,18 +122,16 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
                 occurrence_filter=occurrence_filter
             )
 
-            async with execute_psql_query(
-                conn, query, (), fetch='one', dict_cursor=True
-            ) as result:
-                if not result:
-                    return JSONResponse(content={'result': None}, status_code=200)
+            result = await execute_psql_query(conn, query, fetch='one', dict_cursor=True)
+            if not result:
+                return JSONResponse(content={'result': None}, status_code=200)
 
-                geom_json = result['range_extent_geom']
-                return JSONResponse(content={
-                    'result': {
-                        'range_extent_geom': json.loads(geom_json) if geom_json else None
-                    }
-                })
+            geom_json = result['range_extent_geom']
+            return JSONResponse(content={
+                'result': {
+                    'range_extent_geom': json.loads(geom_json) if geom_json else None
+                }
+            })
     except Exception as e:
         api_logger.exception(e)
         raise

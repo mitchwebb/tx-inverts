@@ -114,7 +114,7 @@ APPROVED_DATASETS = [
     "a0551854-61b9-4c1b-ad08-7f10af835b6a",
     # TPWD HARC Texas Coastal Fisheries Matagorda Bay Gill Net
     "b84099fa-99ac-4e11-a8da-d09add544131",
-    # Delaware Museum of Nature and Science â€“ Mollusks
+    # Delaware Museum of Nature and Science & Mollusks
     "3ee66eb3-4786-4bda-b7f1-c145b1a57a6b",
     # Denver Museum of Nature & Science - Entomology
     "552f282a-92a6-4f41-95ef-c6537026fbeb",
@@ -168,7 +168,7 @@ def build_observations_request(
     Args:
         min_date_type ('modified', 'last_interpreted'): Which GBIF column
             compare to database dates
-        min_date (str): Datetime in ISO 8601 format used to determine the
+        min_date (datetime | date): Datetime in ISO 8601 format used to determine the
             earliest date value for records
         test (bool): Determines use of all datasets or single dataset for testing
 
@@ -176,7 +176,7 @@ def build_observations_request(
         GBIF Download Request Body (dict)
     """
 
-    format: GBIFFormat = GBIFFormat.dwca
+    download_format: GBIFFormat = GBIFFormat.dwca
     settings: BaseAppSettings = get_settings()
 
     # Allowed Chordates:
@@ -230,6 +230,7 @@ def build_observations_request(
             "predicates": [
                 {
                     "type": "greaterThanOrEquals",
+                    # GBIF uses all caps for MODIFIED and LAST_INTERPRETED
                     "key": min_date_type.upper(),
                     "value": min_date.strftime("%Y-%m-%d")
                 },
@@ -241,47 +242,20 @@ def build_observations_request(
         }
     ]
 
-    if not test:
-        all_inverts_request = {
-            "creator": settings.gbif.user,
-            "notificationAddresses": [
-                settings.gbif.email
-            ],
-            "format": format,
-            "sendNotification": "true",
-            "predicate": {
-                "type": "and",
-                "predicates": [
-                    *inverts_predicates,
-                    {
-                        "type": "in",
-                        "key": "DATASET_KEY",
-                        "values": APPROVED_DATASETS
-                    }
-                ]
-            }
-        }
-        return all_inverts_request
+    # Use APPROVED_DATASETS list unless test (then just use UTEP, 22k-ish observations)
+    datasets = APPROVED_DATASETS if not test else [
+        '297ecc07-da20-4ebf-9f41-4f80330b4b33']
 
-    else:
-        # Much smaller request (22k from UTEP) for testing
-        test_inverts_request = {
-            "creator": settings.gbif.user,
-            "notificationAddresses": [
-                settings.gbif.email
-            ],
-            "format": format,
-            "sendNotification": "true",
-            "predicate": {
-                "type": "and",
-                "predicates": [
-                    *inverts_predicates,
-                    {
-                        "type": "in",
-                        "key": "DATASET_KEY",
-                        "values": ['297ecc07-da20-4ebf-9f41-4f80330b4b33']
-                    }
-                ]
-            }
+    # Return pieced together body
+    return {
+        "creator": settings.gbif.user,
+        "notificationAddresses": [
+            settings.gbif.email
+        ],
+        "format": download_format,
+        "sendNotification": "true",
+        "predicate": {
+            "type": "and",
+            "predicates": [*inverts_predicates, {"type": "in", "key": "DATASET_KEY", "values": datasets}]
         }
-        return test_inverts_request
+    }

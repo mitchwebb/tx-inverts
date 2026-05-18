@@ -1,5 +1,5 @@
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db_schema.observation_regions import OBSERVATION_REGIONS_TABLE
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.routers.taxa import RANK_COLS
 from psycopg import sql
 

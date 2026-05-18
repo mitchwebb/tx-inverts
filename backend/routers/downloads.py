@@ -1,11 +1,9 @@
 from http.client import HTTPException
 from typing import Literal
 
-from backend.core.sql import DWC_OCCURRENCE_SELECT_CLAUSE, DWC_TAXA_SELECT_CLAUSE, create_occurrence_filter, create_occurrence_taxon_filter
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db_schema.tx_taxa import TX_TAXA_TABLE
+from backend.db.queries.dwc import DWC_TAXA_SELECT_CLAUSE, DWC_OCCURRENCE_SELECT_CLAUSE
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.api_types import DownloadRequestParams
-from backend.models.sql import OccurrenceFilter
 from fastapi import APIRouter, Request, responses
 from psycopg import sql, AsyncConnection
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -93,8 +91,8 @@ async def get_ranked_taxa_download(params: DownloadRequestParams, request: Reque
                 return await estimate_tsv_download_size(conn, query)
         else:
             return responses.StreamingResponse(
-                downloadAndStream(request.app.state.db_pool,
-                                  query, format='tsv'),
+                downloadTableAndStream(request.app.state.db_pool,
+                                       query, format='tsv'),
                 media_type='text/tab-separated-values',
                 headers={
                     'Content-Disposition': 'attachment; filename=taxa_download.tsv'
@@ -105,7 +103,7 @@ async def get_ranked_taxa_download(params: DownloadRequestParams, request: Reque
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def downloadAndStream(pool, query: str, format: Literal['csv', 'tsv']):
+async def downloadTableAndStream(pool, query: str, format: Literal['csv', 'tsv']):
     async with pool.connection() as conn:
         async with conn.cursor() as cur:
             if format == 'tsv':
@@ -132,21 +130,23 @@ async def estimate_tsv_download_size(conn: AsyncConnection, query: sql.Composed)
     # Get accurate row count
     count_query = sql.SQL(
         "SELECT COUNT(*) FROM ({query}) AS t").format(query=query)
-    async with execute_psql_query(conn, count_query, fetch='one') as result:
-        total_rows = result[0]
+    result = await execute_psql_query(conn, count_query, fetch='one')
+    total_rows = result[0]
 
     # Sample a few rows to get realistic avg byte size including headers
     sample_query = sql.SQL(
         "SELECT * FROM ({query}) AS t LIMIT 100").format(query=query)
-    async with execute_psql_query(conn, sample_query, fetch='all') as sample:
-        df = pd.DataFrame(sample)
-        buf = io.StringIO()
-        df.to_csv(buf, sep='\t', index=False)
-        header_bytes = buf.getvalue().index('\n') + 1
-        if (len(df)):
-            avg_row_bytes = (buf.tell() - header_bytes) / len(df)
-        else:
-            avg_row_bytes = 0
+
+    sample = await execute_psql_query(conn, sample_query, fetch='all')
+
+    df = pd.DataFrame(sample)
+    buf = io.StringIO()
+    df.to_csv(buf, sep='\t', index=False)
+    header_bytes = buf.getvalue().index('\n') + 1
+    if (len(df)):
+        avg_row_bytes = (buf.tell() - header_bytes) / len(df)
+    else:
+        avg_row_bytes = 0
 
     return {
         'size_estimate': (total_rows * avg_row_bytes) + header_bytes,

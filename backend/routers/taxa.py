@@ -2,10 +2,10 @@ from re import M
 import time
 
 from backend.core.exception_handler import InvalidTaxonRankError, TaxonNotFoundError
-from backend.core.sql import create_occurrence_filter
-from backend.db_schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db_schema.taxon_region_presence import TAXON_PRESENCE_TABLE
-from backend.db_schema.tx_taxa import TX_TAXA_TABLE
+from backend.db.queries.occurrence import create_occurrence_filter
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.sql import OccurrenceFilter
 from fastapi import Request, APIRouter, HTTPException, Body
 from pydantic import BaseModel
@@ -26,23 +26,23 @@ async def get_taxon_rank(conn, taxon_id):
         WHERE taxon_id = {taxon_id}
     ''').format(taxon_id=sql.Literal(taxon_id))
 
-    async with execute_psql_query(conn, query, (), fetch='one', dict_cursor=True) as result:
-        if result is None:
-            raise TaxonNotFoundError(f'No taxon found for taxon_id={taxon_id}')
+    result = await execute_psql_query(conn, query, fetch='one', dict_cursor=True)
+    if result is None:
+        raise TaxonNotFoundError(f'No taxon found for taxon_id={taxon_id}')
 
-        taxon_rank = result['taxon_rank']
+    taxon_rank = result['taxon_rank']
 
-        if taxon_rank is None:
-            raise InvalidTaxonRankError(
-                f'taxon_rank is NULL for taxon_id={taxon_id}'
-            )
+    if taxon_rank is None:
+        raise InvalidTaxonRankError(
+            f'taxon_rank is NULL for taxon_id={taxon_id}'
+        )
 
-        if taxon_rank not in RANK_ORDER:
-            raise InvalidTaxonRankError(
-                f'Invalid taxon_rank "{taxon_rank}" for taxon_id={taxon_id}'
-            )
+    if taxon_rank not in RANK_ORDER:
+        raise InvalidTaxonRankError(
+            f'Invalid taxon_rank "{taxon_rank}" for taxon_id={taxon_id}'
+        )
 
-        return taxon_rank
+    return taxon_rank
 
 
 # Provide search suggestions based on taxon search
@@ -83,9 +83,9 @@ async def search_taxon(request: Request, text: str = Body(...), exclude_species:
     )
     try:
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, query, (), 'all', dict_cursor=True) as results:
-                results = [dict(row) for row in results]
-                return {'results': results}
+            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+            results = [dict(row) for row in results]
+            return {'results': results}
     except Exception as e:
         api_logger.error(str(e))
         raise HTTPException(status_code=500, detail=str(e))
@@ -120,10 +120,11 @@ async def get_taxon_info(params: TaxaRequestParams, request: Request):
 
         # Get taxon info
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, taxon_query, (), 'one', dict_cursor=True) as taxon_result:
-                if not taxon_result:
-                    raise HTTPException(
-                        status_code=404, detail="Taxon not found")
+            taxon_result = await execute_psql_query(
+                conn, taxon_query, fetch='one', dict_cursor=True)
+            if not taxon_result:
+                raise HTTPException(
+                    status_code=404, detail="Taxon not found")
             return {
                 "result": {
                     **taxon_result,
@@ -198,14 +199,14 @@ async def get_backbone(request: Request):
     '''
 
     async with request.app.state.db_pool.connection() as conn:
-        async with execute_psql_query(conn, query, fetch='all', dict_cursor=True) as result:
-            if not result:
-                raise HTTPException(
-                    status_code=404, detail='Backbone not retrieved')
-            tree = result
-            return {
-                "taxa": tree
-            }
+        result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+        if not result:
+            raise HTTPException(
+                status_code=404, detail='Backbone not retrieved')
+        tree = result
+        return {
+            "taxa": tree
+        }
 
 
 # Get list of qualified taxon_ids based on various filters
@@ -250,10 +251,10 @@ async def get_qualified_taxa(params: ObservationsRequestParams, request: Request
         )
 
         async with request.app.state.db_pool.connection() as conn:
-            async with execute_psql_query(conn, occurrence_query, fetch='all') as result:
-                taxon_ids = set(r[0] for r in result)
+            result = await execute_psql_query(conn, occurrence_query, fetch='all')
+            taxon_ids = set(r[0] for r in result)
 
-                return {"qualified_taxa": list(taxon_ids)}
+            return {"qualified_taxa": list(taxon_ids)}
 
     except Exception as e:
         api_logger.exception('Issue getting qualified taxa:', e)

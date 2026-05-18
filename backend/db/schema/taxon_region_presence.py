@@ -1,5 +1,5 @@
 # This is a MATERIALIZED VIEW dependent on the gbif_observations and observation_regions tables
-from backend.db_schema.base import DBTable
+from backend.db.schema.base import DBTable
 
 
 class TaxonRegionPresence(DBTable):
