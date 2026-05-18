@@ -20,11 +20,11 @@ taxa_router = APIRouter()
 
 
 async def get_taxon_rank(conn, taxon_id):
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT taxon_rank
         FROM tx_taxa
         WHERE taxon_id = {taxon_id}
-    ''').format(taxon_id=sql.Literal(taxon_id))
+    """).format(taxon_id=sql.Literal(taxon_id))
 
     result = await execute_psql_query(conn, query, fetch='one', dict_cursor=True)
     if result is None:
@@ -57,7 +57,7 @@ async def search_taxon(request: Request, text: str = Body(...), exclude_species:
             "AND COALESCE(a.taxon_rank, t.taxon_rank) NOT IN ('species', 'subspecies')"
         )
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT DISTINCT ON (COALESCE(a.taxon_id, t.taxon_id))
             COALESCE(a.scientific_name, t.scientific_name) AS scientific_name,
             COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
@@ -76,7 +76,7 @@ async def search_taxon(request: Request, text: str = Body(...), exclude_species:
             COALESCE(a.taxon_id, t.taxon_id),
             COALESCE(a.canonical_name, t.canonical_name)
         LIMIT 10;
-    ''').format(
+    """).format(
         tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
         search_term=sql.Literal('\\m' + search_term.lower()),
         exclude_species_section=exclude_species_section
@@ -96,7 +96,7 @@ async def get_taxon_info(params: TaxaRequestParams, request: Request):
     taxon_id = params.taxon_ids
 
     try:
-        taxon_query = sql.SQL('''
+        taxon_query = sql.SQL("""
             SELECT
                 canonical_name,
                 scientific_name_authorship,
@@ -116,7 +116,7 @@ async def get_taxon_info(params: TaxaRequestParams, request: Request):
                 ns_rank_state_no_inat
             FROM tx_taxa
             WHERE taxon_id = {taxon_id}
-        ''').format(taxon_id=sql.Literal(taxon_id))
+        """).format(taxon_id=sql.Literal(taxon_id))
 
         # Get taxon info
         async with request.app.state.db_pool.connection() as conn:
@@ -176,7 +176,7 @@ class TaxaChildrenRequest(BaseModel):
 # Get flat backbone for frontend (excludes synonyms)
 @taxa_router.get("/get_backbone")
 async def get_backbone(request: Request):
-    query = '''
+    query = """
         SELECT
             taxon_id,
             taxon_rank,
@@ -196,7 +196,7 @@ async def get_backbone(request: Request):
         FROM tx_taxa
         WHERE taxonomic_status IN ('accepted', 'doubtful')
                 ORDER BY taxon_rank, canonical_name
-    '''
+    """
 
     async with request.app.state.db_pool.connection() as conn:
         result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
@@ -228,10 +228,10 @@ async def get_qualified_taxa(params: ObservationsRequestParams, request: Request
         if params.regions:
             region_literals = sql.SQL(', ').join(
                 sql.Literal(r) for r in params.regions)
-            region_join = sql.SQL('''
+            region_join = sql.SQL("""
                 JOIN {presence_table} p ON {observations_table}.accepted_taxon_key = p.accepted_taxon_key
                 AND p.region_id IN ({regions})
-            ''').format(
+            """).format(
                 presence_table=sql.Identifier(TAXON_PRESENCE_TABLE.name),
                 regions=region_literals,
                 observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
@@ -239,12 +239,12 @@ async def get_qualified_taxa(params: ObservationsRequestParams, request: Request
         else:
             region_join = sql.SQL('')
 
-        occurrence_query = sql.SQL('''
+        occurrence_query = sql.SQL("""
             SELECT DISTINCT {observations_table}.accepted_taxon_key
             FROM {observations_table}
             {region_join}
             WHERE {occurrence_filter}
-        ''').format(
+        """).format(
             observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
             occurrence_filter=occurrence_filter,
             region_join=region_join

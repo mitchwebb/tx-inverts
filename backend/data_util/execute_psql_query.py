@@ -12,7 +12,7 @@ async def execute_psql_query(
     batch: bool = False,
     dict_cursor: bool = False
 ):
-    '''
+    """
     Execute a SQL query from API using the shared DB connection. Does not commit.
 
     Args:
@@ -25,7 +25,7 @@ async def execute_psql_query(
 
     Returns:
         Query result if fetch is specified, else None.
-    '''
+    """
 
     row_factory_type = dict_row if dict_cursor else tuple_row
     async with conn.cursor(row_factory=row_factory_type) as cur:

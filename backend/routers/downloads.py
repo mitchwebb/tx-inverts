@@ -38,11 +38,11 @@ downloads_router = APIRouter()
 #     occurrence_filter = create_occurrence_filter(
 #         filter_payload, include_invasives)
 
-#     query = sql.SQL('''
+#     query = sql.SQL("""
 #         {dwc_occurrence_select_clause}
 #         WHERE
 #             {occurrence_filter}
-#     ''').format(
+#     """).format(
 #         dwc_occurrence_select_clause=DWC_OCCURRENCE_SELECT_CLAUSE,
 #         occurrence_filter=occurrence_filter
 #     )
@@ -72,14 +72,14 @@ async def get_ranked_taxa_download(params: DownloadRequestParams, request: Reque
 
     taxa_table = TX_TAXA_TABLE
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         {dwc_taxa_select_clause}
         WHERE
             {taxa_table}.taxon_id = ANY({taxon_ids}) OR
             {taxa_table}.accepted_name_usage_id = ANY({taxon_ids})
         AND
             taxon_rank IN ('species', 'subspecies')
-    ''').format(
+    """).format(
         dwc_taxa_select_clause=DWC_TAXA_SELECT_CLAUSE,
         taxa_table=sql.Identifier(taxa_table.name),
         taxon_ids=sql.Literal(taxon_ids),
@@ -105,12 +105,13 @@ async def get_ranked_taxa_download(params: DownloadRequestParams, request: Reque
 
 async def downloadTableAndStream(pool, query: str, format: Literal['csv', 'tsv']):
     async with pool.connection() as conn:
+        # Using raw cursor here for copy
         async with conn.cursor() as cur:
             if format == 'tsv':
                 delimiter_sql = sql.SQL("E'\\t'")
             else:
                 delimiter_sql = sql.SQL("','")
-            copy_sql = sql.SQL('''
+            copy_sql = sql.SQL("""
                 COPY (
                     {query}
                 ) TO STDOUT
@@ -119,7 +120,7 @@ async def downloadTableAndStream(pool, query: str, format: Literal['csv', 'tsv']
                     DELIMITER {delimiter},
                     HEADER TRUE
                 )
-            ''').format(query=query, delimiter=delimiter_sql)
+            """).format(query=query, delimiter=delimiter_sql)
 
             async with cur.copy(copy_sql) as copy:
                 async for chunk in copy:

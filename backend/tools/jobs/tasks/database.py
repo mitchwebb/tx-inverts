@@ -18,10 +18,10 @@ async def update_index(
     create_sql = index_def['create_sql']
 
     # Check if index exists
-    exists_query = sql.SQL('''
+    exists_query = sql.SQL("""
         SELECT 1 FROM pg_indexes
         WHERE tablename = {table_name} AND indexname = {index_name}
-    ''').format(
+    """).format(
         table_name=sql.Literal(table_name),
         index_name=sql.Literal(index_name)
     )

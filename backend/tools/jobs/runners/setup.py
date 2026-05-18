@@ -54,12 +54,12 @@ async def main():
         # Fill observation_regions table!
         # TODO: Extract to separate task
         db_logger.info('Filling observations_regions table...')
-        insert_statement = sql.SQL('''
+        insert_statement = sql.SQL("""
             INSERT INTO {observation_regions_table}(observation_id, region_id, region_type)
             SELECT o.gbif_id, r.id, r.region_type
             FROM {observations_table} o
             JOIN regions r ON ST_Intersects(o.geometry, r.geometry)
-        ''').format(
+        """).format(
             observation_regions_table=sql.Identifier(
                 OBSERVATION_REGIONS_TABLE.name),
             observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)

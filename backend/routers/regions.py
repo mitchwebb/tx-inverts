@@ -17,11 +17,11 @@ class RegionParams(BaseModel):
 async def get_region_info(data: RegionParams, request: Request):
     try:
         region_id = data.region_id
-        query = sql.SQL('''
+        query = sql.SQL("""
             SELECT id, region_type, name
             FROM {regions_view}
             WHERE id = {region_id}
-        ''').format(
+        """).format(
             regions_view=sql.Identifier(REGIONS_VIEW.name),
             region_id=sql.Literal(region_id)
         )

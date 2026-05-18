@@ -8,7 +8,7 @@ from backend.data_util.requests import fetch_data
 
 @contextmanager
 def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: bool = False):
-    '''
+    """
     Downloads a large file in chunks.
     Returns temp output filepath to be used in context.
     File is deleted after context is ended.
@@ -20,7 +20,7 @@ def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: boo
 
     Returns:
         temp_path (str): Path to the temp file.
-    '''
+    """
 
     # Use temporary directory and path
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -31,7 +31,7 @@ def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: boo
 
 
 def download_large_file(url: str, output_fp: str, chunk_size: int = 1024*1024, verbose: bool = False):
-    '''
+    """
     Downloads a large file in chunks.
     Returns output filepath.
 
@@ -43,16 +43,16 @@ def download_large_file(url: str, output_fp: str, chunk_size: int = 1024*1024, v
 
     Returns:
         output_fp (str): Path to the downloaded file.
-    '''
+    """
 
     _download_file(url, output_fp, chunk_size, verbose)
     return output_fp
 
 
 def _download_file(url, output_fp, chunk_size, verbose=False):
-    '''
+    """
     Helper to handle streaming and saving of a file
-    '''
+    """
     try:
         # Keep track of downloaded mb for logging
         last_logged_mb = 0

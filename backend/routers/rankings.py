@@ -51,11 +51,11 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
             if not ns_result:
                 return JSONResponse(content={'result': None}, status_code=200)
 
-            rank_query = sql.SQL('''
+            rank_query = sql.SQL("""
                 SELECT {rank_col}
                     FROM tx_taxa
                 WHERE taxon_id = {taxon_id}
-            ''').format(
+            """).format(
                 taxon_id=sql.Literal(filters.taxon_id),
                 rank_col=sql.Identifier(rank_col)
             )
@@ -95,7 +95,7 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
 
     try:
         async with pool.connection() as conn:
-            query = sql.SQL('''
+            query = sql.SQL("""
                 WITH region AS (
                     SELECT geometry
                     FROM {tx_table}
@@ -116,7 +116,7 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
                     )
                 ) AS range_extent_geom
                 FROM hull, region;
-            ''').format(
+            """).format(
                 tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
                 occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
                 occurrence_filter=occurrence_filter

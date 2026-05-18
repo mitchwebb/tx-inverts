@@ -9,7 +9,7 @@ from backend.core.logging import db_logger, data_logger
 
 
 class DBTable:
-    '''Abstract base class for table definitions.'''
+    """Abstract base class for table definitions."""
     name: str = ''
     primary_key: str | None = None  # This assumes a single primary key!
     columns: dict[str, str] = {}
@@ -20,12 +20,12 @@ class DBTable:
                 'Subclasses must define name and columns')
 
     def preprocess_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        '''Override in subclasses to fix/transform df before validation and copy.'''
+        """Override in subclasses to fix/transform df before validation and copy."""
         return df
 
     # Get create table statement
     def create_table_query(self) -> str:
-        '''Get create table statement for table using snake_case column names'''
+        """Get create table statement for table using snake_case column names"""
         # Generate list of columns (in snake_case) and types
         columns = [
             sql.SQL('{column} {type}').format(
@@ -51,7 +51,7 @@ class DBTable:
 
     # Get list of columns in snake_case
     def column_order(self) -> list[str]:
-        '''Get list of columns in snake_case, in the defined order.'''
+        """Get list of columns in snake_case, in the defined order."""
         return [to_snake_case(col) for col in self.columns]
 
     def coerce_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -95,7 +95,7 @@ class DBTable:
         return df
 
     def validate_columns(self, df: pd.DataFrame):
-        '''Ensure DataFrame has all required columns.'''
+        """Ensure DataFrame has all required columns."""
         expected = set(self.column_order())
         actual = {to_snake_case(col) for col in df.columns}
 

@@ -9,11 +9,11 @@ from backend.core.logging import data_logger
 
 
 async def get_observation_count(conn: Connection, taxon_ids: int | List[int]):
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT COUNT(*)
         FROM gbif_observations
         WHERE taxon_key = ANY({taxon_ids})
-    ''').format(taxon_ids=sql.Literal(taxon_ids))
+    """).format(taxon_ids=sql.Literal(taxon_ids))
 
     result = await execute_psql_query(conn, query, fetch='one')
     return result[0]

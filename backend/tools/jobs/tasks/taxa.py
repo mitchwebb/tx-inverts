@@ -43,10 +43,10 @@ async def create_invasives_table():
         conn = await get_single_db_connection()
 
         # Sql for copying to table
-        copy_sql = sql.SQL('''
+        copy_sql = sql.SQL("""
             COPY {invasives_table} ({column_order})
             FROM STDIN WITH (FORMAT CSV, DELIMITER E'\t', NULL '\\N')
-        ''').format(
+        """).format(
             invasives_table=sql.Identifier(US_INVASIVES_TABLE.name),
             column_order=sql.SQL(', ').join(map(sql.Identifier, columns))
         )
@@ -68,12 +68,12 @@ async def create_invasives_table():
 
 async def update_invasives(conn):
     # Mark invasive species
-    flag_invasives_query = sql.SQL('''
+    flag_invasives_query = sql.SQL("""
             UPDATE {backbone} b
             SET us_invasive = TRUE
             FROM {invasives_table} i
             WHERE i.taxon_id = COALESCE(b.accepted_name_usage_id, b.taxon_id);
-        ''').format(
+        """).format(
         backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
         invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
     )
@@ -81,7 +81,7 @@ async def update_invasives(conn):
     await execute_psql_query(conn, flag_invasives_query)
 
     # Correct any incorrectly marked species (from previous lists)
-    unflag_invasives_query = sql.SQL('''
+    unflag_invasives_query = sql.SQL("""
             UPDATE {backbone} b
             SET us_invasive = FALSE
             WHERE us_invasive = TRUE
@@ -90,7 +90,7 @@ async def update_invasives(conn):
                 FROM {invasives_table} i
                 WHERE i.taxon_id = COALESCE(b.accepted_name_usage_id, b.taxon_id)
             );
-        ''').format(
+        """).format(
         backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
         invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
     )
@@ -123,9 +123,9 @@ async def _replace_backbone(conn, temp_table_name: str):
 
 # Perform a full update of the gbif_backbone in local database
 async def update_backbone(fp=None):
-    '''
+    """
     Updates the gbif_inverts_backbone table
-    '''
+    """
 
     conn = None
 
@@ -214,14 +214,14 @@ async def update_backbone(fp=None):
         # Using raw cursor for copy
         async with conn.cursor() as cur:
             db_logger.info('Copying to temp table...')
-            copy_sql = sql.SQL('''
+            copy_sql = sql.SQL("""
                 COPY {temp_table} FROM STDIN
                 WITH (
                     FORMAT csv,
                     DELIMITER E'\t',
                     HEADER true,
                     NULL '')
-            ''').format(temp_table=sql.Identifier(temp_table_name))
+            """).format(temp_table=sql.Identifier(temp_table_name))
 
             with open(os.path.join(DATA_OUT_PATH, 'taxa_cleaned.csv'), "r", encoding="utf8") as f:
                 async with cur.copy(copy_sql) as copy:
@@ -257,11 +257,11 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         db_logger.info('Checking for rank columns...')
         for col_name in columns_to_check:
             # Check if the column exists
-            check_col_query = sql.SQL('''
+            check_col_query = sql.SQL("""
                 SELECT 1
                 FROM information_schema.columns
                 WHERE table_name = {backbone} AND column_name = {col_name}
-            ''').format(
+            """).format(
                 backbone=sql.Literal(GBIF_INVERTS_BACKBONE.name),
                 col_name=sql.Literal(col_name)
             )

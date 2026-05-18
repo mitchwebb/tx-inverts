@@ -147,19 +147,19 @@ async def calculate_ns_values(
         compute_occurrences = taxon_rank in {"genus", "species", "subspecies"}
 
         if compute_occurrences:
-            obs_source = sql.SQL('''(
+            obs_source = sql.SQL("""(
                 SELECT 
                     geometry,
                     geom_5070,
                     ST_ClusterDBSCAN(geom_5070, eps := 1000, minpoints := 1) OVER () AS cluster_id
                 FROM filtered_obs
-            ) clustered''')
+            ) clustered""")
             occ_expression = sql.SQL("COUNT(DISTINCT cluster_id)")
         else:
             obs_source = sql.SQL("filtered_obs")
             occ_expression = sql.SQL("NULL::bigint")
 
-        query = sql.SQL('''
+        query = sql.SQL("""
             WITH matching_taxa AS MATERIALIZED (
                 SELECT accepted_taxon_key
                 FROM taxon_lineage
@@ -207,7 +207,7 @@ async def calculate_ns_values(
                 values.a4_cells AS area_of_occupancy_4km2_bins,
                 values.a1_cells AS area_of_occupancy_1km2_bins
             FROM values, hull, region
-        ''').format(
+        """).format(
             tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
             taxon_id=sql.Literal(filters.taxon_id),
             include_inat=sql.Literal(filters.include_inat),

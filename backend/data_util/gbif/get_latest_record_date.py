@@ -16,9 +16,9 @@ async def get_latest_record_date(conn: AsyncConnection, param: Literal['last_int
         datetime | None: the latest date, or None if no data (or unreasonable date)
     """
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT MAX({param}) FROM gbif_observations
-    ''').format(param=sql.Identifier(param))
+    """).format(param=sql.Identifier(param))
 
     result = await execute_psql_query(conn, query, fetch='one')
 

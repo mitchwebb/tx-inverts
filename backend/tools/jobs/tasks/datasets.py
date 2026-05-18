@@ -22,11 +22,11 @@ async def fill_dataset_table(conn: AsyncConnection):
             # INSERT dataset title into gbif_dataset_metadata
             dataset_title = dataset_info['title']
 
-            insert_query = sql.SQL('''
+            insert_query = sql.SQL("""
                 INSERT INTO {dataset_table} (dataset_key, dataset_title)
                 VALUES ({dataset_key}, {dataset_title})
                 ON CONFLICT (dataset_key) DO UPDATE SET dataset_title = EXCLUDED.dataset_title
-            ''').format(
+            """).format(
                 dataset_table=sql.Identifier(GBIF_DATASET_META.name),
                 dataset_key=sql.Literal(dataset_key),
                 dataset_title=sql.Literal(dataset_title)

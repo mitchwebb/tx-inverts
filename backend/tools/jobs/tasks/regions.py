@@ -21,7 +21,7 @@ def _to_multipolygon_wkt(geom) -> str:
 
 
 async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, truncate: bool = False):
-    '''
+    """
     Using a shapefile path, table definition, and column map, creates or updates shapefile table in database.
     Ends process by updating regions matview.
 
@@ -34,7 +34,7 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
     Returns:
         None
 
-    '''
+    """
 
     try:
         # Read in shapefile
@@ -72,11 +72,11 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
             for c in cols
         )
 
-        insert_query = sql.SQL('''
+        insert_query = sql.SQL("""
             INSERT INTO {table} ({cols})
             VALUES ({values})
             ON CONFLICT ({primary_key}) DO UPDATE SET {update_str}
-        ''').format(
+        """).format(
             table=sql.Identifier(table.name),
             cols=col_idents,
             values=values,
@@ -125,12 +125,12 @@ async def update_observation_regions(conn, new_observation_ids: List[int] = None
             )
             await execute_psql_query(conn, truncate_query)
 
-            insert_query = sql.SQL('''
+            insert_query = sql.SQL("""
                 INSERT INTO {observation_regions_table} (observation_id, region_id, region_type)
                 SELECT o.gbif_id, r.id, r.region_type
                 FROM {observations_table} o
                 JOIN regions r ON ST_Intersects(o.geometry, r.geometry)
-            ''').format(
+            """).format(
                 observation_regions_table=sql.Identifier(
                     OBSERVATION_REGIONS_TABLE.name),
                 observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
@@ -141,10 +141,10 @@ async def update_observation_regions(conn, new_observation_ids: List[int] = None
             db_logger.info(
                 f'Updating observation_regions for {len(new_observation_ids)} observations...')
             # Delete any preexisting records
-            delete_query = sql.SQL('''
+            delete_query = sql.SQL("""
                 DELETE FROM {observation_regions_table}
                 WHERE observation_id = ANY({ids})
-            ''').format(
+            """).format(
                 observation_regions_table=sql.Identifier(
                     OBSERVATION_REGIONS_TABLE.name),
                 ids=sql.Literal(new_observation_ids)
@@ -152,13 +152,13 @@ async def update_observation_regions(conn, new_observation_ids: List[int] = None
             await execute_psql_query(conn, delete_query)
 
             # Insert new records for new observations
-            insert_query = sql.SQL('''
+            insert_query = sql.SQL("""
                 INSERT INTO {observation_regions_table} (observation_id, region_id, region_type)
                 SELECT o.gbif_id, r.id, r.region_type
                 FROM {observations_table} o
                 JOIN regions r ON ST_Intersects(o.geometry, r.geometry)
                 WHERE o.gbif_id = ANY({ids})
-            ''').format(
+            """).format(
                 observation_regions_table=sql.Identifier(
                     OBSERVATION_REGIONS_TABLE.name),
                 observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),

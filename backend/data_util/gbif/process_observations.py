@@ -12,17 +12,7 @@ import re
 
 ### Constants for date processing ###
 
-# Year is required, day cannot exist without month
-# No trailing digits allowed
-ISO_YMD_PATTERN = (
-    r'(?P<year>\d{4})'
-    r'(?:-(?P<month>0?[1-9]|1[0-2])'
-    r'(?:-(?P<day>0?[1-9]|[12][0-9]|3[01]))?)?'
-    r'(?!\d)'
-)
-ISO_YMD_REGEX = re.compile(ISO_YMD_PATTERN, re.IGNORECASE)
-
-# Mapping month names/abbreviations to numbers
+# Map of month names/abbreviations to numbers
 MONTH_LOOKUP = {
     "january": 1, "jan": 1,
     "february": 2, "feb": 2,
@@ -37,49 +27,73 @@ MONTH_LOOKUP = {
     "november": 11, "nov": 11,
     "december": 12, "dec": 12
 }
-
 MONTH_NAMES = "|".join(re.escape(m) for m in MONTH_LOOKUP.keys())
 
-AMBIGUOUS_DMY_PATTERN_REGEX = re.compile(
-    rf'(?<!\d)'
-    # Optional day
-    r'(?:(?P<day>0?[1-9]|[12][0-9]|3[01])(?P<daySuffix>st|nd|rd|th)?[-/\s,]+)?'
-    # Month always required
-    rf'(?:(?P<monthNumber>0?[1-9]|1[0-2])|(?P<monthText>{MONTH_NAMES}))'
-    r'[\s\-/.,]+'
+# TODO: Test, but also add no preceding digits to this
+# Strict YYYY, YYYY-MM, YYYY-MM-DD matching
+ISO_YMD_PATTERN = (
+    # Year (required, four digits)
     r'(?P<year>\d{4})'
-    r'(?!\d)',
-    re.IGNORECASE
+    # Optional group start
+    # Month (optional)
+    r'(?:-(?P<month>0?[1-9]|1[0-2])'
+    # Day (optional, requires month)
+    r'(?:-(?P<day>0?[1-9]|[12][0-9]|3[01]))?)?'
+    # No trailing digits
+    r'(?!\d)'
 )
+ISO_YMD_REGEX = re.compile(ISO_YMD_PATTERN, re.IGNORECASE)
 
-AMBIGUOUS_MDY_PATTERN_REGEX = re.compile(
+# Ambigious DMY strings (will match on something like 01/06/2023)
+AMBIGUOUS_DMY_PATTERN_REGEX = re.compile(
+    # No preceding digits
     rf'(?<!\d)'
-    # Either number or text
+    # Day (optional), including number suffixes, followed by separator
+    r'(?:(?P<day>0?[1-9]|[12][0-9]|3[01])(?P<daySuffix>st|nd|rd|th)?[-/\s,]+)?'
+    # Month (required, including spelled months/abbreviations)
     rf'(?:(?P<monthNumber>0?[1-9]|1[0-2])|(?P<monthText>{MONTH_NAMES}))'
     # Separator
     r'[\s\-/.,]+'
-    # Optional day
-    r'(?:(?P<day>0?[1-9]|[12][0-9]|3[01])(?P<daySuffix>st|nd|rd|th)?[-/\s,]+)?'
-    # Year
+    # Year (required, four digits)
     r'(?P<year>\d{4})'
     # No trailing digits
     r'(?!\d)',
     re.IGNORECASE
 )
 
+# Ambiguous MDY strings (will match on something like 01/06/2023)
+AMBIGUOUS_MDY_PATTERN_REGEX = re.compile(
+    # No preceding digits
+    rf'(?<!\d)'
+    # Month (required), either number or text
+    rf'(?:(?P<monthNumber>0?[1-9]|1[0-2])|(?P<monthText>{MONTH_NAMES}))'
+    # Separator
+    r'[\s\-/.,]+'
+    # Day (optional), including number suffixes, followed by separator
+    r'(?:(?P<day>0?[1-9]|[12][0-9]|3[01])(?P<daySuffix>st|nd|rd|th)?[-/\s,]+)?'
+    # Year (required, four digits)
+    r'(?P<year>\d{4})'
+    # No trailing digits
+    r'(?!\d)',
+    re.IGNORECASE
+)
 
+# Some unambiguous key words found in GBIF entries (followed by strict YMD matches)
 EVENT_REMARKS_DATE_PATTERN = (
     r'(?P<keyword>dated|started|ended)[:= ]+' + ISO_YMD_PATTERN
 )
 EVENT_REMARKS_DATE_REGEX = re.compile(EVENT_REMARKS_DATE_PATTERN, re.IGNORECASE)
 
 
+# Internal helper for parsing ambiguous matches
 def _parse_ambiguous_match(match: re.Match[str]) -> dict[str, int | None] | None:
     """
-    Parse ambiguous date match with 'year', 'month', and 'day' groups
+    Parse ambiguous date match into unambiguous 'year', 'month', and 'day' groups
+    Note: This currently ignores YYYY dates. There must be a month, as we already match YYYY on YMD
 
     Args:
-        match (re.Match[str]):
+        match (re.Match[str]): A re.match() result with possible match groups 
+            'year', 'month', 'monthNumber', 'monthText, 'day', and 'daySuffix'
 
     Returns:
         Parts dict (dict[str, int | None] | None): Dict of unambiguous date parts (or None)
@@ -94,36 +108,43 @@ def _parse_ambiguous_match(match: re.Match[str]) -> dict[str, int | None] | None
     month_number = match.group('monthNumber')
     month_text = match.group('monthText')
 
+    # Dict for final matched parts for return
     parts = {
         'year': int(match.group('year')),
         'month': None,
         'day': None
     }
 
+    # Textual month match is always unambiguous
     if month_text:
-        # Textual month is always unambiguous
         parts['month'] = MONTH_LOOKUP[month_text.lower().strip()]
+        # If there is also a day, it is also unambiguous
         if day:
             parts['day'] = int(day)
+    # Month number takes extra work
     elif month_number:
-        # Numeric month is unambiguous if day is missing or day is unambiguous
+        # Consider month unambiguous if day is missing or if day is unambiguous
         if not day or day_suffix or (int(day) > 12):
             parts['month'] = int(month_number)
         # Day is unambiguous if day_suffix or day > 12
         if day and (day_suffix or int(day) > 12):
             parts['day'] = int(day)
 
+    # TODO: To make this function more clear, we should still return solo years
+    # TODO: We don't currently do this, because they have been handled by YMD matches
     # If we have an unambiguous month (and year), our date is unambiguous
     return parts if parts['month'] else None
 
 
+# Strict range parsing
 def parse_date_range_string(range_string: str):
     """
     Expecting a string in yyyy-MM-dd/yyyy-MM-dd type format,
-    parse into start_date and end_date
+    parse into start_date and end_date. This is intentionally strict as 
+    date ranges can get... sticky.
 
     Args:
-        range_string (str): String in yyyy-MM-dd/yyyy-MM-dd format
+        range_string (str): Date string to parse
 
     Returns:
         [start_date, end_date], [None, None] if invalid
@@ -132,10 +153,12 @@ def parse_date_range_string(range_string: str):
     start_date = None
     end_date = None
 
+    # Attempt to split on '/', return [None, None] if unable
     parts = range_string.split('/')
     if len(parts) != 2:
         return [start_date, end_date]
 
+    # Use YMD regex to look for matches in each part
     start_match = ISO_YMD_REGEX.search(parts[0])
     end_match = ISO_YMD_REGEX.search(parts[1])
 
@@ -144,10 +167,12 @@ def parse_date_range_string(range_string: str):
         start_date = start_match.group('year')
         end_date = end_match.group('year')
 
+        # If years matched, check for months
         if start_match.group('month') and end_match.group('month'):
             start_date += f"-{start_match.group('month').zfill(2)}"
             end_date += f"-{end_match.group('month').zfill(2)}"
 
+            # If months matched, check for days
             if start_match.group('day') and end_match.group('day'):
                 start_date += f"-{start_match.group('day').zfill(2)}"
                 end_date += f"-{end_match.group('day').zfill(2)}"
@@ -155,10 +180,10 @@ def parse_date_range_string(range_string: str):
     return [start_date, end_date]
 
 
-# Some basic date parsing for GBIF eventDates
-def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
+# Some basic date parsing for DarwinCore eventDates
+def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     """
-    Take a pandas dataframe/geodataframe and, assuming it's a gbif table,
+    Using a pandas dataframe/geodataframe (assuming it's a DWC table),
     parse out a startDate and endDate, if possible
 
     yyyy-MM-dd/yyyy-MM-dd event_dates are assumed to be a range.
@@ -180,40 +205,48 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     # Ensure columns are strings, missing as empty string
     for col in ['eventRemarks', 'eventDate', 'verbatimEventDate']:
         if col in df.columns:
-            df[col] = df[col].fillna("").astype(str)
+            df[col] = df[col].fillna('').astype(str)
 
     for col in ['year', 'month', 'day']:
-        df[col] = pd.to_numeric(df[col], errors="coerce")  # convert to numeric
+        # Convert cols to numeric
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
+    # Add new columns for start/end dates
+    # TODO: This could be done in a more DarwinCore way, using startDayOfYear and endDayOfYear, but it will require more changes
     df['collectionStartDate'] = ''
     df['collectionEndDate'] = ''
 
+    # Iterate through rows
     for row in df.itertuples(index=True):
         idx = row.Index
         start_date = ''
         end_date = ''
 
-        # First we will check for yyyy-MM-dd/yyyy-MM-dd format in eventDate
-        # This is common across several institutions, and seems trustworthy
+        # First check for yyyy-MM-dd/yyyy-MM-dd format in eventDate
+        # This is common across several institutions, and seems safe
         if row.eventDate:
             [start_date, end_date] = parse_date_range_string(row.eventDate)
             if start_date and end_date:
                 df.at[idx, 'collectionStartDate'] = start_date
                 df.at[idx, 'collectionEndDate'] = end_date
+                # If matched here, move to next row
                 continue
 
-        # If no match, we'll initially assign start date to GBIF YMD columns
+        # If no match, we'll initially assign start date from 'year', 'month', 'day' columns
         # This is the most trustworthy source for single dates
-        gbif_ymd_date = None
+        dwc_ymd_date = None
 
+        # Only fill if we have ALL parts. Otherwise, we should keep looking
         if pd.notna(row.year) and pd.notna(row.month) and pd.notna(row.day):
-            gbif_ymd_date = f'{int(row.year)}-{int(row.month):02d}-{int(row.day):02d}'
+            dwc_ymd_date = f'{int(row.year)}-{int(row.month):02d}-{int(row.day):02d}'
 
-        start_date = gbif_ymd_date if gbif_ymd_date else None
+        # Match end_date to start_date if start_date
+        start_date = dwc_ymd_date if dwc_ymd_date else None
         end_date = start_date
 
-        # eventRemarks will often store event endDates as '; ended <date>' string
+        # eventRemarks will sometimes contain event endDates as '; ended <date>' string
         if row.eventRemarks and (not start_date or not end_date):
+            # Search through eventRemarks for all matches
             for match in EVENT_REMARKS_DATE_REGEX.finditer(row.eventRemarks):
                 keyword = match.group('keyword')
                 matched_date = None
@@ -223,16 +256,19 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
                         matched_date += f"-{match.group('month').zfill(2)}"
                         if match.group('day'):
                             matched_date += f"-{match.group('day').zfill(2)}"
+                # Fill start_date matches (if not already filled)
                 if not start_date and (keyword == 'dated' or keyword == 'started'):
                     start_date = matched_date
+                # Fill end date matches (if not already filled)
                 elif not end_date and keyword == 'ended':
                     end_date = matched_date
+                # If we have both of our matches, stop looking
                 if start_date and end_date:
                     break
 
         # Next we'll check for date strings in verbatimEventDate
-        # A&M's eventDates end up here in M(M)/dd/yyyy hh:mm:ss format
-        # Although we can't trust that format for sure, we can attempt to parse unambiguous dates
+        # A&M's eventDates can end up here in M(M)/dd/yyyy hh:mm:ss format
+        # Although we can't trust that format for sure, we can attempt to parse unambiguous dates from it
         if row.verbatimEventDate and not start_date:
             mdy_match = AMBIGUOUS_MDY_PATTERN_REGEX.search(
                 row.verbatimEventDate)
@@ -245,7 +281,7 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
             elif dmy_match:
                 verbatim_parts = _parse_ambiguous_match(dmy_match)
 
-            # If we parsed a date from verbatim date (and didn't succeed in a previous step), use this
+            # If we parsed a date from verbatimEvenDate (and didn't succeed in a previous, more trusted step), use this date
             if verbatim_parts:
                 verbatim_date = str(verbatim_parts['year'])
                 if verbatim_parts['month']:
@@ -269,9 +305,9 @@ def parse_gbif_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
 
 def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Generator[DataFrame, None, None]:
     """
-    Take an unclean dwc observations file and process it in chunks
+    Take an unclean dwc observations file and process it, in chunks,
     into a format suitable for txinverts database insertion.
-    This includes date parsing via parse_gbif_dates.
+    This includes date parsing via parse_dwc_dates.
 
     Args:
         filepath (str): Path to the dwc observations file.
@@ -297,7 +333,7 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
         # Drop missing coordinates
         chunk = chunk.dropna(subset=['decimalLongitude', 'decimalLatitude'])
 
-        # Note: Bounding box filter is also applied GBIF-side in our pipeline,
+        # Note: Bounding box filter is also applied GBIF-side in the TXInverts pipeline,
         # but is kept here for the sake of processing gbif data retrieved
         # without this parameter
 
@@ -307,14 +343,16 @@ def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Gener
             (chunk['decimalLatitude'].between(min_lat, max_lat))
         ]
         bad_location_count = len(chunk) - len(df)
+
+        # Log number of records removed by bounding box
         if bad_location_count:
             data_logger.info(
                 f'Removed {bad_location_count} records found outside of Texas')
 
         # STEP 2: FILTER/PARSE DATES
-        df = parse_gbif_dates(df)
+        df = parse_dwc_dates(df)
 
-        # Filter out observations with missing dates
+        # Drop observations with dates still missing
         df = df.dropna(subset=['collectionStartDate', 'collectionEndDate'])
         bad_date_count = (len(chunk) - bad_location_count) - len(df)
         if bad_date_count:

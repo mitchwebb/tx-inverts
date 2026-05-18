@@ -1,6 +1,4 @@
 # Logic for inititating and retreiving an occurrence download from GBIF
-
-import requests
 import time
 import os
 import asyncio

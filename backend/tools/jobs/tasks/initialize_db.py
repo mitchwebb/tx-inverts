@@ -10,13 +10,13 @@ from backend.tools.jobs.tasks.views import refresh_materialized_views
 
 # Check if table already exists (for readable erroring)
 async def table_exists(conn: Connection, table_name: str) -> bool:
-    exists_query = sql.SQL('''
+    exists_query = sql.SQL("""
         SELECT EXISTS (
                 SELECT 1
                 FROM information_schema.tables
                 WHERE table_schema = 'public' AND table_name = {table_name}
         )
-    ''').format(table_name=sql.Literal(table_name))
+    """).format(table_name=sql.Literal(table_name))
     result = await execute_psql_query(conn, exists_query, fetch='one')
     return result[0] if result else False
 

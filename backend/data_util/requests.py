@@ -6,7 +6,7 @@ import aiohttp
 
 
 async def fetch_data(session: aiohttp.ClientSession, url: str) -> Any:
-    '''
+    """
     General helper for async JSON fetches given session and url
 
     Args:
@@ -15,7 +15,7 @@ async def fetch_data(session: aiohttp.ClientSession, url: str) -> Any:
 
     Return:
         JSON response (Any)
-    '''
+    """
     try:
         async with session.get(url) as response:
             # If response indicates error, raise

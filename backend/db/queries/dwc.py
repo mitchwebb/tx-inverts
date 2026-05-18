@@ -2,7 +2,7 @@ from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from psycopg import sql
 
-DWC_OCCURRENCE_SELECT_CLAUSE = sql.SQL('''
+DWC_OCCURRENCE_SELECT_CLAUSE = sql.SQL("""
     SELECT
         gbif_id AS "gbifID",
         access_rights AS "accessRights",
@@ -56,9 +56,9 @@ DWC_OCCURRENCE_SELECT_CLAUSE = sql.SQL('''
         collection_start_date as "collectionStartDate",
         collection_end_date as "collectionEndDate"
     FROM {gbif_table}
-''').format(gbif_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name))
+""").format(gbif_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name))
 
-DWC_TAXA_SELECT_CLAUSE = sql.SQL('''
+DWC_TAXA_SELECT_CLAUSE = sql.SQL("""
     SELECT
         taxon_id AS "taxonID",
         dataset_id AS "datasetID",
@@ -85,4 +85,4 @@ DWC_TAXA_SELECT_CLAUSE = sql.SQL('''
         ns_rank_state_no_inat AS "rankStateNoINat",
         us_invasive AS "uSInvasive"
     FROM {backbone}            
-''').format(backbone=sql.Identifier(TX_TAXA_TABLE.name))
+""").format(backbone=sql.Identifier(TX_TAXA_TABLE.name))

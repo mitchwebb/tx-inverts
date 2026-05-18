@@ -39,52 +39,52 @@ INDEX_DEFINITIONS = {
     },
     'idx_gbif_observations_geom_3857': {
         'table': 'gbif_observations',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_gbif_observations_geom_3857 
             ON gbif_observations USING GIST(ST_Transform(geometry, 3857))
-        '''
+        """
     },
     'idx_gbif_observations_institution_code': {
         'table': 'gbif_observations',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_gbif_observations_institution_code
             ON gbif_observations(institution_code)
-        '''
+        """
     },
     'idx_gbif_observations_dataset_key': {
         'table': 'gbif_observations',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_gbif_observations_dataset_key
             ON gbif_observations(dataset_key)
-        '''
+        """
     },
     'idx_inverts_backbone_taxon_id': {
         'table': 'gbif_inverts_backbone',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_inverts_backbone_taxon_id 
             ON gbif_inverts_backbone(taxon_id)
-       '''
+       """
     },
     'idx_inverts_backbone_taxon_rank': {
         'table': 'gbif_inverts_backbone',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_inverts_backbone_taxon_rank
             ON gbif_inverts_backbone(taxon_rank)
-    '''
+    """
     },
     'idx_inverts_backbone_normalized_name': {
         'table': 'gbif_inverts_backbone',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_inverts_backbone_normalized_name
             ON gbif_inverts_backbone (LOWER(canonical_name) text_pattern_ops);
-        '''
+        """
     },
     'idx_inverts_backbone_accepted_name_usage_id': {
         'table': 'gbif_inverts_backbone',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_inverts_backbone_accepted_name_usage_id
             ON gbif_inverts_backbone (accepted_name_usage_id);
-          '''
+          """
     },
     'idx_tx_taxa_normalized_name': {
         'table': 'tx_taxa',
@@ -100,91 +100,91 @@ INDEX_DEFINITIONS = {
     },
     'idx_tx_taxa_parent_rank_status_name': {
         'table': 'tx_taxa',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_tx_taxa_parent_rank_status_name
             ON tx_taxa (parent_name_usage_id, taxon_rank, taxonomic_status, canonical_name);
-        '''
+        """
     },
     'idx_tx_taxa_us_invasive': {
         'table': 'tx_taxa',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_tx_taxa_us_invasive
             ON tx_taxa (us_invasive)
-        '''
+        """
     },
     'idx_inverts_backbone_us_invasive': {
         'table': 'gbif_inverts_backbone',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_inverts_backbone_us_invasive
             ON gbif_inverts_backbone (us_invasive);
-        '''
+        """
     },
     'idx_invasives_taxon_id': {
         'table': 'us_invasives_checklist',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_invasives_taxon_id
             ON us_invasives_checklist (taxon_id);
-        '''
+        """
     },
     'idx_tx_parks_name': {
         'table': 'tx_parks',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_tx_parks_name
             ON tx_parks (prop_name);
-        '''
+        """
     },
     'idx_tx_counties_name': {
         'table': 'tx_counties',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_tx_counties_name
             ON tx_counties (county);
-        '''
+        """
     },
     'idx_regions_obs_id': {
         'table': 'observation_regions',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_regions_obs_id
             ON observation_regions (observation_id);
-        '''
+        """
     },
     'idx_obs_regions_id': {
         'table': 'observation_regions',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_obs_regions_id
             ON observation_regions (region_id);
-        '''
+        """
     },
     'idx_regions_geometry': {
         'table': 'regions',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_regions_geometry
             ON regions USING GIST (geometry);
-        '''
+        """
     },
     'idx_taxon_presence_region_id': {
         'table': 'taxon_region_presence',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX idx_taxon_presence_region_id
             ON taxon_region_presence (region_id)
-        '''
+        """
     },
     'idx_taxon_lineage_ancestor_id': {
         'table': 'taxon_lineage',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX ON taxon_lineage (accepted_taxon_key);
-        '''
+        """
     },
     'idx_taxon_lineage_taxon_key': {
         'table': 'taxon_lineage',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX ON taxon_lineage (ancestor_id)
-        '''
+        """
     },
     'idx_taxon_lineage_ancestor_and_key': {
         'table': 'taxon_lineage',
-        'create_sql': '''
+        'create_sql': """
             CREATE INDEX ON taxon_lineage (ancestor_id, accepted_taxon_key);
-        '''
+        """
     }
 }
 
@@ -192,16 +192,16 @@ INDEX_DEFINITIONS = {
 for rank in RANK_COLS:
     INDEX_DEFINITIONS[f'idx_gbif_observations_{rank}'] = {
         'table': 'gbif_observations',
-        'create_sql': f'''
+        'create_sql': f"""
             CREATE INDEX idx_gbif_observations_{rank}
             ON gbif_observations ({rank})
-        '''
+        """
     }
 
 # View definitions (the order of these matters)
 MATERIALIZED_VIEWS = {
     'tx_taxa': {
-        'create_sql': sql.SQL('''
+        'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW tx_taxa AS
             WITH RECURSIVE ancestors AS (
                 SELECT backbone.*
@@ -222,41 +222,41 @@ MATERIALIZED_VIEWS = {
             )
             SELECT DISTINCT *
                 FROM ancestors
-        ''')
+        """)
     },
     'regions': {
-        'create_sql': sql.SQL('''
+        'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW regions AS
             SELECT id, 'county' AS region_type, county AS name, geometry FROM tx_counties
             UNION ALL
             SELECT id, 'park' AS region_type, prop_name AS name, geometry FROM tx_parks
-        ''')
+        """)
     },
     'taxon_region_presence': {
-        'create_sql': sql.SQL('''
+        'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW taxon_region_presence AS
             SELECT DISTINCT accepted_taxon_key, region_id
             FROM {observations_table} o
             JOIN {observation_regions_table} r 
                 ON r.observation_id = o.gbif_id
-        ''').format(
+        """).format(
             observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
             observation_regions_table=sql.Identifier(
                 OBSERVATION_REGIONS_TABLE.name)
         )
     },
     'taxon_lineage': {
-        'create_sql': sql.SQL('''
+        'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW taxon_lineage AS
             SELECT DISTINCT accepted_taxon_key,
             unnest(ARRAY[accepted_taxon_key, kingdom_id, phylum_id, class_id, order_id, family_id, genus_id, species_id, subspecies_id]) AS ancestor_id
             FROM gbif_observations
             WHERE accepted_taxon_key IS NOT NULL;
-        ''')
+        """)
     },
 
     # 'taxon_descendant_cache': {
-    # 	'create_sql': sql.SQL('''
+    # 	'create_sql': sql.SQL("""
     # 		CREATE MATERIALIZED VIEW taxon_descendant_cache AS
     # 		WITH RECURSIVE descendant_pairs AS (
     # 			SELECT
@@ -273,13 +273,13 @@ MATERIALIZED_VIEWS = {
     # 			JOIN descendant_pairs dt ON b.parent_name_usage_id = dt.descendant_key
     # 		)
     # 		SELECT * FROM descendant_pairs;
-    # 	''')
+    # 	""")
     # },
     # The most imposing thing here are the cell location calculations
     # These convert lat/lon manually into Web Mercator coords in meters
     # where (2 * half_world) / 2 ^ zoom = tile_width in meters
     # 'taxon_tile_cache': {
-    # 	'create_sql': sql.SQL('''
+    # 	'create_sql': sql.SQL("""
     # 		CREATE MATERIALIZED VIEW taxon_tile_cache AS
     # 		WITH zoom_levels AS (
     # 			SELECT unnest({zoom_levels}) AS zoom
@@ -319,15 +319,15 @@ MATERIALIZED_VIEWS = {
     # 			GROUP BY t.taxon_id, z.zoom, x_bin, y_bin, t.publisher, b.bin_size
     # 		)
     # 		SELECT * FROM grid;
-    # 	''').format(
+    # 	""").format(
     # 		pixels_per_grid = sql.Literal(map.PIXELS_PER_GRID),
     # 		zoom_levels = sql.Literal(map.BIN_ZOOM_LEVELS),
     # 		half_world = sql.Literal(map.HALF_WORLD)
     #    	)
     # },
     # 'ns_values_cache': {
-    # 	'create_sql': sql.SQL('''
+    # 	'create_sql': sql.SQL("""
 
-    #     ''')
+    #     """)
     # }
 }

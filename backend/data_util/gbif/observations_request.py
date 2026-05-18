@@ -1,3 +1,4 @@
+# GBIF downloads request body for all inverts from approved sources
 from backend.config import get_settings
 from backend.config.base import BaseAppSettings
 from backend.models.gbif import GBIFFormat
