@@ -24,7 +24,7 @@ from backend.models.sql import SingleTaxonOccurrenceFilter
 # TODO: This might as well be included in taxonomic updates, given that if
 # the backbone is updated, the taxonIDs for these species will be as well
 # TODO: Should I run a truncate? Or allow it, at least?
-async def create_invasives_table():
+async def create_invasives_table(truncate: bool = False):
     conn = None
     try:
         fp = await get_invasives_dataset()
@@ -41,6 +41,12 @@ async def create_invasives_table():
         buffer.seek(0)
 
         conn = await get_single_db_connection()
+
+        if truncate:
+            truncate_sql = sql.SQL("""
+                TRUNCATE {invasives_table}
+            """).format(invasives_table=sql.Identifier(US_INVASIVES_TABLE.name))
+            await execute_psql_query(conn, truncate_sql)
 
         # Sql for copying to table
         copy_sql = sql.SQL("""
@@ -77,7 +83,7 @@ async def update_invasives(conn):
         backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
         invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
     )
-
+    db_logger.info('Flagging invasive species...')
     await execute_psql_query(conn, flag_invasives_query)
 
     # Correct any incorrectly marked species (from previous lists)
@@ -94,8 +100,12 @@ async def update_invasives(conn):
         backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
         invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
     )
-
+    db_logger.info(
+        'Unflagging species that are no longer in invasives table...')
     await execute_psql_query(conn, unflag_invasives_query)
+
+    # Update tx_taxa materialized view
+    await refresh_materialized_view(conn, 'tx_taxa')
 
     await conn.commit()
 

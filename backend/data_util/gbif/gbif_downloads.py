@@ -103,6 +103,7 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                     if response.status == 200:
                         chunk_size = 1024 * 1024
                         downloaded = 0
+                        next_log_threshold = 50 * 1024 * 1024  # Log every 50 MB
                         zip_fp = os.path.join(output_fp, f'{key}.zip')
                         # TODO: I don't believe GBIF returns this. Also it's being chunked now.
                         # Get content length if available
@@ -118,14 +119,18 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                                 f.write(chunk)
                                 downloaded += len(chunk)
                                 # Log download progress in 50MB chunks
-                                if downloaded % (50 * 1024 * 1024) < chunk_size:
-                                    data_logger.info(
-                                        f"Downloaded {downloaded / (1024*1024):.0f} / {total_size / (1024*1024):.0f} MB")
-                        data_logger.info(f'Download complete: {zip_fp}')
+                                if downloaded >= next_log_threshold:
+                                    if total_size:
+                                        data_logger.info(
+                                            f"Downloaded {downloaded / (1024*1024):.0f} / {total_size / (1024*1024):.0f} MB")
+                                    else:
+                                        data_logger.info(
+                                            f"Downloaded {downloaded / (1024*1024):.0f} MB so far")
+                                    next_log_threshold += 50 * 1024 * 1024
+                        data_logger.info(
+                            f"Download complete ({downloaded / (1024*1024):.2f} MB): {zip_fp}")
                         output_fp = extract_zip_files(zip_fp, os.path.join(
                             output_fp, key), target_files, delete_zip=True)
-                        data_logger.info(
-                            f"Finished downloading {downloaded / (1024*1024):.2f} MB")
                         return output_fp
                     # This is what GBIF returns when the download is still being processed
                     elif response.status == 404:

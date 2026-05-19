@@ -1,3 +1,4 @@
+from typing import List
 import zipfile
 import time
 import os
@@ -5,10 +6,24 @@ import os
 from backend.core.logging import data_logger
 
 
-def extract_zip_files(fp, output_fp, target_files=None, delete_zip=False) -> str | None:
+def extract_zip_files(fp: str, output_fp: str, target_files: List[str] = None, delete_zip: bool = False) -> str:
+    """
+    Helper to extract zip files, extracting only specific files if provided by name
+    Optionally deleted original .zip
+
+    Args:
+        fp (str): Filepath to .zip
+        output_fp (str): Desired output path
+        target_files (List[str]): Optional list of desired file names
+        delete_zip (bool): Optional boolean for deleted original .zip
+
+    Return:
+        output_fp if files extracted
+    """
+
     if not os.path.exists(fp):
         data_logger.error(f'{fp} does not exist')
-        return None
+        raise FileNotFoundError(f"{fp} does not exist.")
 
     try:
         # Open .zip
@@ -50,11 +65,15 @@ def extract_zip_files(fp, output_fp, target_files=None, delete_zip=False) -> str
 
         return output_fp
 
+    except FileNotFoundError as e:
+        data_logger.exception(str(e))
+        raise
+
     except zipfile.BadZipFile:
         data_logger.exception(
             f"Failed to open zip file {fp}. It may be corrupted.")
-        return None
+        raise
 
     except Exception as e:
         data_logger.exception(f"Unexpected error during extraction: {e}")
-        return None
+        raise

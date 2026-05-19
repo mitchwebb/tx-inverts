@@ -1,17 +1,18 @@
+from typing import Generator
+
 import requests
 import os
 import tempfile
 from contextlib import contextmanager
 from backend.core.logging import data_logger
-from backend.data_util.requests import fetch_data
 
 
 @contextmanager
-def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: bool = False):
+def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: bool = False) -> Generator[str]:
     """
-    Downloads a large file in chunks.
-    Returns temp output filepath to be used in context.
-    File is deleted after context is ended.
+    Downloads a large file in chunks
+    Returns temp output filepath to be used in context
+    File is deleted after context is ended
 
     Args:
         url (str): File URL
@@ -19,7 +20,7 @@ def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: boo
         verbose (bool): Default False
 
     Returns:
-        temp_path (str): Path to the temp file.
+        temp_path (Generator[str]): Path to the temp file.
     """
 
     # Use temporary directory and path
@@ -27,10 +28,9 @@ def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: boo
         tmp_path = os.path.join(tmp_dir, 'downloaded_file')
         _download_file(url, tmp_path, chunk_size, verbose)
         yield tmp_path
-        # Automatic cleanup after context exits
 
 
-def download_large_file(url: str, output_fp: str, chunk_size: int = 1024*1024, verbose: bool = False):
+def download_large_file(url: str, output_fp: str, chunk_size: int = 1024*1024, verbose: bool = False) -> str:
     """
     Downloads a large file in chunks.
     Returns output filepath.

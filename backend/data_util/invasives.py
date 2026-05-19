@@ -30,7 +30,7 @@ async def get_invasives_dataset():
         }
     }
 
-    key = gbif_download_request(
+    key = await gbif_download_request(
         request_body=json.dumps(request_body),
         pwd=settings.gbif.password,
         username=settings.gbif.user
@@ -62,7 +62,12 @@ async def prep_invasives_dataset(fp):
                 (df['phylum'] != 'Chordata') |
                 (df['class'].isin(
                     ['Ascidiacea', 'Leptocardii', 'Appendicularia', 'Thaliacea']))
-            )
+            ) &
+            # Reasonably, we're not tagging anything higher than species
+            # This filter eliminates GBIF oddities, like how the red-black hybrid
+            # # Solenopsis is resolving to 'Formicidae', causing Formicidae to be
+            # marked as invasive
+            (df['taxonRank'].isin(['GENUS', 'SPECIES', 'SUBSPECIES']))
         )
 
         filtered_df = df.loc[mask]

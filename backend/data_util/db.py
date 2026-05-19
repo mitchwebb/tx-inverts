@@ -3,7 +3,9 @@ from backend.config import get_settings
 
 
 async def get_single_db_connection():
-    """Get database conn using current environment settings"""
+    """
+    Get database conn using current environment settings
+    """
     settings = get_settings()
     db_settings = settings.database
 
