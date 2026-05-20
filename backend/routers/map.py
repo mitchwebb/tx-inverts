@@ -6,19 +6,21 @@ from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
 import re
 
+from backend.models.regions import County, Park
+
 
 map_router = APIRouter()
 
 
 @map_router.post("/search_counties")
-async def search_counties(data: TextData, request: Request):
+async def search_counties(data: TextData, request: Request) -> dict[str, list[County]]:
     search_term = data.text
-    query = sql.SQL("""
+    query = sql.SQL('''
         SELECT county, id
         FROM {counties_table}
         WHERE county ~* {search_term}
         LIMIT 10
-    """).format(
+    ''').format(
         counties_table=sql.Identifier(TEXAS_COUNTIES_TABLE.name),
         search_term=sql.Literal('\\m' + search_term.lower())
     )
@@ -33,14 +35,14 @@ async def search_counties(data: TextData, request: Request):
 
 
 @map_router.post("/search_parks")
-async def search_parks(data: TextData, request: Request):
+async def search_parks(data: TextData, request: Request) -> dict[str, list[Park]]:
     search_term = data.text
-    query = sql.SQL("""
+    query = sql.SQL('''
         SELECT prop_name, alt_prop_name, prop_class, owner, id
         FROM {parks_table}
         WHERE prop_name ~* {search_term}
         LIMIT 10
-    """).format(
+    ''').format(
         parks_table=sql.Identifier(TEXAS_PARKS_TABLE.name),
         search_term=sql.Literal('\\m' + search_term.lower())
     )

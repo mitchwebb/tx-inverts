@@ -18,7 +18,7 @@ def create_occurrence_filter(filter: OccurrenceFilter, skip_taxa: bool = False) 
         skip_taxa (bool): Skips taxa filter if True, defaults to False
 
     Returns:
-        occurrences_clause (sql.SQL): sql.SQL() formatted occurrence clause
+        occurrences_clause (sql.Composed): sql.SQL() formatted occurrence clause
     """
 
     # Create taxon_filter (unless skip_taxa == True, then set to 'TRUE' as a no-op condition)
@@ -106,7 +106,7 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives
         include_invasives (bool): If True, invasive taxa are included in results. Defaults to False.
 
     Returns:
-        full_taxon_clause (sql.SQL): A sql.SQL clause for use in a WHERE body
+        full_taxon_clause (sql.Composed): A sql.SQL clause for use in a WHERE body
     """
 
     # Normalize taxon_ids value to a list (in case an int was provided)
