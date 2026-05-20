@@ -1,5 +1,4 @@
-from contextlib import asynccontextmanager
-from psycopg.rows import dict_row, tuple_row
+from psycopg.rows import dict_row, tuple_row, DictRow, TupleRow
 from psycopg import AsyncConnection, sql
 from typing import Literal
 
@@ -11,7 +10,7 @@ async def execute_psql_query(
     fetch: Literal['one', 'all'] | None = None,
     batch: bool = False,
     dict_cursor: bool = False
-):
+) -> DictRow | TupleRow | None:
     """
     Execute a SQL query from API using the shared DB connection. Does not commit.
 

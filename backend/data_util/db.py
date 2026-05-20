@@ -2,7 +2,7 @@ import psycopg
 from backend.config import get_settings
 
 
-async def get_single_db_connection():
+async def get_single_db_connection() -> psycopg.AsyncConnection:
     """
     Get database conn using current environment settings
     """

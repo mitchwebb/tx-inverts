@@ -32,7 +32,6 @@ async def create_invasives_table(truncate: bool = False):
         df = await prep_invasives_dataset(fp)
 
         df = US_INVASIVES_TABLE.coerce_dataframe(df)
-        US_INVASIVES_TABLE.validate_columns(df)
 
         columns = US_INVASIVES_TABLE.column_order()
 
@@ -132,7 +131,7 @@ async def _replace_backbone(conn, temp_table_name: str):
 
 
 # Perform a full update of the gbif_backbone in local database
-async def update_backbone(fp=None):
+async def update_backbone(fp: str = None, save_cleaned: bool = False):
     """
     Updates the gbif_inverts_backbone table
     """
@@ -201,11 +200,14 @@ async def update_backbone(fp=None):
             'Building taxonomic lineages to fill rank id columns...')
         df = build_lineages_numpy(df)
 
+        # Final column validation for lineage columns
         data_logger.info('Verifying format...')
         GBIF_INVERTS_BACKBONE.validate_columns(df)
 
-        df.to_csv(os.path.join(
-            DATA_OUT_PATH, 'taxa_cleaned.csv'), sep="\t", index=False)
+        # Save taxa_cleaned
+        if save_cleaned:
+            df.to_csv(os.path.join(
+                DATA_OUT_PATH, 'taxa_cleaned.csv'), sep="\t", index=False)
 
         temp_table_name = "temp_" + GBIF_INVERTS_BACKBONE.name
 
@@ -359,8 +361,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
                     ns.calculate_rank(
                         values['number_of_occurrences'],
                         values['range_extent_km2'],
-                        values['area_of_occupancy_4km2_bins']
-                    ) if values else 'U'
+                    ) if values else 'u'
                 )
                 ranks.append(rank)
 

@@ -18,7 +18,7 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] = None, d
         delete_zip (bool): Optional boolean for deleted original .zip
 
     Return:
-        output_fp if files extracted
+        (str) output_fp if files extracted
     """
 
     if not os.path.exists(fp):

@@ -2,6 +2,10 @@ from .base import DBTable
 
 
 class USInvasivesChecklist(DBTable):
+    """
+    US invasive taxa table derived from Global Register of Introduced and Invasive Species (2022)
+    """
+
     name = 'us_invasives_checklist'
     primary_key = 'taxon_key'
     columns = {

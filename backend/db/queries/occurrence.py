@@ -8,7 +8,7 @@ from backend.models.sql import OccurrenceFilter
 from psycopg import sql
 
 
-def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Optional[bool] = False, skip_taxa: bool = False):
+def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Optional[bool] = False, skip_taxa: bool = False) -> sql.SQL:
     """
     Takes OccurrenceFilter parameters and generates sql formatted
     clause for retrieving occurrence data
@@ -17,16 +17,17 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
         filter (OccurrenceFilter): Collection of parameters for filtering occurrence data
 
     Returns:
-        occurrences_clause (str): sql.SQL() formatted clause
+        occurrences_clause (sql.SQL): sql.SQL() formatted occurrence clause
     """
 
+    # Create taxon_filter (unless skip_taxa == True, then set to 'TRUE' as a no-op condition)
     taxon_filter = sql.SQL('TRUE') if skip_taxa else create_occurrence_taxon_filter(
         filter.taxon_ids, include_invasives)
-    observations_table = GBIF_OBSERVATIONS_TABLE
 
-    # If no individual datasets are selected
+    # If no individual datasets are selected, datasets_clause is empty
     if not filter.datasets:
-        datasets_clause = sql.SQL('')  # empty condition
+        datasets_clause = sql.SQL('')
+    # Else, require dataset_key in datasets filter
     else:
         dataset_literals = sql.SQL(', ').join(
             sql.Literal(p) for p in filter.datasets)
@@ -34,23 +35,27 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
             datasets=dataset_literals
         )
 
+    # If date_start provided, add clause, else skip
     if not filter.date_start:
         date_start_clause = sql.SQL('')
     else:
         date_start_clause = sql.SQL('AND collection_start_date >= {date_start}').format(
             date_start=sql.Literal(filter.date_start))
 
+    # Same with date_end
     if not filter.date_end:
         date_end_clause = sql.SQL('')
     else:
         date_end_clause = sql.SQL('AND collection_end_date <= {date_end}').format(
             date_end=sql.Literal(filter.date_end))
 
+    # If regions provided, add clause, else skip
     if not filter.regions:
         region_clause = sql.SQL('')
     else:
         region_literals = sql.SQL(', ').join(
             sql.Literal(r) for r in filter.regions)
+        # Observations_regions_table contains each occurrence record matched to region_ids
         region_clause = sql.SQL("""
             AND EXISTS (
                 SELECT 1 FROM {regions_table} r
@@ -63,8 +68,7 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
             regions=region_literals
         )
 
-    # Checking each column is slightly safer than just referring to the accepted_taxon_key, as
-    # GBIF doesn't ALWAYS resolve synonyms cleanly
+    # Piece it together
     occurrence_filter = sql.SQL("""
         {taxon_filter}
         AND ({include_inat} OR {observations_table}.institution_code != 'iNaturalist')
@@ -80,7 +84,7 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
         date_end_clause=date_end_clause,
         region_clause=region_clause,
         taxon_filter=taxon_filter,
-        observations_table=sql.Identifier(observations_table.name)
+        observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
     )
 
     return occurrence_filter
@@ -88,7 +92,7 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
 
 # This is mostly just used in the occurrence clause, but is used in specific cases to
 # create specialized requests
-def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives: Optional[bool] = False):
+def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives: Optional[bool] = False) -> sql.SQL:
     """
     Takes taxon_ids and generates sql formatted clause to find occurrences with
     matching ids in occurrences table. This matches to taxa in any rank as long
@@ -97,22 +101,22 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives
     is, itself, an invasive taxon, or include_invasives is true.
 
     Args:
-        taxon_ids (int): Taxon ID of desired taxon
-        include_invasives (optional, boolean): Whether to include invasives subspecies
+        taxon_ids (int | List[int]): Taxon ID of desired taxon
+        include_invasives (bool): If True, invasive taxa are included in results. Defaults to False.
 
     Returns:
-        taxon_clause (str): sql.SQL() formatted clause
+        full_taxon_clause (sql.SQL): A sql.SQL clause for use in a WHERE body
     """
 
+    # Normalize taxon_ids value to a list (in case an int was provided)
     taxon_ids = normalize_to_list(taxon_ids)
-
-    taxa_table = TX_TAXA_TABLE
-    observations_table = GBIF_OBSERVATIONS_TABLE
 
     # If no taxon_ids provided (animalia), skip
     if taxon_ids == [1]:
+        # If include_invasives, skip with 'TRUE' no-op
         if include_invasives:
             return sql.SQL('TRUE')
+        # Else, include just simplified invasives clause
         else:
             return sql.SQL("""
                 NOT EXISTS (
@@ -140,6 +144,7 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives
         taxon_ids=sql.Literal(taxon_ids)
     )
 
+    # If we're including invasives, just return lineage_clause
     if include_invasives:
         return lineage_clause
 
@@ -152,14 +157,14 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives
         )
         OR {observations_table}.accepted_taxon_key = ANY({taxon_ids})
     )""").format(
-        taxa_table=sql.Identifier(taxa_table.name),
+        taxa_table=sql.Identifier(TX_TAXA_TABLE.name),
         taxon_ids=sql.Literal(taxon_ids),
-        observations_table=sql.Identifier(observations_table.name)
+        observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
     )
 
-    taxon_clause = sql.SQL("{lineage_clause} AND {invasive_clause}").format(
+    full_taxon_clause = sql.SQL("{lineage_clause} AND {invasive_clause}").format(
         lineage_clause=lineage_clause,
         invasive_clause=invasive_clause
     )
 
-    return taxon_clause
+    return full_taxon_clause

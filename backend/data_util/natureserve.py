@@ -1,4 +1,3 @@
-from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.models.api_types import NSRank
@@ -10,32 +9,32 @@ from backend.models.sql import SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 
 
-def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy) -> NSRank:
+def calculate_rank(number_of_occurrences: int, range_extent: int, area_of_occupancy: int | None = None) -> NSRank:
     """
         Given the minimum key three values, calculate NatureServe-type rank of a species
 
         args:
             number_of_occurrences (int): Count of occurrences of a species
             range_extent (int): Range extent of a given species in km2
-            area_of_occupancy (int): Area of occupancy of a given species
+            area_of_occupancy (int | None): Taxon's AOO in 4km2 bins (optional)
         returns:
-            ns_rank (NSRank): NatureServe-type rank of species
+            ns_rank (NSRank): The taxon's conservation rank ('1'-'5' or 'u')
     """
-    points = 0
 
     # If all values are 0, species is data deficient
     # NatureServe doesn't actually have this ranking. This would be presumed extinct
-    if (number_of_occurrences == 0 and range_extent == 0 and area_of_occupancy == 0):
+    if number_of_occurrences == 0 and range_extent == 0 and area_of_occupancy == 0:
         return "u"
 
     # According to IUCN, range_extent should be AT LEAST equal to area_of_occupancy
-    if (range_extent < area_of_occupancy):
+    if area_of_occupancy is not None and range_extent < area_of_occupancy:
         range_extent = area_of_occupancy
 
-    # If one of these values exists, all of them must at this point
-    if (number_of_occurrences == 0 or range_extent == 0 or area_of_occupancy == 0):
-        return "u"
+    points = 0.0
+    total_weight = 0
 
+    # Occurrence count (weight: 1)
+    total_weight += 1
     if number_of_occurrences == 0:  # NatureServe Z Value
         points += 0.00
     elif 0 < number_of_occurrences <= 5:  # NatureServe A Value
@@ -49,28 +48,8 @@ def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy) -> NS
     elif 300 < number_of_occurrences:  # NatureServe E Value
         points += 5.50
 
-    # These point values are doubled, as NatureServe gives them a weight of 2
-    if area_of_occupancy == 0:  # NatureServe Z Value
-        points += 0.00 * 2
-    elif 0 < area_of_occupancy <= 1:  # NatureServe A Value
-        points += 0.00 * 2
-    elif 1 < area_of_occupancy <= 2:  # NatureServe B Value
-        points += 0.69 * 2
-    elif 2 < area_of_occupancy <= 5:  # NatureServe C Value
-        points += 1.38 * 2
-    elif 5 < area_of_occupancy <= 25:  # NatureServe D Value
-        points += 2.06 * 2
-    elif 25 < area_of_occupancy <= 125:  # NatureServe E Value
-        points += 2.75 * 2
-    elif 125 < area_of_occupancy <= 500:  # NatureServe F Value
-        points += 3.44 * 2
-    elif 500 < area_of_occupancy <= 2500:  # NatureServe G Value
-        points += 4.13 * 2
-    elif 2500 < area_of_occupancy <= 12500:  # NatureServe H Value
-        points += 4.81 * 2
-    elif 12500 < area_of_occupancy:  # NatureServe I Value
-        points += 5.50 * 2
-
+    # Range extent (weight: 1)
+    total_weight += 1
     if range_extent == 0:  # NatureServe Z Value
         points += 0.00
     elif 0 < range_extent <= 100:  # NatureServe A Value
@@ -90,26 +69,61 @@ def calculate_rank(number_of_occurrences, range_extent, area_of_occupancy) -> NS
     elif 2500000 < range_extent:  # NatureServe H Value
         points += 5.50
 
-    three_average_score = points / 4
+    # Including area_of_occupancy isn't suggested at a scale like this
+    # It emphasizes gaps in occurrence data and tends to deflate ranks
+    # Area of occupancy (weight: 2)
+    if area_of_occupancy is not None:
+        total_weight += 2
+        # These point values are doubled, as NatureServe gives them a weight of 2
+        if area_of_occupancy == 0:  # NatureServe Z Value
+            points += 0.00 * 2
+        elif 0 < area_of_occupancy <= 1:  # NatureServe A Value
+            points += 0.00 * 2
+        elif 1 < area_of_occupancy <= 2:  # NatureServe B Value
+            points += 0.69 * 2
+        elif 2 < area_of_occupancy <= 5:  # NatureServe C Value
+            points += 1.38 * 2
+        elif 5 < area_of_occupancy <= 25:  # NatureServe D Value
+            points += 2.06 * 2
+        elif 25 < area_of_occupancy <= 125:  # NatureServe E Value
+            points += 2.75 * 2
+        elif 125 < area_of_occupancy <= 500:  # NatureServe F Value
+            points += 3.44 * 2
+        elif 500 < area_of_occupancy <= 2500:  # NatureServe G Value
+            points += 4.13 * 2
+        elif 2500 < area_of_occupancy <= 12500:  # NatureServe H Value
+            points += 4.81 * 2
+        elif 12500 < area_of_occupancy:  # NatureServe I Value
+            points += 5.50 * 2
 
-    # This is terminology taken from NatureServe ranking calculator
-    # In this case, 'range' refers to the difference between low/high
-    # ranking estimates.
-    # With our parameters, there is no estimate range, hence 'zero_range'
-    zero_range_rank = 0
+    return _get_zero_range_rank(points / total_weight)
+
+
+# This is terminology borrowed from NatureServe ranking calculator
+# In this case, 'range' refers to the difference between low/high
+# ranking estimates.
+# With our parameters, there is no estimate range, hence 'zero_range'
+def _get_zero_range_rank(three_average_score: float) -> str:
+    """
+    Helper for calculating rank from taxon score using 3AVG method
+    This method uses weighting for each metric
+
+    Args:
+        three_average_score (float): Weighted average of conservation metrics
+
+    Returns: String 1 through 5 representing conservation rank value
+    """
 
     if three_average_score <= 1.5:
-        zero_range_rank = 1
+        return '1'
     elif three_average_score <= 2.5:
-        zero_range_rank = 2
+        return '2'
     elif three_average_score <= 3.5:
-        zero_range_rank = 3
+        return '3'
     elif three_average_score <= 4.5:
-        zero_range_rank = 4
-    elif three_average_score > 4.5:
-        zero_range_rank = 5
-
-    return (zero_range_rank)
+        return '4'
+    else:
+        return '5'
 
 
 # TODO: Minimum convex polygon vs a-hull (https://help.natureserve.org/biotics/Content/Record_Management/Element_Files/Element_Ranking/ERANK_Definitions_of_Extent_of_Occurrence_and_Area_of_Occupancy.htm)

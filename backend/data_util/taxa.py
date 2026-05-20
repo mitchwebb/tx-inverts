@@ -1,5 +1,6 @@
 import numpy as np
 from backend.data_util.execute_psql_query import execute_psql_query
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.routers.taxa import RANK_ORDER, TaxonomicRank, RANK_COLS
 from collections import deque, defaultdict
 import pandas as pd
@@ -8,101 +9,96 @@ from psycopg import Connection, sql
 from backend.core.logging import data_logger
 
 
-async def get_observation_count(conn: Connection, taxon_ids: int | List[int]):
+async def get_observation_count(conn: Connection, taxon_ids: int | List[int]) -> int:
+    """
+    Returns the total number of GBIF observations for the given taxon ID(s).
+    """
+
+    if isinstance(taxon_ids, int):
+        taxon_ids = [taxon_ids]
+
     query = sql.SQL("""
         SELECT COUNT(*)
-        FROM gbif_observations
+        FROM {observations_table}
         WHERE taxon_key = ANY({taxon_ids})
-    """).format(taxon_ids=sql.Literal(taxon_ids))
+    """).format(
+        observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+        taxon_ids=sql.Literal(taxon_ids)
+    )
 
     result = await execute_psql_query(conn, query, fetch='one')
     return result[0]
 
 
-# Pandas version of lineage building for backbone
-def build_lineages(df: pd.DataFrame) -> pd.DataFrame:
-    # parent -> [children] map
-    children_map = defaultdict(list)
-    roots = []
-
-    data_logger.info('Collecting root taxa...')
-    # Collect roots and build lineage maps
-    for taxon_id, parent in zip(df["taxon_id"].values, df["parent_name_usage_id"].values):
-        if pd.notna(parent):
-            children_map[parent].append(taxon_id)
-        else:
-            roots.append(taxon_id)
-
-    # initialize queue with roots (kingdoms etc.)
-    queue = deque(roots)
-    df = df.set_index("taxon_id")
-
-    data_logger.info('Building lineage map...')
-    while queue:
-        taxon_id = queue.popleft()
-        row = df.loc[taxon_id]
-        curr_rank: TaxonomicRank = row['taxon_rank']
-        curr_col = f'{curr_rank}_id'
-        parent_id = row["parent_name_usage_id"]
-
-        # copy all parent's lineage columns in one vectorized assignment
-        if pd.notna(parent_id) and parent_id in df.index:
-            df.loc[taxon_id, RANK_COLS] = df.loc[parent_id, RANK_COLS].values
-
-        # overwrite own rank
-        if pd.notna(curr_rank) and curr_rank in RANK_ORDER:
-            df.loc[taxon_id, curr_col] = taxon_id
-
-            # enqueue children
-        for child in children_map.get(taxon_id, []):
-            queue.append(child)
-
-    return df.reset_index(drop=False)
-
-
 # Numpy version of lineage building for backbone
 def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Builds taxonomic lineage columns for each taxon in the provided backbone DataFrame.
+
+    For each taxon, propagates ancestor taxon IDs up through the hierarchy via BFS,
+    populating one column per rank (e.g. kingdom_id, phylum_id, etc.). Synonyms are
+    routed to their accepted taxon before lineage assignment.
+
+    Requires the complete taxonomic backbone — partial DataFrames will produce incorrect lineages.
+
+    Args:
+        df (pd.DataFrame): Full taxanomic backbone from which the lineage columns will be derived
+
+    Return:
+        df with rank columns added, populated with respective taxon_ids
+    """
+
     df = df.copy().reset_index(drop=True)
 
-    # Convert columns to NumPy arrays for speed
-    # Use accepted_name_usage_id where available, default to taxon_id
+    ### Convert columns to NumPy arrays for speed ###
+
+    # Use accepted_name_usage_id as taxon_id where available, fallback to taxon_id
     # This will make sure to always route synonyms back to their accepted taxon
     taxon_ids = np.where(
+        # If non-na accepted_name_usage_id
         df["accepted_name_usage_id"].notna().to_numpy(),
-        df["accepted_name_usage_id"].to_numpy(),
+        df["accepted_name_usage_id"].to_numpy(),  # Use accepted_name_usage_id
+        # Else, default to taxon_id (taxa with null accepted_name_usage_id have accepted taxon_id)
         df["taxon_id"].to_numpy()
     )
     parent_ids = df["parent_name_usage_id"].to_numpy()
 
-    # Determine ranks for each entry using the rank of their accepted_name_usage_id taxon
+    ### Determine Ranks ###
+
+    # Determine ranks for each entry
+    # We must use the rank of their accepted_name_usage_id taxon
     # This helps correctly place synonyms that may have moved rank
 
-    # Safely add an accepted_rank column
+    # Add an accepted_rank column
     rank_lookup = df.set_index("taxon_id")["taxon_rank"]
     accepted_ranks = rank_lookup.reindex(
         df["accepted_name_usage_id"]).to_numpy()
-
+    # Generate ranks column from accepted_ranks when available, fallback to taxon_rank
     ranks = np.where(
         df["accepted_name_usage_id"].notna(),
         accepted_ranks,
         df["taxon_rank"].to_numpy()
     )
 
+    # Generate numpy array for all taxa with columns for each taxon rank
     n_taxa = len(df)
     lineage = np.full((n_taxa, len(RANK_ORDER)), np.nan, dtype="float64")
 
     # Map taxon_id -> row index
-    id_to_idx = {tid: i for i, tid in enumerate(taxon_ids)}
+    id_to_idx = {taxon_id: i for i, taxon_id in enumerate(taxon_ids)}
 
     # Build children map (by index)
     children_map = defaultdict(list)
     roots = []
-    for i, pid in enumerate(parent_ids):
-        if not pd.isna(pid) and pid in id_to_idx:
-            parent_idx = id_to_idx[pid]
+    for i, parent_id in enumerate(parent_ids):
+        if not pd.isna(parent_id) and parent_id in id_to_idx:
+            parent_idx = id_to_idx[parent_id]
             children_map[parent_idx].append(i)
         else:
             roots.append(i)
+
+    # Map rank -> column index
+    rank_to_col_idx = {rank: i for i, rank in enumerate(RANK_ORDER)}
 
     # BFS traversal
     queue = deque(roots)
@@ -113,24 +109,23 @@ def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
 
         # Copy parent's lineage if exists
         if not pd.isna(parent_id) and parent_id in id_to_idx:
-            p_idx = id_to_idx[parent_id]
-            lineage[i, :] = lineage[p_idx, :]
+            parent_idx = id_to_idx[parent_id]
+            lineage[i, :] = lineage[parent_idx, :]
 
         # Overwrite own rank column
-        if pd.notna(rank) and rank in RANK_ORDER:
-            col_idx = RANK_ORDER.index(rank)
+        col_idx = rank_to_col_idx.get(rank)
+        if col_idx is not None:
             lineage[i, col_idx] = taxon_ids[i]
 
         # Enqueue children
         queue.extend(children_map.get(i, []))
 
-    # convert lineage numpy -> dataframe, then to pandas nullable ints
+    # Convert lineage numpy table -> dataframe
     lineage_df = pd.DataFrame(lineage, columns=RANK_COLS)
-    # vectorized cast instead of per-column loop
+    # Cast to Int64
     lineage_df = lineage_df.astype("Int64")
 
-    # assign columns back into df (overwrites existing ones cleanly)
-    for col in RANK_COLS:
-        df[col] = lineage_df[col].values
+    # Assign columns back into df (overwrites existing columns)
+    df[RANK_COLS] = lineage_df.values
 
     return df

@@ -7,7 +7,7 @@ import aiohttp
 
 async def fetch_data(session: aiohttp.ClientSession, url: str) -> Any:
     """
-    General helper for async JSON fetches given session and url
+    General helper for simple async JSON fetches given session and url
 
     Args:
         session (aiohttp.ClientSession): aiohttp session

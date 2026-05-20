@@ -21,31 +21,35 @@ async def get_invasives_dataset():
             settings.gbif.email
         ],
         "format": "dwca",
-        "sendNotification": "true",
+        "sendNotification": True,
         "predicate": {
             "type": "equals",
             "key": "DATASET_KEY",
             "value": dataset_key,
-            "matchCase": "false"
+            "matchCase": False
         }
     }
 
+    # Request GBIF download from API
     key = await gbif_download_request(
         request_body=json.dumps(request_body),
         pwd=settings.gbif.password,
         username=settings.gbif.user
     )
 
+    # Wait for/retrieve GBIF download
     output_dir = await get_gbif_download(key, output_fp=DATA_OUT_PATH, target_files=['occurrence.txt'])
 
+    # Get filepath for invasives occurrence.txt file for return
     observations_fp = os.path.join(output_dir, 'occurrence.txt')
 
     return observations_fp
 
 
 async def prep_invasives_dataset(fp):
+    # Read in file at provided path
     df = pd.read_csv(
-        os.path.join(fp),
+        fp,
         delimiter='\t',
         quoting=csv.QUOTE_NONE,
         on_bad_lines='warn',
@@ -53,30 +57,27 @@ async def prep_invasives_dataset(fp):
         header=0
     )
 
+    # Add taxonID column with values of taxonKey column
     df['taxonID'] = df['taxonKey']
 
-    def filter_invasive_chordates(df):
-        mask = (
-            (df['kingdom'] == 'Animalia') &
-            (
-                (df['phylum'] != 'Chordata') |
-                (df['class'].isin(
-                    ['Ascidiacea', 'Leptocardii', 'Appendicularia', 'Thaliacea']))
-            ) &
-            # Reasonably, we're not tagging anything higher than species
-            # This filter eliminates GBIF oddities, like how the red-black hybrid
-            # # Solenopsis is resolving to 'Formicidae', causing Formicidae to be
-            # marked as invasive
-            (df['taxonRank'].isin(['GENUS', 'SPECIES', 'SUBSPECIES']))
-        )
+    # Build filter to get only inverts of rank genus, species, or subspecies
+    mask = (
+        (df['kingdom'] == 'Animalia') &
+        (
+            (df['phylum'] != 'Chordata') |
+            (df['class'].isin(
+                ['Ascidiacea', 'Leptocardii', 'Appendicularia', 'Thaliacea']))
+        ) &
+        # Reasonably, we're not tagging anything higher than species
+        # This filter eliminates GBIF oddities, like how the red-black
+        # hybrid Solenopsis is resolving to 'Formicidae', causing Formicidae to be
+        # marked as invasive
+        (df['taxonRank'].isin(['GENUS', 'SPECIES', 'SUBSPECIES']))
+    )
+    # Apply filter
+    filtered_df = df.loc[mask]
 
-        filtered_df = df.loc[mask]
-
-        return filtered_df
-
-    filtered_df = filter_invasive_chordates(df)
-
-    df = US_INVASIVES_TABLE.coerce_dataframe(filtered_df)
-    US_INVASIVES_TABLE.validate_columns(df)
+    # Coerce and validate
+    filtered_df = US_INVASIVES_TABLE.coerce_dataframe(filtered_df)
 
     return filtered_df

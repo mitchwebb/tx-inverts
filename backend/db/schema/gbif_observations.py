@@ -3,6 +3,11 @@ from .base import DBTable
 
 
 class GBIFObservationsTable(DBTable):
+    """
+    GBIF observations data for all inverts.
+    Includes lineage columns (<rank>_id) for each taxonomic rank.
+    """
+
     name = 'gbif_observations'
     primary_key = 'gbif_id'
     columns = {

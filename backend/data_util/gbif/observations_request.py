@@ -254,7 +254,7 @@ def build_observations_request(
             settings.gbif.email
         ],
         "format": download_format,
-        "sendNotification": "true",
+        "sendNotification": True,
         "predicate": {
             "type": "and",
             "predicates": [*inverts_predicates, {"type": "in", "key": "DATASET_KEY", "values": datasets}]

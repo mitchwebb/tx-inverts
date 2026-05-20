@@ -3,6 +3,10 @@ from backend.db.schema.base import DBTable
 
 
 class TaxonRegionPresence(DBTable):
+    """
+    Mat view with accepted_taxon_key and region_id pairs
+    """
+
     name = 'taxon_region_presence'
     primary_key = None,
     columns = {

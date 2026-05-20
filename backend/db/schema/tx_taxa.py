@@ -4,6 +4,10 @@ from .base import DBTable
 
 
 class TXTaxaTable(DBTable):
+    """
+    Mat view to store Texas-only subset of GBIF backbone
+    """
+
     name = 'tx_taxa'
     primary_key = 'taxon_id'
     columns = {

@@ -3,6 +3,11 @@ from .base import DBTable
 
 
 class GBIFInvertsBackbone(DBTable):
+    """
+    GBIF backbone for all inverts.
+    Includes lineage columns (<rank>_id) for each taxonomic rank.
+    """
+
     name = 'gbif_inverts_backbone'
     primary_key = 'taxon_id'
     columns = {

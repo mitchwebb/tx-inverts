@@ -1,3 +1,4 @@
+# SQL SELECT clauses to download database data in DWC format
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from psycopg import sql

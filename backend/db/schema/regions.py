@@ -3,6 +3,10 @@ from backend.db.schema.base import DBTable
 
 
 class Regions(DBTable):
+    """
+    Region data materialized view containing id, type, name, and geometry for searchable regions (counties and parks)
+    """
+
     name = 'regions'
     primary_key = None,
     columns = {

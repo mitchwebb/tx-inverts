@@ -178,7 +178,6 @@ async def update_observations(
                                'specificEpithet', 'infraspecificEpithet'] if c in chunk.columns])
 
             chunk = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(chunk)
-            GBIF_OBSERVATIONS_TABLE.validate_columns(chunk)
 
             # Set geometry to None for the copy operation as it doesn't cooperate with the COPY FROM method
             chunk['geometry'] = None

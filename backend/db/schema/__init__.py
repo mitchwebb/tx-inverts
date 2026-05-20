@@ -7,7 +7,8 @@ from .geometries import GEOMETRY_TABLES
 from .base import DBTable
 
 
-# Running list of all tables for auto-initialization
+# Running list of all primary tables needed for auto-initialization
+# Order matters (OBSERVATION_REGIONS_TABLE creation relies on GEOMETRY tables)
 ALL_TABLES: list[DBTable] = [
     GBIF_OBSERVATIONS_TABLE,
     GBIF_INVERTS_BACKBONE,
