@@ -153,7 +153,7 @@ async def estimate_tsv_download_size(conn: AsyncConnection, query: sql.Composed)
 #         raise HTTPException(status_code=500, detail=str(e))
 
 
-@downloads_router.post('/get_ranked_taxa_download')
+@downloads_router.post('/get_ranked_taxa_download', response_model=None)
 async def get_ranked_taxa_download(
     params: DownloadRequestParams,
     request: Request,
