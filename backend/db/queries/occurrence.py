@@ -4,17 +4,18 @@ from backend.data_util.helpers import normalize_to_list
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
-from backend.models.sql import OccurrenceFilter
+from backend.models.occurrence import OccurrenceFilter
 from psycopg import sql
 
 
-def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Optional[bool] = False, skip_taxa: bool = False) -> sql.SQL:
+def create_occurrence_filter(filter: OccurrenceFilter, skip_taxa: bool = False) -> sql.SQL:
     """
     Takes OccurrenceFilter parameters and generates sql formatted
     clause for retrieving occurrence data
 
     Args:
         filter (OccurrenceFilter): Collection of parameters for filtering occurrence data
+        skip_taxa (bool): Skips taxa filter if True, defaults to False
 
     Returns:
         occurrences_clause (sql.SQL): sql.SQL() formatted occurrence clause
@@ -22,7 +23,7 @@ def create_occurrence_filter(filter: OccurrenceFilter, include_invasives: Option
 
     # Create taxon_filter (unless skip_taxa == True, then set to 'TRUE' as a no-op condition)
     taxon_filter = sql.SQL('TRUE') if skip_taxa else create_occurrence_taxon_filter(
-        filter.taxon_ids, include_invasives)
+        filter.taxon_ids, filter.include_invasives)
 
     # If no individual datasets are selected, datasets_clause is empty
     if not filter.datasets:

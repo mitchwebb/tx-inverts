@@ -1,16 +1,18 @@
-from typing import Optional, List
+from typing import List
 from pydantic import computed_field, field_validator, BaseModel, model_validator
 from datetime import date, datetime
 
 
+# Model for OccurrenceFilter (typically made with create_occurrence_filter)
+# Includes validation and normalization of various params
 class OccurrenceFilter(BaseModel):
-    taxon_ids: List[int]
+    taxon_ids: List[int] | None = None
     include_inat: bool = True
-    datasets: Optional[List[str]] = None
-    exclude_invasive: bool = True
-    date_start: Optional[date] = None
-    date_end: Optional[date] = None
-    regions: Optional[List[str]] = None
+    datasets: List[str] | None = None
+    include_invasives: bool = False
+    date_start: date | None = None
+    date_end: date | None = None
+    regions: List[str] | None = None
 
     @field_validator('taxon_ids', mode='before')
     def normalize_taxon_ids(cls, v):
@@ -27,10 +29,12 @@ class OccurrenceFilter(BaseModel):
     @field_validator('datasets', mode='before')
     def normalize_datasets(cls, v):
         if v is None or v in ("null", "", "undefined"):
-            return []
+            return None
         # If it's a comma-separated string, convert to list
         if isinstance(v, str):
-            return [p for p in v.split(',') if p not in ("null", "", "undefined")]
+            result = [p for p in v.split(
+                ',') if p not in ("null", "", "undefined")]
+            return result or None
         return v
 
     @field_validator('date_start', 'date_end', mode='before')
@@ -44,18 +48,23 @@ class OccurrenceFilter(BaseModel):
     @field_validator('regions', mode='before')
     def normalize_regions(cls, v):
         if v is None or v in ("null", "", "undefined"):
-            return []
+            return None
         if isinstance(v, str):
-            return [r for r in v.split(',') if r not in ("null", "", "undefined")]
+            result = [r for r in v.split(
+                ',') if r not in ("null", "", "undefined")]
+            return result or None
         return v
 
 
+# Version of occurrence filter for a single taxon
 class SingleTaxonOccurrenceFilter(OccurrenceFilter):
     # Allow use of taxon_id param, as it makes more sense here
     @model_validator(mode='before')
     @classmethod
     def handle_taxon_id_alias(cls, values):
-        if 'taxon_id' in values and 'taxon_ids' not in values:
+        if 'taxon_id' in values and 'taxon_ids' in values:
+            raise ValueError('Cannot specify both taxon_id and taxon_ids')
+        if 'taxon_id' in values:
             values['taxon_ids'] = [values.pop('taxon_id')]
         return values
 

@@ -18,7 +18,7 @@ import io
 import pandas as pd
 from psycopg import sql, AsyncConnection
 from typing import List, Optional
-from backend.models.sql import SingleTaxonOccurrenceFilter
+from backend.models.occurrence import SingleTaxonOccurrenceFilter
 
 
 # TODO: This might as well be included in taxonomic updates, given that if

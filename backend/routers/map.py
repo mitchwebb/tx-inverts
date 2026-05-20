@@ -1,6 +1,6 @@
 from http.client import HTTPException
 from backend.db.schema.geometries import TEXAS_COUNTIES_TABLE, TEXAS_PARKS_TABLE
-from backend.models.api_types import TextData
+from backend.models.api import TextData
 from fastapi import APIRouter, Request
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql

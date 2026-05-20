@@ -3,7 +3,7 @@ from typing import Literal
 
 from backend.db.queries.dwc import DWC_TAXA_SELECT_CLAUSE, DWC_OCCURRENCE_SELECT_CLAUSE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
-from backend.models.api_types import DownloadRequestParams
+from backend.models.api import DownloadRequestParams
 from fastapi import APIRouter, Request, responses
 from psycopg import sql, AsyncConnection
 from backend.data_util.execute_psql_query import execute_psql_query

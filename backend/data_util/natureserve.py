@@ -1,11 +1,11 @@
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
-from backend.models.api_types import NSRank
+from backend.models.api import NSRank
 from psycopg import Connection, sql
 from backend.routers.taxa import TaxonomicRank
 import psycopg
 from backend.db.queries.occurrence import create_occurrence_filter
-from backend.models.sql import SingleTaxonOccurrenceFilter
+from backend.models.occurrence import SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 
 

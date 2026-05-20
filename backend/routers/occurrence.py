@@ -6,9 +6,9 @@ from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
-from backend.models.api_types import ObservationsRequestParams
+from backend.models.api import ObservationsRequestParams
 from backend.db.queries.occurrence import create_occurrence_filter, create_occurrence_taxon_filter
-from backend.models.sql import OccurrenceFilter, SingleTaxonOccurrenceFilter
+from backend.models.occurrence import OccurrenceFilter, SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 import re
 

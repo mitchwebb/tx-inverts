@@ -21,7 +21,6 @@ from backend.data_util.gbif import (
 )
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.models.update_status import UpdateStatus
 from backend.tools.jobs.tasks.initialize_db import initialize_table
 from backend.tools.jobs.tasks.views import refresh_materialized_views
 from psycopg import sql
@@ -35,7 +34,7 @@ async def update_observations(
     full_replace: bool = False,
     save_cleaned_data: bool = False,
     verbose: bool = False
-) -> Tuple[UpdateStatus, Optional[List[int]], Optional[List[int]]]:
+) -> Tuple[bool, Optional[List[int]], Optional[List[int]]]:
     """
         Perform PARTIAL update of gbif_observations table
 

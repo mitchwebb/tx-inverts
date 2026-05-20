@@ -1,16 +1,13 @@
-from re import M
-import time
-
 from backend.core.exception_handler import InvalidTaxonRankError, TaxonNotFoundError
 from backend.db.queries.occurrence import create_occurrence_filter
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
-from backend.models.sql import OccurrenceFilter
+from backend.models.occurrence import OccurrenceFilter
 from fastapi import Request, APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.models.api_types import ObservationsRequestParams, TaxaRequestParams, TextData
+from backend.models.api import ObservationsRequestParams, TaxaRequestParams, TextData
 from typing import Literal
 from psycopg import sql
 from backend.core.logging import api_logger

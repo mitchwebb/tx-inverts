@@ -8,7 +8,7 @@ from backend.data_util.natureserve import calculate_ns_values
 from backend.routers.taxa import get_taxon_rank
 from psycopg import sql
 from backend.db.queries.occurrence import create_occurrence_filter
-from backend.models.sql import OccurrenceFilter, SingleTaxonOccurrenceFilter
+from backend.models.occurrence import OccurrenceFilter, SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
 
 import json

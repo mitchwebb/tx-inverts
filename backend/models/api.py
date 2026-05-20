@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Literal, Optional, List
 
-
+# Literal type for possible NSRanks
 NSRank = Literal['x', 'h', '1', '2', '3', '4', '5', 'u']
 
 
@@ -20,7 +20,7 @@ class ObservationsRequestParams(TaxaRequestParams):
     date_end: Optional[str] = None
     include_invasives: Optional[bool] = False
     # List of UUIDs from the regions table
-    regions: Optional[List[str]] = None
+    regiosns: Optional[List[str]] = None
 
 
 # Params used to make download request queries
