@@ -44,10 +44,8 @@ async def get_taxon_rank(conn, taxon_id):
 
 # Provide search suggestions based on taxon search
 # Returns only accepted/doubtful taxa, resolving synonyms automatically
-@taxa_router.post("/taxon_search_suggest",)
-async def search_taxon(request: Request, text: str = Body(...), exclude_species: bool = Body(...)):
-    search_term = text
-
+@taxa_router.get("/taxon_search_suggest",)
+async def search_taxon(request: Request, search_term: str, exclude_species: bool = False):
     exclude_species_section = sql.SQL('')
     if exclude_species:
         exclude_species_section = sql.SQL(

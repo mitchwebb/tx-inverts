@@ -4,7 +4,6 @@
     import NSScale from '../../common/NSScale.svelte';
     import { getMapContext } from '../../contexts/mapContext';
     import {
-        getActiveTaxaContext,
         type ActiveTaxon,
     } from '../../contexts/activeTaxaContext';
     import { nSRankKey } from '../../constants/natureServe';

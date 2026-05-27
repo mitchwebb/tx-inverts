@@ -30,16 +30,15 @@
         // Create new AbortController
         abortController = new AbortController();
         const signal = abortController.signal;
-        const url = `/server/map/search_${pathSuffix}`;
+        const url = `/server/map/search_${pathSuffix}?search_term=${inputText}`;
         try {
             // Set is loading
             isLoading = true;
             // Send search request
             const response = await fetch(url, {
                 signal,
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: inputText }),
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
             });
             // Error
             if (!response.ok) {

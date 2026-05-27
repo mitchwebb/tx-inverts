@@ -110,15 +110,7 @@
         };
     });
 
-    // function handleOccDownloadButton() {
-    //     modalContext.visible = true;
-    //     modalContext.content = occurrenceDownloadForm;
-    // }
 </script>
-
-<!-- {#snippet occurrenceDownloadForm()}
-    <DownloadOccurrenceForm />
-{/snippet} -->
 
 {#snippet filters()}
     {#if filtersDomain === 'observations'}
@@ -145,16 +137,10 @@
                         placeholder={'Search by taxon...'}
                     />
                 </div>
-                <!-- <button
-                    class="download-button button"
-                    onclick={handleOccDownloadButton}
-                >
-                    <DownloadIcon />
-                </button> -->
             </div>
             {#if activeTaxa.length && sidebarContext.open}
                 <div id="sidebar-content" class="sidebar-section">
-                    {#each activeTaxa as activeTaxon}
+                    {#each activeTaxa as activeTaxon (activeTaxon.taxonID)}
                         <div id={`${activeTaxon.taxonID}-sidebar-section`}>
                             <TaxonDisplay {activeTaxon} />
                             {#if activeTaxon.taxonID && showNSDisplay}

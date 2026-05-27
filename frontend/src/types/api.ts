@@ -26,6 +26,7 @@ export type NSLevel = 's' | 'g' | 'n';
 export type RawNSValues = {
     number_of_occurrences: number | null;
     area_of_occupancy_4km2_bins: number | null;
+    area_of_occupancy_1km2_bins: number | null;
     range_extent_km2: number | null;
     observation_count: number | null;
 } | null;

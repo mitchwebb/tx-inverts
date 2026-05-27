@@ -1,65 +1,53 @@
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.routers.occurrence import ObservationsRequestParams
 from backend.data_util.natureserve import calculate_ns_values
-from backend.routers.taxa import get_taxon_rank
 from psycopg import sql
 from backend.db.queries.occurrence import create_occurrence_filter
+from backend.models.api import ObservationsRequestParams
 from backend.models.occurrence import OccurrenceFilter, SingleTaxonOccurrenceFilter
 from backend.core.logging import api_logger
-
 import json
-import psycopg
 
 
 rankings_router = APIRouter()
 
 
-@rankings_router.post('/get_ns_metrics', response_class=Response)
-async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
+@rankings_router.post('/get_ns_metrics', response_class=JSONResponse)
+async def get_ns_metrics(params: ObservationsRequestParams, request: Request) -> JSONResponse:
     """
     Get NatureServe metrics (occurrences, range extent, and area of occupancy) 
     for a given (single) taxon_id with filters
 
     Args:
         params (ObservationsRequestParams): Collection of filters to filter occurrence records
-        request (Request)
+        request (fastapi.Request): FastAPI request object
 
     Returns:
-        TODO: Sort out typing and finish this docstring
+        JSON response containing NS metrics and current state rank for the taxon,
+        or {'result': None} if no NS values could be calculated.
     """
-
-    filters = SingleTaxonOccurrenceFilter(
-        taxon_id=params.taxon_ids,
-        include_inat=params.include_inat,
-        date_start=params.date_start,
-        date_end=params.date_end,
-        datasets=params.datasets
-    )
-
-    rank_col = 'ns_rank_state' if filters.include_inat else 'ns_rank_state_no_inat'
 
     pool = request.app.state.db_pool
 
     try:
+        # Make SingleTaxonOccurrenceFilter
+        filters = SingleTaxonOccurrenceFilter(
+            taxon_id=params.taxon_ids,
+            include_inat=params.include_inat,
+            date_start=params.date_start,
+            date_end=params.date_end,
+            datasets=params.datasets,
+        )
+
         async with pool.connection() as conn:
-            taxon_rank = await get_taxon_rank(conn, filters.taxon_id)
-            ns_result = await calculate_ns_values(conn, filters, taxon_rank)
+            # Calculate various ns_values using filtered observation data
+            ns_result = await calculate_ns_values(conn, filters, params.taxon_rank)
+            # Protect against failed ns_result
             if not ns_result:
                 return JSONResponse(content={'result': None}, status_code=200)
-
-            rank_query = sql.SQL("""
-                SELECT {rank_col}
-                    FROM tx_taxa
-                WHERE taxon_id = {taxon_id}
-            """).format(
-                taxon_id=sql.Literal(filters.taxon_id),
-                rank_col=sql.Identifier(rank_col)
-            )
-            rank_result = await execute_psql_query(conn, rank_query, fetch='one', dict_cursor=True)
 
             api_logger.info(f'Retrieved NS values {ns_result}')
             return JSONResponse(content={
@@ -69,31 +57,39 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request):
                     'observation_count': ns_result['observation_count'],
                     'area_of_occupancy_4km2_bins': ns_result['area_of_occupancy_4km2_bins'],
                     'area_of_occupancy_1km2_bins': ns_result['area_of_occupancy_1km2_bins'],
-                    'ns_rank_state': rank_result[rank_col]
                 }
             })
-        return
     except Exception as e:
         api_logger.exception(e)
-        raise
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@rankings_router.post('/get_range_extent_geom', response_class=Response)
-async def get_range_extent_geom(params: ObservationsRequestParams, request: Request):
+@rankings_router.post('/get_range_extent_geom', response_class=JSONResponse)
+async def get_range_extent_geom(params: ObservationsRequestParams, request: Request) -> JSONResponse:
+    """
+    Get hull geometry representing range extent for a given species' filtered observation data
 
-    filters = OccurrenceFilter(
-        taxon_ids=params.taxon_ids,
-        include_inat=params.include_inat,
-        date_end=params.date_end,
-        date_start=params.date_start,
-        datasets=params.datasets
-    )
+    Args:
+        params (ObservationsRequestParams): Collection of filters to filter occurrence records
+        request (fastapi.Request): FastAPI request object
 
-    occurrence_filter = create_occurrence_filter(filters)
+    Returns:
+        JSON response containing range extent geometry, or {'result': None} if no geometry could be calculated.
+    """
 
     pool = request.app.state.db_pool
 
     try:
+        filters = OccurrenceFilter(
+            taxon_ids=params.taxon_ids,
+            include_inat=params.include_inat,
+            date_end=params.date_end,
+            date_start=params.date_start,
+            datasets=params.datasets
+        )
+
+        occurrence_filter = create_occurrence_filter(filters)
+
         async with pool.connection() as conn:
             query = sql.SQL("""
                 WITH region AS (
@@ -134,4 +130,4 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
             })
     except Exception as e:
         api_logger.exception(e)
-        raise
+        raise HTTPException(status_code=500, detail=str(e))

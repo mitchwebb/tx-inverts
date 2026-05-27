@@ -48,12 +48,6 @@
         open = !open;
         if (openCallback) openCallback(id, open);
     }
-
-    $effect(() => {
-        $inspect(defaultOpen);
-        const sidebarContext = getSidebarContext();
-        $inspect(sidebarContext.foldoutStates);
-    });
 </script>
 
 <div

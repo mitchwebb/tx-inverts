@@ -1,7 +1,6 @@
-from http.client import HTTPException
+# Map layer related API requests
 from backend.db.schema.geometries import TEXAS_COUNTIES_TABLE, TEXAS_PARKS_TABLE
-from backend.models.api import TextData
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
 import re
@@ -12,9 +11,12 @@ from backend.models.regions import County, Park
 map_router = APIRouter()
 
 
-@map_router.post("/search_counties")
-async def search_counties(data: TextData, request: Request) -> dict[str, list[County]]:
-    search_term = data.text
+@map_router.get("/search_counties")
+async def search_counties(request: Request, search_term: str) -> dict[str, list[County]]:
+    """
+    Using a search term, search through counties table by county name (case insensitive)
+    """
+
     query = sql.SQL('''
         SELECT county, id
         FROM {counties_table}
@@ -34,9 +36,12 @@ async def search_counties(data: TextData, request: Request) -> dict[str, list[Co
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@map_router.post("/search_parks")
-async def search_parks(data: TextData, request: Request) -> dict[str, list[Park]]:
-    search_term = data.text
+@map_router.get("/search_parks")
+async def search_parks(request: Request, search_term: str) -> dict[str, list[Park]]:
+    """
+    Using a search term, search through parks table by park name (case insensitive)
+    """
+
     query = sql.SQL('''
         SELECT prop_name, alt_prop_name, prop_class, owner, id
         FROM {parks_table}
@@ -57,6 +62,10 @@ async def search_parks(data: TextData, request: Request) -> dict[str, list[Park]
 
 
 def format_park(row: dict) -> dict:
+    """
+    Helper for formatting park information returned in search
+    """
+
     if row.get('owner'):
         row['owner'] = format_owner_name(row['owner'])
     return row
@@ -64,6 +73,10 @@ def format_park(row: dict) -> dict:
 
 # Format 'Austin, City of' type text, as well as 'Unknown' and 'Public; unknown'
 def format_owner_name(name: str) -> str:
+    """
+    Helper for formatting known patterns and values in park['owner_name'] column
+    """
+
     name = re.sub(r';\s*unknown$', '', name, flags=re.IGNORECASE).strip()
     match = re.match(r'^(.+),\s*(.+?)\s+of$', name, re.IGNORECASE)
     if match:

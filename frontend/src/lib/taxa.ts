@@ -67,6 +67,7 @@ export async function getNSMetrics(
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd'],
     datasets: FiltersState['datasets'],
+    taxonRank: ActiveTaxon['info']['taxonRank'],
     signal?: AbortSignal
 ) {
     // Cancel previous request if necessary
@@ -84,6 +85,7 @@ export async function getNSMetrics(
             date_start: dateStart?.toISOString(),
             date_end: dateEnd?.toISOString(),
             datasets: [...datasets],
+            taxon_rank: taxonRank,
         }),
     });
     const json = await response.json();
