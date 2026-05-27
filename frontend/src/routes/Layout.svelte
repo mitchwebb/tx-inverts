@@ -68,6 +68,7 @@
     import { makeIDCollection } from '../util/collection.svelte';
     import { isNarrowView } from '../contexts/device';
     import MobileSidebar from '../components/Sidebar/MobileSidebar.svelte';
+    import type { TaxonomicRank } from '../types/taxa';
 
     // Intialize contexts
 
@@ -185,7 +186,8 @@
                     includeINat,
                     dateStart,
                     dateEnd,
-                    datasets
+                    datasets,
+                    taxon.info.taxonRank
                 );
             }
         });
@@ -201,29 +203,32 @@
 
                 // Check to make sure taxon exists and that it doesn't already have values
                 // observationCount is the easiest to grab
-                if (!taxon || taxon.nSValues.observationCount !== null) return;
+                if (!taxon || taxon.nSValues.observationCount !== null) continue;
 
                 const includeINat = filtersContext.includeINat !== false;
                 const dateStart = filtersContext.dateStart;
                 const dateEnd = filtersContext.dateEnd;
                 const datasets = filtersContext.datasets;
+                const taxonRank = taxon.info.taxonRank;
                 loadNSValues(
                     taxonID,
                     includeINat,
                     dateStart,
                     dateEnd,
-                    datasets
+                    datasets,
+                    taxonRank
                 );
             }
         });
     });
 
     async function loadNSValues(
-        taxonID: number,
+        taxonID: ActiveTaxaState['taxa']['items'][0]['taxonID'],
         includeINat: FiltersState['includeINat'],
         dateStart: FiltersState['dateStart'],
         dateEnd: FiltersState['dateEnd'],
-        datasets: FiltersState['datasets']
+        datasets: FiltersState['datasets'],
+        taxonRank: ActiveTaxaState['taxa']['items'][0]['info']['taxonRank']
     ) {
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
@@ -236,6 +241,7 @@
                 dateStart,
                 dateEnd,
                 datasets,
+                taxonRank,
                 abortController.signal
             );
             taxon.nSValues = normalizeAPIResponse<NSValues>(
