@@ -1,7 +1,7 @@
 import numpy as np
+from backend.constants.taxa import RANK_COLS, RANK_ORDER
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.routers.taxa import RANK_ORDER, TaxonomicRank, RANK_COLS
 from collections import deque, defaultdict
 import pandas as pd
 from typing import List

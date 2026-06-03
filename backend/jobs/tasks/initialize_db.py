@@ -3,9 +3,9 @@ from psycopg import Connection, sql
 from psycopg.errors import Error as PsycopgError
 from backend.db.schema import ALL_TABLES
 from backend.db.schema.base import DBTable
-from backend.tools.jobs.tasks.database import update_indexes
+from backend.jobs.tasks.database import update_indexes
 from backend.core.logging import db_logger
-from backend.tools.jobs.tasks.views import refresh_materialized_views
+from backend.jobs.tasks.views import refresh_materialized_views
 
 
 # Check if table already exists (for readable erroring)

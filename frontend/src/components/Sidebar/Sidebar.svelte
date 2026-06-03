@@ -292,7 +292,7 @@
         font-size: 1.2rem;
     }
     #sidebar-wrapper {
-        user-select: none;
+        /* user-select: none; */
         /* Prevent absorbing clicks on wrapper if contents are short */
         pointer-events: none;
         position: relative;

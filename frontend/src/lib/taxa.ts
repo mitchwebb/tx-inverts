@@ -40,22 +40,17 @@ export async function getCommonNames(taxonID: ActiveTaxon['taxonID']) {
 
 // Get taxon info (triggered by change in taxonContext.activeTaxonID)
 export async function getTaxonInfo(taxonID: ActiveTaxon['taxonID']) {
-    const url = '/server/taxa/get_taxon_info';
+    const url = `/server/taxa/get_taxon_info?taxon_id=${taxonID}`;
     const response = await fetch(url, {
-        method: 'POST',
+        method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taxon_ids: taxonID }),
     });
-
-    const json = await response.json();
-
     if (!response.ok) {
-        const detail = json?.detail ?? 'Unknown error';
+        const result = await response.json();
+        const detail = result?.detail ?? 'Unknown error';
         throw new Error(detail);
     }
-
-    const result: RawTaxonInfo = json.result;
-    return result;
+    return (await response.json()) as RawTaxonInfo;
 }
 
 let abortController = new AbortController();
@@ -88,16 +83,12 @@ export async function getNSMetrics(
             taxon_rank: taxonRank,
         }),
     });
-    const json = await response.json();
-
     if (!response.ok) {
-        const detail = json?.detail ?? 'Unknown error';
-        throw new Error(
-            typeof detail === 'string' ? detail : JSON.stringify(detail)
-        );
+        const result = await response.json();
+        const detail = result?.detail ?? 'Unknown error';
+        throw new Error(detail);
     }
-
-    return json.result as RawNSValues;
+    return (await response.json()) as RawNSValues;
 }
 
 // Logic for loading backbone structure into browser
@@ -111,12 +102,10 @@ export async function loadBackbone() {
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
-        const json = await response.json();
-        const result: TaxonNodeType[] = json.taxa;
-        if (result) {
-            const taxaMap = new Map(
-                result.map((node) => [node.taxon_id, node])
-            );
+        const tree: TaxonNodeType[] = await response.json();
+
+        if (tree) {
+            const taxaMap = new Map(tree.map((node) => [node.taxon_id, node]));
             taxaTree.set(taxaMap);
         }
         return;
@@ -152,8 +141,7 @@ export async function getQualifiedTaxa(
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
-        const json = await response.json();
-        return json.qualified_taxa;
+        return await response.json();
     } catch (error) {
         console.error(error);
         return null;

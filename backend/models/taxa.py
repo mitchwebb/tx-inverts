@@ -1,0 +1,53 @@
+# Taxon related models
+from pydantic import BaseModel, Field
+from backend.constants.taxa import TaxonomicRank
+
+
+class TaxonSuggestion(BaseModel):
+    scientific_name: str | None
+    canonical_name: str | None
+    taxon_id: int | None
+    taxon_rank: str | None
+    us_invasive: bool | None
+    taxonomic_status: str | None
+
+
+class TaxonInfo(BaseModel):
+    canonical_name: str | None
+    scientific_name_authorship: str | None
+    accepted_name_usage_id: int | None
+    kingdom: str | None
+    phylum: str | None
+    # Aliased for reserved word 'class'
+    taxon_class: str | None = Field(None, alias='class')
+    order: str | None
+    family: str | None
+    genus: str | None
+    species: str | None
+    subspecies: str | None
+    taxon_rank: TaxonomicRank | None
+    us_invasive: bool | None
+    taxonomic_status: str | None
+    ns_rank_state: str | None
+    ns_rank_state_no_inat: str | None
+
+# Class for backbone tree node (used for frontend table display and navigation)
+
+
+class TaxonTreeNode(BaseModel):
+    taxon_id: int | None
+    taxon_rank: str | None
+    parent_name_usage_id: int | None
+    accepted_name_usage_id: int | None
+    canonical_name: str | None
+    scientific_name_authorship: str | None
+    ns_rank_state: str | None
+    ns_rank_state_no_inat: str | None
+    taxonomic_status: str | None
+    us_invasive: bool | None
+    phylum: str | None
+    # Aliased for reserved word 'class'
+    taxon_class: str | None = Field(None, alias='class')
+    order: str | None
+    family: str | None
+    genus: str | None

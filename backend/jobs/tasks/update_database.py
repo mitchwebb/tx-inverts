@@ -1,10 +1,10 @@
 from backend.data_util.db import get_single_db_connection
-from backend.tools.jobs.tasks.database import update_indexes
-from backend.tools.jobs.tasks.initialize_db import initialize_all_tables
-from backend.tools.jobs.tasks.regions import update_observation_regions
-from backend.tools.jobs.tasks.taxa import update_backbone, update_ns_ranks
-from backend.tools.jobs.tasks.occurrence import update_observations
-from backend.tools.jobs.tasks.views import refresh_materialized_views
+from backend.jobs.tasks.database import update_indexes
+from backend.jobs.tasks.initialize_db import initialize_all_tables
+from backend.jobs.tasks.regions import update_observation_regions
+from backend.jobs.tasks.taxa import update_backbone, update_ns_ranks
+from backend.jobs.tasks.occurrence import update_observations
+from backend.jobs.tasks.views import refresh_materialized_views
 from backend.core.logging import tasks_logger
 import os
 

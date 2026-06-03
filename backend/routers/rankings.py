@@ -1,3 +1,4 @@
+# Conservation rank related API endpoints
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from fastapi import APIRouter, HTTPException, Request
@@ -33,7 +34,7 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request) ->
     pool = request.app.state.db_pool
 
     try:
-        # Make SingleTaxonOccurrenceFilter
+        # Make SingleTaxonOccurrenceFilter Object
         filters = SingleTaxonOccurrenceFilter(
             taxon_id=params.taxon_ids,
             include_inat=params.include_inat,
@@ -48,17 +49,11 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request) ->
             # Protect against failed ns_result
             if not ns_result:
                 return JSONResponse(content={'result': None}, status_code=200)
-
             api_logger.info(f'Retrieved NS values {ns_result}')
-            return JSONResponse(content={
-                'result': {
-                    'number_of_occurrences': ns_result['number_of_occurrences'],
-                    'range_extent_km2': ns_result['range_extent_km2'],
-                    'observation_count': ns_result['observation_count'],
-                    'area_of_occupancy_4km2_bins': ns_result['area_of_occupancy_4km2_bins'],
-                    'area_of_occupancy_1km2_bins': ns_result['area_of_occupancy_1km2_bins'],
-                }
-            })
+
+            # Return results
+            return JSONResponse(content=ns_result)
+
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
@@ -80,6 +75,7 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
     pool = request.app.state.db_pool
 
     try:
+        # Make OccurrenceFilter Object
         filters = OccurrenceFilter(
             taxon_ids=params.taxon_ids,
             include_inat=params.include_inat,
@@ -88,9 +84,11 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
             datasets=params.datasets
         )
 
+        # Make occurrence_filter SQL fragment
         occurrence_filter = create_occurrence_filter(filters)
 
         async with pool.connection() as conn:
+            # Get range extent geometry via SQL using filtered occurrences
             query = sql.SQL("""
                 WITH region AS (
                     SELECT geometry
@@ -117,7 +115,6 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
                 occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
                 occurrence_filter=occurrence_filter
             )
-
             result = await execute_psql_query(conn, query, fetch='one', dict_cursor=True)
             if not result:
                 return JSONResponse(content={'result': None}, status_code=200)

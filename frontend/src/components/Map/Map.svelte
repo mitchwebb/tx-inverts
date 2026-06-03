@@ -447,7 +447,7 @@
         map.addSource(obsBundle.id, {
             ...obsBundle.source,
             tiles: [
-                `${window.location.origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${dataDatasets}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
+                `${window.location.origin}/server/occurrence/tiles/{z}/{x}/{y}.mvt?include_inat=${includeINat}&taxon_id=${taxonID}&date_start=${dateStart}&date_end=${dateEnd}${dataDatasets ? dataDatasets.map((d) => `&datasets=${d}`).join('') : ''}`,
             ],
         });
         obsBundle.layers.forEach((layer) => map.addLayer(layer));
@@ -507,7 +507,7 @@
                 ) as mapboxgl.VectorTileSource;
                 if (source) {
                     source.setTiles([
-                        `${window.location.origin}/server/occurrence/tiles/${includeINat}/${taxonID}/${dataDatasets}/${dateStart}/${dateEnd}/{z}/{x}/{y}.mvt`,
+                        `${window.location.origin}/server/occurrence/tiles/{z}/{x}/{y}.mvt?include_inat=${includeINat}&taxon_id=${taxonID}&date_start=${dateStart}&date_end=${dateEnd}${dataDatasets ? dataDatasets.map((d) => `&datasets=${d}`).join('') : ''}`,
                     ]);
                 }
                 fetchRangeExtentGeom(taxonID);
@@ -634,7 +634,7 @@
     }
     :global(.mapboxgl-popup-content > .mapboxgl-popup-close-button) {
         color: var(--text-default) !important;
-        font-size: 1rem;
+        /* font-size: 1rem; */
         position: absolute !important;
         padding: 5px 10px !important;
     }

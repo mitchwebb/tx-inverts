@@ -1,7 +1,5 @@
-from tkinter import N
-
 from pydantic import BaseModel
-from typing import Literal, Optional, List
+from typing import Literal, List
 
 # Literal type for possible NSRanks
 NSRank = Literal['x', 'h', '1', '2', '3', '4', '5', 'u']

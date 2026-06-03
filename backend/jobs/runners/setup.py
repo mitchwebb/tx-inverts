@@ -4,16 +4,16 @@ from backend.data_util.db import get_single_db_connection
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
-from backend.tools.jobs.runners.run_async import run_async
-from backend.tools.jobs.tasks.database import update_indexes
-from backend.tools.jobs.tasks.datasets import fill_dataset_table
-from backend.tools.jobs.tasks.initialize_db import initialize_all_tables
-from backend.tools.jobs.tasks.regions import fill_all_geometry_tables
-from backend.tools.jobs.tasks.taxa import update_backbone, update_ns_ranks
-from backend.tools.jobs.tasks.occurrence import update_observations
-from backend.tools.jobs.tasks.taxa import create_invasives_table
+from backend.jobs.runners.run_async import run_async
+from backend.jobs.tasks.database import update_indexes
+from backend.jobs.tasks.datasets import fill_dataset_table
+from backend.jobs.tasks.initialize_db import initialize_all_tables
+from backend.jobs.tasks.regions import fill_all_geometry_tables
+from backend.jobs.tasks.taxa import update_backbone, update_ns_ranks
+from backend.jobs.tasks.occurrence import update_observations
+from backend.jobs.tasks.taxa import create_invasives_table
 from backend.core.logging import setup_logging, db_logger
-from backend.tools.jobs.tasks.views import refresh_materialized_views, refresh_materialized_view
+from backend.jobs.tasks.views import refresh_materialized_views, refresh_materialized_view
 from psycopg import sql
 
 

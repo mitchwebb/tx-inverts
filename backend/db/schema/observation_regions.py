@@ -1,5 +1,4 @@
 from backend.db.schema.base import DBTable
-from backend.models.api import ObservationsRequestParams
 
 
 class ObservationRegions(DBTable):

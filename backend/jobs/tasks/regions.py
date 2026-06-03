@@ -6,8 +6,8 @@ from backend.db.schema.base import DBTable
 from shapely import MultiPolygon
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
-from backend.tools.jobs.tasks.database import update_index
-from backend.tools.jobs.tasks.views import refresh_materialized_view
+from backend.jobs.tasks.database import update_index
+from backend.jobs.tasks.views import refresh_materialized_view
 from psycopg import sql
 from backend.core.logging import db_logger
 import geopandas as gpd

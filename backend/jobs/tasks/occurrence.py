@@ -21,8 +21,8 @@ from backend.data_util.gbif import (
 )
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.tools.jobs.tasks.initialize_db import initialize_table
-from backend.tools.jobs.tasks.views import refresh_materialized_views
+from backend.jobs.tasks.initialize_db import initialize_table
+from backend.jobs.tasks.views import refresh_materialized_views
 from psycopg import sql
 from typing import List, Optional, Tuple
 

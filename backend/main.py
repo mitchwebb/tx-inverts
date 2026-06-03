@@ -1,5 +1,8 @@
+from starlette import routing
 from contextlib import asynccontextmanager
-from backend.core.exception_handler import global_exception_handler
+
+from fastapi.exceptions import RequestValidationError
+from backend.core.exception_handler import global_exception_handler, validation_error_handler
 from backend.core.logging import setup_logging
 from fastapi import FastAPI
 from backend.core.logging import api_logger
@@ -76,8 +79,12 @@ app.include_router(regions_router, prefix='/regions')
 
 # Register exception handler
 app.add_exception_handler(Exception, global_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_error_handler)
 
-# Print routes (for debugging)
+
+# Print routes (for startup debugging)
 api_logger.debug("Routes:")
 for route in app.routes:
-    api_logger.debug(f"  {route.path} - {','.join(route.methods)}")
+    if isinstance(route, routing.Route):
+        api_logger.debug(
+            f"  {route.path} - {','.join(route.methods if route.methods is not None else set())}")

@@ -61,7 +61,7 @@
             // Ending loading
             isLoading = false;
             const json = await response.json();
-            suggestions = json.results.map(
+            suggestions = json.map(
                 (result: RawTaxonSearchSuggestion) => {
                     return {
                         scientificName: result.scientific_name,

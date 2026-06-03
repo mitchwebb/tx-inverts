@@ -64,7 +64,7 @@
                 <MenuIcon />
             </button>
         {:else}
-            <div id="main-nav" class="nav-item menu-item">
+            <div id="main-nav" class="nav-item">
                 {#each NAV_ITEMS as navItem}
                     <NavbarItem item={navItem} variant={'desktop'} />
                 {/each}
@@ -79,7 +79,6 @@
 <style>
     .menu-foldout-button {
         background-color: transparent;
-        /* padding: 0; */
     }
     #header-search-bar {
         display: flex;
@@ -88,12 +87,6 @@
         width: 100%;
         height: 100%;
         max-width: 350px;
-    }
-    .menu-item {
-        list-style-type: none;
-        user-select: none;
-        cursor: pointer;
-        box-sizing: border-box;
     }
     #main-nav {
         height: 100%;

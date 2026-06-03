@@ -68,7 +68,6 @@
     import { makeIDCollection } from '../util/collection.svelte';
     import { isNarrowView } from '../contexts/device';
     import MobileSidebar from '../components/Sidebar/MobileSidebar.svelte';
-    import type { TaxonomicRank } from '../types/taxa';
 
     // Intialize contexts
 

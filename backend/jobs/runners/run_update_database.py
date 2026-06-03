@@ -1,5 +1,5 @@
-from backend.tools.jobs.runners.run_async import run_async
-from backend.tools.jobs.tasks.update_database import update_database
+from backend.jobs.runners.run_async import run_async
+from backend.jobs.tasks.update_database import update_database
 from backend.core.logging import setup_logging, tasks_logger
 
 

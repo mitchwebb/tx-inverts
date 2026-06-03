@@ -1,4 +1,4 @@
-# Map layer related API requests
+# Map layer related API endpoints
 from backend.db.schema.geometries import TEXAS_COUNTIES_TABLE, TEXAS_PARKS_TABLE
 from fastapi import APIRouter, HTTPException, Request
 from backend.data_util.execute_psql_query import execute_psql_query

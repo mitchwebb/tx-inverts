@@ -1,4 +1,4 @@
-# Occurrence related API requests
+# Occurrence related API endpoints
 from datetime import date
 import backend.constants.map as map
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META

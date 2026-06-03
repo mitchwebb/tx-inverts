@@ -10,7 +10,7 @@
     } from '../contexts/activeTaxaContext';
     import { getRegionInfo } from '../lib/regions';
     import { getFiltersContext } from '../contexts/filtersContext';
-    import type { RawRegionInfo, RegionInfo } from '../types/api';
+    import type { RegionInfo } from '../types/api';
     import BackbonePage from './Backbone/BackbonePage.svelte';
     import AboutPage from './AboutPage.svelte';
     import WalkthroughPage from './WalkthroughPage.svelte';
