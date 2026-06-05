@@ -1,29 +1,33 @@
-from typing import List
-from pydantic import computed_field, field_validator, BaseModel, model_validator
+from typing import Annotated, List
+from pydantic import BeforeValidator, ConfigDict, field_validator, BaseModel, model_validator
 from datetime import date, datetime
 
 
-# Model for OccurrenceFilter (typically made with create_occurrence_filter)
+def _normalize_taxon_ids(v: int | List[int] | str | None): return ([1] if v is None else [
+    int(v)] if isinstance(v, (int, str)) else v)
+
+
+# Model for OccurrenceFilters
 # Includes validation and normalization of various params
-class OccurrenceFilter(BaseModel):
-    taxon_ids: List[int] | None = None
-    include_inat: bool = True
+class OccurrenceFilters(BaseModel):
+    # Normalize taxon_ids to list, default to [1] (Animalia) if None provided
+    taxon_ids: Annotated[
+        List[int],
+        BeforeValidator(_normalize_taxon_ids)
+    ] = [1]
+    include_inat: bool | None = True
     datasets: List[str] | None = None
     include_invasives: bool = False
-    date_start: date | None = None
-    date_end: date | None = None
+    date_start: date | str | None = None
+    date_end: date | str | None = None
     regions: List[str] | None = None
 
-    @field_validator('taxon_ids', mode='before')
-    def normalize_taxon_ids(cls, v):
-        # Default to Animalia if taxon_ids not provided
-        if v is None:
-            return [1]
-        if isinstance(v, int):
-            return [v]
-        if isinstance(v, str):
-            return [int(v)]
-        return v
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    # Convert include_inat None to True
+    @field_validator('include_inat', mode='before')
+    def normalize_include_inat(cls, v):
+        return True if v is None else v
 
     # These validators are really only necessary with our tile request, as nulls are passed as 'null'
     @field_validator('datasets', mode='before')
@@ -54,28 +58,3 @@ class OccurrenceFilter(BaseModel):
                 ',') if r not in ("null", "", "undefined")]
             return result or None
         return v
-
-
-# Version of occurrence filter for a single taxon
-class SingleTaxonOccurrenceFilter(OccurrenceFilter):
-    # Allow use of taxon_id param, as it makes more sense here
-    @model_validator(mode='before')
-    @classmethod
-    def handle_taxon_id_alias(cls, values):
-        if 'taxon_id' in values and 'taxon_ids' in values:
-            raise ValueError('Cannot specify both taxon_id and taxon_ids')
-        if 'taxon_id' in values:
-            values['taxon_ids'] = [values.pop('taxon_id')]
-        return values
-
-    @model_validator(mode='after')
-    def validate_single_taxon(self):
-        if len(self.taxon_ids) != 1:
-            raise ValueError(
-                'SingleTaxonFilter only supports a single taxon_id')
-        return self
-
-    @computed_field
-    @property
-    def taxon_id(self) -> int:
-        return self.taxon_ids[0]

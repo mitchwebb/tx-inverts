@@ -29,8 +29,8 @@ async def search_counties(request: Request, search_term: str) -> dict[str, list[
 
     try:
         async with request.app.state.db_pool.connection() as conn:
-            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
-            results = [dict(row) for row in results]
+            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
+            results = [County(**dict(row)) for row in results]
             return {'results': results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -54,21 +54,21 @@ async def search_parks(request: Request, search_term: str) -> dict[str, list[Par
 
     try:
         async with request.app.state.db_pool.connection() as conn:
-            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
             results = [format_park(dict(row)) for row in results]
             return {'results': results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def format_park(row: dict) -> dict:
+def format_park(row: dict) -> Park:
     """
     Helper for formatting park information returned in search
     """
 
     if row.get('owner'):
         row['owner'] = format_owner_name(row['owner'])
-    return row
+    return Park(**dict(row))
 
 
 # Format 'Austin, City of' type text, as well as 'Unknown' and 'Public; unknown'

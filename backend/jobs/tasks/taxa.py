@@ -18,7 +18,8 @@ import io
 import pandas as pd
 from psycopg import sql, AsyncConnection
 from typing import List, Optional
-from backend.models.occurrence import SingleTaxonOccurrenceFilter
+
+from backend.models.occurrence import OccurrenceFilters
 
 
 # TODO: This might as well be included in taxonomic updates, given that if
@@ -131,7 +132,7 @@ async def _replace_backbone(conn, temp_table_name: str):
 
 
 # Perform a full update of the gbif_backbone in local database
-async def update_backbone(fp: str = None, save_cleaned: bool = False):
+async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
     """
     Updates the gbif_inverts_backbone table
     """
@@ -324,7 +325,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
             )
 
         # Get taxon_ids
-        rows = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+        rows = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
         taxa_to_update: List[int] = [row['taxon_id'] for row in rows]
 
         if not taxa_to_update:
@@ -350,8 +351,8 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
             # Calculate values for taxa with inat observations and without
             for include_inat in [True, False]:
 
-                filters = SingleTaxonOccurrenceFilter(
-                    taxon_id=taxon_id,
+                filters = OccurrenceFilters(
+                    taxon_ids=[taxon_id],
                     include_inat=include_inat,
                 )
 

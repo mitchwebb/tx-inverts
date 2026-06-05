@@ -1,16 +1,76 @@
 from psycopg.rows import dict_row, tuple_row, DictRow, TupleRow
 from psycopg import AsyncConnection, sql
-from typing import Literal
+from typing import Literal, Sequence, overload
+
+
+# Fetch one tuple overload
+@overload
+async def execute_psql_query(
+    conn: AsyncConnection,
+    query: sql.Composed | sql.SQL,
+    params: tuple | list[tuple] | None = ...,
+    fetch: Literal['one'] = ...,
+    batch: bool = ...,
+    dict_cursor: Literal[False] = ...,
+) -> TupleRow | None: ...
+
+
+# Fetch one dict overload
+@overload
+async def execute_psql_query(
+    conn: AsyncConnection,
+    query: sql.Composed | sql.SQL,
+    params: tuple | list[tuple] | None = ...,
+    fetch: Literal['one'] = ...,
+    batch: bool = ...,
+    dict_cursor: Literal[True] = ...,
+) -> DictRow | None: ...
+
+
+# Fetch all tuples overload
+@overload
+async def execute_psql_query(
+    conn: AsyncConnection,
+    query: sql.Composed | sql.SQL,
+    params: tuple | list[tuple] | None = ...,
+    fetch: Literal['all'] = ...,
+    batch: bool = ...,
+    dict_cursor: Literal[False] = ...
+) -> Sequence[TupleRow] | None: ...
+
+
+# Fetch all dicts overload
+@overload
+async def execute_psql_query(
+    conn: AsyncConnection,
+    query: sql.Composed | sql.SQL,
+    params: tuple | list[tuple] | None = ...,
+    fetch: Literal['all'] = ...,
+    batch: bool = ...,
+    dict_cursor: Literal[True] = ...
+) -> Sequence[DictRow] | None: ...
+
+
+# Fetch None overload
+@overload
+async def execute_psql_query(
+    conn: AsyncConnection,
+    query: sql.Composed | sql.SQL,
+    params: tuple | list[tuple] | None = ...,
+    fetch: None = ...,
+    batch: bool = ...,
+    dict_cursor: bool = ...
+) -> None: ...
 
 
 async def execute_psql_query(
     conn: AsyncConnection,
-    query: sql.Composed | str,
+    query: sql.Composed | sql.SQL,
     params: tuple | list[tuple] | None = None,
     fetch: Literal['one', 'all'] | None = None,
     batch: bool = False,
     dict_cursor: bool = False
-) -> DictRow | TupleRow | None:
+) -> DictRow | TupleRow | Sequence[DictRow | TupleRow] | None:
     """
     Execute a SQL query from API using the shared DB connection. Does not commit.
 

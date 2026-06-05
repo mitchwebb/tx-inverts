@@ -1,4 +1,7 @@
 # Conservation rank related API endpoints
+from typing import cast
+
+from backend.constants.taxa import TaxonomicRank
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from fastapi import APIRouter, HTTPException, Request
@@ -6,9 +9,9 @@ from fastapi.responses import JSONResponse
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.natureserve import calculate_ns_values
 from psycopg import sql
-from backend.db.queries.occurrence import create_occurrence_filter
-from backend.models.api import ObservationsRequestParams
-from backend.models.occurrence import OccurrenceFilter, SingleTaxonOccurrenceFilter
+from backend.db.queries.occurrence import create_occurrence_filter_sql
+from backend.models.api import SingleTaxonObsRequestParams
+from backend.models.occurrence import OccurrenceFilters
 from backend.core.logging import api_logger
 import json
 
@@ -17,13 +20,13 @@ rankings_router = APIRouter()
 
 
 @rankings_router.post('/get_ns_metrics', response_class=JSONResponse)
-async def get_ns_metrics(params: ObservationsRequestParams, request: Request) -> JSONResponse:
+async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) -> JSONResponse:
     """
     Get NatureServe metrics (occurrences, range extent, and area of occupancy) 
     for a given (single) taxon_id with filters
 
     Args:
-        params (ObservationsRequestParams): Collection of filters to filter occurrence records
+        params (SingleTaxonObsRequestParams): Collection of filters to filter occurrence records
         request (fastapi.Request): FastAPI request object
 
     Returns:
@@ -35,8 +38,8 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request) ->
 
     try:
         # Make SingleTaxonOccurrenceFilter Object
-        filters = SingleTaxonOccurrenceFilter(
-            taxon_id=params.taxon_ids,
+        filters = OccurrenceFilters(
+            taxon_ids=[params.taxon_id],
             include_inat=params.include_inat,
             date_start=params.date_start,
             date_end=params.date_end,
@@ -45,8 +48,8 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request) ->
 
         async with pool.connection() as conn:
             # Calculate various ns_values using filtered observation data
-            ns_result = await calculate_ns_values(conn, filters, params.taxon_rank)
-            # Protect against failed ns_result
+            ns_result = await calculate_ns_values(conn, filters, cast(TaxonomicRank, params.taxon_rank))
+            # Protect against failed ns_resut
             if not ns_result:
                 return JSONResponse(content={'result': None}, status_code=200)
             api_logger.info(f'Retrieved NS values {ns_result}')
@@ -60,12 +63,12 @@ async def get_ns_metrics(params: ObservationsRequestParams, request: Request) ->
 
 
 @rankings_router.post('/get_range_extent_geom', response_class=JSONResponse)
-async def get_range_extent_geom(params: ObservationsRequestParams, request: Request) -> JSONResponse:
+async def get_range_extent_geom(params: SingleTaxonObsRequestParams, request: Request) -> JSONResponse:
     """
     Get hull geometry representing range extent for a given species' filtered observation data
 
     Args:
-        params (ObservationsRequestParams): Collection of filters to filter occurrence records
+        params (SingleTaxonObsRequestParams): Collection of filters to filter occurrence records
         request (fastapi.Request): FastAPI request object
 
     Returns:
@@ -75,9 +78,9 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
     pool = request.app.state.db_pool
 
     try:
-        # Make OccurrenceFilter Object
-        filters = OccurrenceFilter(
-            taxon_ids=params.taxon_ids,
+        # Make OccurrenceFilters Object
+        filters = OccurrenceFilters(
+            taxon_ids=[params.taxon_id],
             include_inat=params.include_inat,
             date_end=params.date_end,
             date_start=params.date_start,
@@ -85,7 +88,7 @@ async def get_range_extent_geom(params: ObservationsRequestParams, request: Requ
         )
 
         # Make occurrence_filter SQL fragment
-        occurrence_filter = create_occurrence_filter(filters)
+        occurrence_filter = create_occurrence_filter_sql(filters)
 
         async with pool.connection() as conn:
             # Get range extent geometry via SQL using filtered occurrences

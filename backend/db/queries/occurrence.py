@@ -4,21 +4,21 @@ from backend.data_util.helpers import normalize_to_list
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
-from backend.models.occurrence import OccurrenceFilter
 from psycopg import sql
+from backend.models.occurrence import OccurrenceFilters
 
 
-def create_occurrence_filter(filter: OccurrenceFilter, skip_taxa: bool = False) -> sql.SQL:
+def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = False) -> sql.SQL | sql.Composed:
     """
-    Takes OccurrenceFilter parameters and generates sql formatted
+    Takes OccurrenceFilters parameters and generates sql formatted
     clause for retrieving occurrence data
 
     Args:
-        filter (OccurrenceFilter): Collection of parameters for filtering occurrence data
+        filter (OccurrenceFilters): Collection of parameters for filtering occurrence data
         skip_taxa (bool): Skips taxa filter if True, defaults to False
 
     Returns:
-        occurrences_clause (sql.Composed): sql.SQL() formatted occurrence clause
+        occurrences_clause (sql.Composed | sql.SQL): a sql occurrence clause
     """
 
     # Create taxon_filter (unless skip_taxa == True, then set to 'TRUE' as a no-op condition)
@@ -93,7 +93,7 @@ def create_occurrence_filter(filter: OccurrenceFilter, skip_taxa: bool = False) 
 
 # This is mostly just used in the occurrence clause, but is used in specific cases to
 # create specialized requests
-def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives: Optional[bool] = False) -> sql.SQL:
+def create_occurrence_taxon_filter(taxon_ids: int | List[int] = 1, include_invasives: Optional[bool] = False) -> sql.Composed | sql.SQL:
     """
     Takes taxon_ids and generates sql formatted clause to find occurrences with
     matching ids in occurrences table. This matches to taxa in any rank as long
@@ -102,17 +102,17 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int], include_invasives
     is, itself, an invasive taxon, or include_invasives is true.
 
     Args:
-        taxon_ids (int | List[int]): Taxon ID of desired taxon
+        taxon_ids (int | List[int]): Taxon ID of desired taxon. Defaults to 1 (Animalia)
         include_invasives (bool): If True, invasive taxa are included in results. Defaults to False.
 
     Returns:
-        full_taxon_clause (sql.Composed): A sql.SQL clause for use in a WHERE body
+        full_taxon_clause (sql.Composed | sql.SQL): A sql clause for use in a WHERE body
     """
 
     # Normalize taxon_ids value to a list (in case an int was provided)
     taxon_ids = normalize_to_list(taxon_ids)
 
-    # If no taxon_ids provided (animalia), skip
+    # If no taxon_ids provided (Animalia), skip
     if taxon_ids == [1]:
         # If include_invasives, skip with 'TRUE' no-op
         if include_invasives:

@@ -5,26 +5,42 @@ from typing import Literal, List
 NSRank = Literal['x', 'h', '1', '2', '3', '4', '5', 'u']
 
 
-# Params used to make queries for taxon information only
+# Params used to make queries for multiple taxon information only
 class TaxaRequestParams(BaseModel):
-    taxon_ids: List[int] | int | None = None
+    taxon_ids: List[int]
     taxon_rank: str | None = None
     ns_ranks: List[NSRank] | None = None
 
 
-# Params used to make queries which rely on filtered observation data
-class ObservationsRequestParams(TaxaRequestParams):
+# Params used to make queries for a single taxon
+class TaxonRequestParams(BaseModel):
+    taxon_id: int
+    taxon_rank: str | None = None
+    ns_ranks: List[NSRank] | None = None
+
+
+# Params used to filter observation data
+class ObsRequestParams(BaseModel):
     include_inat: bool | None = True
     datasets: List[str] | None = None
     date_start: str | None = None
     date_end: str | None = None
     include_invasives: bool | None = False
-    # List of UUIDs from the regions table
     regions: List[str] | None = None
 
 
+# Class for observations requests for multiple taxa
+class MultiTaxaObsRequestParams(TaxaRequestParams, ObsRequestParams):
+    pass
+
+
+# Class for observations request for a single taxon
+class SingleTaxonObsRequestParams(TaxonRequestParams, ObsRequestParams):
+    pass
+
+
 # Params used to make download request queries
-class DownloadRequestParams(ObservationsRequestParams):
+class DownloadRequestParams(MultiTaxaObsRequestParams):
     estimate: bool = False  # If true, trigger query size estimate
 
 

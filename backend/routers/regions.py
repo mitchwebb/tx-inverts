@@ -50,4 +50,4 @@ async def get_region_info(region_id: str, request: Request) -> RegionInfo:
         raise HTTPException(
             status_code=404, detail=f'Region {region_id} not found')
 
-    return results
+    return RegionInfo(**dict(results))

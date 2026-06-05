@@ -1,5 +1,5 @@
 # Logic for processing/filtering GBIF observations downloads in darwincore format
-from typing import Generator
+from typing import Generator, TypedDict, cast
 from backend.core.logging import data_logger
 from pandas import DataFrame
 from geopandas.geodataframe import GeoDataFrame
@@ -8,6 +8,8 @@ from pathlib import Path
 import pandas as pd
 import csv
 import re
+
+from backend.types.occurrence import GBIFObservationRow
 
 
 ### Constants for date processing ###
@@ -219,6 +221,10 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     # Iterate through rows
     for row in df.itertuples(index=True):
         idx = row.Index
+
+        # Cast row type to GBIFObservationsRow for type recognition
+        row = cast(GBIFObservationRow, row)
+
         start_date = ''
         end_date = ''
 
@@ -303,7 +309,7 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     return df
 
 
-def process_dwc_observations(filepath: Path, chunk_size: int = 1000000) -> Generator[DataFrame, None, None]:
+def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Generator[DataFrame, None, None]:
     """
     Take an unclean dwc observations file and process it, in chunks,
     into a format suitable for txinverts database insertion.

@@ -2,7 +2,6 @@ from backend.jobs.runners.run_async import run_async
 from backend.jobs.tasks.occurrence import update_observations
 from backend.core.logging import setup_logging
 from backend.core.logging import tasks_logger
-import asyncio
 
 
 async def main():

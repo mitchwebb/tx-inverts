@@ -3,7 +3,7 @@ from backend.db.schema.base import DBTable
 
 class ObservationRegions(DBTable):
     name = 'observation_regions'
-    primary_key = None,
+    primary_key = None
     columns = {
         'observation_id': 'BIGINT REFERENCES gbif_observations(gbif_id) ON DELETE CASCADE',
         'region_id': 'UUID',

@@ -47,7 +47,7 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
         # Pre-process dataframe
         # Set id and geometry in df
         gdf['geometry'] = gdf['geometry'].apply(_to_multipolygon_wkt)
-        gdf['id'] = [uuid.uuid4() for _ in range(len(gdf))]
+        gdf['id'] = [str(uuid.uuid4()) for _ in range(len(gdf))]
 
         # Get column order and match with values
         cols = list(gdf.columns)
@@ -71,6 +71,9 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
             sql.SQL('ST_GeomFromText(%s, 4326)') if c == 'geometry' else sql.SQL('%s')
             for c in cols
         )
+
+        # Assert primary key for type checking
+        assert table.primary_key, f"Table {table.name} must have a primary key"
 
         insert_query = sql.SQL("""
             INSERT INTO {table} ({cols})
@@ -110,7 +113,7 @@ async def fill_all_geometry_tables(conn, truncate: bool = False):
     db_logger.info('Updated all geometry tables')
 
 
-async def update_observation_regions(conn, new_observation_ids: List[int] = None, replace_all: bool = False):
+async def update_observation_regions(conn, new_observation_ids: List[int] | None = None, replace_all: bool = False):
 
     try:
         # Make sure indexes are in place

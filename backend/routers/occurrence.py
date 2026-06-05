@@ -1,22 +1,23 @@
 # Occurrence related API endpoints
 from datetime import date
+from typing import Sequence
 import backend.constants.map as map
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Query, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
-from psycopg import sql
-from backend.models.api import ObservationsRequestParams
-from backend.db.queries.occurrence import create_occurrence_filter, create_occurrence_taxon_filter
-from backend.models.occurrence import OccurrenceFilter, SingleTaxonOccurrenceFilter
+from psycopg import sql, rows
+from backend.db.queries.occurrence import create_occurrence_filter_sql, create_occurrence_taxon_filter
+from backend.models.api import SingleTaxonObsRequestParams
 from backend.core.logging import api_logger
+from backend.models.occurrence import OccurrenceFilters
 
 
 occurrence_router = APIRouter()
 
 
 @occurrence_router.get('/get_datasets')
-async def get_datasets(request: Request) -> dict[str, list[dict]]:
+async def get_datasets(request: Request) -> dict[str, Sequence[rows.DictRow]]:
     """
     Get list of ALL datasets found in dataset_meta table (all datasets represented in observations records)
     """
@@ -47,12 +48,12 @@ async def get_datasets(request: Request) -> dict[str, list[dict]]:
 
 
 @occurrence_router.post('/get_dataset_counts')
-async def get_dataset_counts(params: ObservationsRequestParams, request: Request) -> dict[str, int] | None:
+async def get_dataset_counts(params: SingleTaxonObsRequestParams, request: Request) -> dict[str, int] | None:
     """
     Get observation counts for each dataset represented in filtered observation data
 
     Args:
-        params (ObservationsRequestParams): Params for filtering observation data
+        params (SingleTaxonObsRequestParams): Params for filtering observation data
         request (fastapi.Request): FastAPI request object
 
     Returns:
@@ -65,8 +66,8 @@ async def get_dataset_counts(params: ObservationsRequestParams, request: Request
 
         async with pool.connection() as conn:
 
-            filter_payload = OccurrenceFilter(
-                taxon_ids=params.taxon_ids,
+            filter_payload = OccurrenceFilters(
+                taxon_ids=[params.taxon_id],
                 include_inat=params.include_inat,
                 date_start=params.date_start,
                 date_end=params.date_end
@@ -74,9 +75,10 @@ async def get_dataset_counts(params: ObservationsRequestParams, request: Request
 
             taxon_filter = create_occurrence_taxon_filter(
                 filter_payload.taxon_ids)
-            occurrence_filter = create_occurrence_filter(filter_payload)
 
-            query = sql.SQL("""
+            occurrence_filter = create_occurrence_filter_sql(filter_payload)
+
+            query = sql.SQL('''
                 WITH datasets_with_taxon AS (
                     SELECT DISTINCT dataset_key
                     FROM gbif_observations
@@ -98,7 +100,7 @@ async def get_dataset_counts(params: ObservationsRequestParams, request: Request
                 LEFT JOIN counts
                     ON counts.dataset_key = p.dataset_key
                 ORDER BY count DESC;
-            """).format(
+            ''').format(
                 occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
                 occurrence_filter=occurrence_filter,
                 taxon_filter=taxon_filter
@@ -118,12 +120,12 @@ async def get_dataset_counts(params: ObservationsRequestParams, request: Request
 
 
 @occurrence_router.post('/get_observation_dates')
-async def get_observation_dates(params: ObservationsRequestParams, request: Request) -> dict[str, date | None] | None:
+async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Request) -> dict[str, date | None] | None:
     """
-    Get min/max dates represented in filtered observation data
+    Get min/max dates represented in filtered observation data for single taxon
 
     Args:
-        params (ObservationsRequestParams): Params for filtering observation data
+        params (SingleTaxonObsRequestParams): Params for filtering observation data
         request (fastapi.Request): FastAPI request object
 
     Returns:
@@ -135,12 +137,12 @@ async def get_observation_dates(params: ObservationsRequestParams, request: Requ
 
         async with pool.connection() as conn:
 
-            filter_payload = OccurrenceFilter(
-                taxon_ids=params.taxon_ids,
+            filter_payload = OccurrenceFilters(
+                taxon_ids=[params.taxon_id],
                 include_inat=params.include_inat
             )
 
-            occurrence_filter = create_occurrence_filter(filter_payload)
+            occurrence_filter = create_occurrence_filter_sql(filter_payload)
 
             query = sql.SQL("""
                 SELECT MIN(collection_start_date) as min_date, MAX(collection_end_Date) as max_date
@@ -187,15 +189,15 @@ async def get_tile(z: int, x: int, y: int, request: Request, include_inat: bool 
     """
 
     try:
-        filter_payload = SingleTaxonOccurrenceFilter(
-            taxon_id=taxon_id,
+        filter_payload = OccurrenceFilters(
+            taxon_ids=[taxon_id],
             include_inat=include_inat,
             datasets=datasets,
             date_start=date_start,
             date_end=date_end,
         )
 
-        occurrence_filter = create_occurrence_filter(filter_payload)
+        occurrence_filter = create_occurrence_filter_sql(filter_payload)
 
         # Get grid size in meters at a given zoom level
         grid_size = map.get_meters_per_pixel(z) * map.PIXELS_PER_GRID

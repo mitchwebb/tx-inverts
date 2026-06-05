@@ -5,11 +5,11 @@ from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from collections import deque, defaultdict
 import pandas as pd
 from typing import List
-from psycopg import Connection, sql
+from psycopg import AsyncConnection, sql
 from backend.core.logging import data_logger
 
 
-async def get_observation_count(conn: Connection, taxon_ids: int | List[int]) -> int:
+async def get_observation_count(conn: AsyncConnection, taxon_ids: int | List[int]) -> int | None:
     """
     Returns the total number of GBIF observations for the given taxon ID(s).
     """
@@ -27,7 +27,8 @@ async def get_observation_count(conn: Connection, taxon_ids: int | List[int]) ->
     )
 
     result = await execute_psql_query(conn, query, fetch='one')
-    return result[0]
+
+    return int(result[0]) if result else None
 
 
 # Numpy version of lineage building for backbone
@@ -104,7 +105,7 @@ def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
     queue = deque(roots)
     while queue:
         i = queue.popleft()
-        rank = ranks[i]
+        rank = ranks[i].item()
         parent_id = parent_ids[i]
 
         # Copy parent's lineage if exists

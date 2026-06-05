@@ -1,3 +1,4 @@
+from datetime import date
 from hashlib import new
 import io
 import json
@@ -7,7 +8,6 @@ from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
-import psycopg
 import time
 
 from backend.config import get_settings
@@ -28,8 +28,8 @@ from typing import List, Optional, Tuple
 
 
 async def update_observations(
-    fp: str = None,
-    gbif_request_key: str = None,
+    fp: str | None = None,
+    gbif_request_key: str | None = None,
     chunk_size: int = 1000000,
     full_replace: bool = False,
     save_cleaned_data: bool = False,
@@ -74,7 +74,8 @@ async def update_observations(
 
             # Else, create new request
             else:
-                kwargs = {'min_date_type': 'modified'}
+                min_date = None
+                kwargs: dict[str, str | date] = {'min_date_type': 'modified'}
 
                 if full_replace:
                     data_logger.info(
@@ -88,9 +89,13 @@ async def update_observations(
                     data_logger.info(
                         f'Using min modified date for GBIF request: {min_date}')
 
+                if min_date is not None:
+                    kwargs['min_date'] = min_date
+
                 # Request a GBIF download
+                # Pylance has a tough time with kwarg types, and this is local, so we're just ignoring
                 request_body = observations_request.build_observations_request(
-                    **kwargs)
+                    **kwargs)  # type: ignore[arg-type]
 
                 key = await gbif_downloads.gbif_download_request(
                     request_body=json.dumps(request_body),
@@ -347,7 +352,8 @@ async def update_observations(
                 temp_table=sql.Identifier(temp_table_name)
             )
             result = await execute_psql_query(conn, id_query, fetch='all', dict_cursor=True)
-            affected_observation_ids = [row['gbif_id'] for row in result]
+
+            affected_observation_ids = [row['gbif_id'] for row in result or []]
 
         # Else, compare old and new rows, replacing only those with altered information
         else:
@@ -365,7 +371,7 @@ async def update_observations(
                 temp_table=sql.Identifier(temp_table_name)
             )
             result = await execute_psql_query(conn, changed_query, fetch='one', dict_cursor=True)
-            changed_count = result['changed_taxa']
+            changed_count = result['changed_taxa'] if result is not None else 0
 
             # If updated rows with updated accepted_taxon_keys exist, warn...
             if changed_count > 0:
@@ -381,7 +387,7 @@ async def update_observations(
                 SELECT COUNT(*) AS new_row_count FROM {temp_table}
             """).format(temp_table=sql.Identifier(temp_table_name))
             result = await execute_psql_query(conn, new_row_query, fetch='one', dict_cursor=True)
-            new_row_count = result['new_row_count']
+            new_row_count = result['new_row_count'] if result is not None else 0
 
             # Now update main table
             db_logger.info(f'Rows to copy: {new_row_count}')
@@ -419,7 +425,7 @@ async def update_observations(
             )
             result = await execute_psql_query(
                 conn, updated_ids_query, fetch='all', dict_cursor=True)
-            affected_observation_ids = [row['gbif_id'] for row in result]
+            affected_observation_ids = [row['gbif_id'] for row in result or []]
 
         # Refresh materialized views
         db_logger.info('Refreshing materialized views...')
@@ -438,7 +444,7 @@ async def update_observations(
         )
 
         missing_taxa = await execute_psql_query(conn, missing_id_query, fetch='all', dict_cursor=True)
-        missing_keys = [row['accepted_taxon_key'] for row in missing_taxa]
+        missing_keys = [row['accepted_taxon_key'] for row in missing_taxa or []]
         missing_count = len(missing_keys)
 
         if missing_count > 0:
@@ -500,16 +506,16 @@ async def sync_observations_to_backbone():
         # Get count of rows that need changing
         row_count = await execute_psql_query(
             conn,
-            query='SELECT COUNT(*) AS n FROM tmp_update;',
+            query=sql.SQL('SELECT COUNT(*) AS n FROM tmp_update;'),
             fetch='one',
             dict_cursor=True
         )
 
         db_logger.info(
-            f"Rows that actually need updating: {row_count['n']}")
+            f"Rows that actually need updating: {row_count['n'] if row_count is not None else 0}")
 
         # Make a cheeky index to speed up next operation
-        await execute_psql_query(conn, 'CREATE INDEX ON tmp_update (gbif_id);')
+        await execute_psql_query(conn, sql.SQL('CREATE INDEX ON tmp_update (gbif_id);'))
 
         # Update affected observations rows in gbif_observations
         db_logger.info('Updating affected observations...')
@@ -540,7 +546,7 @@ async def sync_observations_to_backbone():
                 GBIF_OBSERVATIONS_TABLE.name),
             backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
         )
-        rows = await execute_psql_query(conn, orphans_query, fetch='all', dict_cursor=True)
+        rows = await execute_psql_query(conn, orphans_query, fetch='all', dict_cursor=True) or []
         orphaned_keys = [row['orphaned_keys'] for row in rows]
 
         if len(orphaned_keys) > 0:

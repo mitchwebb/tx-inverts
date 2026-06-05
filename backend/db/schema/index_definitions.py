@@ -1,5 +1,6 @@
 # Various index and mat view creation statements and information
 
+from backend.constants.taxa import RANK_COLS
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_COUNTIES_TABLE, TEXAS_PARKS_TABLE
@@ -9,7 +10,6 @@ from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
-from backend.routers.taxa import RANK_COLS
 from psycopg import sql
 
 

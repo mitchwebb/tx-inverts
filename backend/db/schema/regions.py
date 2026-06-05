@@ -8,7 +8,7 @@ class Regions(DBTable):
     """
 
     name = 'regions'
-    primary_key = None,
+    primary_key = None
     columns = {
         'id': 'UUID',
         'region_type': 'TEXT',

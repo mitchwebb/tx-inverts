@@ -15,7 +15,7 @@ export async function getDatasetCounts(
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                taxon_ids: activeTaxonID,
+                taxon_id: activeTaxonID,
                 include_inat: includeINat,
                 date_start: dateStart?.toISOString(),
                 date_end: dateEnd?.toISOString(),
@@ -82,7 +82,7 @@ export async function getObservationDates(
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    taxon_ids: activeTaxonID,
+                    taxon_id: activeTaxonID,
                     include_inat: includeINat,
                 }),
             }

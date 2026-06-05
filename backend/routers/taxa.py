@@ -1,12 +1,12 @@
 # Taxon related API endpoints
-from backend.db.queries.occurrence import create_occurrence_filter
+from backend.db.queries.occurrence import create_occurrence_filter_sql
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
-from backend.models.occurrence import OccurrenceFilter
+from backend.models.occurrence import OccurrenceFilters
 from fastapi import Request, APIRouter, HTTPException
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.models.api import ObservationsRequestParams
+from backend.models.api import MultiTaxaObsRequestParams
 from psycopg import sql
 from backend.core.logging import api_logger
 from backend.models.taxa import TaxonInfo, TaxonSuggestion, TaxonTreeNode
@@ -69,7 +69,7 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
     )
     try:
         async with request.app.state.db_pool.connection() as conn:
-            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+            results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
             return [TaxonSuggestion(**row) for row in results]
     except Exception as e:
         api_logger.error(str(e))
@@ -184,7 +184,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
         ''').format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name))
 
         async with request.app.state.db_pool.connection() as conn:
-            result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
+            result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
         return [TaxonTreeNode(**row) for row in result]
 
     except HTTPException:
@@ -196,13 +196,13 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
 
 # Get list of qualified taxon_ids based on various filters
 @taxa_router.post("/get_qualified_taxa")
-async def get_qualified_taxa(params: ObservationsRequestParams, request: Request):
+async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request):
     """
     Get list of taxon ids of taxa represented by observations data given
-    various observation filters (ObservationsRequestParams)
+    various observation filters (MultiTaxaObsRequestParams)
 
     Args:
-        params (ObservationRequestParams): Various params for filtering observation data
+        params (MultiTaxaObsRequestParams): Various params for filtering observation data
         request (fastapi.Request): FastAPI request object
 
     Returns:
@@ -213,7 +213,7 @@ async def get_qualified_taxa(params: ObservationsRequestParams, request: Request
 
     try:
         # Create occurrence filter item
-        filter_payload = OccurrenceFilter(
+        filter_payload = OccurrenceFilters(
             taxon_ids=params.taxon_ids,
             include_inat=params.include_inat,
             date_start=params.date_start,
@@ -221,7 +221,7 @@ async def get_qualified_taxa(params: ObservationsRequestParams, request: Request
             datasets=params.datasets
         )
         # Create occurrence filter sql chunk
-        occurrence_filter = create_occurrence_filter(filter_payload)
+        occurrence_filter = create_occurrence_filter_sql(filter_payload)
 
         # If regions specified, include special taxa-by-region join
         if params.regions:
@@ -251,7 +251,7 @@ async def get_qualified_taxa(params: ObservationsRequestParams, request: Request
         )
 
         async with request.app.state.db_pool.connection() as conn:
-            result = await execute_psql_query(conn, occurrence_query, fetch='all')
+            result = await execute_psql_query(conn, occurrence_query, fetch='all') or []
             taxon_ids = set(r[0] for r in result)
 
             return taxon_ids

@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import LiteralString, NamedTuple
 import pandas as pd
 from psycopg import sql
 from backend.data_util.case import to_snake_case
@@ -34,7 +34,7 @@ SQL_TYPE_MAP = {
 class DBTable:
     """Abstract base class for table definitions"""
     name: str
-    columns: dict[str, str]
+    columns: dict[str, LiteralString]
     primary_key: str | None = None  # This assumes a single primary key!
 
     def __init__(self):
@@ -43,7 +43,7 @@ class DBTable:
                 'Subclasses must define name and columns')
 
     # Get create table statement
-    def create_table_query(self) -> str:
+    def create_table_query(self) -> sql.Composed:
         """Get create table statement for table using snake_case column names"""
         # Generate list of columns (in snake_case) and types
         columns = [
@@ -63,7 +63,7 @@ class DBTable:
         return create_sql
 
     # Get drop table statement
-    def drop_table_query(self) -> str:
+    def drop_table_query(self) -> sql.Composed:
         return sql.SQL(
             "DROP TABLE IF EXISTS {table_name}"
         ).format(table_name=sql.Identifier(self.name))
@@ -100,7 +100,7 @@ class DBTable:
             for col in missing:
                 df[col] = None
 
-        # Coerce numberic columns to appropriate nullable pandas types
+        # Coerce numeric columns to appropriate nullable pandas types
         for col_name, col_type in self.columns.items():
             col_name = to_snake_case(col_name)
             if col_name not in df.columns:
@@ -110,7 +110,9 @@ class DBTable:
                     if mapping.needs_numeric_coercion:
                         df[col_name] = pd.to_numeric(
                             df[col_name], errors='coerce')
-                    df[col_name] = df[col_name].astype(mapping.pandas_dtype)
+                    # SQL_TYPE_MAP ensures that this is safe (even with the ignore)
+                    df[col_name] = df[col_name].astype(
+                        mapping.pandas_dtype)  # type: ignore[arg-type]
                     break
 
         self.validate_columns(df)

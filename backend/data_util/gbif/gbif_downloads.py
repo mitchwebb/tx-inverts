@@ -61,7 +61,7 @@ async def gbif_download_request(request_body: str, pwd: str, username: str, test
         raise
 
 
-async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800, target_files: list[str] | None = None, verbose=False):
+async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800, target_files: list[str] | None = None, verbose=False) -> str:
     """
     Uses a GBIF download key to download and save a GBIF download to a local CSV
 

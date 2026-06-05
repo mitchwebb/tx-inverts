@@ -1,5 +1,5 @@
 from backend.data_util.execute_psql_query import execute_psql_query
-from psycopg import Connection, sql
+from psycopg import AsyncConnection, sql
 from psycopg.errors import Error as PsycopgError
 from backend.db.schema import ALL_TABLES
 from backend.db.schema.base import DBTable
@@ -9,7 +9,7 @@ from backend.jobs.tasks.views import refresh_materialized_views
 
 
 # Check if table already exists (for readable erroring)
-async def table_exists(conn: Connection, table_name: str) -> bool:
+async def table_exists(conn: AsyncConnection, table_name: str) -> bool:
     exists_query = sql.SQL("""
         SELECT EXISTS (
                 SELECT 1
@@ -50,7 +50,7 @@ async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: 
 
 
 # Initialize all tables provided to ALL_TABLES constant
-async def initialize_all_tables(conn: Connection, *, verbose: bool = False, strict: bool = True):
+async def initialize_all_tables(conn: AsyncConnection, *, verbose: bool = False, strict: bool = True):
     for table in ALL_TABLES:
         await initialize_table(conn, table, verbose, strict)
 

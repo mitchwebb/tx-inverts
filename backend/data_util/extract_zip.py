@@ -6,7 +6,7 @@ import os
 from backend.core.logging import data_logger
 
 
-def extract_zip_files(fp: str, output_fp: str, target_files: List[str] = None, delete_zip: bool = False) -> str:
+def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = None, delete_zip: bool = False) -> str:
     """
     Helper to extract zip files, extracting only specific files if provided by name
     Optionally deleted original .zip

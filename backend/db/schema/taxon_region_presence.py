@@ -8,7 +8,7 @@ class TaxonRegionPresence(DBTable):
     """
 
     name = 'taxon_region_presence'
-    primary_key = None,
+    primary_key = None
     columns = {
         'accepted_taxon_key': 'BIGINT',
         'region_id': 'TEXT'

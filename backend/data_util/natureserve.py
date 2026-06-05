@@ -2,11 +2,10 @@ from backend.constants.taxa import TaxonomicRank
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.models.api import NSRank
-from psycopg import Connection, sql
-import psycopg
-from backend.db.queries.occurrence import create_occurrence_filter
-from backend.models.occurrence import SingleTaxonOccurrenceFilter
+from psycopg import AsyncConnection, sql, rows
+from backend.db.queries.occurrence import create_occurrence_filter_sql
 from backend.core.logging import api_logger
+from backend.models.occurrence import OccurrenceFilters
 
 
 def calculate_rank(number_of_occurrences: int, range_extent: int, area_of_occupancy: int | None = None) -> NSRank:
@@ -103,7 +102,7 @@ def calculate_rank(number_of_occurrences: int, range_extent: int, area_of_occupa
 # In this case, 'range' refers to the difference between low/high
 # ranking estimates.
 # With our parameters, there is no estimate range, hence 'zero_range'
-def _get_zero_range_rank(three_average_score: float) -> str:
+def _get_zero_range_rank(three_average_score: float) -> NSRank:
     """
     Helper for calculating rank from taxon score using 3AVG method
     This method uses weighting for each metric
@@ -130,8 +129,8 @@ def _get_zero_range_rank(three_average_score: float) -> str:
 # TODO: Round up Range Extent to match AOO minimum
 # Separated from router to allow command line or other direct access
 async def calculate_ns_values(
-    conn: Connection,
-    filters: SingleTaxonOccurrenceFilter,
+    conn: AsyncConnection,
+    filters: OccurrenceFilters,
     taxon_rank: TaxonomicRank = 'species'
 ) -> dict | None:
     """
@@ -141,7 +140,7 @@ async def calculate_ns_values(
 
         Args:
             conn (Connection): async DB connection or context manager supporting async with
-            filters (SingleTaxonOccurrenceFilter): Occurrence filters, with taxon_ids being a single taxon_id
+            filters (OccurrenceFilters): Occurrence filters with taxon_ids being a single taxon_id
             taxon_rank (TaxonomicRank): The rank of the queried taxon, defaults to 'species'
 
         Returns:
@@ -154,7 +153,19 @@ async def calculate_ns_values(
     """
 
     try:
-        occurrence_filter = create_occurrence_filter(filters, skip_taxa=True)
+        # This function should only be run on a single taxon
+        if not filters.taxon_ids:
+            raise ValueError("calculate_ns_values requires a taxon_id")
+
+        if len(filters.taxon_ids) != 1:
+            raise ValueError(
+                f"calculate_ns_values requires exactly one taxon_id, got {len(filters.taxon_ids)}"
+            )
+
+        taxon_id = filters.taxon_ids[0]
+
+        occurrence_filter = create_occurrence_filter_sql(
+            filters, skip_taxa=True)
 
         # Occurrences is only a useful metric for species and subspecies
         # We'll include genus as well, because why not
@@ -223,7 +234,7 @@ async def calculate_ns_values(
             FROM values, hull, region
         """).format(
             tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
-            taxon_id=sql.Literal(filters.taxon_id),
+            taxon_id=sql.Literal(taxon_id),
             include_inat=sql.Literal(filters.include_inat),
             occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
             occurrence_filter=occurrence_filter,
@@ -232,10 +243,11 @@ async def calculate_ns_values(
         )
 
         # Using raw cursor for setting local work mem
-        async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+        async with conn.cursor(row_factory=rows.dict_row) as cur:
             await cur.execute("SET LOCAL work_mem = '256MB'")
             await cur.execute(query)
             result = await cur.fetchone()
             return result
     except Exception as e:
         api_logger.exception(e)
+        raise
