@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Iterator
 
 import requests
 import os
@@ -8,7 +8,7 @@ from backend.core.logging import data_logger
 
 
 @contextmanager
-def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: bool = False) -> Generator[str]:
+def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: bool = False) -> Iterator[str]:
     """
     Downloads a large file in chunks
     Returns temp output filepath to be used in context
@@ -20,7 +20,7 @@ def download_large_temp_file(url: str, chunk_size: int = 1024*1024, verbose: boo
         verbose (bool): Default False
 
     Returns:
-        temp_path (Generator[str]): Path to the temp file.
+        temp_path (Iterator[str]): Path to the temp file.
     """
 
     # Use temporary directory and path

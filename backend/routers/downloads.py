@@ -1,5 +1,5 @@
 # Download related API endpoints
-from typing import AsyncGenerator, Literal
+from typing import AsyncIterator, Literal
 from psycopg_pool import AsyncConnectionPool
 from backend.db.queries.dwc import DWC_TAXA_SELECT_CLAUSE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
@@ -19,7 +19,7 @@ async def download_table_and_stream(
     pool: AsyncConnectionPool,
     query: sql.Composed,
     format: Literal['csv', 'tsv'],
-) -> AsyncGenerator[bytes]:
+) -> AsyncIterator[bytes]:
     """
     Stream query results directly from Postgres using COPY TO STDOUT.
 
