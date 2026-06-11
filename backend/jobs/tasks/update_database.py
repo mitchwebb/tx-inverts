@@ -35,7 +35,7 @@ async def update_database():
             # A bit deceptive, but new_row_keys == None means update ALL rows
             new_row_keys = None
 
-        # Update NatureServe ranks
+        # Update conservation ranks
         await update_ns_ranks(conn, new_row_keys)
 
         # Refresh the materialized views

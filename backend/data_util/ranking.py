@@ -22,7 +22,7 @@ def calculate_rank(number_of_occurrences: int, range_extent: int, area_of_occupa
 
     # If all values are 0, species is data deficient
     # NatureServe doesn't actually have this ranking. This would be presumed extinct
-    if number_of_occurrences == 0 and range_extent == 0 and area_of_occupancy == 0:
+    if number_of_occurrences == 0 and range_extent == 0 and (area_of_occupancy == 0 or area_of_occupancy is None):
         return "u"
 
     # According to IUCN, range_extent should be AT LEAST equal to area_of_occupancy

@@ -4,7 +4,7 @@ from backend.data_util.download_large_file import download_large_file
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.extract_zip import extract_zip_files
 from backend.data_util.invasives import get_invasives_dataset, prep_invasives_dataset
-import backend.data_util.natureserve as ns
+import backend.data_util.ranking as ns
 from backend.data_util.taxa import build_lineages_numpy
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
@@ -257,7 +257,7 @@ async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
 
 async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]] = None) -> None:
     """
-    Update NatureServe ranks for selected (or all) taxa
+    Update conservation ranks for selected (or all) taxa
 
     conn (AsyncConnection): Active async DB connection
     taxon_keys (int[]): List of taxon_keys to update (if None, updates all)
@@ -329,17 +329,17 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         taxa_to_update: List[int] = [row['taxon_id'] for row in rows]
 
         if not taxa_to_update:
-            data_logger.info("No taxa to update for NatureServe ranks.")
+            data_logger.info("No taxa to update for conservation ranks.")
             return
 
         total = len(taxa_to_update)
 
-        data_logger.info(f"Updating NatureServe ranks for {total} taxa...")
+        data_logger.info(f"Updating conservation ranks for {total} taxa...")
 
         # Get list of taxon_ids and ranks for batch update
         rank_assignments: List[tuple[int, str, str]] = []
 
-        # Calcuate ranks for all taxa (with and without inat)
+        # Calculate ranks for all taxa (with and without inat)
         for index, taxon_id in enumerate(taxa_to_update):
             # Update every 100 taxa or at the beginning and end
             if index % 100 == 0 or index == total - 1:
@@ -391,7 +391,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         await refresh_materialized_view(conn, 'tx_taxa')
         await conn.commit()
 
-        data_logger.info("NatureServe rank updates complete.")
+        data_logger.info("Conservation rank updates complete.")
     except Exception as e:
         data_logger.exception(f"Failed to update NS ranks: {e}")
         await conn.rollback()

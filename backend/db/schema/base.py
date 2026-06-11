@@ -1,7 +1,7 @@
 from typing import LiteralString, NamedTuple
 import pandas as pd
 from psycopg import sql
-from backend.data_util.case import to_snake_case
+from backend.data_util.case import camel_to_snake_case
 from backend.core.logging import data_logger
 
 
@@ -48,7 +48,7 @@ class DBTable:
         # Generate list of columns (in snake_case) and types
         columns = [
             sql.SQL('{column} {type}').format(
-                column=sql.Identifier(to_snake_case(col)),
+                column=sql.Identifier(camel_to_snake_case(col)),
                 type=sql.SQL(dtype)
             ) for col, dtype in self.columns.items()
         ]
@@ -71,7 +71,7 @@ class DBTable:
     # Get list of columns in snake_case
     def column_order(self) -> list[str]:
         """Get list of columns in snake_case in their defined order."""
-        return [to_snake_case(col) for col in self.columns]
+        return [camel_to_snake_case(col) for col in self.columns]
 
     def coerce_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -79,7 +79,8 @@ class DBTable:
             Drops unexpected columns
             Validates that required columns exist
         """
-        df = df.rename(columns={col: to_snake_case(col) for col in df.columns})
+        df = df.rename(columns={col: camel_to_snake_case(col)
+                       for col in df.columns})
 
         # Get list of columns from column_order method
         allowed_cols = set(self.column_order())
@@ -102,7 +103,7 @@ class DBTable:
 
         # Coerce numeric columns to appropriate nullable pandas types
         for col_name, col_type in self.columns.items():
-            col_name = to_snake_case(col_name)
+            col_name = camel_to_snake_case(col_name)
             if col_name not in df.columns:
                 continue
             for sql_type, mapping in SQL_TYPE_MAP.items():

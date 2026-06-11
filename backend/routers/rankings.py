@@ -7,7 +7,7 @@ from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.data_util.natureserve import calculate_ns_values
+from backend.data_util.ranking import calculate_ns_values
 from psycopg import sql
 from backend.db.queries.occurrence import create_occurrence_filter_sql
 from backend.models.api import SingleTaxonObsRequestParams
@@ -22,7 +22,7 @@ rankings_router = APIRouter()
 @rankings_router.post('/get_ns_metrics', response_class=JSONResponse)
 async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) -> JSONResponse:
     """
-    Get NatureServe metrics (occurrences, range extent, and area of occupancy) 
+    Get conservation metrics (occurrences, range extent, and area of occupancy) 
     for a given (single) taxon_id with filters
 
     Args:

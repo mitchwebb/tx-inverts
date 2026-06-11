@@ -1,15 +1,20 @@
 import json
 import os
 import csv
+from pathlib import Path
 import pandas as pd
+from pandas import DataFrame
 from backend.config import get_settings
 from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.gbif.gbif_downloads import gbif_download_request, get_gbif_download
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
 
 
+# Simple flow to request and retrieve gbif invasive species dataset
 async def get_invasives_dataset():
     # Global Register of Introduced and Invasive Species - United States
+    # While this wont change often, and is only used to create the data table, it's worth
+    # noting that this may be updated one day, and this value may need to be replaced
     dataset_key = '32ad19ed-6b89-447a-9242-795c0897f345'
 
     settings = get_settings()
@@ -46,16 +51,20 @@ async def get_invasives_dataset():
     return observations_fp
 
 
-async def prep_invasives_dataset(fp):
-    # Read in file at provided path
-    df = pd.read_csv(
-        fp,
-        delimiter='\t',
-        quoting=csv.QUOTE_NONE,
-        on_bad_lines='warn',
-        low_memory=False,
-        header=0
-    )
+async def prep_invasives_dataset(data: str | Path | DataFrame) -> DataFrame:
+    # If passed filepath string or Path
+    if isinstance(data, (str, Path)):
+        # Read in file at provided path
+        df = pd.read_csv(
+            data,
+            delimiter='\t',
+            quoting=csv.QUOTE_NONE,
+            on_bad_lines='warn',
+            low_memory=False,
+            header=0
+        )
+    else:
+        df = data
 
     # Add taxonID column with values of taxonKey column
     df['taxonID'] = df['taxonKey']

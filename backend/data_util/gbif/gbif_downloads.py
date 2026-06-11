@@ -7,7 +7,7 @@ from backend.data_util.extract_zip import extract_zip_files
 from backend.core.logging import data_logger
 
 
-async def gbif_download_request(request_body: str, pwd: str, username: str, test=False):
+async def gbif_download_request(request_body: str, pwd: str, username: str):
     """
     Creates a download request using GBIF's API
 
@@ -15,7 +15,7 @@ async def gbif_download_request(request_body: str, pwd: str, username: str, test
     anywhere from 1 minute to 30+ minutes, depending on the complexity of the
     query as well as the current status of GBIF's download API.
 
-    This function is designed to be used in conjuction with the
+    This function is designed to be used in conjunction with the
     get_GBIF_download function.
 
     Args:
@@ -32,30 +32,29 @@ async def gbif_download_request(request_body: str, pwd: str, username: str, test
         "Content-Type": "application/json"
     }
 
-    if test:
-        GBIF_url = "https://api.gbif-uat.org/v1/occurrence/download/request"
-    else:
-        GBIF_url = "https://api.gbif.org/v1/occurrence/download/request"
+    # Although we once had a test param, this GBIF endpoint doesn't function with their testing server
+    # Maybe they will fix it in the future
+    GBIF_url = "https://api.gbif.org/v1/occurrence/download/request"
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(
+            response = await session.post(
                 GBIF_url,
                 data=request_body,
                 auth=aiohttp.BasicAuth(username, pwd),
                 headers=headers
-            ) as response:
-                if response.status == 201:
-                    data_logger.info('Download request submitted successfully.')
-                    key = await response.text()
-                    data_logger.info(
-                        f'Find this download request at https://www.gbif.org/occurrence/download/{key}')
-                    return key
-                else:
-                    text = await response.text()
-                    raise RuntimeError(
-                        f'Download request failed: {response.status}: {text}'
-                    )
+            )
+            if response.status == 201:
+                data_logger.info('Download request submitted successfully.')
+                key = await response.text()
+                data_logger.info(
+                    f'Find this download request at https://www.gbif.org/occurrence/download/{key}')
+                return key
+            else:
+                text = await response.text()
+                raise RuntimeError(
+                    f'Download request failed: {response.status}: {text}'
+                )
     except Exception as e:
         data_logger.exception(f"Request failed: {e}")
         raise
