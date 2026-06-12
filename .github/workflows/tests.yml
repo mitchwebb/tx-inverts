@@ -20,3 +20,19 @@ jobs:
 
             - run: pip install -r ./backend/github_requirements.txt
             - run: pytest ./backend
+              env:
+                  # GLOBAL APP
+                  ENV: ${{secrets.ENV}}
+                  GBIF__USER: ${{secrets.GBIF__USER}}
+                  GBIF__EMAIL: ${{secrets.GBIF__USER}}
+                  GBIF__PASSWORD: ${{secrets.GBIF__USER}}
+
+                  # PostgreSQL
+                  DATABASE__USER: ${{secrets.GBIF__USER}}
+                  DATABASE__PASSWORD: ${{secrets.GBIF__USER}}
+                  DATABASE__HOST: ${{secrets.GBIF__USER}}
+                  DATABASE__PORT: ${{secrets.GBIF__USER}}
+                  DATABASE__NAME: ${{secrets.GBIF__USER}}
+
+                  # CORS
+                  CORS__DOMAIN: ${{secrets.GBIF__USER}}
