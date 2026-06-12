@@ -11,7 +11,7 @@ jobs:
             - name: Install system dependencies
               run: |
                   sudo apt-get update 
-                  sudo apt-get install -y gdal-bin libgdal-dev
+                  sudo apt-get install -y --fix-missing gdal-bin libgdal-dev libpq-dev
 
             - name: Set up Python
               uses: actions/setup-python@v4
