@@ -24,15 +24,15 @@ jobs:
                   # GLOBAL APP
                   ENV: ${{secrets.ENV}}
                   GBIF__USER: ${{secrets.GBIF__USER}}
-                  GBIF__EMAIL: ${{secrets.GBIF__USER}}
-                  GBIF__PASSWORD: ${{secrets.GBIF__USER}}
+                  GBIF__EMAIL: ${{secrets.GBIF__EMAIL}}
+                  GBIF__PASSWORD: ${{secrets.GBIF__PASSWORD}}
 
                   # PostgreSQL
-                  DATABASE__USER: ${{secrets.GBIF__USER}}
-                  DATABASE__PASSWORD: ${{secrets.GBIF__USER}}
-                  DATABASE__HOST: ${{secrets.GBIF__USER}}
-                  DATABASE__PORT: ${{secrets.GBIF__USER}}
-                  DATABASE__NAME: ${{secrets.GBIF__USER}}
+                  DATABASE__USER: ${{secrets.DATABASE__USER}}
+                  DATABASE__PASSWORD: ${{secrets.DATABASE__PASSWORD}}
+                  DATABASE__HOST: ${{secrets.DATABASE__HOST}}
+                  DATABASE__PORT: ${{secrets.DATABASE__PORT}}
+                  DATABASE__NAME: ${{secrets.DATABASE__NAME}}
 
                   # CORS
-                  CORS__DOMAIN: ${{secrets.GBIF__USER}}
+                  CORS__DOMAIN: ${{secrets.CORS__DOMAIN}}
