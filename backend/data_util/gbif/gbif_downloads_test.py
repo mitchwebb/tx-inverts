@@ -28,7 +28,7 @@ async def test_raises_on_bad_credentials(mocker):
         await gbif_download_request(REQUEST_BODY, pwd='wrong', username='wrong')
 
 
-# Test that gbif_download_request successfully returns download key on 201
+# Test that gbif_download_request returns download key on 201
 async def test_returns_download_key(mocker):
     mock_response = mocker.MagicMock()
     mock_response.status = 201

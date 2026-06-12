@@ -97,6 +97,12 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
     async with aiohttp.ClientSession(timeout=session_timeout) as session:
         while time.time() < end_time:
             try:
+                async with session.get(f'https://api.gbif.org/v1/occurrence/download/{key}') as meta:
+                    metadata = await meta.json()
+                    total_size = metadata.get('size', 0)
+                    if total_size:
+                        data_logger.info(
+                            f'Expected download size: {total_size / (1024*1024*1024):.2f} GB')
                 async with session.get(f'https://api.gbif.org/v1/occurrence/download/request/{key}', allow_redirects=True) as response:
                     # If the download is found
                     if response.status == 200:
@@ -104,13 +110,9 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                         downloaded = 0
                         next_log_threshold = 50 * 1024 * 1024  # Log every 50 MB
                         zip_fp = os.path.join(output_fp, f'{key}.zip')
-                        # TODO: I don't believe GBIF returns this. Also it's being chunked now.
-                        # Get content length if available
-                        total_size = int(
-                            response.headers.get("Content-Length", 0))
                         if total_size:
                             data_logger.info(
-                                f"Starting download of {total_size / (1024*1024):.2f} MB")
+                                f"Starting download of {total_size / (1024*1024*1024):.2f} GB")
                         else:
                             data_logger.info("Starting download (size unknown)")
                         with open(zip_fp, "wb") as f:
@@ -121,13 +123,13 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                                 if downloaded >= next_log_threshold:
                                     if total_size:
                                         data_logger.info(
-                                            f"Downloaded {downloaded / (1024*1024):.0f} / {total_size / (1024*1024):.0f} MB")
+                                            f"Downloaded {downloaded / (1024*1024*1024):.0f} / {total_size / (1024*1024*1024):.0f} GB")
                                     else:
                                         data_logger.info(
-                                            f"Downloaded {downloaded / (1024*1024):.0f} MB so far")
+                                            f"Downloaded {downloaded / (1024*1024*1024):.0f} GB so far")
                                     next_log_threshold += 50 * 1024 * 1024
                         data_logger.info(
-                            f"Download complete ({downloaded / (1024*1024):.2f} MB): {zip_fp}")
+                            f"Download complete ({downloaded / (1024*1024*1024):.2f} GB): {zip_fp}")
                         output_fp = extract_zip_files(zip_fp, os.path.join(
                             output_fp, key), target_files, delete_zip=True)
                         return output_fp
