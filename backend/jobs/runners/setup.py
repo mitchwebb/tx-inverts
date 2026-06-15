@@ -12,9 +12,11 @@ from backend.jobs.tasks.regions import fill_all_geometry_tables
 from backend.jobs.tasks.taxa import update_backbone, update_ns_ranks
 from backend.jobs.tasks.occurrence import update_observations
 from backend.jobs.tasks.taxa import create_invasives_table
-from backend.core.logging import setup_logging, db_logger
+from backend.core.logging import setup_logging, db_logger, data_logger, tasks_logger
 from backend.jobs.tasks.views import refresh_materialized_views, refresh_materialized_view
 from psycopg import sql
+from backend.constants.paths import DATA_OUT_PATH
+import os
 
 
 # Initial script to create and populate database for Texas Inverts
@@ -24,7 +26,12 @@ async def main():
     conn = None
 
     try:
+        if not os.path.exists(DATA_OUT_PATH):
+            data_logger.info(f"Making data directory at {DATA_OUT_PATH}")
+            os.makedirs(DATA_OUT_PATH)
+
         conn = await get_single_db_connection()
+
         # Initialize all tables (including mat views) and associated indexes
         await initialize_all_tables(conn, verbose=True, strict=True)
 
@@ -71,6 +78,8 @@ async def main():
 
         # Refresh materialized views now that they're filled
         await refresh_materialized_views(conn)
+
+        tasks_logger.info('Texas Inverts initial setup complete! Enjoy the app!')
 
     except Exception as e:
         db_logger.exception(f'Database initialization failed. Exiting. {e}')

@@ -8,7 +8,7 @@ class TexasGeometry(DBTable):
     """
 
     name = 'tx_geometry'
-    primary_key = 'state'
+    primary_key = 'id'
     columns = {
         'id': 'uuid PRIMARY KEY',
         'state': 'TEXT',
@@ -45,7 +45,7 @@ class TexasCountiesTable(DBTable):
     """
 
     name = 'tx_counties'
-    primary_key = 'county'
+    primary_key = 'id'
     columns = {
         'id': 'uuid PRIMARY KEY',
         'county': 'TEXT',
