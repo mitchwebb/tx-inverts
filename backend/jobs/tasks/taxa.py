@@ -145,7 +145,7 @@ async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
             data_logger.info('Downloading backbone from gbif...')
             zip_path = download_large_file(
                 'https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip',
-                output_fp=os.path.join(DATA_OUT_PATH, 'backbone_test.zip')
+                output_fp=os.path.join(DATA_OUT_PATH, 'backbone.zip')
             )
             extract_dir = DATA_OUT_PATH
 
@@ -205,10 +205,10 @@ async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
         data_logger.info('Verifying format...')
         GBIF_INVERTS_BACKBONE.validate_columns(df)
 
-        # Save taxa_cleaned
-        if save_cleaned:
-            df.to_csv(os.path.join(
-                DATA_OUT_PATH, 'taxa_cleaned.csv'), sep="\t", index=False)
+        # Save backbone
+        tsv_path = os.path.join(DATA_OUT_PATH, 'backbone.tsv')
+
+        df.to_csv(tsv_path, sep='\t', index=False)
 
         temp_table_name = "temp_" + GBIF_INVERTS_BACKBONE.name
 
@@ -228,13 +228,17 @@ async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
         async with conn.cursor() as cur:
             db_logger.info('Copying to temp table...')
             copy_sql = sql.SQL("""
-                COPY {temp_table} FROM STDIN
+                COPY {temp_table} ({column_order}) FROM STDIN
                 WITH (
                     FORMAT csv,
                     DELIMITER E'\t',
                     HEADER true,
                     NULL '')
-            """).format(temp_table=sql.Identifier(temp_table_name))
+            """).format(
+                temp_table=sql.Identifier(temp_table_name),
+                column_order=sql.SQL(', ').join(
+                    map(sql.Identifier, GBIF_INVERTS_BACKBONE.column_order()))
+            )
 
             with open(os.path.join(DATA_OUT_PATH, 'taxa_cleaned.csv'), "r", encoding="utf8") as f:
                 async with cur.copy(copy_sql) as copy:

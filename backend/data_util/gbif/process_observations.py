@@ -163,19 +163,22 @@ def parse_date_range_string(range_string: str):
     end_match = ISO_YMD_REGEX.search(parts[1])
 
     # If matched on start_date and end_date years, add years to output string
-    if start_match and end_match and start_match.group('year') and end_match.group('year'):
+    if start_match and end_match:
+        # Regex requires year
         start_date = start_match.group('year')
         end_date = end_match.group('year')
 
-        # If years matched, check for months
-        if start_match.group('month') and end_match.group('month'):
+        # Months only match if year matched
+        if start_match.group('month'):
             start_date += f"-{start_match.group('month').zfill(2)}"
+        if end_match.group('month'):
             end_date += f"-{end_match.group('month').zfill(2)}"
 
-            # If months matched, check for days
-            if start_match.group('day') and end_match.group('day'):
-                start_date += f"-{start_match.group('day').zfill(2)}"
-                end_date += f"-{end_match.group('day').zfill(2)}"
+        # Days only match if month matched
+        if start_match.group('day'):
+            start_date += f"-{start_match.group('day').zfill(2)}"
+        if end_match.group('day'):
+            end_date += f"-{end_match.group('day').zfill(2)}"
 
     return [start_date, end_date]
 
@@ -184,7 +187,7 @@ def parse_date_range_string(range_string: str):
 def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     """
     Using a pandas dataframe/geodataframe (assuming it's a DWC table),
-    parse out a startDate and endDate, if possible
+    parse out a collectionStartDate and collectionEndDate, if possible
 
     yyyy-MM-dd/yyyy-MM-dd event_dates are assumed to be a range.
     HOWEVER, not all eventDates are formatted this way.
