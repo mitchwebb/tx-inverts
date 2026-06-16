@@ -240,7 +240,7 @@ async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
                     map(sql.Identifier, GBIF_INVERTS_BACKBONE.column_order()))
             )
 
-            with open(os.path.join(DATA_OUT_PATH, 'taxa_cleaned.csv'), "r", encoding="utf8") as f:
+            with open(os.path.join(DATA_OUT_PATH, 'backbone.tsv'), "r", encoding="utf8") as f:
                 async with cur.copy(copy_sql) as copy:
                     while chunk := f.read(1024*1024):
                         await copy.write(chunk)

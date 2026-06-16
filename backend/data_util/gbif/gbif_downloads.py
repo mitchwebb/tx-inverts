@@ -60,6 +60,15 @@ async def gbif_download_request(request_body: str, pwd: str, username: str):
         raise
 
 
+# Adaptive formatting of MB logging
+def _fmt_size_string(bytes: int):
+    # If over one GB
+    if bytes >= 1024**3:
+        return f"{bytes / 1024**3:.2f} GB"
+    # Else return as MB
+    return f"{bytes / 1024**2:.2f} MB"
+
+
 async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800, target_files: list[str] | None = None, verbose=False) -> str:
     """
     Uses a GBIF download key to download and save a GBIF download to a local CSV
@@ -102,7 +111,8 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                     total_size = metadata.get('size', 0)
                     if total_size:
                         data_logger.info(
-                            f'Expected download size: {total_size / (1024*1024*1024):.2f} GB')
+                            f'Expected download size: {_fmt_size_string(total_size)}'
+                        )
                 async with session.get(f'https://api.gbif.org/v1/occurrence/download/request/{key}', allow_redirects=True) as response:
                     # If the download is found
                     if response.status == 200:
@@ -112,9 +122,9 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                         zip_fp = os.path.join(output_fp, f'{key}.zip')
                         if total_size:
                             data_logger.info(
-                                f"Starting download of {total_size / (1024*1024*1024):.2f} GB")
+                                f"Starting download of {_fmt_size_string(total_size)}")
                         else:
-                            data_logger.info("Starting download (size unknown)")
+                            data_logger.info("Starting download (Size Unknown)")
                         with open(zip_fp, "wb") as f:
                             async for chunk in response.content.iter_chunked(chunk_size):
                                 f.write(chunk)
@@ -122,14 +132,13 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                                 # Log download progress in 50MB chunks
                                 if downloaded >= next_log_threshold:
                                     if total_size:
-                                        data_logger.info(
-                                            f"Downloaded {downloaded / (1024*1024*1024):.0f} / {total_size / (1024*1024*1024):.0f} GB")
+                                        data_logger.info(f"Downloaded {_fmt_size_string(downloaded)} / {_fmt_size_string(total_size)}")
                                     else:
                                         data_logger.info(
-                                            f"Downloaded {downloaded / (1024*1024*1024):.0f} GB so far")
+                                            f"Downloaded {_fmt_size_string(downloaded)} so far")
                                     next_log_threshold += 50 * 1024 * 1024
                         data_logger.info(
-                            f"Download complete ({downloaded / (1024*1024*1024):.2f} GB): {zip_fp}")
+                            f"Download complete ({_fmt_size_string(downloaded)}): {zip_fp}")
                         output_fp = extract_zip_files(zip_fp, os.path.join(
                             output_fp, key), target_files, delete_zip=True)
                         return output_fp

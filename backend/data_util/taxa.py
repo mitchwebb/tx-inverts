@@ -61,7 +61,7 @@ def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
         df["accepted_name_usage_id"].to_numpy(),  # Use accepted_name_usage_id
         # Else, default to taxon_id (taxa with null accepted_name_usage_id have accepted taxon_id)
         df["taxon_id"].to_numpy()
-    )
+    ).tolist()
     parent_ids = df["parent_name_usage_id"].to_numpy()
 
     ### Determine Ranks ###

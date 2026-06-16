@@ -11,6 +11,7 @@ from backend.jobs.tasks.views import refresh_materialized_view
 from psycopg import sql
 from backend.core.logging import db_logger
 import geopandas as gpd
+import pandas as pd
 
 
 # Helper to get row geometry, cast to MultiPolygon if Polygon
@@ -41,16 +42,19 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
         gdf = gpd.read_file(fp)
         # Change CRS to 4326 (WGS 84)
         gdf = gdf.to_crs(epsg=4326)
+
+        # Back to regular df
+        df = pd.DataFrame(gdf)
         # Rename columns using column map
-        gdf = gdf.rename(columns=col_map)[list(col_map.values())]
+        df = df.rename(columns=col_map)[list(col_map.values())]
 
         # Pre-process dataframe
         # Set id and geometry in df
-        gdf['geometry'] = gdf['geometry'].apply(_to_multipolygon_wkt)
-        gdf['id'] = [str(uuid.uuid4()) for _ in range(len(gdf))]
+        df['geometry'] = df['geometry'].apply(_to_multipolygon_wkt)
+        df['id'] = [str(uuid.uuid4()) for _ in range(len(df))]
 
         # Get column order and match with values
-        cols = list(gdf.columns)
+        cols = list(df.columns)
         col_idents = sql.SQL(', ').join(sql.Identifier(c) for c in cols)
 
         # On conflict, update all columns except primary key
@@ -90,7 +94,7 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
         # Build params list (tuples)
         row_params = [
             tuple(row[c] for c in cols)
-            for _, row in gdf.iterrows()
+            for _, row in df.iterrows()
         ]
 
         await execute_psql_query(conn, insert_query, row_params, batch=True)
