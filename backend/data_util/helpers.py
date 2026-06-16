@@ -1,6 +1,7 @@
 def normalize_to_list[T](value: T | list[T]) -> list[T]:
     """
-    Helper to normalize input value to list
+    Helper to normalize simple input value to list.
+    Will normalize None to [None].
 
     Args:
         value (T | list[T]): Input value of type T or list of values of type T

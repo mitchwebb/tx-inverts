@@ -1,6 +1,7 @@
 import numpy as np
 from backend.constants.taxa import RANK_COLS, RANK_ORDER
 from backend.data_util.execute_psql_query import execute_psql_query
+from backend.data_util.helpers import normalize_to_list
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from collections import deque, defaultdict
 import pandas as pd
@@ -14,14 +15,14 @@ async def get_observation_count(conn: AsyncConnection, taxon_ids: int | List[int
     Returns the total number of GBIF observations for the given taxon ID(s).
     """
 
-    if isinstance(taxon_ids, int):
-        taxon_ids = [taxon_ids]
+    # Normalize taxon_ids to list (handles single ints)
+    taxon_ids = normalize_to_list(taxon_ids)
 
-    query = sql.SQL("""
+    query = sql.SQL('''
         SELECT COUNT(*)
         FROM {observations_table}
         WHERE taxon_key = ANY({taxon_ids})
-    """).format(
+    ''').format(
         observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
         taxon_ids=sql.Literal(taxon_ids)
     )
@@ -32,7 +33,7 @@ async def get_observation_count(conn: AsyncConnection, taxon_ids: int | List[int
 
 
 # Numpy version of lineage building for backbone
-def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
+def build_lineages(df: pd.DataFrame) -> pd.DataFrame:
     """
     Builds taxonomic lineage columns for each taxon in the provided backbone DataFrame.
 
@@ -49,6 +50,7 @@ def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
         df with rank columns added, populated with respective taxon_ids
     """
 
+    # Reset indexes (normal indexes are used later, and no need to preserve old indexes)
     df = df.copy().reset_index(drop=True)
 
     ### Convert columns to NumPy arrays for speed ###
@@ -57,12 +59,12 @@ def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
     # This will make sure to always route synonyms back to their accepted taxon
     taxon_ids = np.where(
         # If non-na accepted_name_usage_id
-        df["accepted_name_usage_id"].notna().to_numpy(),
-        df["accepted_name_usage_id"].to_numpy(),  # Use accepted_name_usage_id
+        df['accepted_name_usage_id'].notna().to_numpy(),
+        df['accepted_name_usage_id'].to_numpy(),  # Use accepted_name_usage_id
         # Else, default to taxon_id (taxa with null accepted_name_usage_id have accepted taxon_id)
-        df["taxon_id"].to_numpy()
+        df['taxon_id'].to_numpy()
     ).tolist()
-    parent_ids = df["parent_name_usage_id"].to_numpy()
+    parent_ids = df['parent_name_usage_id'].to_numpy()
 
     ### Determine Ranks ###
 
@@ -71,19 +73,19 @@ def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
     # This helps correctly place synonyms that may have moved rank
 
     # Add an accepted_rank column
-    rank_lookup = df.set_index("taxon_id")["taxon_rank"]
+    rank_lookup = df.set_index('taxon_id')['taxon_rank']
     accepted_ranks = rank_lookup.reindex(
-        df["accepted_name_usage_id"]).to_numpy()
+        df['accepted_name_usage_id']).to_numpy()
     # Generate ranks column from accepted_ranks when available, fallback to taxon_rank
     ranks = np.where(
-        df["accepted_name_usage_id"].notna(),
+        df['accepted_name_usage_id'].notna(),
         accepted_ranks,
-        df["taxon_rank"].to_numpy()
+        df['taxon_rank'].to_numpy()
     )
 
     # Generate numpy array for all taxa with columns for each taxon rank
     n_taxa = len(df)
-    lineage = np.full((n_taxa, len(RANK_ORDER)), np.nan, dtype="float64")
+    lineage = np.full((n_taxa, len(RANK_ORDER)), np.nan, dtype='float64')
 
     # Map taxon_id -> row index
     id_to_idx = {taxon_id: i for i, taxon_id in enumerate(taxon_ids)}
@@ -124,7 +126,7 @@ def build_lineages_numpy(df: pd.DataFrame) -> pd.DataFrame:
     # Convert lineage numpy table -> dataframe
     lineage_df = pd.DataFrame(lineage, columns=RANK_COLS)
     # Cast to Int64
-    lineage_df = lineage_df.astype("Int64")
+    lineage_df = lineage_df.astype('Int64')
 
     # Assign columns back into df (overwrites existing columns)
     df[RANK_COLS] = lineage_df.values

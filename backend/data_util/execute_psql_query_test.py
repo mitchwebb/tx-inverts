@@ -5,22 +5,6 @@ from psycopg import sql, rows
 from backend.data_util.execute_psql_query import execute_psql_query
 
 
-# Make fake conn/cur for calling functions
-@pytest.fixture
-def mock_conn():
-    # Fake cursor with async methods
-    mock_cursor = AsyncMock()
-
-    # conn.cursor() needs to work as `async with conn.cursor(...) as cur`
-    mock_cursor_ctx = MagicMock()
-    mock_cursor_ctx.__aenter__ = AsyncMock(return_value=mock_cursor)
-    mock_cursor_ctx.__aexit__ = AsyncMock(return_value=None)
-
-    conn = MagicMock()
-    conn.cursor = MagicMock(return_value=mock_cursor_ctx)
-    return conn, mock_cursor
-
-
 # Make sure batch=True raises if not given params
 @pytest.mark.asyncio
 async def test_batch_without_params_raises(mock_conn):

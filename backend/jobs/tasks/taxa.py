@@ -5,7 +5,7 @@ from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.extract_zip import extract_zip_files
 from backend.data_util.invasives import get_invasives_dataset, prep_invasives_dataset
 import backend.data_util.ranking as ns
-from backend.data_util.taxa import build_lineages_numpy
+from backend.data_util.taxa import build_lineages
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
@@ -199,7 +199,7 @@ async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
         # Build taxonomic lineages and insert rank ids into dataframe
         data_logger.info(
             'Building taxonomic lineages to fill rank id columns...')
-        df = build_lineages_numpy(df)
+        df = build_lineages(df)
 
         # Final column validation for lineage columns
         data_logger.info('Verifying format...')

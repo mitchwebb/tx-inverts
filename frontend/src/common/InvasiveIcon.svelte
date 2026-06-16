@@ -15,7 +15,7 @@
     function handleMouseEnter() {
         if (!invasiveIcon) return;
         tooltipContext.content =
-            '<div> This species has been identified as invasive within the United States </div>';
+            'This species has been identified as invasive within the United States';
         tooltipContext.visible = true;
         tooltipContext.target = invasiveIcon;
         // tooltipContext.backgroundColor = 'goldenrod';
