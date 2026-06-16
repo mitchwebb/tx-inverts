@@ -24,7 +24,6 @@ from backend.models.occurrence import OccurrenceFilters
 
 # TODO: This might as well be included in taxonomic updates, given that if
 # the backbone is updated, the taxonIDs for these species will be as well
-# TODO: Should I run a truncate? Or allow it, at least?
 async def create_invasives_table(truncate: bool = False):
     conn = None
     try:

@@ -30,7 +30,7 @@ from typing import List, Optional, Tuple
 async def update_observations(
     fp: str | None = None,
     gbif_request_key: str | None = None,
-    chunk_size: int = 1000000,
+    chunk_size: int = 100000,
     full_replace: bool = False,
     save_cleaned_data: bool = False,
     verbose: bool = False
