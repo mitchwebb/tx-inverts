@@ -1,6 +1,7 @@
-from unittest.mock import patch
+import pytest
 
-from backend.data_util.taxa import get_observation_count
+from backend.data_util.taxa import build_lineages, get_observation_count
+import pandas as pd
 
 
 class TestGetObservationCount:
@@ -19,4 +20,33 @@ class TestGetObservationCount:
         assert result == None
 
 
-# class TestBuildLineages:
+@pytest.fixture
+def simple_backbone():
+    return pd.DataFrame([
+        # Kingdom (root)
+        {'taxon_id': 1, 'parent_name_usage_id': None,
+            'accepted_name_usage_id': None, 'taxon_rank': 'kingdom'},
+        # Phylum A under kingdom
+        {'taxon_id': 2, 'parent_name_usage_id': 1,
+            'accepted_name_usage_id': None, 'taxon_rank': 'phylum'},
+        # Phylum B under same kingdom
+        {'taxon_id': 3, 'parent_name_usage_id': 1,
+            'accepted_name_usage_id': None, 'taxon_rank': 'phylum'},
+        # Species under phylum A
+        {'taxon_id': 4, 'parent_name_usage_id': 2,
+            'accepted_name_usage_id': None, 'taxon_rank': 'species'},
+        # Species under phylum B
+        {'taxon_id': 5, 'parent_name_usage_id': 3,
+            'accepted_name_usage_id': 3, 'taxon_rank': 'species'},
+        # Synonym pointing to species
+        {'taxon_id': 6, 'parent_name_usage_id': 2,
+            'accepted_name_usage_id': 3, 'taxon_rank': 'species'},
+    ])
+
+
+class TestBuildLineages:
+    def test_basic_lineage(self, simple_backbone):
+        result = build_lineages(simple_backbone)
+        row = result[result['taxon_id'] == 3].iloc[0]
+        assert row['kingdom_id'] == 1
+        assert row['phylum_id'] == 2

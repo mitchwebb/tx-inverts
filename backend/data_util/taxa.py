@@ -107,7 +107,7 @@ def build_lineages(df: pd.DataFrame) -> pd.DataFrame:
     queue = deque(roots)
     while queue:
         i = queue.popleft()
-        rank = ranks[i].item()
+        rank = str(ranks[i])
         parent_id = parent_ids[i]
 
         # Copy parent's lineage if exists
