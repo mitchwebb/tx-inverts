@@ -2,7 +2,7 @@ from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import AsyncConnection, sql
 from psycopg.errors import Error as PsycopgError
 from backend.db.schema import ALL_TABLES
-from backend.db.schema.base import DBTable
+from backend.db.schema.base_table import DBTable
 from backend.jobs.tasks.database import update_indexes
 from backend.core.logging import db_logger
 from backend.jobs.tasks.views import refresh_materialized_views

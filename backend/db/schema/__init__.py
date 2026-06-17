@@ -5,7 +5,7 @@ from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
 from .gbif_observations import GBIF_OBSERVATIONS_TABLE
 from .gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from .geometries import GEOMETRY_TABLES
-from .base import DBTable
+from .base_table import DBTable
 
 
 # Running list of all primary tables needed for auto-initialization

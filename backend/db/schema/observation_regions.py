@@ -1,4 +1,4 @@
-from backend.db.schema.base import DBTable
+from backend.db.schema.base_table import DBTable
 
 
 class ObservationRegions(DBTable):

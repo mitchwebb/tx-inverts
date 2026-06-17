@@ -88,7 +88,7 @@ def build_lineages(df: pd.DataFrame) -> pd.DataFrame:
     lineage = np.full((n_taxa, len(RANK_ORDER)), np.nan, dtype='float64')
 
     # Map taxon_id -> row index
-    id_to_idx = {taxon_id: i for i, taxon_id in enumerate(taxon_ids)}
+    id_to_idx = {df['taxon_id'].iloc[i]: i for i in range(n_taxa)}
 
     # Build children map (by index)
     children_map = defaultdict(list)

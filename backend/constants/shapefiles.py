@@ -4,7 +4,7 @@
 from pydantic import BaseModel, ConfigDict
 
 from backend.constants.paths import SHAPEFILE_PATHS
-from backend.db.schema.base import DBTable
+from backend.db.schema.base_table import DBTable
 from backend.db.schema.geometries import TEXAS_COUNTIES_TABLE, TEXAS_GEOMETRY_TABLE, TEXAS_PARKS_TABLE
 
 

@@ -37,16 +37,72 @@ def simple_backbone():
             'accepted_name_usage_id': None, 'taxon_rank': 'species'},
         # Species under phylum B
         {'taxon_id': 5, 'parent_name_usage_id': 3,
-            'accepted_name_usage_id': 3, 'taxon_rank': 'species'},
-        # Synonym pointing to species
-        {'taxon_id': 6, 'parent_name_usage_id': 2,
-            'accepted_name_usage_id': 3, 'taxon_rank': 'species'},
+            'accepted_name_usage_id': None, 'taxon_rank': 'species'},
+        # Species with no phylum
+        {'taxon_id': 6, 'parent_name_usage_id': 1,
+            'accepted_name_usage_id': None, 'taxon_rank': 'species'},
+        # Synonym
+        {'taxon_id': 7, 'parent_name_usage_id': 3,
+            'accepted_name_usage_id': 5, 'taxon_rank': 'species'},
+        # Synonym that resolves to a higher taxon
+        {'taxon_id': 8, 'parent_name_usage_id': 1,
+            'accepted_name_usage_id': 2, 'taxon_rank': 'species'},
+        # Child of synonym
+        {'taxon_id': 9, 'parent_name_usage_id': 7,
+            'accepted_name_usage_id': None, 'taxon_rank': 'subspecies'},
     ])
 
 
 class TestBuildLineages:
+    # Test that basic lineages are successfully built
     def test_basic_lineage(self, simple_backbone):
         result = build_lineages(simple_backbone)
-        row = result[result['taxon_id'] == 3].iloc[0]
+        row_a = result[result['taxon_id'] == 4].iloc[0]
+        assert row_a['kingdom_id'] == 1
+        assert row_a['phylum_id'] == 2
+
+        row_b = result[result['taxon_id'] == 5].iloc[0]
+        assert row_b['kingdom_id'] == 1
+        assert row_b['phylum_id'] == 3
+
+        # Species with no phylum (should link straight to kingdom)
+        row_c = result[result['taxon_id'] == 6].iloc[0]
+        assert row_c['kingdom_id'] == 1
+        assert pd.isna(row_c['phylum_id'])
+
+    # Test that synonyms get routed correctly and get accepted rank_id
+    def test_synonym_lineage(self, simple_backbone):
+        result = build_lineages(simple_backbone)
+
+        row = result[result['taxon_id'] == 7].iloc[0]
         assert row['kingdom_id'] == 1
+        assert row['phylum_id'] == 3
+        assert row['species_id'] == 5
+
+    # Test that synonyms are given proper rank_id when being resolved as different taxon_rank
+    def test_synonym_rank_reassignment(self, simple_backbone):
+        result = build_lineages(simple_backbone)
+
+        row = result[result['taxon_id'] == 8].iloc[0]
+
+        # species_id should now be NA, given that synonym species resolves to phylum
+        assert pd.isna(row['species_id'])
+        # phylum_id should resolve to accepted_name_usage_id
         assert row['phylum_id'] == 2
+
+    # Verify that root taxa have empty ids
+    def test_root_taxa_are_empty(self, simple_backbone):
+        result = build_lineages(simple_backbone)
+
+        row = result[result['taxon_id'] == 1].iloc[0]
+
+        assert pd.isna([row['phylum_id'], row['class_id'], row['order_id'],
+                       row['family_id'], row['genus_id'], row['species_id'], row['subspecies_id']]).all()
+
+    # Verify that child of synonym inherits updated lineage
+    def test_synonym_child_lineage(self, simple_backbone):
+        result = build_lineages(simple_backbone)
+
+        row = result[result['taxon_id'] == 7].iloc[0]
+
+        assert row['species_id'] == 5

@@ -79,7 +79,8 @@ async def main():
         # Refresh materialized views now that they're filled
         await refresh_materialized_views(conn)
 
-        tasks_logger.info('Texas Inverts initial setup complete! Enjoy the app!')
+        tasks_logger.info(
+            'Texas Inverts initial setup complete! Enjoy the app!')
 
     except Exception as e:
         db_logger.exception(f'Database initialization failed. Exiting. {e}')

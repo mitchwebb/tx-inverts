@@ -10,7 +10,7 @@ class SQLTypeMapping(NamedTuple):
     needs_numeric_coercion: bool
 
 
-# Map from SQL type to pandas type, with boolean to indicate numeric conversion
+# Map from SQL type to pandas type, with boolean to indicate need for numeric conversion
 SQL_TYPE_MAP = {
     'BIGINT': SQLTypeMapping('Int64', True),
     'INTEGER': SQLTypeMapping('Int32', True),
@@ -38,7 +38,7 @@ class DBTable:
     primary_key: str | None = None  # This assumes a single primary key!
 
     def __init__(self):
-        if not self.name or not self.columns:
+        if not getattr(self, 'name', None) or not getattr(self, 'columns', None):
             raise NotImplementedError(
                 'Subclasses must define name and columns')
 
@@ -75,9 +75,9 @@ class DBTable:
 
     def coerce_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-            Renames columns to snake_case
-            Drops unexpected columns
-            Validates that required columns exist
+            Renames columns to snake_case.
+            Drops unexpected columns.
+            Validates that required columns exist.
         """
         df = df.rename(columns={col: camel_to_snake_case(col)
                        for col in df.columns})
@@ -125,7 +125,7 @@ class DBTable:
 
     def validate_columns(self, df: pd.DataFrame):
         """
-        Ensure DataFrame has all required columns
+        Ensure DataFrame has all required columns without coercion
         """
         expected = set(self.column_order())
         actual = set(df.columns)

@@ -200,13 +200,8 @@ async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
             'Building taxonomic lineages to fill rank id columns...')
         df = build_lineages(df)
 
-        # Final column validation for lineage columns
-        data_logger.info('Verifying format...')
-        GBIF_INVERTS_BACKBONE.validate_columns(df)
-
         # Save backbone
         tsv_path = os.path.join(DATA_OUT_PATH, 'backbone.tsv')
-
         df.to_csv(tsv_path, sep='\t', index=False)
 
         temp_table_name = "temp_" + GBIF_INVERTS_BACKBONE.name

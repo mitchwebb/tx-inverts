@@ -1,6 +1,6 @@
 # Model for tx_taxa table, a materialized view of GBIFInvertsBackbone
 # TODO: In this case, do we even need to spell this out?
-from .base import DBTable
+from .base_table import DBTable
 
 
 class TXTaxaTable(DBTable):

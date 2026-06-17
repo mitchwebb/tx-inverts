@@ -1,4 +1,4 @@
-from .base import DBTable
+from .base_table import DBTable
 
 
 class USInvasivesChecklist(DBTable):

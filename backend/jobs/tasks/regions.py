@@ -2,7 +2,7 @@ from typing import List
 import uuid
 from backend.constants.shapefiles import GEOMETRY_TABLE_CONFIGS
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.db.schema.base import DBTable
+from backend.db.schema.base_table import DBTable
 from shapely import MultiPolygon
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE

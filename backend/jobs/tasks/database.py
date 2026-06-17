@@ -14,8 +14,8 @@ async def update_index(
     if not index_def:
         raise ValueError(f"Index definition for '{index_name}' not found.")
 
-    table_name = index_def['table']
-    create_sql = index_def['create_sql']
+    table_name = index_def.table.name
+    create_sql = index_def.create_sql()
 
     # Check if index exists
     exists_query = sql.SQL("""
@@ -31,8 +31,9 @@ async def update_index(
     if exists:
         if reindex:
             db_logger.info(f'{index_name} already exists, reindexing...')
-            reindex_query = sql.SQL('REINDEX INDEX {}').format(
-                sql.Identifier(index_name))
+            reindex_query = sql.SQL('REINDEX INDEX {index_name}').format(
+                index_name=sql.Identifier(index_name)
+            )
             await execute_psql_query(conn, reindex_query)
 
         # If index exists and reindex == False, skip

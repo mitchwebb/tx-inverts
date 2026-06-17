@@ -1,5 +1,5 @@
 # Model for gbif_observations table
-from .base import DBTable
+from .base_table import DBTable
 
 
 class GBIFObservationsTable(DBTable):

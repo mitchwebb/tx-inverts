@@ -1,5 +1,5 @@
 # Various geometry tables for mapping
-from .base import DBTable
+from .base_table import DBTable
 
 
 class TexasGeometry(DBTable):
