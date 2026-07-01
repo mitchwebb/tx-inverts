@@ -302,11 +302,11 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     df['collectionStartDate'] = pd.NA
     df['collectionEndDate'] = pd.NA
 
-    date_audit = []
+    # date_audit = []
 
     # Iterate through rows
     for row in df.itertuples(index=True):
-        original_event_date = row.eventDate
+        # original_event_date = row.eventDate
 
         idx = row.Index
 
@@ -387,41 +387,41 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         df.at[idx, 'collectionStartDate'] = start_date
         df.at[idx, 'collectionEndDate'] = end_date
 
-        original = None
-        if pd.notna(row.year) and pd.notna(row.month) and pd.notna(row.day):
-            original = f'{int(row.year)}-{int(row.month):02d}-{int(row.day):02d}'
-        elif pd.notna(row.year) and pd.notna(row.month):
-            original = f'{int(row.year)}-{int(row.month):02d}'
-        elif pd.notna(row.year):
-            original = f'{int(row.year)}'
+        # original = None
+        # if pd.notna(row.year) and pd.notna(row.month) and pd.notna(row.day):
+        #     original = f'{int(row.year)}-{int(row.month):02d}-{int(row.day):02d}'
+        # elif pd.notna(row.year) and pd.notna(row.month):
+        #     original = f'{int(row.year)}-{int(row.month):02d}'
+        # elif pd.notna(row.year):
+        #     original = f'{int(row.year)}'
 
-        if original != start_date or ((not start_date) and any([row.verbatimEventDate, row.eventDate, row.eventRemarks, pd.notna(row.year)])):
-            date_audit.append({
-                'index': idx,
-                'newDate': start_date,
-                'originalDate': original_event_date,
-                'eventDate': row.eventDate,
-                'verbatimEventDate': row.verbatimEventDate,
-                'year': row.year,
-                'month': row.month,
-                'day': row.day,
-                'eventRemarks': row.eventRemarks,
-                'collectionStartDate': start_date,
-                'collectionEndDate': end_date,
-                'status': 'failed' if not start_date else 'altered'
-            })
+        # if original != start_date or ((not start_date) and any([row.verbatimEventDate, row.eventDate, row.eventRemarks, pd.notna(row.year)])):
+        #     date_audit.append({
+        #         'index': idx,
+        #         'newDate': start_date,
+        #         'originalDate': original_event_date,
+        #         'eventDate': row.eventDate,
+        #         'verbatimEventDate': row.verbatimEventDate,
+        #         'year': row.year,
+        #         'month': row.month,
+        #         'day': row.day,
+        #         'eventRemarks': row.eventRemarks,
+        #         'collectionStartDate': start_date,
+        #         'collectionEndDate': end_date,
+        #         'status': 'failed' if not start_date else 'altered'
+        #     })
 
     # Convert empty strings to None for SQL/NULL compatibility
     df['collectionStartDate'] = df['collectionStartDate'].replace('', None)
     df['collectionEndDate'] = df['collectionEndDate'].replace('', None)
 
-    if date_audit:
-        i = 0
-        path = os.path.join(DATA_OUT_PATH)
-        while os.path.exists(os.path.join(path, f'date_audit_{i}.csv')):
-            i += 1
-        pd.DataFrame(date_audit).to_csv(os.path.join(
-            path, f'date_audit_{i}.csv'), index=False)
+    # if date_audit:
+    #     i = 0
+    #     path = os.path.join(DATA_OUT_PATH)
+    #     while os.path.exists(os.path.join(path, f'date_audit_{i}.csv')):
+    #         i += 1
+    #     pd.DataFrame(date_audit).to_csv(os.path.join(
+    #         path, f'date_audit_{i}.csv'), index=False)
 
     return df
 
