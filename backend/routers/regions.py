@@ -1,4 +1,6 @@
 # Region tables related SQL endpoints
+from uuid import UUID
+
 from pydantic import BaseModel
 
 from backend.db.schema.regions import REGIONS_VIEW
@@ -12,7 +14,7 @@ regions_router = APIRouter()
 
 
 class RegionInfo(BaseModel):
-    id: str
+    id: str | UUID
     region_type: str
     name: str
 

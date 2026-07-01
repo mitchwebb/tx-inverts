@@ -132,6 +132,7 @@ export async function getQualifiedTaxa(
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                taxon_ids: [1],
                 date_start: dateStart?.toISOString(),
                 date_end: dateEnd?.toISOString(),
                 datasets: [...datasets],
