@@ -14,8 +14,8 @@ async def main():
         setup_logging()
         tasks_logger.info("Starting update_backbone job...")
 
-        await create_invasives_table(truncate=True)
-        await update_backbone()
+        await create_invasives_table(conn, truncate=True)
+        await update_backbone(conn)
         await update_ns_ranks(conn)
 
         tasks_logger.info("update_backbone job finished")

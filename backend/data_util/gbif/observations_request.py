@@ -157,6 +157,8 @@ APPROVED_DATASETS = [
 
 
 def build_observations_request(
+        user: str,
+        email: str,
         min_date_type: Literal['modified', 'last_interpreted'] = 'modified',
         min_date: datetime | date = datetime(1800, 1, 1),
         test: bool = False) -> dict:
@@ -178,7 +180,6 @@ def build_observations_request(
     """
 
     download_format: GBIFFormat = GBIFFormat.dwca
-    settings: BaseAppSettings = get_settings()
 
     # Allowed Chordates:
     #   Thaliacea 207
@@ -249,9 +250,9 @@ def build_observations_request(
 
     # Return pieced together body
     return {
-        "creator": settings.gbif.user,
+        "creator": user,
         "notificationAddresses": [
-            settings.gbif.email
+            email
         ],
         "format": download_format,
         "sendNotification": True,

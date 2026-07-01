@@ -6,7 +6,7 @@ from backend.db.schema.base_table import DBTable
 from shapely import MultiPolygon
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
-from backend.jobs.tasks.database import update_index
+from backend.jobs.tasks.indexes import update_index
 from backend.jobs.tasks.views import refresh_materialized_view
 from psycopg import sql
 from backend.core.logging import db_logger
@@ -118,7 +118,6 @@ async def fill_all_geometry_tables(conn, truncate: bool = False):
 
 
 async def update_observation_regions(conn, new_observation_ids: List[int] | None = None, replace_all: bool = False):
-
     try:
         # Make sure indexes are in place
         await update_index(conn, 'idx_obs_regions_id')

@@ -5,10 +5,10 @@ from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.jobs.runners.run_async import run_async
-from backend.jobs.tasks.database import update_indexes
+from backend.jobs.tasks.indexes import update_indexes
 from backend.jobs.tasks.datasets import fill_dataset_table
-from backend.jobs.tasks.initialize_db import initialize_all_tables
-from backend.jobs.tasks.regions import fill_all_geometry_tables
+from backend.jobs.tasks.tables import initialize_all_tables
+from backend.jobs.tasks.regions import fill_all_geometry_tables, update_observation_regions
 from backend.jobs.tasks.taxa import update_backbone, update_ns_ranks
 from backend.jobs.tasks.occurrence import update_observations
 from backend.jobs.tasks.taxa import create_invasives_table
@@ -32,6 +32,13 @@ async def main():
 
         conn = await get_single_db_connection()
 
+        create_test_db_query = sql.SQL('''
+            CREATE DATABASE test_inverts;
+            CREATE_USER test_user WITH ENCRYPTED PASSWORD 'test_pass';
+            GRANT ALL PRIVILEGES ON DATABASE test_inverts TO test_user;
+        ''')
+        await execute_psql_query(conn, create_test_db_query)
+
         # Initialize all tables (including mat views) and associated indexes
         await initialize_all_tables(conn, verbose=True, strict=True)
 
@@ -42,13 +49,13 @@ async def main():
         await fill_all_geometry_tables(conn, truncate=True)
 
         # Create invasives table
-        await create_invasives_table()
+        await create_invasives_table(conn)
 
         # Taxonomy table initialization
-        await update_backbone()
+        await update_backbone(conn)
 
         # Observations table initialization
-        await update_observations(chunk_size=100000)
+        await update_observations(conn, chunk_size=100000)
 
         # Refresh taxon_lineage view to help with ns_ranks speed
         await refresh_materialized_view(conn, 'taxon_lineage')
@@ -59,19 +66,7 @@ async def main():
         await update_ns_ranks(conn)
 
         # Fill observation_regions table!
-        # TODO: Extract to separate task
-        db_logger.info('Filling observations_regions table...')
-        insert_statement = sql.SQL("""
-            INSERT INTO {observation_regions_table}(observation_id, region_id, region_type)
-            SELECT o.gbif_id, r.id, r.region_type
-            FROM {observations_table} o
-            JOIN regions r ON ST_Intersects(o.geometry, r.geometry)
-        """).format(
-            observation_regions_table=sql.Identifier(
-                OBSERVATION_REGIONS_TABLE.name),
-            observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
-        )
-        await execute_psql_query(conn, insert_statement)
+        await update_observation_regions(conn, replace_all=True)
 
         await conn.commit()
         db_logger.info('Created observations_regions table')

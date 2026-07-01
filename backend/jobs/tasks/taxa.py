@@ -1,5 +1,4 @@
 from backend.constants.paths import DATA_OUT_PATH
-from backend.data_util.db import get_single_db_connection
 from backend.data_util.download_large_file import download_large_file
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.extract_zip import extract_zip_files
@@ -9,7 +8,7 @@ from backend.data_util.taxa import build_lineages
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
-from backend.jobs.tasks.initialize_db import initialize_table
+from backend.jobs.tasks.tables import initialize_table
 from backend.jobs.tasks.views import refresh_materialized_view
 from backend.core.logging import data_logger, db_logger
 import csv
@@ -22,10 +21,9 @@ from typing import List, Optional
 from backend.models.occurrence import OccurrenceFilters
 
 
-# TODO: This might as well be included in taxonomic updates, given that if
-# the backbone is updated, the taxonIDs for these species will be as well
-async def create_invasives_table(truncate: bool = False):
-    conn = None
+# TODO: If the backbone is updated, we should assume that this needs to be
+# updated as well, considering these taxon_ids would also change
+async def create_invasives_table(conn: AsyncConnection, truncate: bool = False):
     try:
         fp = await get_invasives_dataset()
 
@@ -38,8 +36,6 @@ async def create_invasives_table(truncate: bool = False):
         buffer = io.StringIO()
         df.to_csv(buffer, index=False, sep='\t', header=False, na_rep='\\N')
         buffer.seek(0)
-
-        conn = await get_single_db_connection()
 
         if truncate:
             truncate_sql = sql.SQL("""
@@ -63,15 +59,10 @@ async def create_invasives_table(truncate: bool = False):
 
         await conn.commit()
     except Exception as e:
-        if conn is not None:
-            await conn.rollback()
         db_logger.error(f'Failed to create invasives table: {e}')
-    finally:
-        if conn is not None:
-            await conn.close()
 
 
-async def update_invasives(conn):
+async def update_invasives(conn: AsyncConnection):
     # Mark invasive species
     flag_invasives_query = sql.SQL("""
             UPDATE {backbone} b
@@ -131,12 +122,10 @@ async def _replace_backbone(conn, temp_table_name: str):
 
 
 # Perform a full update of the gbif_backbone in local database
-async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
+async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cleaned: bool = False) -> None:
     """
     Updates the gbif_inverts_backbone table
     """
-
-    conn = None
 
     try:
         # If no filepath provided, download and extract
@@ -192,8 +181,6 @@ async def update_backbone(fp: str | None = None, save_cleaned: bool = False):
         )
 
         df = GBIF_INVERTS_BACKBONE.coerce_dataframe(df)
-
-        conn = await get_single_db_connection()
 
         # Build taxonomic lineages and insert rank ids into dataframe
         data_logger.info(

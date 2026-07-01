@@ -1,17 +1,17 @@
 from backend.data_util.db import get_single_db_connection
-from backend.jobs.tasks.database import update_indexes
-from backend.jobs.tasks.initialize_db import initialize_all_tables
+from backend.jobs.tasks.indexes import update_indexes
+from backend.jobs.tasks.tables import initialize_all_tables
 from backend.jobs.tasks.regions import update_observation_regions
 from backend.jobs.tasks.taxa import update_backbone, update_ns_ranks
 from backend.jobs.tasks.occurrence import update_observations
 from backend.jobs.tasks.views import refresh_materialized_views
 from backend.core.logging import tasks_logger
-import os
-
 
 # Automatically update observations table from GBIF
 # This function grabs new records (determined by latest modified date value currently in table)
 # and ALSO grabs all records with no modified date (as there is no way to vet these)
+
+
 async def update_database():
     conn = None
     try:
@@ -26,12 +26,12 @@ async def update_database():
         await conn.commit()
 
         # Update observations, returning new taxon_keys and row_ids
-        backbone_update_required, new_row_keys, new_row_ids = await update_observations()
+        backbone_update_required, new_row_keys, new_row_ids = await update_observations(conn)
 
         await update_observation_regions(conn, new_row_ids)
 
         if backbone_update_required:
-            await update_backbone()
+            await update_backbone(conn)
             # A bit deceptive, but new_row_keys == None means update ALL rows
             new_row_keys = None
 

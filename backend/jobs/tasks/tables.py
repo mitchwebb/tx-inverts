@@ -3,7 +3,7 @@ from psycopg import AsyncConnection, sql
 from psycopg.errors import Error as PsycopgError
 from backend.db.schema import ALL_TABLES
 from backend.db.schema.base_table import DBTable
-from backend.jobs.tasks.database import update_indexes
+from backend.jobs.tasks.indexes import update_indexes
 from backend.core.logging import db_logger
 from backend.jobs.tasks.views import refresh_materialized_views
 
@@ -31,6 +31,7 @@ async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: 
 
         create_sql = table.create_table_query()
         await execute_psql_query(conn, create_sql)
+        await conn.commit()
         if verbose:
             db_logger.info(f'Created table: {table.name}')
 
@@ -45,14 +46,13 @@ async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: 
         if strict:
             raise
 
-    finally:
-        await conn.commit()
-
 
 # Initialize all tables provided to ALL_TABLES constant
 async def initialize_all_tables(conn: AsyncConnection, *, verbose: bool = False, strict: bool = True):
     for table in ALL_TABLES:
         await initialize_table(conn, table, verbose, strict)
 
+    # Refresh materialized_views, as some depend on these tables
     await refresh_materialized_views(conn)
+    # Update indexes for safety
     await update_indexes(conn)

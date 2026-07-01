@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from backend.data_util.invasives import prep_invasives_dataset
+from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
 
 # Test taxon data for
 test_data = [
@@ -95,3 +96,10 @@ async def test_prep_invasives_filter():
     assert 2362833 in result['taxon_id'].values
     # Greater taxonRanks excluded (PHYLUM)
     assert 6173164 not in result['taxon_id'].values
+
+
+# See that prep_invasives successfully outputs coerced tabled
+@pytest.mark.asyncio
+async def test_prep_invasives_coerces_columns():
+    result = await prep_invasives_dataset(test_df)
+    assert set(result.columns) == set(US_INVASIVES_TABLE.column_order())

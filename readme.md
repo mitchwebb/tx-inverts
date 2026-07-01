@@ -11,3 +11,41 @@ As a note: while Svelte may not share the ubiquity of TypeScript, Python, or Pos
 ## Installation
 
 To install the site on a publicly available server, follow the instructions in the ~~installation manual~~ (coming soon).
+
+```
+    GBIF__USER='************'
+    GBIF__EMAIL='************'
+    GBIF__PASSWORD='************'
+
+    DATABASE__USER='************'
+    DATABASE__PASSWORD='************'
+    DATABASE__HOST='************'
+    DATABASE__PORT='************'
+    DATABASE__NAME='************'
+
+    CORS__DOMAIN='************'
+```
+
+## Testing
+
+Unit and integration testing of the backend is accomplished through Pytest. In an environment with Pytest, run 'pytest ./backend' from the project's root directory.
+
+Integration testing expects a test database with the following parameters:
+
+```
+    host: 'localhost',
+    database: 'test_inverts',
+    port: 5432,
+    user: 'test_user',
+    password: 'test_pass'
+```
+
+With a PostgreSQL server running on the port specified above, a functioning test database can be created using the following SQL:
+
+```
+    CREATE DATABASE test_inverts;
+    CREATE USER test_user WITH ENCRYPTED PASSWORD 'test_pass';
+    ALTER SCHEMA public OWNER TO test_user;
+    GRANT ALL PRIVILEGES ON DATABASE test_inverts TO test_user;
+    CREATE EXTENSION postgis;
+```

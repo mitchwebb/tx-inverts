@@ -3,7 +3,7 @@ from backend.data_util.db import get_single_db_connection
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.jobs.runners.run_async import run_async
 from backend.jobs.tasks.datasets import fill_dataset_table
-from backend.jobs.tasks.initialize_db import initialize_table
+from backend.jobs.tasks.tables import initialize_table
 
 
 async def main():

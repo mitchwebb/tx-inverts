@@ -7,4 +7,10 @@ class GBIFSettings(BaseSettings):
     user: str
     password: str
     email: str
-    url: str = 'https://api.gbif.org/v1/'
+
+    # UAT Endpoint Credentials
+    # The GBIF UAT requires another account, so these are optional
+    # The test using this is skipped if they are not provided
+    uat_user: str | None = None
+    uat_email: str | None = None
+    uat_password: str | None = None

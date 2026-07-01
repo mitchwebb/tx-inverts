@@ -7,7 +7,7 @@ from backend.data_util.extract_zip import extract_zip_files
 from backend.core.logging import data_logger
 
 
-async def gbif_download_request(request_body: str, pwd: str, username: str):
+async def gbif_download_request(request_body: str, pwd: str, username: str, test: bool = False):
     """
     Creates a download request using GBIF's API
 
@@ -22,7 +22,7 @@ async def gbif_download_request(request_body: str, pwd: str, username: str):
         request_body (str): GBIF request body (refer to GBIF documentation)
         pwd (str): GBIF password
         username (str): GBIF username
-        test (bool, optional): Determines use of GBIF test API for testing
+        test (bool = False): Determines use of GBIF test API for testing
 
     Returns:
         GBIF download key (str)
@@ -32,14 +32,15 @@ async def gbif_download_request(request_body: str, pwd: str, username: str):
         "Content-Type": "application/json"
     }
 
-    # Although we once had a test param, this GBIF endpoint doesn't function with their testing server
-    # Maybe they will fix it in the future
-    GBIF_url = "https://api.gbif.org/v1/occurrence/download/request"
+    gbif_url = "https://api.gbif.org/v1/occurrence/download/request"
+
+    if test:
+        gbif_url = "https://api.gbif-uat.org/v1/occurrence/download/request"
 
     try:
         async with aiohttp.ClientSession() as session:
             response = await session.post(
-                GBIF_url,
+                gbif_url,
                 data=request_body,
                 auth=aiohttp.BasicAuth(username, pwd),
                 headers=headers
@@ -50,6 +51,13 @@ async def gbif_download_request(request_body: str, pwd: str, username: str):
                 data_logger.info(
                     f'Find this download request at https://www.gbif.org/occurrence/download/{key}')
                 return key
+            if response.status == 401:
+                data_logger.warning(
+                    '401 Unauthorized. If using the GBIF test server, ensure you are using '
+                    'credentials registered at uat.gbif.org — production credentials will not work.'
+                )
+                text = await response.text()
+                raise RuntimeError(f'Download request failed: 401 Unauthorized')
             else:
                 text = await response.text()
                 raise RuntimeError(
@@ -76,7 +84,7 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
     This function will attempt to download the provided GBIF download every
     ten seconds for a given time (time_to_wait)
 
-    This function can be used in conjuction with the
+    This function can be used in conjunction with the
     GBIF_download_request function.
 
     Args:
@@ -132,7 +140,8 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                                 # Log download progress in 50MB chunks
                                 if downloaded >= next_log_threshold:
                                     if total_size:
-                                        data_logger.info(f"Downloaded {_fmt_size_string(downloaded)} / {_fmt_size_string(total_size)}")
+                                        data_logger.info(
+                                            f"Downloaded {_fmt_size_string(downloaded)} / {_fmt_size_string(total_size)}")
                                     else:
                                         data_logger.info(
                                             f"Downloaded {_fmt_size_string(downloaded)} so far")
