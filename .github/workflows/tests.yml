@@ -8,7 +8,7 @@ jobs:
 
         services:
             postgres:
-                image: postgres:16
+                image: postgis/postgis:16-3.4
                 env:
                     POSTGRES_USER: test_user
                     POSTGRES_PASSWORD: test_pass
@@ -25,7 +25,10 @@ jobs:
 
         steps:
             - uses: actions/checkout@v3
-
+            - name: Enable PostGIS
+              run: psql -U test_user -h localhost -d test_inverts -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+              env:
+                  PGPASSWORD: test_pass
             - name: Install system dependencies
               run: |
                   sudo apt-get update 
