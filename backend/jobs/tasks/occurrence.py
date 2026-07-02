@@ -259,7 +259,7 @@ async def update_observations(
     gbif_request_key: str | None = None,
     chunk_size: int = 100000,
     full_replace: bool = False,
-    delete_file = True
+    delete_file=True
 ) -> Tuple[bool, Optional[List[int]], Optional[List[int]]]:
     """
         Orchestration function to update gbif_observations table
@@ -495,7 +495,7 @@ async def update_observations(
         if using_download and delete_file:
             os.remove(fp)
             # If parent is empty, remove parent directory as well
-            parent_directory = Path(fp).parent.absolute()
+            parent_directory = os.path.dirname(os.path.abspath(fp))
             os.rmdir(parent_directory)
 
         return (backbone_update_suggested, new_row_keys or None, affected_observation_ids or None)
