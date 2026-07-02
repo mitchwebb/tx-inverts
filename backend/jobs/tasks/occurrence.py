@@ -259,6 +259,7 @@ async def update_observations(
     gbif_request_key: str | None = None,
     chunk_size: int = 100000,
     full_replace: bool = False,
+    delete_file = True
 ) -> Tuple[bool, Optional[List[int]], Optional[List[int]]]:
     """
         Orchestration function to update gbif_observations table
@@ -270,18 +271,22 @@ async def update_observations(
         Will overwrite db observation rows which share a gbif_id
 
         Args:
-            fp (str): Filepath to observations csv (if provided, function will NOT make a new GBIF request)
-            gbif_request_key (str): Key returned by gbif download request. Can be used if a request was already made.
-            chunk_size (int): Chunk size to be used when reading in CSV for data cleaning
-            full_replace (bool): If True, operation will replace observations table with new data
-            save_cleaned_data (bool): If True, cleaned data will be saved in data/cleaned directory after processing,
-            verbose (bool)
+            conn (psycopg.AsyncConnection): Active psycopg async database connection
+            fp (str | None = None): Filepath to observations csv (if provided, function will NOT make a new GBIF request)
+            gbif_request_key (str | None = None): Key returned by gbif download request. Can be used if a request was already made.
+            chunk_size (int = 100000): Chunk size to be used when reading in CSV for data cleaning
+            full_replace (bool = False): If True, operation will replace observations table with new data
+            delete_download (bool = True): If True, downloaded observations file will not be kept
+
 
         Returns:
             (backbone_update_suggested, new_row_keys, affected_observation_ids)
     """
 
     try:
+        # Track whether or not we're using a local file or a downloaded file
+        using_download = fp is None
+
         # If no fp to observations file is provided, create GBIF request and download new data
         if fp is None:
             fp = await get_gbif_inverts_file(conn, gbif_request_key, full_replace)
@@ -485,6 +490,13 @@ async def update_observations(
             backbone_update_suggested = True
 
         await conn.commit()
+
+        # If we've downloaded a file and delete_file is True, delete it
+        if using_download and delete_file:
+            os.remove(fp)
+            # If parent is empty, remove parent directory as well
+            parent_directory = Path(fp).parent.absolute()
+            os.rmdir(parent_directory)
 
         return (backbone_update_suggested, new_row_keys or None, affected_observation_ids or None)
 
