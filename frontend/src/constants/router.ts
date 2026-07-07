@@ -2,21 +2,23 @@ import { getMapContext, type MapState } from '../contexts/mapContext';
 import {
     getActiveTaxaContext,
     type ActiveTaxaState,
+    type ActiveTaxon,
 } from '../contexts/activeTaxaContext';
 import {
     getFiltersContext,
     type FiltersState,
 } from '../contexts/filtersContext';
-import type { NSRank } from '../types/api';
-import type { ParamCodec, SyncedKeys } from '../types/router';
+import type { NSRank, RegionInfo } from '../types/api';
+import type { URLParamCodec, SyncedKeys } from '../types/router';
 import {
-    booleanCodec,
-    dateCodec,
-    iDObjectCodec,
-    stringArrayCodec,
-    stringCodec,
+    booleanURLCodec,
+    dateURLCodec,
+    collectionObjectURLCodec,
+    stringArrayURLCodec,
+    stringURLCodec,
 } from '../util/router';
 import type { TaxonomicRank } from '../types/taxa';
+import type { makeIDCollection } from '../util/collection.svelte';
 
 export function makeSyncedKeys<
     Context,
@@ -31,24 +33,32 @@ export const routerSyncedKeys = {
     filters: {
         getContext: getFiltersContext,
         keys: makeSyncedKeys<FiltersState>({
-            includeINat: { param: 'inat', codec: booleanCodec(true) },
+            includeINat: { param: 'inat', codec: booleanURLCodec(true) },
             datasets: {
                 param: 'dataset',
-                codec: stringArrayCodec() as ParamCodec<string[]>,
+                codec: stringArrayURLCodec() as URLParamCodec<string[]>,
             },
             nSRanks: {
                 param: 'status',
-                codec: stringArrayCodec() as ParamCodec<NSRank[]>,
+                codec: stringArrayURLCodec() as URLParamCodec<NSRank[]>,
             },
             taxonRank: {
                 param: 'rank',
-                codec: stringCodec() as ParamCodec<TaxonomicRank | null>,
+                codec: stringURLCodec() as URLParamCodec<TaxonomicRank | null>,
             },
-            dateStart: { param: 'd1', codec: dateCodec() },
-            dateEnd: { param: 'd2', codec: dateCodec() },
+            dateStart: {
+                param: 'd1',
+                codec: dateURLCodec(),
+            },
+            dateEnd: {
+                param: 'd2',
+                codec: dateURLCodec(),
+            },
             region: {
                 param: 'region',
-                codec: iDObjectCodec(),
+                codec: collectionObjectURLCodec() as URLParamCodec<
+                    ReturnType<typeof makeIDCollection<RegionInfo, string>>
+                >,
             },
         }),
     },
@@ -59,7 +69,9 @@ export const routerSyncedKeys = {
         keys: makeSyncedKeys<ActiveTaxaState>({
             taxa: {
                 param: 'taxon',
-                codec: iDObjectCodec(),
+                codec: collectionObjectURLCodec() as URLParamCodec<
+                    ReturnType<typeof makeIDCollection<ActiveTaxon, number>>
+                >,
             },
         }),
     },

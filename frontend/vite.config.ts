@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import dotenv from 'dotenv';
 
@@ -18,5 +18,8 @@ export default defineConfig({
                 rewrite: (path) => path.replace(/^\/server/, ''), // Optional path rewrite
             },
         },
+    },
+    test: {
+        exclude: ['**/node_modules/**', '**/dist/**', 'ui-tests/**'],
     },
 });

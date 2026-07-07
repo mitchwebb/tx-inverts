@@ -1,4 +1,4 @@
-export type ParamCodec<T> = {
+export type URLParamCodec<T> = {
     toURL(value: T): string[] | null;
     fromURL(values: string[]): T | null | undefined;
 };
@@ -6,7 +6,7 @@ export type ParamCodec<T> = {
 // Type for relevant router keys to keep in sync
 export type SyncedKey<ContextKey, P extends string = string> = {
     param: P;
-    codec: ParamCodec<ContextKey>;
+    codec: URLParamCodec<ContextKey>;
 };
 
 // Create type to pair synced router keys with their contexts

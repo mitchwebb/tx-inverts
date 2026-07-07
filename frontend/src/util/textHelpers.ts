@@ -42,7 +42,7 @@ export function capitalizeWords(words: string | string[]): string | string[] {
 export function toLocaleRounded(number: number | null, decimals: number = 0) {
     // TODO: Needs to error
     if (number == null) {
-        return;
+        throw new TypeError('toLocaleRounded: number must not be null');
     }
     const rounded = number.toFixed(decimals);
     const localeString = Number(rounded).toLocaleString();

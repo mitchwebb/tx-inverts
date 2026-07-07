@@ -54,8 +54,8 @@ DWC_OCCURRENCE_SELECT_CLAUSE = sql.SQL("""
         accepted_taxon_key AS "acceptedTaxonKey",
         accepted_scientific_name AS "acceptedScientificName",
         verbatim_scientific_name AS "verbatimScientificName",
-        collection_start_date as "collectionStartDate",
-        collection_end_date as "collectionEndDate"
+        EXTRACT(DOY FROM collection_start_date)::int as "startDayOfYear",
+        EXTRACT(DOY FROM collection_end_date)::int as "endDayOfYear"
     FROM {gbif_table}
 """).format(gbif_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name))
 

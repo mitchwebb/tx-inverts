@@ -1,6 +1,18 @@
-// A little generator for managing contexts with type Record<string, string>[]
-// where Records have a unique ID. This is a way of retaining a sorted array of objects,
-// while making them easier to work with.
+/**
+ * Creates a reactive, ordered collection of items with unique IDs.
+ *
+ * @template T - The item type
+ * @template ID - The ID type (string or number)
+ * @param getID - Function that extracts a unique ID from an item
+ * @param onAdd - Optional async callback fired after an item is added, receives the new item's ID
+ * @returns Collection object with the following properties and methods:
+ * - `items` — reactive array of all items in insertion order
+ * - `ids` — array of all item IDs in insertion order
+ * - `get(id)` — returns the item with the given ID, or undefined
+ * - `add(item)` — appends item and fires onAdd if provided
+ * - `remove(id)` — removes item with the given ID
+ * - `clear()` — removes all items
+ */
 export function makeIDCollection<
     T,
     ID extends number | string = number | string,

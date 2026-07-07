@@ -3,7 +3,7 @@ name: Python Tests
 on: [push, pull_request]
 
 jobs:
-    test:
+    test-python:
         runs-on: ubuntu-latest
 
         services:
@@ -57,3 +57,13 @@ jobs:
 
                   # CORS
                   CORS__DOMAIN: ${{secrets.CORS__DOMAIN}}
+    test-frontend:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+            - run: npm ci
+              working-directory: ./frontend
+            - run: npm run vitest
+              working-directory: ./frontend

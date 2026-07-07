@@ -1,25 +1,28 @@
-import type { ActiveTaxon } from '../contexts/activeTaxaContext';
-import type { ParamCodec } from '../types/router';
+import type { URLParamCodec } from '../types/router';
+import type { makeIDCollection } from './collection.svelte';
 
 /**
  * URL/CONTEXT CODECS
  * These should be used to transfer params between URL and Contexts
  */
-export const numberCodec = (
-    defaultValue: number | null = null
-): ParamCodec<number | null> => ({
-    toURL(value) {
-        if (value == null || value === defaultValue) return null;
-        return [String(value)];
-    },
-    fromURL(values) {
-        if (values.length === 0) return defaultValue;
-        const n = Number(values[0]);
-        return Number.isNaN(n) ? defaultValue : n;
-    },
-});
 
-export const booleanCodec = (defaultValue: boolean): ParamCodec<boolean> => ({
+// export const numberCodec = (
+//     defaultValue: number | null = null
+// ): ParamCodec<number | null> => ({
+//     toURL(value) {
+//         if (value == null || value === defaultValue) return null;
+//         return [String(value)];
+//     },
+//     fromURL(values) {
+//         if (values.length === 0) return defaultValue;
+//         const n = Number(values[0]);
+//         return Number.isNaN(n) ? defaultValue : n;
+//     },
+// });
+
+export const booleanURLCodec = (
+    defaultValue: boolean
+): URLParamCodec<boolean> => ({
     toURL(value) {
         return value === defaultValue ? null : [String(value)];
     },
@@ -29,7 +32,7 @@ export const booleanCodec = (defaultValue: boolean): ParamCodec<boolean> => ({
     },
 });
 
-export const stringArrayCodec = (): ParamCodec<string[]> => ({
+export const stringArrayURLCodec = (): URLParamCodec<string[]> => ({
     toURL(values) {
         return values === null || values.length === 0
             ? null
@@ -40,7 +43,7 @@ export const stringArrayCodec = (): ParamCodec<string[]> => ({
     },
 });
 
-export const numberArrayCodec = (): ParamCodec<number[]> => ({
+export const numberArrayURLCodec = (): URLParamCodec<number[]> => ({
     toURL(values) {
         return values === null || values.length === 0
             ? null
@@ -51,9 +54,9 @@ export const numberArrayCodec = (): ParamCodec<number[]> => ({
     },
 });
 
-export const stringCodec = (
+export const stringURLCodec = (
     defaultValue: string | null = null
-): ParamCodec<string | null> => ({
+): URLParamCodec<string | null> => ({
     toURL(value) {
         if (value === null || value === defaultValue) return null; // omit defaults
         return [value];
@@ -64,9 +67,9 @@ export const stringCodec = (
     },
 });
 
-export const dateCodec = (
+export const dateURLCodec = (
     defaultValue: Date | null = null
-): ParamCodec<Date | null> => ({
+): URLParamCodec<Date | null> => ({
     toURL(value) {
         if (value === null || value === defaultValue) return null; // omit defaults
         return [value.toLocaleDateString()];
@@ -78,12 +81,17 @@ export const dateCodec = (
 });
 
 // Codec to take a Record type, keyed by IDs, resulting in ID values for URL
-// These require special fromURL handling, and therefor return nothing in this codec
-export function iDObjectCodec(): ParamCodec<any> {
+// These require special fromURL handling, and therefor return nothing in their codec
+// Though designed to work with objects made using makeIDCollection(), it also works
+// with simple keyed objects, where the keys are IDs.
+export function collectionObjectURLCodec(): URLParamCodec<
+    | ReturnType<typeof makeIDCollection<any, string | number>>
+    | Record<string | number, any>
+> {
     return {
         toURL: (value) => {
             if (!value) return null;
-            const keys = value.ids ?? Object.keys(value);
+            const keys = 'ids' in value ? value.ids : Object.keys(value);
             return keys.length ? keys.map(String) : null;
         },
         fromURL: (_values) => undefined,

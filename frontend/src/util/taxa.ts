@@ -4,6 +4,6 @@ import { italicizedRanks, type ItalicizedRank } from '../constants/taxa';
 export function isItalicizedRank(value: unknown): value is ItalicizedRank {
     return (
         typeof value === 'string' &&
-        (italicizedRanks as readonly string[]).includes(value)
+        italicizedRanks.includes(value.toLowerCase() as ItalicizedRank)
     );
 }

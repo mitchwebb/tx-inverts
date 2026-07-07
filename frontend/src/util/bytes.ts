@@ -1,4 +1,12 @@
-export function getHumanReadableBytes(size: number) {
+/**
+ * Takes size in bytes and returns human-readable string with units (up to YB)
+ *
+ * Falls back to input value with 'Bytes' if failed to parse
+ *
+ * @param bytes - Size in bytes
+ * @returns A human readable string with size units
+ */
+export function getHumanReadableBytes(bytes: number): string {
     let sizes = [
         ' Bytes',
         ' KB',
@@ -11,12 +19,12 @@ export function getHumanReadableBytes(size: number) {
         ' YB',
     ];
 
-    for (let i = 1; i < sizes.length; i++) {
-        if (size < Math.pow(1024, i))
+    for (let i = 1; i <= sizes.length; i++) {
+        if (bytes < Math.pow(1000, i))
             return (
-                Math.round((size / Math.pow(1024, i - 1)) * 100) / 100 +
+                parseFloat((bytes / Math.pow(1024, i - 1)).toFixed(2)) +
                 sizes[i - 1]
             );
     }
-    return size;
+    return bytes.toString() + ' Bytes';
 }

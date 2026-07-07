@@ -2,7 +2,7 @@ import { taxaTree } from '../contexts/TaxaTree';
 import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawNSValues, RawTaxonInfo, TaxonNodeType } from '../types/api';
-import { deduplicateStringArray } from '../util/deduplicate';
+import { deduplicateStringArray } from '../util/deduplicateArray';
 
 export async function getCommonNames(taxonID: ActiveTaxon['taxonID']) {
     const commonNamesURL = `https://api.gbif.org/v1/species/${taxonID}/vernacularNames?limit=100`;

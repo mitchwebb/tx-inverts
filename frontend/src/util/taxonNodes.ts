@@ -24,6 +24,7 @@ export function getVisibleNodes(
     return visible;
 }
 
+// Take flatMap of TaxonNodeType[] and created a nested tree using parent_name_usage_id
 export function getNestedTree(
     flatMap: Map<number, TaxonNodeType>
 ): Record<number, TaxonNodeType[]> {

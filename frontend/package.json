@@ -8,6 +8,7 @@
         "build": "vite build",
         "preview": "vite preview",
         "format": "prettier \"**/*.{ts,js,tsx,jsx,svelte,css,scss,html,json,md}\" --write",
+        "vitest": "vitest",
         "test:chrome": "npx playwright test --headed --browser=chromium",
         "test:firefox": "npx playwright test --headed --browser=firefox",
         "test:safari": "npx playwright test --headed --browser=webkit"
@@ -17,7 +18,8 @@
         "@sveltejs/vite-plugin-svelte": "^5.0.3",
         "@tsconfig/svelte": "^5.0.4",
         "@types/node": "^24.0.10",
-        "vite": "^6.0.5"
+        "vite": "^6.0.5",
+        "vitest": "^4.1.9"
     },
     "dependencies": {
         "air-datepicker": "^3.6.0",
