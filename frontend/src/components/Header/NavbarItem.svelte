@@ -1,5 +1,4 @@
 <script lang="ts">
-    import Foldout from '../../common/Foldout.svelte';
     import { getRouterContext } from '../../contexts/routerContext';
     import type { NavItem } from '../../types/nav';
     import NavbarDropdown from './NavbarDropdown.svelte';

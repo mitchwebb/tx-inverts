@@ -186,7 +186,6 @@
                     dateStart,
                     dateEnd,
                     datasets,
-                    taxon.info.taxonRank
                 );
             }
         });
@@ -208,14 +207,12 @@
                 const dateStart = filtersContext.dateStart;
                 const dateEnd = filtersContext.dateEnd;
                 const datasets = filtersContext.datasets;
-                const taxonRank = taxon.info.taxonRank;
                 loadNSValues(
                     taxonID,
                     includeINat,
                     dateStart,
                     dateEnd,
                     datasets,
-                    taxonRank
                 );
             }
         });
@@ -227,7 +224,6 @@
         dateStart: FiltersState['dateStart'],
         dateEnd: FiltersState['dateEnd'],
         datasets: FiltersState['datasets'],
-        taxonRank: ActiveTaxaState['taxa']['items'][0]['info']['taxonRank']
     ) {
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
@@ -240,7 +236,6 @@
                 dateStart,
                 dateEnd,
                 datasets,
-                taxonRank,
                 abortController.signal
             );
             taxon.nSValues = normalizeAPIResponse<NSValues>(

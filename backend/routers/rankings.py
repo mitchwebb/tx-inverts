@@ -2,6 +2,9 @@
 from typing import cast
 
 from backend.constants.taxa import TaxonomicRank
+from backend.core.exception_handler import TaxonNotFoundError
+from backend.data_util.taxa import taxon_exists
+from backend.db.queries.taxa import get_taxon_rank
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from fastapi import APIRouter, HTTPException, Request
@@ -47,15 +50,30 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
         )
 
         async with pool.connection() as conn:
+
+            if not await taxon_exists(conn, params.taxon_id):
+                raise TaxonNotFoundError(
+                    f'Requested taxon {params.taxon_id} is not found in the backbone')
+
+            # Occurrences is only a useful metric for species and subspecies
+            # We'll include genus as well, because why not
+            taxon_rank = await get_taxon_rank(conn, params.taxon_id)
+            compute_occurrences = taxon_rank in {
+                'genus', 'species', 'subspecies'} or taxon_rank is None
+
             # Calculate various ns_values using filtered observation data
-            ns_result = await calculate_ns_values(conn, filters, cast(TaxonomicRank, params.taxon_rank))
-            # Protect against failed ns_resut
+            ns_result = await calculate_ns_values(conn, filters, compute_occurrences)
+
+            # Protect against failed ns_result
             if not ns_result:
                 return JSONResponse(content={'result': None}, status_code=200)
             api_logger.info(f'Retrieved NS values {ns_result}')
 
             # Return results
             return JSONResponse(content=ns_result)
+
+    except TaxonNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
     except Exception as e:
         api_logger.exception(e)
@@ -78,6 +96,7 @@ async def get_range_extent_geom(params: SingleTaxonObsRequestParams, request: Re
     pool = request.app.state.db_pool
 
     try:
+
         # Make OccurrenceFilters Object
         filters = OccurrenceFilters(
             taxon_ids=[params.taxon_id],
@@ -87,10 +106,14 @@ async def get_range_extent_geom(params: SingleTaxonObsRequestParams, request: Re
             datasets=params.datasets
         )
 
-        # Make occurrence_filter SQL fragment
-        occurrence_filter = create_occurrence_filter_sql(filters)
-
         async with pool.connection() as conn:
+            if not await taxon_exists(conn, params.taxon_id):
+                raise TaxonNotFoundError(
+                    f'Requested taxon {params.taxon_id} is not found in the backbone')
+
+            # Make occurrence_filter SQL fragment
+            occurrence_filter = create_occurrence_filter_sql(filters)
+
             # Get range extent geometry via SQL using filtered occurrences
             query = sql.SQL("""
                 WITH region AS (
@@ -99,9 +122,7 @@ async def get_range_extent_geom(params: SingleTaxonObsRequestParams, request: Re
                     WHERE state = 'Texas'
                 ),
                 hull AS (
-                    SELECT ST_ConvexHull(ST_Collect(
-                        ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326)
-                    )) AS geom
+                    SELECT ST_ConvexHull(ST_Collect(geometry)) AS geom
                     FROM {occurrence_table}
                     WHERE
                         {occurrence_filter}
@@ -120,14 +141,16 @@ async def get_range_extent_geom(params: SingleTaxonObsRequestParams, request: Re
             )
             result = await execute_psql_query(conn, query, fetch='one', dict_cursor=True)
             if not result:
-                return JSONResponse(content={'result': None}, status_code=200)
+                return JSONResponse(content={'range_extent_geom': None}, status_code=200)
 
             geom_json = result['range_extent_geom']
             return JSONResponse(content={
-                'result': {
-                    'range_extent_geom': json.loads(geom_json) if geom_json else None
-                }
+                'range_extent_geom': json.loads(geom_json) if geom_json else None
             })
+
+    except TaxonNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))

@@ -3,6 +3,7 @@
     - Toolbar for MapOverlay
 -->
 <script lang="ts">
+    import { fade } from 'svelte/transition';
     import LayersIcon from '../../assets/LayersIcon.svelte';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import type { CheckboxPayload } from '../../common/CheckboxInput.svelte';
@@ -28,40 +29,36 @@
 </script>
 
 <div id="map-toolbar-wrapper">
-    <div id="map-toolbar-left">
-        <ToolbarFoldoutButton
-            id="layers-menu"
-            ariaLabel="Expand layers and legends menu"
-            ButtonLabel={LayersIcon}
+    <ToolbarFoldoutButton
+        id="layers-menu"
+        ariaLabel="Expand layers and legends menu"
+        ButtonLabel={LayersIcon}
+    >
+        <MapLegendFoldout
+            label="Counties"
+            layerID="counties-group"
+            handler={layerToggleHandler}
+            foldout={false}
+        ></MapLegendFoldout>
+        <EcoregionLegend />
+        <MapLegendFoldout
+            label="Parks"
+            layerID="parks"
+            handler={layerToggleHandler}
         >
-            <MapLegendFoldout
-                label="Counties"
-                layerID="counties-group"
-                handler={layerToggleHandler}
-                foldout={false}
-            ></MapLegendFoldout>
-            <EcoregionLegend />
-            <MapLegendFoldout
-                label="Parks"
-                layerID="parks"
-                handler={layerToggleHandler}
-            >
-                <MapLegendDisplay
-                    targetProp="LegendClass"
-                    source="parks"
-                    sourceLayer="texas_parks"
-                    colorKey={TexasParksColorStops}
-                />
-            </MapLegendFoldout>
-        </ToolbarFoldoutButton>
-    </div>
-    <div id="map-toolbar-right">
-        {#if mapContext.loading}
-            <div id="map-loading-icon" class="icon loading-blink">
-                <LoadingIcon />
-            </div>
-        {/if}
-    </div>
+            <MapLegendDisplay
+                targetProp="LegendClass"
+                source="parks"
+                sourceLayer="texas_parks"
+                colorKey={TexasParksColorStops}
+            />
+        </MapLegendFoldout>
+    </ToolbarFoldoutButton>
+    {#if mapContext.loading}
+        <div id="map-loading-icon" class="icon loading-blink" transition:fade>
+            <LoadingIcon />
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -84,10 +81,10 @@
         pointer-events: none;
         z-index: 0;
         display: flex;
-        gap: 1rem;
+        gap: .5rem;
         height: max-content;
         align-items: center;
-        justify-content: space-between;
+        /* justify-content: space-between; */
     }
     #map-toolbar-wrapper > * {
         z-index: 50;
@@ -96,5 +93,12 @@
     #map-loading-icon {
         z-index: 50;
         color: var(--accent-color);
+        stroke-width: 4px;
     }
+    /* #map-toolbar-left {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+    } */
 </style>

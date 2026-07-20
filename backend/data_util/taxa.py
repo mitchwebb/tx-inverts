@@ -2,12 +2,33 @@ import numpy as np
 from backend.constants.taxa import RANK_COLS, RANK_ORDER
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.helpers import normalize_to_list
+from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from collections import deque, defaultdict
 import pandas as pd
 from typing import List
 from psycopg import AsyncConnection, sql
-from backend.core.logging import data_logger
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
+
+
+async def taxon_exists(conn: AsyncConnection, taxon_id: int) -> bool:
+    """Small helper to check existence of taxon_id in backbone"""
+
+    result = await execute_psql_query(
+        conn,
+        sql.SQL('''
+            SELECT EXISTS(
+                SELECT 1 FROM {backbone} 
+                WHERE taxon_id = {taxon_id}
+            )
+        ''').format(
+            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+            taxon_id=sql.Literal(taxon_id)
+        ),
+        fetch='one'
+    )
+
+    return result[0] if result else False
 
 
 async def get_observation_count(conn: AsyncConnection, taxon_ids: int | List[int]) -> int | None:

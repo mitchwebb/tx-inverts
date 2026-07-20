@@ -1,4 +1,6 @@
 from backend.constants.taxa import TaxonomicRank
+from backend.core.exception_handler import TaxonNotFoundError
+from backend.data_util.taxa import taxon_exists
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.models.api import NSRank
@@ -23,7 +25,7 @@ def calculate_rank(number_of_occurrences: int, range_extent: int, area_of_occupa
     # If all values are 0, species is data deficient
     # NatureServe doesn't actually have this ranking. This would be presumed extinct
     if number_of_occurrences == 0 and range_extent == 0 and (area_of_occupancy == 0 or area_of_occupancy is None):
-        return "u"
+        return 'u'
 
     # According to IUCN, range_extent should be AT LEAST equal to area_of_occupancy
     if area_of_occupancy is not None and range_extent < area_of_occupancy:
@@ -131,17 +133,24 @@ def _get_zero_range_rank(three_average_score: float) -> NSRank:
 async def calculate_ns_values(
     conn: AsyncConnection,
     filters: OccurrenceFilters,
-    taxon_rank: TaxonomicRank = 'species'
+    compute_occurrences: bool = True
 ) -> dict | None:
     """
         Fetch range extent area (km²), number of occurrences,
         total observation count, and area of occupancy bins (4km²)
         for a requested taxon_id.
 
+        PRECONDITION: {occurrence_table} must contain only observations
+        that already fall within the Texas boundary (region.geometry in
+        this query). This function does NOT spatially filter observations
+        to Texas — observation_count, number_of_occurrences, and the AOO
+        bins assume the source table is pre-scoped. Only range_extent_km2
+        explicitly clips to `region` (for the hull/area calculation).
+
         Args:
             conn (Connection): async DB connection or context manager supporting async with
             filters (OccurrenceFilters): Occurrence filters with taxon_ids being a single taxon_id
-            taxon_rank (TaxonomicRank): The rank of the queried taxon, defaults to 'species'
+            compute_occurrences (bool = True): Whether or not to compute occurrence count (can be costly, and isn't useful for higher taxa)
 
         Returns:
             dict with keys 'range_extent_km2',
@@ -149,17 +158,21 @@ async def calculate_ns_values(
                            'observation_count',
                            'area_of_occupancy_4km2_bins',
                            'area_of_occupancy_1km2_bins'
-            or None if no data found
     """
 
     try:
         # This function should only be run on a single taxon
         if not filters.taxon_ids:
-            raise ValueError("calculate_ns_values requires a taxon_id")
+            raise ValueError('calculate_ns_values requires a taxon_id')
 
         if len(filters.taxon_ids) != 1:
             raise ValueError(
-                f"calculate_ns_values requires exactly one taxon_id, got {len(filters.taxon_ids)}"
+                f'calculate_ns_values requires exactly one taxon_id, got {len(filters.taxon_ids)}'
+            )
+
+        if not await taxon_exists(conn, filters.taxon_ids[0]):
+            raise TaxonNotFoundError(
+                f'Requested taxon {filters.taxon_ids[0]} not found in backbone'
             )
 
         taxon_id = filters.taxon_ids[0]
@@ -167,24 +180,21 @@ async def calculate_ns_values(
         occurrence_filter = create_occurrence_filter_sql(
             filters, skip_taxa=True)
 
-        # Occurrences is only a useful metric for species and subspecies
-        # We'll include genus as well, because why not
-        compute_occurrences = taxon_rank in {"genus", "species", "subspecies"}
-
         if compute_occurrences:
-            obs_source = sql.SQL("""(
-                SELECT 
+            obs_source = sql.SQL('''
+                ( SELECT 
                     geometry,
                     geom_5070,
                     ST_ClusterDBSCAN(geom_5070, eps := 1000, minpoints := 1) OVER () AS cluster_id
-                FROM filtered_obs
-            ) clustered""")
-            occ_expression = sql.SQL("COUNT(DISTINCT cluster_id)")
+                        FROM filtered_obs
+                    ) clustered
+            ''')
+            occ_expression = sql.SQL('COUNT(DISTINCT cluster_id)')
         else:
-            obs_source = sql.SQL("filtered_obs")
-            occ_expression = sql.SQL("NULL::bigint")
+            obs_source = sql.SQL('filtered_obs')
+            occ_expression = sql.SQL('NULL::bigint')
 
-        query = sql.SQL("""
+        query = sql.SQL('''
             WITH matching_taxa AS MATERIALIZED (
                 SELECT accepted_taxon_key
                 FROM taxon_lineage
@@ -204,7 +214,7 @@ async def calculate_ns_values(
                 FROM {tx_table}
                 WHERE state = 'Texas'
             ),
-            values AS (
+            agg_values AS (
                 SELECT
                     COUNT(*) AS observation_count,
                     {occ_expression} AS number_of_occurrences,
@@ -213,9 +223,10 @@ async def calculate_ns_values(
                     ST_Collect(geometry) AS geom_collection
                 FROM {obs_source}
             ),
+            -- While precise to an acceptable degree, ConvexHull run on a projection isn't PERFECT
             hull AS (
                 SELECT ST_ConvexHull(geom_collection) AS geometry
-                FROM values
+                FROM agg_values
             )
             SELECT
                 COALESCE(
@@ -227,15 +238,14 @@ async def calculate_ns_values(
                     ) / 1e6,
                     0
                 ) AS range_extent_km2,
-                values.observation_count,
-                values.number_of_occurrences,
-                values.a4_cells AS area_of_occupancy_4km2_bins,
-                values.a1_cells AS area_of_occupancy_1km2_bins
-            FROM values, hull, region
-        """).format(
+                agg_values.observation_count,
+                agg_values.number_of_occurrences,
+                agg_values.a4_cells AS area_of_occupancy_4km2_bins,
+                agg_values.a1_cells AS area_of_occupancy_1km2_bins
+            FROM agg_values, hull, region
+        ''').format(
             tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
             taxon_id=sql.Literal(taxon_id),
-            include_inat=sql.Literal(filters.include_inat),
             occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
             occurrence_filter=occurrence_filter,
             obs_source=obs_source,

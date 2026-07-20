@@ -2,6 +2,8 @@
 from datetime import date
 from typing import Sequence
 import backend.constants.map as map
+from backend.core.exception_handler import TaxonNotFoundError
+from backend.data_util.taxa import taxon_exists
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Query, Request, HTTPException, Response
@@ -19,24 +21,27 @@ occurrence_router = APIRouter()
 @occurrence_router.get('/get_datasets')
 async def get_datasets(request: Request) -> dict[str, Sequence[rows.DictRow]]:
     """
-    Get list of ALL datasets found in dataset_meta table (all datasets represented in observations records)
+    Get list of ALL datasets found in dataset_meta table (all datasets in our APPROVED_DATASETS)
     """
 
     try:
-        query = sql.SQL("""
+        query = sql.SQL('''
             SELECT * FROM {dataset_table}
-        """).format(dataset_table=sql.Identifier(GBIF_DATASET_META.name))
+        ''').format(dataset_table=sql.Identifier(GBIF_DATASET_META.name))
 
         async with request.app.state.db_pool.connection() as conn:
             result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
-            if not result:
+
+            if result is None:
                 raise HTTPException(
                     status_code=404, detail='Dataset information not retrieved')
 
-            datasets = result
+            if len(result) == 0:
+                raise HTTPException(
+                    404, 'No datasets found in datasets table! Have you run setup/fill_dataset_table?')
 
             return {
-                'datasets': datasets
+                'datasets': result
             }
 
     except HTTPException:
@@ -57,7 +62,8 @@ async def get_dataset_counts(params: SingleTaxonObsRequestParams, request: Reque
         request (fastapi.Request): FastAPI request object
 
     Returns:
-        dict[str, int] | None: Mapping of dataset_key to observation count, ordered by count descending. Returns None if no results are found.
+        dict[str, int] | None: Mapping of dataset_key to observation count, ordered by count descending. 
+        Returns None if no results are found.
 
     """
 
@@ -65,6 +71,10 @@ async def get_dataset_counts(params: SingleTaxonObsRequestParams, request: Reque
         pool = request.app.state.db_pool
 
         async with pool.connection() as conn:
+
+            if not await taxon_exists(conn, params.taxon_id):
+                raise TaxonNotFoundError(
+                    f'Requested taxon {params.taxon_id} is not found in the backbone')
 
             filter_payload = OccurrenceFilters(
                 taxon_ids=[params.taxon_id],
@@ -114,6 +124,10 @@ async def get_dataset_counts(params: SingleTaxonObsRequestParams, request: Reque
             else:
                 return None
 
+    except TaxonNotFoundError as e:
+        api_logger.exception(e)
+        raise HTTPException(status_code=404, detail=str(e))
+
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
@@ -137,19 +151,28 @@ async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Re
 
         async with pool.connection() as conn:
 
+            if not await taxon_exists(conn, params.taxon_id):
+                raise TaxonNotFoundError(
+                    f'Requested taxon {params.taxon_id} is not found in the backbone')
+
             filter_payload = OccurrenceFilters(
                 taxon_ids=[params.taxon_id],
-                include_inat=params.include_inat
+                include_inat=params.include_inat,
+                date_start=params.date_start,
+                date_end=params.date_end,
+                datasets=params.datasets,
+                regions=params.regions
             )
 
             occurrence_filter = create_occurrence_filter_sql(filter_payload)
 
-            query = sql.SQL("""
-                SELECT MIN(collection_start_date) as min_date, MAX(collection_end_Date) as max_date
+            query = sql.SQL('''
+                SELECT
+                    MIN(LEAST(collection_start_date, collection_end_date)) AS min_date,
+                    MAX(GREATEST(collection_start_date, collection_end_date)) AS max_date
                 FROM {occurrence_table}
-                WHERE
-                    {occurrence_filter}
-            """).format(
+                WHERE {occurrence_filter}
+            ''').format(
                 occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
                 occurrence_filter=occurrence_filter
             )
@@ -161,13 +184,25 @@ async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Re
             else:
                 return None
 
+    except TaxonNotFoundError as e:
+        api_logger.exception(e)
+        raise HTTPException(status_code=404, detail=str(e))
+
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @occurrence_router.get('/tiles/{z}/{x}/{y}.mvt', response_class=Response)
-async def get_tile(z: int, x: int, y: int, request: Request, include_inat: bool = Query(), taxon_id: int = Query(), datasets: list[str] = Query(default=[]), date_start: str = Query(), date_end: str = Query()):
+async def get_tile(
+    z: int, x: int, y: int,
+    request: Request,
+    taxon_id: int = Query(),
+    include_inat: bool = Query(default=True),
+    datasets: list[str] = Query(default=[]),
+    date_start: str | None = Query(default=None),
+    date_end: str | None = Query(default=None)
+):
     """
     Get map tiles for observations data as Mapbox Vector Tiles
     Returns clustered heatmap tiles at zoom levels below 10, and individual point observation at zoom level 10 and above.
@@ -203,7 +238,7 @@ async def get_tile(z: int, x: int, y: int, request: Request, include_inat: bool 
         grid_size = map.get_meters_per_pixel(z) * map.PIXELS_PER_GRID
 
         if z < 10:
-            query = sql.SQL("""
+            query = sql.SQL('''
                     WITH
                     bbox AS (
                         SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
@@ -242,7 +277,7 @@ async def get_tile(z: int, x: int, y: int, request: Request, include_inat: bool 
                         FROM bins_geom, bbox
                     )
                     SELECT ST_AsMVT(mvt_geom, 'observations-heatmap', 4096, 'geom') FROM mvt_geom;
-                """).format(
+                ''').format(
                 include_inat=sql.Literal(include_inat),
                 taxon_id=sql.Literal(taxon_id),
                 x=sql.Literal(x),
@@ -255,7 +290,7 @@ async def get_tile(z: int, x: int, y: int, request: Request, include_inat: bool 
             )
         # Return point observations if zoomed in
         else:
-            query = sql.SQL("""
+            query = sql.SQL('''
                     WITH
                     bbox AS (
                         SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
@@ -284,7 +319,7 @@ async def get_tile(z: int, x: int, y: int, request: Request, include_inat: bool 
                         WHERE ST_Intersects(obs.geom, bbox.geom)
                     )
                     SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
-                """).format(
+                ''').format(
                 include_inat=sql.Literal(include_inat),
                 taxon_id=sql.Literal(taxon_id),
                 x=sql.Literal(x),

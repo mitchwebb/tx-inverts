@@ -173,7 +173,6 @@
 
         if (replace) window.history.replaceState(null, '', newURL.toString());
         else window.history.pushState(null, '', newURL.toString());
-
         routerContext.url = newURL;
     }
 

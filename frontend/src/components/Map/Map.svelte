@@ -347,13 +347,14 @@
                 }
             });
 
-            // Monitor taxon layer events to trigger loading behavior
-            map.on('sourcedata', (e) => {
-                if (
-                    e.sourceId?.startsWith('observations-tiles-') ||
-                    e.sourceId?.startsWith('range-extent-')
-                ) {
-                    mapContext.loading = !e.isSourceLoaded;
+            let wasLoading = false;
+
+            map.on("render", () => {
+                const loading = !map.areTilesLoaded();
+
+                if (loading !== wasLoading) {
+                    wasLoading = loading;
+                    mapContext.loading = loading;
                 }
             });
 
@@ -402,8 +403,7 @@
             return;
         }
 
-        const json = await response.json();
-        const result = json.result;
+        const result = await response.json();
         mapContext.taxonLayers[taxonID].rangeExtentGeom =
             result.range_extent_geom;
 

@@ -4,6 +4,12 @@ import type { FiltersState } from '../contexts/filtersContext';
 import type { RawNSValues, RawTaxonInfo, TaxonNodeType } from '../types/api';
 import { deduplicateStringArray } from '../util/deduplicateArray';
 
+/**
+ * Simple request to GBIF API to get common names for a given taxonID
+ * Filters to English common names from ITIS. Deduplicates using deduplicateStringArray
+ * @param taxonID
+ * @returns {string[]} Array of common name strings
+ */
 export async function getCommonNames(taxonID: ActiveTaxon['taxonID']) {
     const commonNamesURL = `https://api.gbif.org/v1/species/${taxonID}/vernacularNames?limit=100`;
     try {
@@ -62,7 +68,6 @@ export async function getNSMetrics(
     dateStart: FiltersState['dateStart'],
     dateEnd: FiltersState['dateEnd'],
     datasets: FiltersState['datasets'],
-    taxonRank: ActiveTaxon['info']['taxonRank'],
     signal?: AbortSignal
 ) {
     // Cancel previous request if necessary
@@ -80,7 +85,6 @@ export async function getNSMetrics(
             date_start: dateStart?.toISOString(),
             date_end: dateEnd?.toISOString(),
             datasets: [...datasets],
-            taxon_rank: taxonRank,
         }),
     });
     if (!response.ok) {
