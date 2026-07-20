@@ -1,5 +1,6 @@
 from backend.core.logging import setup_logging, tasks_logger
 from backend.data_util.db import get_single_db_connection
+from backend.data_util.gbif.observations_request import APPROVED_DATASETS
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.jobs.runners.run_async import run_async
 from backend.jobs.tasks.datasets import fill_dataset_table
@@ -16,7 +17,7 @@ async def main():
 
         await initialize_table(conn, GBIF_DATASET_META)
 
-        await fill_dataset_table(conn)
+        await fill_dataset_table(conn, APPROVED_DATASETS)
 
         tasks_logger.info("fill_dataset_table job finished")
     except Exception as e:
