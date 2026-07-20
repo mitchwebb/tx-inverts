@@ -40,7 +40,6 @@ export function capitalizeWords(words: string | string[]): string | string[] {
  * @returns Input number, rounded, with separators
  */
 export function toLocaleRounded(number: number | null, decimals: number = 0) {
-    // TODO: Needs to error
     if (number == null) {
         throw new TypeError('toLocaleRounded: number must not be null');
     }
