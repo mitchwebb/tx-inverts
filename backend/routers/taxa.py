@@ -18,7 +18,8 @@ taxa_router = APIRouter()
 @taxa_router.get("/taxon_search_suggest",)
 async def search_taxon(request: Request, search_term: str, exclude_species: bool = False) -> list[TaxonSuggestion]:
     """
-    Get taxon search suggestions given a search term.
+    Get taxon search suggestions given a search term. 
+    Only searches for beginnings of words.
     Can conditionally exclude species results (specialized use for parent taxon filtering).
 
     Returns only accepted/doubtful taxa, resolving synonyms automatically.
@@ -107,7 +108,7 @@ async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
     """
 
     try:
-        taxon_query = sql.SQL("""
+        taxon_query = sql.SQL('''
             SELECT
                 canonical_name,
                 scientific_name_authorship,
@@ -127,7 +128,7 @@ async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
                 ns_rank_state_no_inat
             FROM tx_taxa
             WHERE taxon_id = {taxon_id}
-        """).format(taxon_id=sql.Literal(taxon_id))
+        ''').format(taxon_id=sql.Literal(taxon_id))
 
         # Get taxon info
         async with request.app.state.db_pool.connection() as conn:
@@ -198,7 +199,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
 @taxa_router.post("/get_qualified_taxa")
 async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request):
     """
-    Get list of taxon ids of taxa represented by observations data given
+    Get list of taxon ids of taxa represented in observations data given
     various observation filters (MultiTaxaObsRequestParams)
 
     Args:
@@ -228,7 +229,8 @@ async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request
             region_literals = sql.SQL(', ').join(
                 sql.Literal(r) for r in params.regions)
             region_join = sql.SQL('''
-                JOIN {presence_table} p ON {observations_table}.accepted_taxon_key = p.accepted_taxon_key
+                JOIN {presence_table} p 
+                ON {observations_table}.accepted_taxon_key = p.accepted_taxon_key
                 AND p.region_id IN ({regions})
             ''').format(
                 presence_table=sql.Identifier(TAXON_PRESENCE_TABLE.name),

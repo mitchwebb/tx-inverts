@@ -2,6 +2,7 @@
 
 from backend.data_util.db import get_single_db_connection
 from backend.data_util.execute_psql_query import execute_psql_query
+from backend.data_util.gbif.observations_request import APPROVED_DATASETS
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.jobs.runners.run_async import run_async
@@ -43,7 +44,7 @@ async def main():
         await initialize_all_tables(conn, verbose=True, strict=True)
 
         # Fill dataset metadata table (provides correct names for datasets)
-        await fill_dataset_table(conn)
+        await fill_dataset_table(conn, APPROVED_DATASETS)
 
         # Fill geometry tables with information from geojson and GDB files (mapped to new names)
         await fill_all_geometry_tables(conn, truncate=True)
