@@ -1,7 +1,14 @@
 import pytest
+import pytest_asyncio
 
-from backend.data_util.taxa import build_lineages, get_observation_count
+from backend.conftest import insert_rows
+from backend.data_util.taxa import build_lineages, get_observation_count, taxon_exists
 import pandas as pd
+
+from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
+from backend.jobs.tasks.views import refresh_materialized_view
 
 
 class TestGetObservationCount:
@@ -106,3 +113,48 @@ class TestBuildLineages:
         row = result[result['taxon_id'] == 7].iloc[0]
 
         assert row['species_id'] == 5
+
+
+@pytest_asyncio.fixture
+async def simple_backbone_db(conn):
+    # Values to insert into backbone table
+    taxa = [
+        {
+            'scientific_name': 'Atta texana',
+            'canonical_name': 'Atta texana',
+            'taxon_id': 5035741,
+            'accepted_name_usage_id': 5035741,
+            'taxon_rank': 'species',
+            'us_invasive': False,
+            'taxonomic_status': 'accepted',
+            'kingdom_id': 1,
+            'family_id': 4342,
+            'genus_id': 1323108,
+            'species_id': 5035741,
+        },
+        {
+            'scientific_name': 'Atta',
+            'canonical_name': 'Atta',
+            'taxon_id': 1323108,
+            'accepted_name_usage_id': None,
+            'taxon_rank': 'genus',
+            'us_invasive': False,
+            'taxonomic_status': 'accepted',
+            'kingdom_id': 1,
+            'family_id': 4342,
+            'genus_id': 1323108,
+            'species_id': None
+        },
+    ]
+
+    await insert_rows(taxa, GBIF_INVERTS_BACKBONE.name, conn)
+
+
+class TestTaxonExists:
+    async def test_existing_taxon_returns_true(self, conn, simple_backbone_db):
+        result = await taxon_exists(conn, 5035741)
+        assert result == True
+
+    async def test_missing_taxon_returns_false(self, conn, simple_backbone_db):
+        result = await taxon_exists(conn, 0000000)
+        assert result == False
