@@ -240,6 +240,7 @@ MATERIALIZED_VIEWS = {
                         child.parent_name_usage_id,
                         child.accepted_name_usage_id
                     )
+                    AND parent.taxon_id != child.taxon_id
             )
             SELECT DISTINCT *
                 FROM ancestors
