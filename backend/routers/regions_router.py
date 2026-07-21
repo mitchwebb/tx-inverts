@@ -60,7 +60,7 @@ async def get_region_info(region_id: str, request: Request) -> RegionInfo:
 
 
 @regions_router.get("/search_counties")
-async def search_counties(request: Request, search_term: str) -> dict[str, list[County]]:
+async def search_counties(request: Request, search_term: str) -> list[County]:
     """
     Using a search term, search through counties table by county name (case insensitive)
     """
@@ -79,13 +79,13 @@ async def search_counties(request: Request, search_term: str) -> dict[str, list[
         async with request.app.state.db_pool.connection() as conn:
             results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
             results = [County(**dict(row)) for row in results]
-            return {'results': results}
+            return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @regions_router.get("/search_parks")
-async def search_parks(request: Request, search_term: str) -> dict[str, list[Park]]:
+async def search_parks(request: Request, search_term: str) -> list[Park]:
     """
     Using a search term, search through parks table by park name (case insensitive)
     """
@@ -104,7 +104,7 @@ async def search_parks(request: Request, search_term: str) -> dict[str, list[Par
         async with request.app.state.db_pool.connection() as conn:
             results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
             results = [format_park(dict(row)) for row in results]
-            return {'results': results}
+            return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

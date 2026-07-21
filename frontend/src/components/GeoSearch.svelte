@@ -6,6 +6,7 @@
     type GeoSearchProps = {
         placeholder?: string | null;
         pathSuffix: 'parks' | 'counties';
+        // Passed method of parsing the search output (is different for different region types)
         parseJSON: (json: any) => T[];
         suggestionRow: Snippet<[T, number]>;
         handleSelect: (suggestion: T) => void;
@@ -44,11 +45,12 @@
             if (!response.ok) {
                 throw new Error(`Response status: ${response.status}`);
             }
-            // Ending loading
-            isLoading = false;
+            // Parse and set new suggestions
             const json = await response.json();
-            const parsedJSON = parseJSON(json.results);
-            suggestions = parsedJSON;
+            
+            // End loading
+            isLoading = false;
+            suggestions= parseJSON(json);
         } catch (error) {
             console.error(error);
         }
