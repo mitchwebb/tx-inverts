@@ -30,7 +30,7 @@
         // Create new AbortController
         abortController = new AbortController();
         const signal = abortController.signal;
-        const url = `/server/map/search_${pathSuffix}?search_term=${inputText}`;
+        const url = `/server/regions/search_${pathSuffix}?search_term=${inputText}`;
         try {
             // Set is loading
             isLoading = true;

@@ -6,12 +6,11 @@ from backend.core.exception_handler import global_exception_handler, validation_
 from backend.core.logging import setup_logging
 from fastapi import FastAPI
 from backend.core.logging import api_logger
-from backend.routers.occurrence import occurrence_router
-from backend.routers.map import map_router
-from backend.routers.taxa import taxa_router
-from backend.routers.rankings import rankings_router
-from backend.routers.downloads import downloads_router
-from backend.routers.regions import regions_router
+from backend.routers.occurrence_router import occurrence_router
+from backend.routers.taxa_router import taxa_router
+from backend.routers.rankings_router import rankings_router
+from backend.routers.downloads_router import downloads_router
+from backend.routers.regions_router import regions_router
 from backend.config import get_settings
 from psycopg_pool import AsyncConnectionPool
 from fastapi.middleware.cors import CORSMiddleware
@@ -71,7 +70,6 @@ app.add_middleware(
 
 # Add routers
 app.include_router(occurrence_router, prefix='/occurrence')
-app.include_router(map_router, prefix='/map')
 app.include_router(taxa_router, prefix='/taxa')
 app.include_router(rankings_router, prefix='/rankings')
 app.include_router(downloads_router, prefix='/downloads')
