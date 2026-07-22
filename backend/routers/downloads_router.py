@@ -17,7 +17,7 @@ downloads_router = APIRouter()
 
 async def download_table_and_stream(
     pool: AsyncConnectionPool,
-    query: sql.Composed,
+    query: sql.Composed | sql.Composable,
     format: Literal['csv', 'tsv'],
 ) -> AsyncIterator[bytes]:
     """
@@ -38,9 +38,9 @@ async def download_table_and_stream(
         # Using raw cursor here for copy
         async with conn.cursor() as cur:
             if format == 'tsv':
-                delimiter_sql = sql.SQL('E"\\t"')
+                delimiter_sql = sql.Literal('\t')
             else:
-                delimiter_sql = sql.SQL(',')
+                delimiter_sql = sql.Literal(',')
             copy_sql = sql.SQL("""
                 COPY (
                     {query}
@@ -50,13 +50,17 @@ async def download_table_and_stream(
                     DELIMITER {delimiter},
                     HEADER TRUE
                 )
-            """).format(query=query, delimiter=delimiter_sql)
+            """).format(
+                query=query,
+                delimiter=delimiter_sql
+            )
 
             async with cur.copy(copy_sql) as copy:
                 async for chunk in copy:
                     yield chunk
 
 
+# Although this could be adjusted to allow for csv estimation, we aren't allowing csv output
 async def estimate_tsv_download_size(conn: AsyncConnection, query: sql.Composed) -> dict[str, int | float]:
     """
     Estimate the byte size and row count of a TSV export for the given query.
@@ -123,8 +127,6 @@ async def get_ranked_taxa_download(
     taxon_ids = params.taxon_ids
     estimate = params.estimate
 
-    taxa_table = TX_TAXA_TABLE
-
     query = sql.SQL("""
         {dwc_taxa_select_clause}
         WHERE (
@@ -135,7 +137,7 @@ async def get_ranked_taxa_download(
             taxon_rank IN ('species', 'subspecies')
     """).format(
         dwc_taxa_select_clause=DWC_TAXA_SELECT_CLAUSE,
-        taxa_table=sql.Identifier(taxa_table.name),
+        taxa_table=sql.Identifier(TX_TAXA_TABLE.name),
         taxon_ids=sql.Literal(taxon_ids),
     )
 
