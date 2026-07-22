@@ -20,9 +20,36 @@ class GBIFInvertsBackbone(DBTable):
         'scientific_name_authorship': 'TEXT',
         'canonical_name': 'TEXT',
         'generic_name': 'TEXT',
-        'taxon_rank': "TEXT CHECK (taxon_rank IN ('genus', 'kingdom', 'family', 'phylum', 'species', 'unranked', 'subspecies', 'variety', 'form', 'class', 'order'))",
+        'taxon_rank': """
+            TEXT CHECK (
+                taxon_rank IN (
+                    'genus', 
+                    'kingdom', 
+                    'family', 
+                    'phylum', 
+                    'species', 
+                    'unranked', 
+                    'subspecies', 
+                    'variety', 
+                    'form', 
+                    'class', 
+                    'order'
+                )
+            )
+        """,
         'name_published_in': 'TEXT',
-        'taxonomic_status': "TEXT CHECK (taxonomic_status IN ('accepted', 'doubtful', 'synonym', 'homotypic synonym', 'heterotypic synonym', 'proparte synonym'))",
+        'taxonomic_status': """
+            TEXT CHECK (
+                taxonomic_status IN (
+                    'accepted', 
+                    'doubtful', 
+                    'synonym', 
+                    'homotypic synonym', 
+                    'heterotypic synonym', 
+                    'proparte synonym'
+                )
+            )
+        """,
         'taxon_remarks': 'TEXT',
         'kingdom': 'TEXT',
         'kingdom_id': 'BIGINT',

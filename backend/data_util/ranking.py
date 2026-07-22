@@ -163,16 +163,16 @@ async def calculate_ns_values(
     try:
         # This function should only be run on a single taxon
         if not filters.taxon_ids:
-            raise ValueError('calculate_ns_values requires a taxon_id')
+            raise ValueError("calculate_ns_values requires a taxon_id")
 
         if len(filters.taxon_ids) != 1:
             raise ValueError(
-                f'calculate_ns_values requires exactly one taxon_id, got {len(filters.taxon_ids)}'
+                f"calculate_ns_values requires exactly one taxon_id, got {len(filters.taxon_ids)}"
             )
 
         if not await taxon_exists(conn, filters.taxon_ids[0]):
             raise TaxonNotFoundError(
-                f'Requested taxon {filters.taxon_ids[0]} not found in backbone'
+                f"Requested taxon {filters.taxon_ids[0]} not found in backbone"
             )
 
         taxon_id = filters.taxon_ids[0]
@@ -181,20 +181,20 @@ async def calculate_ns_values(
             filters, skip_taxa=True)
 
         if compute_occurrences:
-            obs_source = sql.SQL('''
-                ( SELECT 
+            obs_source = sql.SQL("""
+                ( SELECT
                     geometry,
                     geom_5070,
                     ST_ClusterDBSCAN(geom_5070, eps := 1000, minpoints := 1) OVER () AS cluster_id
                         FROM filtered_obs
                     ) clustered
-            ''')
+            """)
             occ_expression = sql.SQL('COUNT(DISTINCT cluster_id)')
         else:
             obs_source = sql.SQL('filtered_obs')
             occ_expression = sql.SQL('NULL::bigint')
 
-        query = sql.SQL('''
+        query = sql.SQL("""
             WITH matching_taxa AS MATERIALIZED (
                 SELECT accepted_taxon_key
                 FROM taxon_lineage
@@ -243,7 +243,7 @@ async def calculate_ns_values(
                 agg_values.a4_cells AS area_of_occupancy_4km2_bins,
                 agg_values.a1_cells AS area_of_occupancy_1km2_bins
             FROM agg_values, hull, region
-        ''').format(
+        """).format(
             tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
             taxon_id=sql.Literal(taxon_id),
             occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),

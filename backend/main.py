@@ -31,11 +31,11 @@ async def lifespan(app: FastAPI):
     # Startup logic
     # Make database connection available to all routes (with dict_row factory)
     dsn = (
-        f"dbname={settings.database.name} "
-        f"user={settings.database.user} "
-        f"password={settings.database.password} "
-        f"host={settings.database.host} "
-        f"port={settings.database.port}"
+        f'dbname={settings.database.name} '
+        f'user={settings.database.user} '
+        f'password={settings.database.password} '
+        f'host={settings.database.host} '
+        f'port={settings.database.port}'
     )
 
     app.state.db_pool = AsyncConnectionPool(
@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
     # Shutdown logic
 
     # Setup database connection close on shutdown
-    if hasattr(app.state, "db_pool"):
+    if hasattr(app.state, 'db_pool'):
         await app.state.db_pool.close()
 
 
@@ -64,8 +64,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.cors.domain],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 # Add routers

@@ -25,14 +25,13 @@
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import {
         getFiltersContext,
-        type FiltersState,
     } from '../../contexts/filtersContext';
     import { buildTooltipSections } from '../../lib/map/mapTooltips';
     import {
         clearTargetFeatures,
         handleLegendHover,
     } from '../../lib/map/mapFeatures';
-    import { onMount, untrack } from 'svelte';
+    import { untrack } from 'svelte';
     import { isMobile } from '../../contexts/device';
 
     // ---------------------------------------------
@@ -338,7 +337,7 @@
                     tooltip
                         .setLngLat(coordinates)
                         .setHTML(
-                            `<div class='tooltip-content'>
+                            `<div class="tooltip-content">
                                 ${tooltipHTML}
                             </div>
                             `
@@ -349,7 +348,7 @@
 
             let wasLoading = false;
 
-            map.on("render", () => {
+            map.on('render', () => {
                 const loading = !map.areTilesLoaded();
 
                 if (loading !== wasLoading) {
@@ -399,7 +398,7 @@
 
         if (!response.ok) {
             const errData = await response.json();
-            console.error('Error:', response.status, errData.detail);
+            console.error("Error:", response.status, errData.detail);
             return;
         }
 

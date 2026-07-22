@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 import logging
 
 
-logger = logging.getLogger("api")
+logger = logging.getLogger('api')
 
 
 class TaxonNotFoundError(Exception):
@@ -44,4 +44,4 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 async def validation_error_handler(request, exc):
     logger.error(f"Validation error: {exc.errors()}")
-    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+    return JSONResponse(status_code=422, content={'detail': exc.errors()})

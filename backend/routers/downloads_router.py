@@ -38,9 +38,9 @@ async def download_table_and_stream(
         # Using raw cursor here for copy
         async with conn.cursor() as cur:
             if format == 'tsv':
-                delimiter_sql = sql.SQL("E'\\t'")
+                delimiter_sql = sql.SQL('E"\\t"')
             else:
-                delimiter_sql = sql.SQL("','")
+                delimiter_sql = sql.SQL(',')
             copy_sql = sql.SQL("""
                 COPY (
                     {query}
@@ -125,7 +125,7 @@ async def get_ranked_taxa_download(
 
     taxa_table = TX_TAXA_TABLE
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         {dwc_taxa_select_clause}
         WHERE (
             {taxa_table}.taxon_id = ANY({taxon_ids}) OR
@@ -133,7 +133,7 @@ async def get_ranked_taxa_download(
         )
         AND
             taxon_rank IN ('species', 'subspecies')
-    ''').format(
+    """).format(
         dwc_taxa_select_clause=DWC_TAXA_SELECT_CLAUSE,
         taxa_table=sql.Identifier(taxa_table.name),
         taxon_ids=sql.Literal(taxon_ids),

@@ -26,12 +26,12 @@ class TestBaseTable:
     def test_create_table_query(self, mock_table):
         query = mock_table.create_table_query()
         assert query.as_string(
-        ) == '''CREATE TABLE IF NOT EXISTS "test_table" ("user_id" BIGINT, "user_name" TEXT, "user_pin" INTEGER);'''
+        ) == 'CREATE TABLE IF NOT EXISTS "test_table" ("user_id" BIGINT, "user_name" TEXT, "user_pin" INTEGER);'
 
     def test_drop_table_query(self, mock_table):
         query = mock_table.drop_table_query()
         assert query.as_string(
-        ) == '''DROP TABLE IF EXISTS "test_table"'''
+        ) == 'DROP TABLE IF EXISTS "test_table"'
 
     # Verify .column_order() returns columns in original order, converted to snake_case
     def test_column_order(self, mock_table):

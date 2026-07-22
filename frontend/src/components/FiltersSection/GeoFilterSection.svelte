@@ -74,13 +74,13 @@
 {/snippet}
 
 {#snippet parkRow(suggestion: ParkSuggestion)}
-    <div class='park-suggestion-row'>
-        <span class='prop-name'>{suggestion.name}</span>
-        <div class='alt-prop-text'>
+    <div class="park-suggestion-row">
+        <span class="prop-name">{suggestion.name}</span>
+        <div class="alt-prop-text">
             {#if suggestion.altPropName && suggestion.altPropName.trim()}
-                <span class='alt-prop-name thin'>{suggestion.altPropName}</span>
+                <span class="alt-prop-name thin">{suggestion.altPropName}</span>
             {/if}
-            <span class='park-owner thin'>{suggestion.owner}</span>
+            <span class="park-owner thin">{suggestion.owner}</span>
         </div>
     </div>
 {/snippet}
@@ -98,7 +98,7 @@
                 parseJSON={parseCounties} 
                 suggestionRow={countyRow} 
                 handleSelect={handleRegionSelect}/>
-            <div class='county-cards'>
+            <div class="county-cards">
                 {#each filtersContext.region.items.filter((r) => r.regionType === 'county') as county}
                     <SearchbarCard label={county.name} value={county.id} handleRemoveCard={handleRemoveRegion}/>
                 {/each}

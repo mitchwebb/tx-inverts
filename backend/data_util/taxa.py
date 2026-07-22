@@ -8,7 +8,6 @@ from collections import deque, defaultdict
 import pandas as pd
 from typing import List
 from psycopg import AsyncConnection, sql
-from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 
 
 async def taxon_exists(conn: AsyncConnection, taxon_id: int) -> bool:
@@ -16,12 +15,12 @@ async def taxon_exists(conn: AsyncConnection, taxon_id: int) -> bool:
 
     result = await execute_psql_query(
         conn,
-        sql.SQL('''
+        sql.SQL("""
             SELECT EXISTS(
-                SELECT 1 FROM {backbone} 
+                SELECT 1 FROM {backbone}
                 WHERE taxon_id = {taxon_id}
             )
-        ''').format(
+        """).format(
             backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
             taxon_id=sql.Literal(taxon_id)
         ),
@@ -39,11 +38,11 @@ async def get_observation_count(conn: AsyncConnection, taxon_ids: int | List[int
     # Normalize taxon_ids to list (handles single ints)
     taxon_ids = normalize_to_list(taxon_ids)
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT COUNT(*)
         FROM {observations_table}
         WHERE taxon_key = ANY({taxon_ids})
-    ''').format(
+    """).format(
         observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
         taxon_ids=sql.Literal(taxon_ids)
     )
@@ -59,13 +58,13 @@ def build_lineages(df: pd.DataFrame) -> pd.DataFrame:
     Builds taxonomic lineage columns for each taxon in the provided backbone DataFrame.
 
     For each taxon, propagates ancestor taxon IDs up through the hierarchy via BFS,
-    populating one column per rank (e.g. kingdom_id, phylum_id, etc.). Synonyms are
+    populating one column per rank(e.g. kingdom_id, phylum_id, etc.). Synonyms are
     routed to their accepted taxon before lineage assignment.
 
     Requires the complete taxonomic backbone — partial DataFrames will produce incorrect lineages.
 
     Args:
-        df (pd.DataFrame): Full taxanomic backbone from which the lineage columns will be derived
+        df(pd.DataFrame): Full taxanomic backbone from which the lineage columns will be derived
 
     Return:
         df with rank columns added, populated with respective taxon_ids

@@ -1,10 +1,7 @@
 # Logic for processing/filtering GBIF observations downloads in darwincore format
 import datetime
-import os
 from typing import Iterator, cast
 
-from numpy import extract
-from backend.constants.paths import DATA_OUT_PATH
 from backend.core.logging import data_logger
 from pandas import DataFrame
 from geopandas.geodataframe import GeoDataFrame
@@ -20,20 +17,20 @@ from backend.types.occurrence import GBIFObservationRow
 
 # Map of month names/abbreviations to numbers
 MONTH_LOOKUP = {
-    "january": 1, "jan": 1, "i": 1,
-    "february": 2, "feb": 2, "ii": 2,
-    "march": 3, "mar": 3, "iii": 3,
-    "april": 4, "apr": 4, "iv": 4,
-    "may": 5, "v": 5,
-    "june": 6, "jun": 6, "vi": 6,
-    "july": 7, "jul": 7, "vii": 7,
-    "august": 8, "aug": 8, "viii": 8,
-    "september": 9, "sep": 9, "sept": 9, "ix": 9,
-    "october": 10, "oct": 10, "x": 10,
-    "november": 11, "nov": 11, "xi": 11,
-    "december": 12, "dec": 12, "xii": 12,
+    'january': 1, 'jan': 1, 'i': 1,
+    'february': 2, 'feb': 2, 'ii': 2,
+    'march': 3, 'mar': 3, 'iii': 3,
+    'april': 4, 'apr': 4, 'iv': 4,
+    'may': 5, 'v': 5,
+    'june': 6, 'jun': 6, 'vi': 6,
+    'july': 7, 'jul': 7, 'vii': 7,
+    'august': 8, 'aug': 8, 'viii': 8,
+    'september': 9, 'sep': 9, 'sept': 9, 'ix': 9,
+    'october': 10, 'oct': 10, 'x': 10,
+    'november': 11, 'nov': 11, 'xi': 11,
+    'december': 12, 'dec': 12, 'xii': 12,
 }
-MONTH_NAMES = "|".join(re.escape(m) for m in MONTH_LOOKUP.keys())
+MONTH_NAMES = '|'.join(re.escape(m) for m in MONTH_LOOKUP.keys())
 
 # DWC Should use ISO 8601. This is what GBIF does.
 # Strict YYYY, YYYY-MM, YYYY-MM-DD matching
@@ -183,9 +180,9 @@ def parse_iso_date_string(date_string: str) -> str | None:
 
     date = match.group('year')
     if match.group('month'):
-        date += f"-{match.group('month').zfill(2)}"
+        date += f'-{match.group('month').zfill(2)}'
         if match.group('day'):
-            date += f"-{match.group('day').zfill(2)}"
+            date += f'-{match.group('day').zfill(2)}'
 
     # Quick way to verify valid date format
     try:
@@ -534,7 +531,7 @@ def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Iterat
         bad_date_count = texas_count - len(chunk)
         if bad_date_count:
             data_logger.info(
-                f'Removed {bad_date_count} records found with invalid collection dates')
+                f"Removed {bad_date_count} records found with invalid collection dates")
 
         # Overwrite species/subspecies values with epithet column values if they exist
         for target, source in [('species', 'specificEpithet'), ('subspecies', 'infraspecificEpithet')]:
@@ -546,11 +543,11 @@ def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Iterat
         chunk = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(chunk)
 
         # Convert valid dates to ISO strings, leave missing as None
-        data_logger.info('Converting valid dates to ISO format...')
+        data_logger.info("Converting valid dates to ISO format...")
         for col in ['collection_start_date', 'collection_end_date']:
             chunk[col] = pd.to_datetime(chunk[col], errors='coerce').dt.date
 
         data_logger.info(
-            f'Processed chunk with {len(chunk)} valid records of {total_count} total records')
+            f"Processed chunk with {len(chunk)} valid records of {total_count} total records")
 
         yield chunk

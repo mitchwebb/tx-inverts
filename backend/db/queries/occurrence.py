@@ -27,7 +27,7 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
 
     # If no individual datasets are selected, datasets_clause is empty
     if not filter.datasets:
-        datasets_clause = sql.SQL('')
+        datasets_clause = sql.SQL("")
     # Else, require dataset_key in datasets filter
     else:
         dataset_literals = sql.SQL(', ').join(
@@ -38,21 +38,21 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
 
     # If date_start provided, add clause, else skip
     if not filter.date_start:
-        date_start_clause = sql.SQL('')
+        date_start_clause = sql.SQL("")
     else:
         date_start_clause = sql.SQL('AND collection_start_date >= {date_start}').format(
             date_start=sql.Literal(filter.date_start))
 
     # Same with date_end
     if not filter.date_end:
-        date_end_clause = sql.SQL('')
+        date_end_clause = sql.SQL("")
     else:
         date_end_clause = sql.SQL('AND collection_end_date <= {date_end}').format(
             date_end=sql.Literal(filter.date_end))
 
     # If regions provided, add clause, else skip
     if not filter.regions:
-        region_clause = sql.SQL('')
+        region_clause = sql.SQL("")
     else:
         region_literals = sql.SQL(', ').join(
             sql.Literal(r) for r in filter.regions)

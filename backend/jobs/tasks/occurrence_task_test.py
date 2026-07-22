@@ -10,12 +10,12 @@ def make_chunk():
     import pandas as pd
     return pd.DataFrame([
         {
-            "gbif_id": 1,
-            "taxon_key": 1,
-            "accepted_taxon_key": 1,
-            "decimal_latitude": 5.0,
-            "decimal_longitude": 5.0,
-            "parent_name_usage_id": 1
+            'gbif_id': 1,
+            'taxon_key': 1,
+            'accepted_taxon_key': 1,
+            'decimal_latitude': 5.0,
+            'decimal_longitude': 5.0,
+            'parent_name_usage_id': 1
         }
     ])
 
@@ -42,7 +42,7 @@ class TestUpdateObservations:
         backbone_update_suggested, new_row_keys, affected_ids = (
             await update_observations(
                 conn,
-                fp="fake.csv",
+                fp='fake.csv',
                 full_replace=True,
             )
         )

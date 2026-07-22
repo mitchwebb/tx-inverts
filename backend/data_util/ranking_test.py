@@ -148,7 +148,7 @@ async def simple_tx_taxa(conn):
 
 
 @pytest.mark.parametrize(
-    "occurrences,range_extent,area_of_occupancy,expected_rank", [
+    'occurrences,range_extent,area_of_occupancy,expected_rank', [
         (22,        998,         4,               '2'),
         (66,        2345,        100,             '3'),
         (342,       6723,        27,              '4'),

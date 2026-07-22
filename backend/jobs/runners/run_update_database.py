@@ -12,5 +12,5 @@ async def main():
     tasks_logger.info("update_database job finished")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_async(main())

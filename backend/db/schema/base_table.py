@@ -92,12 +92,12 @@ class DBTable:
 
         # Remove unwanted columns
         if extra:
-            data_logger.info(f'Removing unwanted columns...')
+            data_logger.info(f"Removing unwanted columns...")
             df = df[[col for col in df.columns if col in allowed_cols]]
 
         # Add missing columns
         if missing:
-            data_logger.info(f'Adding empty missing columns to df: {missing}')
+            data_logger.info(f"Adding empty missing columns to df: {missing}")
             for col in missing:
                 df[col] = None
 
@@ -134,6 +134,6 @@ class DBTable:
         extra = actual - expected
 
         if missing:
-            raise ValueError(f'df is missing expected columns: {missing}')
+            raise ValueError(f"df is missing expected columns: {missing}")
         if extra:
-            raise ValueError(f'df has unexpected columns: {extra}')
+            raise ValueError(f"df has unexpected columns: {extra}")

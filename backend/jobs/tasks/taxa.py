@@ -59,7 +59,7 @@ async def create_invasives_table(conn: AsyncConnection, truncate: bool = False):
 
         await conn.commit()
     except Exception as e:
-        db_logger.error(f'Failed to create invasives table: {e}')
+        db_logger.error(f"Failed to create invasives table: {e}")
 
 
 async def update_invasives(conn: AsyncConnection):
@@ -73,7 +73,7 @@ async def update_invasives(conn: AsyncConnection):
         backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
         invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
     )
-    db_logger.info('Flagging invasive species...')
+    db_logger.info("Flagging invasive species...")
     await execute_psql_query(conn, flag_invasives_query)
 
     # Correct any incorrectly marked species (from previous lists)
@@ -91,7 +91,7 @@ async def update_invasives(conn: AsyncConnection):
         invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
     )
     db_logger.info(
-        'Unflagging species that are no longer in invasives table...')
+        "Unflagging species that are no longer in invasives table...")
     await execute_psql_query(conn, unflag_invasives_query)
 
     # Update tx_taxa materialized view
@@ -108,7 +108,7 @@ async def _replace_backbone(conn, temp_table_name: str):
     )
     await execute_psql_query(conn, truncate_query)
     # Insert rows
-    insert_query = sql.SQL('INSERT INTO {backbone_table} SELECT * FROM {temp_table}').format(
+    insert_query = sql.SQL("INSERT INTO {backbone_table} SELECT * FROM {temp_table}").format(
         backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
         temp_table=sql.Identifier(temp_table_name)
     )
@@ -130,7 +130,7 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
     try:
         # If no filepath provided, download and extract
         if fp is None:
-            data_logger.info('Downloading backbone from gbif...')
+            data_logger.info("Downloading backbone from gbif...")
             zip_path = download_large_file(
                 'https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip',
                 output_fp=os.path.join(DATA_OUT_PATH, 'backbone.zip')
@@ -143,7 +143,7 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
 
             fp = os.path.join(extract_dir, 'Taxon.tsv')
 
-        data_logger.info('Reading backbone...')
+        data_logger.info("Reading backbone...")
         df = pd.read_csv(
             fp,
             delimiter='\t',
@@ -166,7 +166,7 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
             )
         )
 
-        data_logger.info('Filtering to inverts...')
+        data_logger.info("Filtering to inverts...")
         # Apply mask
         df = df[mask]
 
@@ -174,7 +174,7 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
         df['ns_rank_state'] = pd.NA
 
         # Fit dataframe to table definition
-        data_logger.info('Formatting table...')
+        data_logger.info("Formatting table...")
         df = df.rename(
             columns={'specificEpithet': 'species',
                      'infraspecificEpithet': 'subspecies'}
@@ -184,21 +184,21 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
 
         # Build taxonomic lineages and insert rank ids into dataframe
         data_logger.info(
-            'Building taxonomic lineages to fill rank id columns...')
+            "Building taxonomic lineages to fill rank id columns...")
         df = build_lineages(df)
 
         # Save backbone
         tsv_path = os.path.join(DATA_OUT_PATH, 'backbone.tsv')
         df.to_csv(tsv_path, sep='\t', index=False)
 
-        temp_table_name = "temp_" + GBIF_INVERTS_BACKBONE.name
+        temp_table_name = 'temp_' + GBIF_INVERTS_BACKBONE.name
 
         # Make sure table exists
         await initialize_table(conn, GBIF_INVERTS_BACKBONE, verbose=True)
 
-        db_logger.info('Creating temp table for insertion...')
+        db_logger.info("Creating temp table for insertion...")
         # Create temp table without indexes/constraints for faster COPY
-        create_query = sql.SQL('CREATE TEMP TABLE {temp_table} (LIKE {backbone_table} INCLUDING DEFAULTS)').format(
+        create_query = sql.SQL("CREATE TEMP TABLE {temp_table} (LIKE {backbone_table} INCLUDING DEFAULTS)").format(
             temp_table=sql.Identifier(temp_table_name),
             backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
         )
@@ -207,7 +207,7 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
         # Copy to temp table
         # Using raw cursor for copy
         async with conn.cursor() as cur:
-            db_logger.info('Copying to temp table...')
+            db_logger.info("Copying to temp table...")
             copy_sql = sql.SQL("""
                 COPY {temp_table} ({column_order}) FROM STDIN
                 WITH (
@@ -221,20 +221,20 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
                     map(sql.Identifier, GBIF_INVERTS_BACKBONE.column_order()))
             )
 
-            with open(os.path.join(DATA_OUT_PATH, 'backbone.tsv'), "r", encoding="utf8") as f:
+            with open(os.path.join(DATA_OUT_PATH, 'backbone.tsv'), 'r', encoding='utf8') as f:
                 async with cur.copy(copy_sql) as copy:
                     while chunk := f.read(1024*1024):
                         await copy.write(chunk)
 
         # Replace backbone
-        db_logger.info('Replacing backbone...')
+        db_logger.info("Replacing backbone...")
 
         await _replace_backbone(conn, temp_table_name)
 
         await conn.commit()
 
     except Exception as e:
-        db_logger.error(f'Error updating backbone: {e}')
+        db_logger.error(f"Error updating backbone: {e}")
         if conn is not None:
             await conn.rollback()
         raise
@@ -252,7 +252,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         columns_to_check = ['ns_rank_state', 'ns_rank_state_no_inat']
 
         # Check for both relevant columns and add them if they don't exist
-        db_logger.info('Checking for rank columns...')
+        db_logger.info("Checking for rank columns...")
         for col_name in columns_to_check:
             # Check if the column exists
             check_col_query = sql.SQL("""
@@ -270,7 +270,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
             if result is None:
                 # Add the missing column
                 add_col_query = sql.SQL(
-                    'ALTER TABLE {backbone} ADD COLUMN {col} TEXT'
+                    "ALTER TABLE {backbone} ADD COLUMN {col} TEXT"
                 ).format(
                     backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
                     col=sql.Identifier(col_name)
@@ -278,7 +278,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
 
                 await execute_psql_query(conn, add_col_query)
                 db_logger.info(
-                    f'Added blank {col_name} column to {GBIF_INVERTS_BACKBONE.name}')
+                    f"Added blank {col_name} column to {GBIF_INVERTS_BACKBONE.name}")
 
         # Commit possible column changes
         await conn.commit()

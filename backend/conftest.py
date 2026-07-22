@@ -22,7 +22,7 @@ from backend.main import app
 logging.disable(logging.CRITICAL)
 
 
-if sys.platform == "win32":
+if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
@@ -119,15 +119,16 @@ async def client(test_app):
 @pytest.mark.asyncio
 async def insert_rows(rows, table_name: str, conn: psycopg.AsyncConnection):
     """
-    Insert rows into testing tables. 
+    Insert rows into testing tables.
     Infers column names from row objects.
     As a result, each row must contain the same columns.
     """
+
     columns = list(rows[0].keys())
-    query = sql.SQL('''
+    query = sql.SQL("""
         INSERT INTO {table} ({fields})
         VALUES ({placeholders})
-    ''').format(
+    """).format(
         table=sql.Identifier(table_name),
         fields=sql.SQL(', ').join(map(sql.Identifier, columns)),
         placeholders=sql.SQL(', ').join(sql.Placeholder() * len(columns))
@@ -140,6 +141,7 @@ async def insert_rows(rows, table_name: str, conn: psycopg.AsyncConnection):
 @pytest_asyncio.fixture
 async def tx_bounding_box(setup_gbif_schema, conn):
     """Fill texas geometry table"""
+
     rows = [{
         'id': '939f959a-b5c2-4908-9ae1-6ab9ab2b3ae0',
         'state': 'Texas',

@@ -25,9 +25,9 @@ async def get_datasets(request: Request) -> dict[str, Sequence[rows.DictRow]]:
     """
 
     try:
-        query = sql.SQL('''
+        query = sql.SQL("""
             SELECT * FROM {dataset_table}
-        ''').format(dataset_table=sql.Identifier(GBIF_DATASET_META.name))
+        """).format(dataset_table=sql.Identifier(GBIF_DATASET_META.name))
 
         async with request.app.state.db_pool.connection() as conn:
             result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True)
@@ -88,7 +88,7 @@ async def get_dataset_counts(params: SingleTaxonObsRequestParams, request: Reque
 
             occurrence_filter = create_occurrence_filter_sql(filter_payload)
 
-            query = sql.SQL('''
+            query = sql.SQL("""
                 WITH datasets_with_taxon AS (
                     SELECT DISTINCT dataset_key
                     FROM gbif_observations
@@ -110,7 +110,7 @@ async def get_dataset_counts(params: SingleTaxonObsRequestParams, request: Reque
                 LEFT JOIN counts
                     ON counts.dataset_key = p.dataset_key
                 ORDER BY count DESC;
-            ''').format(
+            """).format(
                 occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
                 occurrence_filter=occurrence_filter,
                 taxon_filter=taxon_filter
@@ -166,13 +166,13 @@ async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Re
 
             occurrence_filter = create_occurrence_filter_sql(filter_payload)
 
-            query = sql.SQL('''
+            query = sql.SQL("""
                 SELECT
                     MIN(LEAST(collection_start_date, collection_end_date)) AS min_date,
                     MAX(GREATEST(collection_start_date, collection_end_date)) AS max_date
                 FROM {occurrence_table}
                 WHERE {occurrence_filter}
-            ''').format(
+            """).format(
                 occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
                 occurrence_filter=occurrence_filter
             )
@@ -238,7 +238,7 @@ async def get_tile(
         grid_size = map.get_meters_per_pixel(z) * map.PIXELS_PER_GRID
 
         if z < 10:
-            query = sql.SQL('''
+            query = sql.SQL("""
                     WITH
                     bbox AS (
                         SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
@@ -277,7 +277,7 @@ async def get_tile(
                         FROM bins_geom, bbox
                     )
                     SELECT ST_AsMVT(mvt_geom, 'observations-heatmap', 4096, 'geom') FROM mvt_geom;
-                ''').format(
+                """).format(
                 include_inat=sql.Literal(include_inat),
                 taxon_id=sql.Literal(taxon_id),
                 x=sql.Literal(x),
@@ -290,7 +290,7 @@ async def get_tile(
             )
         # Return point observations if zoomed in
         else:
-            query = sql.SQL('''
+            query = sql.SQL("""
                     WITH
                     bbox AS (
                         SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
@@ -319,7 +319,7 @@ async def get_tile(
                         WHERE ST_Intersects(obs.geom, bbox.geom)
                     )
                     SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
-                ''').format(
+                """).format(
                 include_inat=sql.Literal(include_inat),
                 taxon_id=sql.Literal(taxon_id),
                 x=sql.Literal(x),

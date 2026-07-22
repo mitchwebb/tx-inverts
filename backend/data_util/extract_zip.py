@@ -22,7 +22,7 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
     """
 
     if not os.path.exists(fp):
-        data_logger.error(f'{fp} does not exist')
+        data_logger.error(f"{fp} does not exist")
         raise FileNotFoundError(f"{fp} does not exist.")
 
     try:
@@ -37,19 +37,19 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
                 for target_file in target_files:
                     if target_file in available_files:
                         data_logger.info(
-                            f'Extracting {target_file} from .zip...')
+                            f"Extracting {target_file} from .zip...")
                         zip_ref.extract(target_file, output_fp)
                     else:
                         data_logger.error(
-                            f'{target_file} not found in .zip. Exiting process...')
+                            f"{target_file} not found in .zip. Exiting process...")
                         raise FileNotFoundError(
                             f"{target_file} not found in .zip archive.")
             else:
-                data_logger.info('Extracting files from zip...')
+                data_logger.info("Extracting files from zip...")
                 zip_ref.extractall(output_fp)
 
         if delete_zip:
-            data_logger.info('Deleting original zip...')
+            data_logger.info("Deleting original zip...")
             try:
                 os.remove(fp)
             except PermissionError as e:
@@ -61,7 +61,7 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
                 except Exception as e2:
                     data_logger.exception(f"Still couldn't delete zip: {e2}")
 
-        data_logger.info(f'File(s) downloaded successfully to {output_fp}')
+        data_logger.info(f"File(s) downloaded successfully to {output_fp}")
 
         return output_fp
 

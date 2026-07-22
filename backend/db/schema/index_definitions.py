@@ -222,7 +222,7 @@ INDEX_DEFINITIONS = {d.name: d for d in _all_indexes}
 # View definitions (the order of these matters)
 MATERIALIZED_VIEWS = {
     'tx_taxa': {
-        'create_sql': sql.SQL('''
+        'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW {tx_taxa} AS
             WITH RECURSIVE ancestors AS (
                 SELECT backbone.*
@@ -244,7 +244,7 @@ MATERIALIZED_VIEWS = {
             )
             SELECT DISTINCT *
                 FROM ancestors
-        ''').format(
+        """).format(
             tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
             gbif_inverts_backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
             gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
@@ -253,25 +253,25 @@ MATERIALIZED_VIEWS = {
     # TODO: Ecoregions are currently hosted only on mapbox
     # If we want them to be searchable, we'll need to add them to local tables
     'regions': {
-        'create_sql': sql.SQL('''
+        'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW {regions} AS
             SELECT id, 'county' AS region_type, county AS name, geometry FROM {tx_counties}
             UNION ALL
             SELECT id, 'park' AS region_type, prop_name AS name, geometry FROM {tx_parks}
-        ''').format(
+        """).format(
             regions=sql.Identifier(REGIONS_VIEW.name),
             tx_counties=sql.Identifier(TEXAS_COUNTIES_TABLE.name),
             tx_parks=sql.Identifier(TEXAS_PARKS_TABLE.name),
         )
     },
     'taxon_region_presence': {
-        'create_sql': sql.SQL('''
+        'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW {taxon_region_presence} AS
             SELECT DISTINCT accepted_taxon_key, region_id
             FROM {observations_table} o
             JOIN {observation_regions_table} r
                 ON r.observation_id = o.gbif_id
-        ''').format(
+        """).format(
             taxon_region_presence=sql.Identifier(TAXON_PRESENCE_TABLE.name),
             observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
             observation_regions_table=sql.Identifier(
@@ -279,13 +279,13 @@ MATERIALIZED_VIEWS = {
         )
     },
     'taxon_lineage': {
-        'create_sql': sql.SQL('''
+        'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW {taxon_lineage} AS
             SELECT DISTINCT accepted_taxon_key,
             unnest(ARRAY[accepted_taxon_key, kingdom_id, phylum_id, class_id, order_id, family_id, genus_id, species_id, subspecies_id]) AS ancestor_id
             FROM {gbif_observations}
             WHERE accepted_taxon_key IS NOT NULL;
-        ''').format(
+        """).format(
             taxon_lineage=sql.Identifier(TAXON_LINEAGE_TABLE.name),
             gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
         )

@@ -29,13 +29,13 @@ async def gbif_download_request(request_body: str, pwd: str, username: str, test
     """
 
     headers = {
-        "Content-Type": "application/json"
+        'Content-Type': 'application/json'
     }
 
-    gbif_url = "https://api.gbif.org/v1/occurrence/download/request"
+    gbif_url = 'https://api.gbif.org/v1/occurrence/download/request'
 
     if test:
-        gbif_url = "https://api.gbif-uat.org/v1/occurrence/download/request"
+        gbif_url = 'https://api.gbif-uat.org/v1/occurrence/download/request'
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -46,22 +46,22 @@ async def gbif_download_request(request_body: str, pwd: str, username: str, test
                 headers=headers
             )
             if response.status == 201:
-                data_logger.info('Download request submitted successfully.')
+                data_logger.info("Download request submitted successfully.")
                 key = await response.text()
                 data_logger.info(
-                    f'Find this download request at https://www.gbif.org/occurrence/download/{key}')
+                    f"Find this download request at https://www.gbif.org/occurrence/download/{key}")
                 return key
             if response.status == 401:
                 data_logger.warning(
-                    '401 Unauthorized. If using the GBIF test server, ensure you are using '
-                    'credentials registered at uat.gbif.org — production credentials will not work.'
+                    "401 Unauthorized. If using the GBIF test server, ensure you are using "
+                    "credentials registered at uat.gbif.org — production credentials will not work."
                 )
                 text = await response.text()
-                raise RuntimeError(f'Download request failed: 401 Unauthorized')
+                raise RuntimeError(f"Download request failed: 401 Unauthorized")
             else:
                 text = await response.text()
                 raise RuntimeError(
-                    f'Download request failed: {response.status}: {text}'
+                    f"Download request failed: {response.status}: {text}"
                 )
     except Exception as e:
         data_logger.exception(f"Request failed: {e}")
@@ -133,7 +133,7 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                                 f"Starting download of {_fmt_size_string(total_size)}")
                         else:
                             data_logger.info("Starting download (Size Unknown)")
-                        with open(zip_fp, "wb") as f:
+                        with open(zip_fp, 'wb') as f:
                             async for chunk in response.content.iter_chunked(chunk_size):
                                 f.write(chunk)
                                 downloaded += len(chunk)
@@ -158,12 +158,12 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                                 f"No response for that key. Download is likely still being processed in GBIF's system. Trying again in {waiting_interval} seconds.")
                     elif response.status == 410:
                         raise FileNotFoundError(
-                            f'GBIF download {key} has been deleted.')
+                            f"GBIF download {key} has been deleted.")
                     else:
                         raise RuntimeError(
-                            f'Unexpected status code: {response.status}')
+                            f"Unexpected status code: {response.status}")
             except Exception as e:
-                data_logger.exception(f'Error occurred: {e}')
+                data_logger.exception(f"Error occurred: {e}")
                 raise
 
             # asyncio so the server doesn't get hung up waiting
@@ -171,4 +171,4 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
 
     # If failed within provided time, give up
     raise TimeoutError(
-        f'No successful response received within {time_to_wait} seconds.')
+        f"No successful response received within {time_to_wait} seconds.")

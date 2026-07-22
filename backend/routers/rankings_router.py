@@ -67,7 +67,7 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
             # Protect against failed ns_result
             if not ns_result:
                 return JSONResponse(content={'result': None}, status_code=200)
-            api_logger.info(f'Retrieved NS values {ns_result}')
+            api_logger.info(f"Retrieved NS values {ns_result}")
 
             # Return results
             return JSONResponse(content=ns_result)

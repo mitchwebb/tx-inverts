@@ -322,10 +322,10 @@ class TestGetQualifiedTaxa:
             {'observation_id': 6, 'region_id': '435ebf14-5173-466c-8afb-32ddaaa3b253',
                 'region_type': 'county'},  # Add occ 6 (acc_taxon_id: 1323108)
         ]
-        regions_query = sql.SQL('''
+        regions_query = sql.SQL("""
             INSERT INTO {regions_table} ({fields})
             VALUES ({placeholders})
-        ''').format(
+        """).format(
             regions_table=sql.Identifier(OBSERVATION_REGIONS_TABLE.name),
             fields=sql.SQL(', ').join(
                 map(sql.Identifier, list(regions[0].keys()))),

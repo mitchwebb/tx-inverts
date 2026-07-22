@@ -46,7 +46,7 @@ async def update_database():
         await conn.commit()
 
     except Exception as e:
-        tasks_logger.exception(f'Update database task failed. Exiting. {e}')
+        tasks_logger.exception(f"Update database task failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
     finally:

@@ -33,11 +33,11 @@ async def main():
 
         conn = await get_single_db_connection()
 
-        create_test_db_query = sql.SQL('''
+        create_test_db_query = sql.SQL("""
             CREATE DATABASE test_inverts;
             CREATE_USER test_user WITH ENCRYPTED PASSWORD 'test_pass';
             GRANT ALL PRIVILEGES ON DATABASE test_inverts TO test_user;
-        ''')
+        """)
         await execute_psql_query(conn, create_test_db_query)
 
         # Initialize all tables (including mat views) and associated indexes
@@ -70,16 +70,16 @@ async def main():
         await update_observation_regions(conn, replace_all=True)
 
         await conn.commit()
-        db_logger.info('Created observations_regions table')
+        db_logger.info("Created observations_regions table")
 
         # Refresh materialized views now that they're filled
         await refresh_materialized_views(conn)
 
         tasks_logger.info(
-            'Texas Inverts initial setup complete! Enjoy the app!')
+            "Texas Inverts initial setup complete! Enjoy the app!")
 
     except Exception as e:
-        db_logger.exception(f'Database initialization failed. Exiting. {e}')
+        db_logger.exception(f"Database initialization failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
     finally:

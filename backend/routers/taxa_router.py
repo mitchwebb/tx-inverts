@@ -15,7 +15,7 @@ from backend.models.taxa import TaxonInfo, TaxonSuggestion, TaxonTreeNode
 taxa_router = APIRouter()
 
 
-@taxa_router.get("/taxon_search_suggest",)
+@taxa_router.get('/taxon_search_suggest',)
 async def search_taxon(request: Request, search_term: str, exclude_species: bool = False) -> list[TaxonSuggestion]:
     """
     Get taxon search suggestions given a search term. 
@@ -35,7 +35,7 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
     """
 
     # Handle species exclusion (or lack thereof)
-    exclude_species_section = sql.SQL('')
+    exclude_species_section = sql.SQL("")
     if exclude_species:
         exclude_species_section = sql.SQL(
             "AND COALESCE(a.taxon_rank, t.taxon_rank) NOT IN ('species', 'subspecies')"
@@ -77,7 +77,7 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@taxa_router.get("/get_taxon_info")
+@taxa_router.get('/get_taxon_info')
 async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
     """
     Get assorted taxon info for a given taxon_id
@@ -108,7 +108,7 @@ async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
     """
 
     try:
-        taxon_query = sql.SQL('''
+        taxon_query = sql.SQL("""
             SELECT
                 canonical_name,
                 scientific_name_authorship,
@@ -128,7 +128,7 @@ async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
                 ns_rank_state_no_inat
             FROM tx_taxa
             WHERE taxon_id = {taxon_id}
-        ''').format(taxon_id=sql.Literal(taxon_id))
+        """).format(taxon_id=sql.Literal(taxon_id))
 
         # Get taxon info
         async with request.app.state.db_pool.connection() as conn:
@@ -136,7 +136,7 @@ async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
                 conn, taxon_query, fetch='one', dict_cursor=True)
 
     except Exception as e:
-        api_logger.exception('Issue getting taxon info: %s', e)
+        api_logger.exception(f"Issue getting taxon info: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
     if taxon_result is None:
@@ -147,7 +147,7 @@ async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
 
 
 # Get flat backbone for frontend (excludes synonyms)
-@taxa_router.get("/get_backbone")
+@taxa_router.get('/get_backbone')
 async def get_backbone(request: Request) -> list[TaxonTreeNode]:
     """
     Get backbone from tx_taxa table (excluding synonyms)
@@ -162,7 +162,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
     """
 
     try:
-        query = sql.SQL('''
+        query = sql.SQL("""
             SELECT
                 taxon_id,
                 taxon_rank,
@@ -182,7 +182,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
             FROM {tx_taxa}
             WHERE taxonomic_status IN ('accepted', 'doubtful')
                     ORDER BY taxon_rank, canonical_name
-        ''').format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name))
+        """).format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name))
 
         async with request.app.state.db_pool.connection() as conn:
             result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
@@ -191,12 +191,12 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
     except HTTPException:
         raise
     except Exception as e:
-        api_logger.exception('Issue getting taxon info: %s', e)
+        api_logger.exception("Issue getting taxon info: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # Get list of qualified taxon_ids based on various filters
-@taxa_router.post("/get_qualified_taxa")
+@taxa_router.post('/get_qualified_taxa')
 async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request):
     """
     Get list of taxon ids of taxa represented in observations data given
@@ -210,7 +210,7 @@ async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request
         list[int]: List of qualified taxon ids
     """
 
-    api_logger.info('Getting qualified taxa...')
+    api_logger.info("Getting qualified taxa...")
 
     try:
         # Create occurrence filter item
@@ -228,25 +228,25 @@ async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request
         if params.regions:
             region_literals = sql.SQL(', ').join(
                 sql.Literal(r) for r in params.regions)
-            region_join = sql.SQL('''
+            region_join = sql.SQL("""
                 JOIN {presence_table} p 
                 ON {observations_table}.accepted_taxon_key = p.accepted_taxon_key
                 AND p.region_id IN ({regions})
-            ''').format(
+            """).format(
                 presence_table=sql.Identifier(TAXON_PRESENCE_TABLE.name),
                 regions=region_literals,
                 observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
             )
         else:
-            region_join = sql.SQL('')
+            region_join = sql.SQL("")
 
         # Piece together the full query
-        occurrence_query = sql.SQL('''
+        occurrence_query = sql.SQL("""
             SELECT DISTINCT {observations_table}.accepted_taxon_key
             FROM {observations_table}
             {region_join}
             WHERE {occurrence_filter}
-        ''').format(
+        """).format(
             observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
             occurrence_filter=occurrence_filter,
             region_join=region_join
@@ -259,5 +259,5 @@ async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request
             return taxon_ids
 
     except Exception as e:
-        api_logger.exception('Issue getting qualified taxa: %s', e)
+        api_logger.exception("Issue getting qualified taxa: %s", e)
         raise HTTPException(status_code=500, detail=str(e))

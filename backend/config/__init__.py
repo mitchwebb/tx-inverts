@@ -4,7 +4,7 @@ from .base import DevSettings, ProdSettings
 from functools import lru_cache
 
 # Get current ENV param from base .env file
-load_dotenv(dotenv_path=".env")
+load_dotenv(dotenv_path='.env')
 
 
 @lru_cache()

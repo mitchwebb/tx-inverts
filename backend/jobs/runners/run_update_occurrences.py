@@ -34,7 +34,7 @@ async def main():
         tasks_logger.info("update_occurrences job finished")
 
     except Exception as e:
-        tasks_logger.exception(f'Update_occurrences task failed. Exiting. {e}')
+        tasks_logger.exception(f"Update_occurrences task failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
     finally:
@@ -42,5 +42,5 @@ async def main():
             await conn.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_async(main())

@@ -253,10 +253,10 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/9/113/209.mvt',
             params=[
-                ("taxon_id", 5035741),
-                ("include_inat", True),
-                ("date_start", None),
-                ("date_end", None),
+                ('taxon_id', 5035741),
+                ('include_inat', True),
+                ('date_start', None),
+                ('date_end', None),
             ],
         )
 
@@ -275,10 +275,10 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/9/309/398.mvt',
             params=[
-                ("taxon_id", 5035741),
-                ("include_inat", True),
-                ("date_start", None),
-                ("date_end", None),
+                ('taxon_id', 5035741),
+                ('include_inat', True),
+                ('date_start', None),
+                ('date_end', None),
             ],
         )
 
@@ -296,8 +296,8 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/10/227/419.mvt',
             params=[
-                ("taxon_id", 5035741),
-                ("date_start", "2022-01-01"),
+                ('taxon_id', 5035741),
+                ('date_start', '2022-01-01'),
             ],
         )
 
@@ -310,10 +310,10 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/10/227/419.mvt',
             params=[
-                ("taxon_id", 5035741),
-                ("include_inat", True),
-                ("date_start", None),
-                ("date_end", None),
+                ('taxon_id', 5035741),
+                ('include_inat', True),
+                ('date_start', None),
+                ('date_end', None),
             ],
         )
 
@@ -332,10 +332,10 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/10/309/398.mvt',
             params=[
-                ("taxon_id", 5035741),
-                ("include_inat", True),
-                ("date_start", None),
-                ("date_end", None),
+                ('taxon_id', 5035741),
+                ('include_inat', True),
+                ('date_start', None),
+                ('date_end', None),
             ],
         )
 

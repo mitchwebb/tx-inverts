@@ -23,8 +23,8 @@ async def fetch_data(session: aiohttp.ClientSession, url: str) -> Any:
             data = await response.json()
             return data
     except aiohttp.ClientError as e:
-        api_logger.error(f'Error fetching data from {url}: {e}')
+        api_logger.error(f"Error fetching data from {url}: {e}")
         raise
     except asyncio.TimeoutError:
-        api_logger.error(f'Request to {url} timed out')
+        api_logger.error(f"Request to {url} timed out")
         raise

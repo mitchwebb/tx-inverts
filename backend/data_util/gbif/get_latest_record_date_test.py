@@ -10,14 +10,14 @@ from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 @pytest.fixture
 async def observations_with_dates(conn, setup_gbif_schema):
     async with conn.cursor() as cur:
-        await cur.execute(sql.SQL('''
+        await cur.execute(sql.SQL("""
             INSERT INTO {observations_table} (gbif_id, modified, last_interpreted)
-            VALUES 
+            VALUES
                 (1, '2021-06-01', '2021-07-01'),
                 (2, '2020-06-01', '2020-07-01'),
                 (3, '3000-06-01', '3000-07-01'),
                 (4, NULL, NULL)
-        ''').format(
+        """).format(
             observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
         ))
     yield
@@ -41,10 +41,10 @@ class TestGetLatestRecordDate:
         today = date.today()
         next_year = date(today.year + 1, today.month, today.day)
         async with conn.cursor() as cur:
-            await cur.execute(sql.SQL('''
+            await cur.execute(sql.SQL("""
                 INSERT INTO {observations_table} (gbif_id, modified)
                     VALUES (1, {next_year})
-            ''').format(
+            """).format(
                 observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
                 next_year=sql.Literal(next_year)
             ))

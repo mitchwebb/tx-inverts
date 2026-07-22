@@ -20,10 +20,10 @@ async def get_latest_record_date(conn: AsyncConnection, param: Literal['last_int
 
     now = datetime.now()
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT MAX({param}) FROM {observations_table}
         WHERE {param} <= {now}
-    ''').format(
+    """).format(
         param=sql.Identifier(param),
         observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
         now=sql.Literal(now.isoformat())

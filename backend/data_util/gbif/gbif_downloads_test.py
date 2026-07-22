@@ -2,7 +2,7 @@ import pytest
 from backend.config import get_settings
 from backend.data_util.gbif.gbif_downloads import gbif_download_request
 
-REQUEST_BODY = '{"type": "OCCURRENCE", "format": "SIMPLE_CSV"}'
+REQUEST_BODY = "{'type': 'OCCURRENCE', 'format': 'SIMPLE_CSV'}"
 
 SETTINGS = get_settings()
 

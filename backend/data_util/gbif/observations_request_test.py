@@ -17,17 +17,17 @@ settings = get_settings()
 )
 async def test_observations_request_not_malformed():
     request_body = build_observations_request(
-        settings.gbif.uat_user or "",
-        settings.gbif.uat_email or ""
+        settings.gbif.uat_user or '',
+        settings.gbif.uat_email or ''
     )
     async with aiohttp.ClientSession() as session:
         response = await session.post(
             'https://api.gbif-uat.org/v1/occurrence/download/request',
             data=json.dumps(request_body),
             auth=aiohttp.BasicAuth(
-                settings.gbif.uat_user or "",
-                settings.gbif.uat_password or ""
+                settings.gbif.uat_user or '',
+                settings.gbif.uat_password or ''
             ),
-            headers={"Content-Type": "application/json"}
+            headers={'Content-Type': 'application/json'}
         )
         assert response.status == 201

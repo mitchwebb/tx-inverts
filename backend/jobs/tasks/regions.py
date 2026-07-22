@@ -68,11 +68,11 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
             truncate_query = sql.SQL('TRUNCATE {table}').format(
                 table=sql.Identifier(table.name))
             await execute_psql_query(conn, truncate_query)
-            db_logger.info(f'Truncated {table.name} table')
+            db_logger.info(f"Truncated {table.name} table")
 
         # Build placeholders, handling geometry column specially
         values = sql.SQL(', ').join(
-            sql.SQL('ST_GeomFromText(%s, 4326)') if c == 'geometry' else sql.SQL('%s')
+            sql.SQL("ST_GeomFromText(%s, 4326)") if c == 'geometry' else sql.SQL("%s")
             for c in cols
         )
 
@@ -103,9 +103,9 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
 
         # Refresh regions view
         await refresh_materialized_view(conn, 'regions')
-        db_logger.info(f'Updated {table.name} table...')
+        db_logger.info(f"Updated {table.name} table...")
     except Exception as e:
-        db_logger.error(f'Failed to fill geometry table: {e}')
+        db_logger.error(f"Failed to fill geometry table: {e}")
         await conn.rollback()
         raise
 
@@ -114,7 +114,7 @@ async def fill_all_geometry_tables(conn, truncate: bool = False):
     for config in GEOMETRY_TABLE_CONFIGS:
         await fill_geometry_table(config.path, config.table, config.col_map, conn, truncate=truncate)
     await conn.commit()
-    db_logger.info('Updated all geometry tables')
+    db_logger.info("Updated all geometry tables")
 
 
 async def update_observation_regions(conn, new_observation_ids: List[int] | None = None, replace_all: bool = False):
@@ -125,8 +125,8 @@ async def update_observation_regions(conn, new_observation_ids: List[int] | None
 
         # If replace_all or no ids provided, truncate table and recompute all
         if replace_all or new_observation_ids is None:
-            db_logger.info('Truncating observation_regions table...')
-            truncate_query = sql.SQL('TRUNCATE {table}').format(
+            db_logger.info("Truncating observation_regions table...")
+            truncate_query = sql.SQL("TRUNCATE {table}").format(
                 table=sql.Identifier(OBSERVATION_REGIONS_TABLE.name)
             )
             await execute_psql_query(conn, truncate_query)
@@ -173,8 +173,8 @@ async def update_observation_regions(conn, new_observation_ids: List[int] | None
             await execute_psql_query(conn, insert_query)
 
         await conn.commit()
-        db_logger.info('Updated observations_regions table')
+        db_logger.info("Updated observations_regions table")
     except Exception as e:
-        db_logger.error(f'Failed to update observation_regions: {e}')
+        db_logger.error(f"Failed to update observation_regions: {e}")
         await conn.rollback()
         raise

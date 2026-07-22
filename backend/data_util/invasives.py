@@ -21,17 +21,17 @@ async def get_invasives_dataset():
 
     # Request a GBIF download
     request_body = {
-        "creator": settings.gbif.user,
-        "notificationAddresses": [
+        'creator': settings.gbif.user,
+        'notificationAddresses': [
             settings.gbif.email
         ],
-        "format": "dwca",
-        "sendNotification": True,
-        "predicate": {
-            "type": "equals",
-            "key": "DATASET_KEY",
-            "value": dataset_key,
-            "matchCase": False
+        'format': 'dwca',
+        'sendNotification': True,
+        'predicate': {
+            'type': 'equals',
+            'key': 'DATASET_KEY',
+            'value': dataset_key,
+            'matchCase': False
         }
     }
 

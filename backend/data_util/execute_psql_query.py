@@ -91,7 +91,7 @@ async def execute_psql_query(
         # If batch request, use execute_batch
         if batch:
             if params is None:
-                raise ValueError('Batch operations require params.')
+                raise ValueError("Batch operations require params.")
             await cur.executemany(query, params)
         else:
             if params is not None:

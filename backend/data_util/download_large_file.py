@@ -75,16 +75,16 @@ def _download_file(url, output_fp, chunk_size, verbose=False):
                             if total:
                                 percent = (downloaded / total) * 100
                                 data_logger.debug(
-                                    f'Downloaded {downloaded_mb:.2f} MB of {total / 1024 / 1024:.2f} MB ({percent:.2f}%)')
+                                    f"Downloaded {downloaded_mb:.2f} MB of {total / 1024 / 1024:.2f} MB ({percent:.2f}%)")
                             else:
                                 data_logger.info(
-                                    f'Downloaded {downloaded_mb:.2f} MB')
+                                    f"Downloaded {downloaded_mb:.2f} MB")
                             last_logged_mb = downloaded_mb
 
-        data_logger.info('Download complete.')
+        data_logger.info("Download complete.")
 
     except Exception:
-        data_logger.exception('Download failed')
+        data_logger.exception("Download failed")
         # If download fails, we need to delete the temp file
         if os.path.exists(output_fp):
             os.remove(output_fp)

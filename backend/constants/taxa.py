@@ -23,4 +23,4 @@ type TaxonomicRank = Literal[
     'subspecies'
 ]
 
-RANK_COLS = [f"{r}_id" for r in RANK_ORDER]
+RANK_COLS = [f'{r}_id' for r in RANK_ORDER]

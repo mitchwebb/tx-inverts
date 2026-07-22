@@ -12,29 +12,29 @@ async def get_taxon_rank(conn, taxon_id):
     Given a taxon id, determine the taxonomic rank using the tx_taxa table
     """
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT taxon_rank
         FROM {tx_taxa}
         WHERE taxon_id = {taxon_id}
-    ''').format(
+    """).format(
         tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
         taxon_id=sql.Literal(taxon_id)
     )
 
     result = await execute_psql_query(conn, query, fetch='one', dict_cursor=True)
     if result is None:
-        raise TaxonNotFoundError(f'No taxon found for taxon_id={taxon_id}')
+        raise TaxonNotFoundError(f"No taxon found for taxon_id={taxon_id}")
 
     taxon_rank = result['taxon_rank']
 
     if taxon_rank is None:
         raise InvalidTaxonRankError(
-            f'taxon_rank is NULL for taxon_id={taxon_id}'
+            f"taxon_rank is NULL for taxon_id={taxon_id}"
         )
 
     if taxon_rank not in RANK_ORDER:
         raise InvalidTaxonRankError(
-            f'Invalid taxon_rank "{taxon_rank}" for taxon_id={taxon_id}'
+            f"Invalid taxon_rank '{taxon_rank}' for taxon_id={taxon_id}"
         )
 
     return taxon_rank

@@ -19,7 +19,7 @@ async def fill_dataset_table(conn: AsyncConnection, dataset_ids: List[str]):
             # If no dataset info is found, log, but continue
             if dataset_info is None:
                 api_logger.warning(
-                    f'Dataset info not found for dataset key "{dataset_key}"')
+                    f"Dataset info not found for dataset key '{dataset_key}'")
                 continue
             # INSERT dataset title into gbif_dataset_metadata
             dataset_title = dataset_info['title']

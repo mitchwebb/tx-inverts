@@ -61,7 +61,7 @@
     }
 </script>
 
-<div class='geo-searchbar'>
+<div class="geo-searchbar">
     <SearchSuggestBar 
         {placeholder}
         handleSearchSuggest={handleSearchSuggest}

@@ -23,7 +23,7 @@ class RegionInfo(BaseModel):
     name: str
 
 
-@regions_router.get("/get_region_info", response_model=RegionInfo)
+@regions_router.get('/get_region_info', response_model=RegionInfo)
 async def get_region_info(region_id: str, request: Request) -> RegionInfo:
     """
     Get basic region information from region_id
@@ -36,11 +36,11 @@ async def get_region_info(region_id: str, request: Request) -> RegionInfo:
     """
 
     try:
-        query = sql.SQL('''
+        query = sql.SQL("""
             SELECT id, region_type, name
             FROM {regions_view}
             WHERE id = {region_id}
-        ''').format(
+        """).format(
             regions_view=sql.Identifier(REGIONS_VIEW.name),
             region_id=sql.Literal(region_id)
         )
@@ -59,18 +59,18 @@ async def get_region_info(region_id: str, request: Request) -> RegionInfo:
     return RegionInfo(**dict(results))
 
 
-@regions_router.get("/search_counties")
+@regions_router.get('/search_counties')
 async def search_counties(request: Request, search_term: str) -> list[County]:
     """
     Using a search term, search through counties table by county name (case insensitive)
     """
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT county, id
         FROM {counties_table}
         WHERE county ~* {search_term}
         LIMIT 10
-    ''').format(
+    """).format(
         counties_table=sql.Identifier(TEXAS_COUNTIES_TABLE.name),
         search_term=sql.Literal('\\m' + search_term.lower())
     )
@@ -84,18 +84,18 @@ async def search_counties(request: Request, search_term: str) -> list[County]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@regions_router.get("/search_parks")
+@regions_router.get('/search_parks')
 async def search_parks(request: Request, search_term: str) -> list[Park]:
     """
     Using a search term, search through parks table by park name (case insensitive)
     """
 
-    query = sql.SQL('''
+    query = sql.SQL("""
         SELECT prop_name, alt_prop_name, prop_class, owner, id
         FROM {parks_table}
         WHERE prop_name ~* {search_term}
         LIMIT 10
-    ''').format(
+    """).format(
         parks_table=sql.Identifier(TEXAS_PARKS_TABLE.name),
         search_term=sql.Literal('\\m' + search_term.lower())
     )

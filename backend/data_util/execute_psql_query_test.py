@@ -9,9 +9,9 @@ from backend.data_util.execute_psql_query import execute_psql_query
 @pytest.mark.asyncio
 async def test_batch_without_params_raises(mock_conn):
     conn, _ = mock_conn
-    query = sql.SQL('')
+    query = sql.SQL("")
 
-    with pytest.raises(ValueError, match="Batch operations require params"):
+    with pytest.raises(ValueError, match='Batch operations require params'):
         await execute_psql_query(conn, query, batch=True, params=None)
 
 
@@ -19,7 +19,7 @@ async def test_batch_without_params_raises(mock_conn):
 @pytest.mark.asyncio
 async def test_dict_cursor_uses_dict_row_factory(mock_conn):
     conn, _ = mock_conn
-    query = sql.SQL('')
+    query = sql.SQL("")
 
     await execute_psql_query(conn, query, fetch='one', dict_cursor=True)
 
@@ -30,7 +30,7 @@ async def test_dict_cursor_uses_dict_row_factory(mock_conn):
 @pytest.mark.asyncio
 async def test_tuple_cursor_uses_tuple_row_factory(mock_conn):
     conn, _ = mock_conn
-    query = sql.SQL('')
+    query = sql.SQL("")
 
     await execute_psql_query(conn, query, fetch='one', dict_cursor=False)
 
@@ -41,7 +41,7 @@ async def test_tuple_cursor_uses_tuple_row_factory(mock_conn):
 @pytest.mark.asyncio
 async def test_fetch_one_calls_fetchone(mock_conn):
     conn, mock_cursor = mock_conn
-    query = sql.SQL('')
+    query = sql.SQL("")
 
     await execute_psql_query(conn, query, fetch='one')
 
@@ -53,7 +53,7 @@ async def test_fetch_one_calls_fetchone(mock_conn):
 @pytest.mark.asyncio
 async def test_fetch_all_calls_fetchall(mock_conn):
     conn, mock_cursor = mock_conn
-    query = sql.SQL('')
+    query = sql.SQL("")
 
     await execute_psql_query(conn, query, fetch='all')
 
@@ -65,7 +65,7 @@ async def test_fetch_all_calls_fetchall(mock_conn):
 @pytest.mark.asyncio
 async def test_fetch_none_fetches_none(mock_conn):
     conn, mock_cursor = mock_conn
-    query = sql.SQL('')
+    query = sql.SQL("")
 
     await execute_psql_query(conn, query)
 

@@ -33,10 +33,10 @@ async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: 
         await execute_psql_query(conn, create_sql)
         await conn.commit()
         if verbose:
-            db_logger.info(f'Created table: {table.name}')
+            db_logger.info(f"Created table: {table.name}")
 
     except PsycopgError as e:
-        error_msg = getattr(e, "pgerror", str(e))
+        error_msg = getattr(e, 'pgerror', str(e))
         db_logger.error(f"Failed to create table '{table.name}': {error_msg}")
         if strict:
             raise

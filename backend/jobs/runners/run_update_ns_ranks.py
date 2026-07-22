@@ -15,12 +15,12 @@ async def main():
 
         tasks_logger.info("update_ns_ranks finished")
     except Exception as e:
-        tasks_logger.exception(f'Update NS ranks task failed. Exiting. {e}')
+        tasks_logger.exception(f"Update NS ranks task failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
     finally:
         if conn is not None:
             await conn.close()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_async(main())
