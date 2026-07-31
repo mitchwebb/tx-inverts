@@ -3,10 +3,8 @@ import pytest_asyncio
 from backend.conftest import insert_rows
 from backend.core.exception_handler import TaxonNotFoundError
 from backend.data_util.ranking import calculate_ns_values, calculate_rank
-from backend.db.queries.occurrence import create_occurrence_filter_sql
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.views import refresh_materialized_view
@@ -173,7 +171,7 @@ class TestCalculateNSValues:
             include_inat=None,
             date_start=None,
             date_end=None,
-            datasets=None
+            datasets=None,
         )
 
         ns_values = await calculate_ns_values(

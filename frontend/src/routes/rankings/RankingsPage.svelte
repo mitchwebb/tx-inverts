@@ -46,7 +46,6 @@
         { label: 'Order', sortKey: 'order' },
         { label: 'Family', sortKey: 'family' },
         { label: 'Genus', sortKey: 'genus' },
-        // { label: 'Taxon Rank', sortKey: 'taxon_rank' },
     ]);
 
     function handleTaxonSelect(e: MouseEvent) {
@@ -341,7 +340,6 @@
     }
     .row-text {
         display: flex;
-        /* align-items: center; */
     }
     #rankings-page-body:hover #download-rankings-button {
         opacity: 0.6;

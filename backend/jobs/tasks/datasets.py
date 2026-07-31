@@ -2,14 +2,14 @@ import asyncio
 from typing import List
 from backend.core.logging import api_logger
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.data_util.gbif.observations_request import APPROVED_DATASETS
 from backend.data_util.requests import fetch_data
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from psycopg import AsyncConnection, sql
 import aiohttp
 
 
-# TODO: Would it be wiser to grab these dynamically using the datasets present in gbif_observations? Only if we think we'll ingest outside sources.
+# TODO: Would it be wiser to grab these dynamically using the datasets present in gbif_observations?
+# Only if we think we'll ingest outside sources.
 async def fill_dataset_table(conn: AsyncConnection, dataset_ids: List[str]):
     async with aiohttp.ClientSession() as session:
         for dataset_key in dataset_ids:
@@ -35,6 +35,7 @@ async def fill_dataset_table(conn: AsyncConnection, dataset_ids: List[str]):
             )
             await execute_psql_query(conn, insert_query)
 
-            await asyncio.sleep(0.1)  # be polite to the API
+            # Be polite to GBIF (there aren't too many datasets to grab, so this isn't a huge cost)
+            await asyncio.sleep(0.1)
 
     await conn.commit()

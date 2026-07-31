@@ -29,7 +29,6 @@
 >
     <div class="filters-section-header">
         <span>Conservation Ranks</span>
-        &nbsp
         <InfoButton hover={true} type="tooltip">
             <div>
                 This filter uses preliminary ranks determined using unfiltered

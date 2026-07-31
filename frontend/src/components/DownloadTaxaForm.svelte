@@ -2,29 +2,33 @@
     import { getRankingsContext } from '../contexts/rankingsContext';
     import { getTaxaDownload } from '../lib/downloads';
     import DownloadAndFiltersForm from './DownloadAndFiltersForm.svelte';
-    import TaxaFilters from './FiltersSection/TaxaFilters.svelte';
+    import Filters from './FiltersSection/Filters.svelte';
 
     const rankingsContext = getRankingsContext();
 
     let visibleTaxonIDs = $derived(rankingsContext.visibleTaxonIDs);
 
     async function requestTaxaDownload(
-        estimate: boolean,
+        getEstimate: boolean,
         onProgress?: (received: number) => void
     ) {
         const response = await getTaxaDownload(
             visibleTaxonIDs,
-            estimate,
+            getEstimate,
             onProgress
         );
-        if (estimate && response) return response;
+        if (getEstimate && response) return response;
         return null;
     }
 </script>
 
 <div id="download-form-wrapper">
     <DownloadAndFiltersForm requestHandler={requestTaxaDownload}>
-        <TaxaFilters header="Download Ranked Taxa TSV" />
+        <Filters
+            domain="taxa"
+            header="Download Ranked Taxa TSV"
+            includeButtons={false}
+        />
     </DownloadAndFiltersForm>
 </div>
 

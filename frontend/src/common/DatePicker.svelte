@@ -6,8 +6,6 @@
     import localeEn from 'air-datepicker/locale/en';
     import 'air-datepicker/air-datepicker.css';
 
-    // TODO: Work on binding typed dates
-
     let inputEl: HTMLInputElement;
 
     export type AirDatepickerPayload = {
@@ -125,12 +123,13 @@
         display: none;
     }
     input {
-        padding: 0.5rem;
+        padding: 0 0.75rem;
         color: var(--text-default);
         background-color: var(--container-back);
         border: 1px solid var(--border);
         border-radius: 3px;
         min-width: 75px;
+        font-size: .8rem;
     }
     input:focus {
         outline: 1px solid var(--accent-color);

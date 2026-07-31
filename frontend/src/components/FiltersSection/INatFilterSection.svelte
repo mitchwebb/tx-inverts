@@ -57,7 +57,6 @@
     }
     #inat-filter-section-header {
         display: flex;
-        gap: 0.25rem;
     }
     .inat-toggle-wrapper {
         display: flex;

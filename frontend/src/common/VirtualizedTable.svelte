@@ -372,7 +372,6 @@
         background-color: var(--container-fore);
     }
     .header-info {
-        margin-left: 0.2rem;
         flex-shrink: 0;
         pointer-events: auto;
     }

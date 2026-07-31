@@ -43,7 +43,7 @@
         tooltipContext.target = infoButton;
         tooltipContext.visible = true;
     }
-
+    
     onDestroy(() => {
         handleMouseExit();
     });
@@ -81,5 +81,6 @@
         background-color: transparent;
         border: none;
         color: var(--text-default);
+        margin: 0 .25rem;
     }
 </style>

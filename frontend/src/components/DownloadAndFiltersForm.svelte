@@ -8,7 +8,7 @@
     type DownloadFormProps = {
         header?: string;
         requestHandler: (
-            estimate: boolean,
+            getEstimate: boolean,
             onProgress?: (received: number) => void
         ) => Promise<any>;
         children?: Snippet;
@@ -31,9 +31,11 @@
     );
 
     async function handleDownload() {
+        downloadDisabled = true;
         await requestHandler(false, (r) => {
             bytesReceived = r;
         });
+        downloadDisabled = false;
         bytesReceived = null;
     }
 
@@ -45,6 +47,12 @@
             const estimateMetrics: EstimateMetrics = (await requestHandler(
                 true
             )) as EstimateMetrics;
+            if (!estimateMetrics) {
+                loadingEstimate = false;
+                rowCount = null;
+                estimateSize = null;
+                return;
+            }
             estimateSize = estimateMetrics.sizeEstimate;
             rowCount = estimateMetrics.rowCount;
             loadingEstimate = false;
@@ -81,11 +89,18 @@
             <div id="download-loading-icon" class="icon">
                 <LoadingIcon />
             </div>
+        {:else if estimateSize == null && rowCount == null}
+            <div class="retrieval-failed-message">
+                Download Retrieval Failed
+            </div>
         {/if}
     </div>
 </div>
 
 <style>
+    .retrieval-failed-message {
+        margin: 0 0.5rem;
+    }
     .large-file {
         color: red;
     }

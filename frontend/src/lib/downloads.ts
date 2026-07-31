@@ -1,11 +1,10 @@
-import type { FiltersState } from '../contexts/filtersContext';
 import type { EstimateMetrics, RawEstimateMetrics } from '../types/api';
 
 export async function getDownload(
     endpoint: string,
     filename: string,
     body: object,
-    estimate: boolean,
+    getEstimate: boolean,
     onProgress?: (bytesReceived: number) => void
 ): Promise<EstimateMetrics | number | null> {
     try {
@@ -14,12 +13,12 @@ export async function getDownload(
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...body,
-                estimate,
+                get_estimate: getEstimate,
             }),
         });
         if (!response.ok)
             throw new Error(`Response status: ${response.status}`);
-        if (estimate) {
+        if (getEstimate) {
             const result: RawEstimateMetrics = await response.json();
             const estimateMetrics: EstimateMetrics = {
                 sizeEstimate: result.size_estimate,
@@ -53,36 +52,38 @@ export async function getDownload(
     }
 }
 
-// Thin wrapper for specific, allowed downloads
-export async function getOccurrenceDownload(
-    taxonIDs: number[],
-    includeINat: FiltersState['includeINat'],
-    dateStart: FiltersState['dateStart'],
-    dateEnd: FiltersState['dateEnd'],
-    datasets: FiltersState['datasets'],
-    includeInvasives: boolean,
-    estimate: boolean,
-    onProgress?: (received: number) => void
-) {
-    return getDownload(
-        'server/downloads/get_occurrence_download',
-        'occurrence_download.tsv',
-        {
-            taxon_ids: taxonIDs,
-            include_inat: includeINat,
-            date_start: dateStart?.toISOString(),
-            date_end: dateEnd?.toISOString(),
-            datasets: datasets,
-            include_invasives: includeInvasives,
-        },
-        estimate,
-        onProgress
-    );
-}
+// // Thin wrapper for specific, allowed downloads
+// export async function getOccurrenceDownload(
+//     taxonIDs: number[],
+//     includeINat: FiltersState['includeINat'],
+//     dateStart: FiltersState['dateStart'],
+//     dateEnd: FiltersState['dateEnd'],
+//     datasets: FiltersState['datasets'],
+//     coordUncertainty: FiltersState['coordUncertainty'],
+//     includeInvasives: boolean,
+//     getEstimate: boolean,
+//     onProgress?: (received: number) => void
+// ) {
+//     return getDownload(
+//         'server/downloads/get_occurrence_download',
+//         'occurrence_download.tsv',
+//         {
+//             taxon_ids: taxonIDs,
+//             include_inat: includeINat,
+//             date_start: dateStart?.toISOString(),
+//             date_end: dateEnd?.toISOString(),
+//             datasets: datasets,
+//             coordUncertainty: coordUncertainty,
+//             include_invasives: includeInvasives,
+//         },
+//         estimate,
+//         onProgress
+//     );
+// }
 
 export async function getTaxaDownload(
     filteredIDs: number[],
-    estimate: boolean,
+    getEstimate: boolean,
     onProgress?: (received: number) => void
 ) {
     return getDownload(
@@ -91,7 +92,7 @@ export async function getTaxaDownload(
         {
             taxon_ids: filteredIDs,
         },
-        estimate,
+        getEstimate,
         onProgress
     );
 }

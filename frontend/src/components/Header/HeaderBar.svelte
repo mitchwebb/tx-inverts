@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onDestroy, onMount } from 'svelte';
     import { isNarrowView } from '../../contexts/device';
     import TaxaSearch from '../TaxaSearch.svelte';
     import MobileNavbarFoldout from './MobileNavbarFoldout.svelte';

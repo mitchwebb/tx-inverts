@@ -326,7 +326,6 @@
     #rank-text {
         margin-bottom: 0.5rem;
         display: flex;
-        gap: 0.25rem;
         justify-content: center;
         font-size: 1.2rem;
     }

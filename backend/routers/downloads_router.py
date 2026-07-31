@@ -57,7 +57,7 @@ async def download_table_and_stream(
 
             async with cur.copy(copy_sql) as copy:
                 async for chunk in copy:
-                    yield chunk
+                    yield bytes(chunk)
 
 
 # Although this could be adjusted to allow for csv estimation, we aren't allowing csv output
@@ -125,7 +125,7 @@ async def get_ranked_taxa_download(
     """
 
     taxon_ids = params.taxon_ids
-    estimate = params.estimate
+    get_estimate = params.get_estimate
 
     query = sql.SQL("""
         {dwc_taxa_select_clause}
@@ -142,7 +142,7 @@ async def get_ranked_taxa_download(
     )
 
     try:
-        if estimate:
+        if get_estimate:
             async with request.app.state.db_pool.connection() as conn:
                 return await estimate_tsv_download_size(conn, query)
         else:

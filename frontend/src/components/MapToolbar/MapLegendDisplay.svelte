@@ -98,7 +98,7 @@
         display: flex;
         align-items: center;
         justify-content: left;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
     }
     .legend-label {
         text-align: left;

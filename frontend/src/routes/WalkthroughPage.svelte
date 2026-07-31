@@ -4,7 +4,6 @@
     import { getRouterContext } from '../contexts/routerContext';
     import { openModal } from '../lib/modal.svelte';
     import RangeExtentModal from '../common/Modals/RangeExtentModal.svelte';
-    import TaxaSearch from '../components/TaxaSearch.svelte';
     import Sidebar from '../components/Sidebar/Sidebar.svelte';
     import MagnifyIcon from '../assets/MagnifyIcon.svelte';
     import { DUMMY_TAXON } from '../constants/taxa';
