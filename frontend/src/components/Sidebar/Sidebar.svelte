@@ -6,10 +6,7 @@
 
 <script lang="ts">
     import NSSection from './NSSection.svelte';
-    import {
-        getActiveTaxaContext,
-        type ActiveTaxon,
-    } from '../../contexts/activeTaxaContext';
+    import { type ActiveTaxon } from '../../contexts/activeTaxaContext';
     import { getSidebarContext } from '../../contexts/sidebarContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import { countActiveFilters } from '../../lib/filters.svelte';
@@ -19,10 +16,9 @@
     import { getModalContext } from '../../contexts/modalContext';
     import AddTaxonButton from './AddTaxonButton.svelte';
     import TaxaSearch from '../TaxaSearch.svelte';
-    import ObservationsFilters from '../FiltersSection/ObservationsFilters.svelte';
-    import TaxaFilters from '../FiltersSection/TaxaFilters.svelte';
     import { openModal } from '../../lib/modal.svelte';
     import type { RouterPath } from '../../types/router';
+    import Filters from '../FiltersSection/Filters.svelte';
 
     type SidebarProps = {
         activeTaxa: ActiveTaxon[];
@@ -109,15 +105,10 @@
             );
         };
     });
-
 </script>
 
 {#snippet filters()}
-    {#if filtersDomain === 'observations'}
-        <ObservationsFilters />
-    {:else if filtersDomain === 'taxa'}
-        <TaxaFilters />
-    {/if}
+    <Filters domain={filtersDomain} />
 {/snippet}
 
 <div id="sidebar-wrapper" class="space-between">

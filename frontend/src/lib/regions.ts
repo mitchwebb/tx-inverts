@@ -7,7 +7,7 @@ import {
 } from '../types/api';
 
 export async function getRegionInfo(
-    regionID: FiltersState['region']['ids'][0]
+    regionID: FiltersState['regions']['ids'][0]
 ): Promise<RegionInfo | null> {
     const url = `server/regions/get_region_info?region_id=${regionID}`;
     try {

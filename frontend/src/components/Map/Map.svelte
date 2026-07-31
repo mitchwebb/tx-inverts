@@ -25,6 +25,7 @@
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import {
         getFiltersContext,
+        type FiltersState,
     } from '../../contexts/filtersContext';
     import { buildTooltipSections } from '../../lib/map/mapTooltips';
     import {
@@ -33,6 +34,8 @@
     } from '../../lib/map/mapFeatures';
     import { untrack } from 'svelte';
     import { isMobile } from '../../contexts/device';
+    import { buildTileURL } from '../../util/map'
+    import { serializeFilters } from '../../util/requests';
 
     // ---------------------------------------------
     // Contexts & reactive state
@@ -376,23 +379,14 @@
 
     // Get range extent geometry per-taxon
     // This needs to be done when observations change (from filtering)
-    async function fetchRangeExtentGeom(taxonID: number) {
-        const includeINat = filtersContext.includeINat;
-        const datasets = filtersContext.datasets?.length
-            ? filtersContext.datasets
-            : null;
-        const dateStart = filtersContext.dateStart;
-        const dateEnd = filtersContext.dateEnd;
+    async function fetchRangeExtentGeom(taxonID: number, filters: FiltersState) {
 
         const response = await fetch('/server/rankings/get_range_extent_geom', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 taxon_id: taxonID,
-                include_inat: includeINat,
-                date_start: dateStart?.toISOString(),
-                date_end: dateEnd?.toISOString(),
-                datasets: datasets,
+                ...serializeFilters(filters)
             }),
         });
 
@@ -422,12 +416,7 @@
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
         const color = taxon.color;
-        const includeINat = filtersContext.includeINat;
-        const dataDatasets = filtersContext.datasets?.length
-            ? filtersContext.datasets
-            : null;
-        const dateStart = filtersContext.dateStart?.toISOString();
-        const dateEnd = filtersContext.dateEnd?.toISOString();
+        const filters = filtersContext;
 
         if (!mapContext.taxonLayers[taxonID]) {
             mapContext.taxonLayers[taxonID] = {
@@ -445,9 +434,10 @@
         // Add observation source with tile URL
         map.addSource(obsBundle.id, {
             ...obsBundle.source,
-            tiles: [
-                `${window.location.origin}/server/occurrence/tiles/{z}/{x}/{y}.mvt?include_inat=${includeINat}&taxon_id=${taxonID}&date_start=${dateStart}&date_end=${dateEnd}${dataDatasets ? dataDatasets.map((d) => `&datasets=${d}`).join('') : ''}`,
-            ],
+            tiles: [buildTileURL(
+                taxonID, 
+                filters
+            )],
         });
         obsBundle.layers.forEach((layer) => map.addLayer(layer));
 
@@ -474,20 +464,16 @@
         ];
 
         // Fetch range extent geom
-        await fetchRangeExtentGeom(taxonID);
+        await fetchRangeExtentGeom(taxonID, filtersContext);
 
         mapContext.taxonLayers[taxonID].loaded = true;
     }
 
     // Update select map layers which depend on activeSpecies changes
     $effect(() => {
-        const includeINat = filtersContext.includeINat;
-        const dataDatasets = filtersContext?.datasets?.length
-            ? filtersContext.datasets
-            : null;
-        const dateStart = filtersContext.dateStart?.toISOString();
-        const dateEnd = filtersContext.dateEnd?.toISOString();
         if (!map || !mapReady) return;
+        // Explicit reads register each as a dependency, deep reactivity included
+        const filters = { ...filtersContext }
 
         let cancelled = false;
 
@@ -506,10 +492,13 @@
                 ) as mapboxgl.VectorTileSource;
                 if (source) {
                     source.setTiles([
-                        `${window.location.origin}/server/occurrence/tiles/{z}/{x}/{y}.mvt?include_inat=${includeINat}&taxon_id=${taxonID}&date_start=${dateStart}&date_end=${dateEnd}${dataDatasets ? dataDatasets.map((d) => `&datasets=${d}`).join('') : ''}`,
+                        buildTileURL( 
+                            taxonID,
+                            filters
+                        ),
                     ]);
                 }
-                fetchRangeExtentGeom(taxonID);
+                fetchRangeExtentGeom(taxonID, filters);
             }
         });
 

@@ -3,7 +3,7 @@
     import type { CheckboxPayload } from '../../common/CheckboxInput.svelte';
     import CheckboxInput from '../../common/CheckboxInput.svelte';
     import Toggle from '../../common/Toggle.svelte';
-    import type { FilterDomain } from '../../constants/sidebarFilters';
+    import type { FiltersDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { datasets } from '../../contexts/Datasets';
     import { getFiltersContext } from '../../contexts/filtersContext';
@@ -11,7 +11,7 @@
 
     type DatasetFilterProps = {
         header?: string;
-        domain?: FilterDomain;
+        domain?: FiltersDomain;
         showCounts?: boolean;
     };
 
@@ -22,13 +22,13 @@
     }: DatasetFilterProps = $props();
 
     const filtersContext = getFiltersContext();
-    const taxonContext = getActiveTaxaContext();
+    const taxaContext = getActiveTaxaContext();
 
     const iNatActive = $derived(filtersContext.includeINat);
 
     // Determine datasetCounts added across all taxa
     let datasetCounts = $derived(
-        Object.values(taxonContext.taxa.items).reduce(
+        Object.values(taxaContext.taxa.items).reduce(
             (acc, taxon) => {
                 if (!taxon.datasetCounts) return acc;
                 for (const [dataset, count] of Object.entries(
@@ -42,14 +42,22 @@
         )
     );
 
+    const higherTaxaActive = $derived(
+        taxaContext.taxa.ids.some((id) => {
+            const taxon = taxaContext.taxa.get(id);
+            const taxonRank = taxon?.info.taxonRank;
+            return taxonRank && !['species', 'subspecies'].includes(taxonRank);
+        })
+    );
+
     // Derive a unified list of datasets
     const datasetList = $derived.by(() => {
         if (!$datasets) return [];
         // If in observations domain and taxa selected,
         // OR if in taxa domain and parent taxa selected
         if (
-            (domain === 'observations' && taxonContext.taxa.ids.length) ||
-            (domain === 'taxa' && filtersContext.filterTaxonIDs.length)
+            (domain === 'observations' && taxaContext.taxa.ids.length) ||
+            (domain === 'taxa' && higherTaxaActive)
         ) {
             // Filter to relevant datasets
             return Object.entries(datasetCounts).map(([key, count]) => ({
@@ -91,7 +99,7 @@
 
     // Determine if observationsMetrics are loading for any taxa
     const observationsMetricsLoading = $derived(
-        Object.values(taxonContext.taxa.items).some(
+        Object.values(taxaContext.taxa.items).some(
             (taxon) => taxon.observationMetricsLoading
         )
     );
@@ -103,19 +111,20 @@
 
 {#if $datasets}
     <div
-        class="data-datasets-section filters-section"
+        class="datasets-section filters-section"
         class:active={!!filtersContext.datasets?.length ||
             !filtersContext.includeINat}
         class:loading-blink={observationsMetricsLoading}
     >
-        <div id="data-datasets-header" class="filters-section-header">
-            {#if observationsMetricsLoading}
-                <div class="loading-icon icon">
-                    <LoadingIcon />
-                </div>
-            {:else}
+        <div id="datasets-header" class="filters-section-header">
+            <div class="datasets-header-and-icon">
                 <span>{header}</span>
-            {/if}
+                {#if observationsMetricsLoading}
+                    <div class="loading-icon icon">
+                        <LoadingIcon />
+                    </div>
+                {/if}
+            </div>
             <div class="inat-toggle-wrapper">
                 <div class="inat-toggle">
                     <Toggle
@@ -188,6 +197,10 @@
 {/if}
 
 <style>
+    .datasets-header-and-icon {
+        display: flex;
+        gap: 0.5rem;
+    }
     .datasets-list {
         width: 100%;
         position: relative;
@@ -242,9 +255,10 @@
         /* white-space: nowrap; */
         font-size: 1rem;
     }
-    #data-datasets-header {
+    #datasets-header {
         display: flex;
         justify-content: space-between;
+        align-content: center;
     }
     .no-data-message {
         text-align: left;
@@ -259,7 +273,6 @@
     .institution-name-wrapper {
         display: flex;
         justify-content: space-between;
-        /* width: 100%; */
         flex-grow: 1;
         min-width: 0;
     }
@@ -269,16 +282,13 @@
         min-width: 0;
         text-overflow: ellipsis;
         overflow: hidden;
+        font-size: 0.8rem;
     }
     .institution-count {
         flex-shrink: 0;
+        font-size: 0.8rem;
     }
-    .institution-code {
-        /* font-style: italic; */
-        text-align: right;
-        font-weight: 200;
-    }
-    .data-datasets-section {
+    .datasets-section {
         display: flex;
         flex-direction: column;
         min-width: 250px;

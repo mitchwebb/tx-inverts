@@ -40,7 +40,7 @@ class GBIFObservationsTable(DBTable):
         'verbatim_locality': 'TEXT',
         'decimal_latitude': 'DOUBLE PRECISION',
         'decimal_longitude': 'DOUBLE PRECISION',
-        'coordinate_uncertainty_in_meters': 'TEXT',
+        'coordinate_uncertainty_in_meters': 'NUMERIC',
         'coordinate_precision': 'TEXT',
         'scientific_name': 'TEXT',
         'kingdom': 'TEXT',

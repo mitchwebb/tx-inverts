@@ -80,7 +80,10 @@ async def get_dataset_counts(params: SingleTaxonObsRequestParams, request: Reque
                 taxon_ids=[params.taxon_id],
                 include_inat=params.include_inat,
                 date_start=params.date_start,
-                date_end=params.date_end
+                date_end=params.date_end,
+                regions=params.regions,
+                coord_uncertainty=params.coord_uncertainty
+                # Don't include datasets
             )
 
             taxon_filter = create_occurrence_taxon_filter(
@@ -161,7 +164,8 @@ async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Re
                 date_start=params.date_start,
                 date_end=params.date_end,
                 datasets=params.datasets,
-                regions=params.regions
+                regions=params.regions,
+                coord_uncertainty=params.coord_uncertainty
             )
 
             occurrence_filter = create_occurrence_filter_sql(filter_payload)
@@ -201,7 +205,8 @@ async def get_tile(
     include_inat: bool = Query(default=True),
     datasets: list[str] = Query(default=[]),
     date_start: str | None = Query(default=None),
-    date_end: str | None = Query(default=None)
+    date_end: str | None = Query(default=None),
+    coord_uncertainty: int | None = Query(default=None)
 ):
     """
     Get map tiles for observations data as Mapbox Vector Tiles
@@ -213,6 +218,7 @@ async def get_tile(
         datasets (list[str]): List of desired dataset IDs
         date_start (str): Minimum desired date
         date_end (str): Maximum desired date
+        coord_uncertainty (int): Maximum desired coordinate uncertainty in meters
         x (int): X value of tile
         y (int): Y value of tile
         z (int): Z value of tile (zoom)
@@ -227,9 +233,10 @@ async def get_tile(
         filter_payload = OccurrenceFilters(
             taxon_ids=[taxon_id],
             include_inat=include_inat,
-            datasets=datasets,
             date_start=date_start,
             date_end=date_end,
+            datasets=datasets,
+            coord_uncertainty=coord_uncertainty,
         )
 
         occurrence_filter = create_occurrence_filter_sql(filter_payload)

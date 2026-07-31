@@ -3,6 +3,7 @@
     import GeoSearch from '../GeoSearch.svelte';
     import SearchbarCard from '../../common/SearchbarCard.svelte';
     import type { RegionInfo } from '../../types/api';
+    import InfoButton from '../../common/InfoButton.svelte';
 
     const filtersContext = getFiltersContext();
 
@@ -10,7 +11,7 @@
         header?: string;
     };
 
-    const { header = 'Regions Present' }: GeoFiltersProps = $props();
+    const { header = 'Regions' }: GeoFiltersProps = $props();
 
     type RawCountySuggestion = {
         'county': string,
@@ -58,12 +59,12 @@
 
     function handleRegionSelect(suggestion: RegionInfo) {
         if (!suggestion.id) return;
-        filtersContext.region.add(suggestion)
+        filtersContext.regions.add(suggestion)
     }
 
     function handleRemoveRegion(id: string | null) {
         if (!id) return;
-        filtersContext.region.remove(id);
+        filtersContext.regions.remove(id);
     }
 </script>
 
@@ -88,9 +89,16 @@
 <div
     class="geographic-filter filters-section"
 >
-    <div class="filters-section-header">{header}</div>
+    <div class="filters-section-header">
+        {header}
+        <InfoButton type="tooltip">
+            <span>
+                Filter to those taxa which have been found in the regions specified below. Only the coordinates of the record are considered for this filter—not the record's uncertainty radius.
+            </span>
+        </InfoButton>
+    </div>
     <div id="geo-filters" class="filters-section-content">
-        <div class="geo-filters-item filters-section" class:active={filtersContext.region.items.some((r) => r.regionType === "county")}>
+        <div class="geo-filters-item filters-section" class:active={filtersContext.regions.items.some((r) => r.regionType === "county")}>
             <span> County </span>
             <GeoSearch 
                 placeholder="Search counties..." 
@@ -99,12 +107,12 @@
                 suggestionRow={countyRow} 
                 handleSelect={handleRegionSelect}/>
             <div class="county-cards">
-                {#each filtersContext.region.items.filter((r) => r.regionType === 'county') as county}
+                {#each filtersContext.regions.items.filter((r) => r.regionType === 'county') as county}
                     <SearchbarCard label={county.name} value={county.id} handleRemoveCard={handleRemoveRegion}/>
                 {/each}
             </div>
         </div>
-        <div class="geo-filters-item filters-section" class:active={filtersContext.region.items.some((r) => r.regionType === "park")}>
+        <div class="geo-filters-item filters-section" class:active={filtersContext.regions.items.some((r) => r.regionType === "park")}>
             <span> Park </span>
             <GeoSearch 
                 placeholder="Search parks..."
@@ -114,7 +122,7 @@
                 handleSelect={handleRegionSelect}
                 />
             <div class="parks-cards">
-                {#each filtersContext.region.items.filter((r) => r.regionType === 'park') as park}
+                {#each filtersContext.regions.items.filter((r) => r.regionType === 'park') as park}
                     <SearchbarCard label={park.name} value={park.id} handleRemoveCard={handleRemoveRegion}/>
                 {/each}
             </div>

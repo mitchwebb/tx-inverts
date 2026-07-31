@@ -91,6 +91,11 @@ _all_indexes = [
         table=GBIF_OBSERVATIONS_TABLE,
         clause=sql.SQL('(dataset_key)')
     ),
+    IndexDefinition(
+        name='idx_gbif_observations_coordinate_uncertainty_in_meters',
+        table=GBIF_OBSERVATIONS_TABLE,
+        clause=sql.SQL('(coordinate_uncertainty_in_meters)')
+    ),
 
     ### BACKBONE ###
 

@@ -6,20 +6,6 @@ import type { makeIDCollection } from './collection.svelte';
  * These should be used to transfer params between URL and Contexts
  */
 
-// export const numberCodec = (
-//     defaultValue: number | null = null
-// ): ParamCodec<number | null> => ({
-//     toURL(value) {
-//         if (value == null || value === defaultValue) return null;
-//         return [String(value)];
-//     },
-//     fromURL(values) {
-//         if (values.length === 0) return defaultValue;
-//         const n = Number(values[0]);
-//         return Number.isNaN(n) ? defaultValue : n;
-//     },
-// });
-
 export const booleanURLCodec = (
     defaultValue: boolean
 ): URLParamCodec<boolean> => ({
@@ -40,6 +26,17 @@ export const stringArrayURLCodec = (): URLParamCodec<string[]> => ({
     },
     fromURL(values) {
         return [...new Set(values)];
+    },
+});
+
+export const numberURLCodec = (): URLParamCodec<number> => ({
+    toURL(value) {
+        if (value === null) return null; // omit defaults
+        return [value.toString()];
+    },
+    fromURL(values) {
+        const parsed = Number(values[0]);
+        return Number.isNaN(parsed) ? null : parsed;
     },
 });
 

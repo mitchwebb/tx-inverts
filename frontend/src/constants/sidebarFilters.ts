@@ -5,14 +5,14 @@ import {
 
 // The scope of a given filter--whether it targets taxa or observation data
 // This is used to trigger certain warnings
-export type FilterDomain = 'observations' | 'taxa';
+export type FiltersDomain = 'observations' | 'taxa';
 
 // Grab defaults from initial state object
 const FILTER_DEFAULTS = initialFiltersState;
 
 export type SidebarFilterMetaItem<T = unknown> = {
     default: T;
-    domain: FilterDomain[];
+    domain: FiltersDomain[];
     count: boolean;
     group?: string;
     isActive?: (value: T) => boolean;
@@ -24,11 +24,6 @@ export const SIDEBAR_FILTER_META: Record<
     keyof FiltersState,
     SidebarFilterMetaItem<any>
 > = {
-    filterTaxonIDs: {
-        default: FILTER_DEFAULTS.filterTaxonIDs,
-        domain: ['taxa'],
-        count: true,
-    },
     nSRanks: {
         default: FILTER_DEFAULTS.nSRanks,
         domain: ['taxa'],
@@ -61,11 +56,16 @@ export const SIDEBAR_FILTER_META: Record<
         domain: ['taxa'],
         count: true,
     },
-    region: {
-        default: FILTER_DEFAULTS.region,
+    regions: {
+        default: FILTER_DEFAULTS.regions,
         domain: ['taxa'],
         count: true,
         isActive: (value) => value.ids.length > 0,
+    },
+    coordUncertainty: {
+        default: FILTER_DEFAULTS.coordUncertainty,
+        domain: ['observations'],
+        count: true,
     },
 } satisfies {
     [K in keyof FiltersState]: SidebarFilterMetaItem<FiltersState[K]>;

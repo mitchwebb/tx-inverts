@@ -16,6 +16,8 @@ import {
     collectionObjectURLCodec,
     stringArrayURLCodec,
     stringURLCodec,
+    numberArrayURLCodec,
+    numberURLCodec,
 } from '../util/router';
 import type { TaxonomicRank } from '../types/taxa';
 import type { makeIDCollection } from '../util/collection.svelte';
@@ -26,6 +28,17 @@ export function makeSyncedKeys<
 >(obj: T): T {
     return obj;
 }
+
+export type RouterSyncedKey =
+    | 'inat'
+    | 'dataset'
+    | 'status'
+    | 'rank'
+    | 'd1'
+    | 'd2'
+    | 'region'
+    | 'uncertainty'
+    | 'taxon';
 
 // Collect all context keys synced with router URL params and match them with their contexts and codecs
 // This is used to set contexts from URL params and vice-versa
@@ -54,11 +67,15 @@ export const routerSyncedKeys = {
                 param: 'd2',
                 codec: dateURLCodec(),
             },
-            region: {
+            regions: {
                 param: 'region',
                 codec: collectionObjectURLCodec() as URLParamCodec<
                     ReturnType<typeof makeIDCollection<RegionInfo, string>>
                 >,
+            },
+            coordUncertainty: {
+                param: 'uncertainty',
+                codec: numberURLCodec() as URLParamCodec<number>,
             },
         }),
     },

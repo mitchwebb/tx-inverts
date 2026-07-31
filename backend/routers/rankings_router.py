@@ -47,6 +47,7 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
             date_start=params.date_start,
             date_end=params.date_end,
             datasets=params.datasets,
+            coord_uncertainty=params.coord_uncertainty
         )
 
         async with pool.connection() as conn:
@@ -103,7 +104,8 @@ async def get_range_extent_geom(params: SingleTaxonObsRequestParams, request: Re
             include_inat=params.include_inat,
             date_end=params.date_end,
             date_start=params.date_start,
-            datasets=params.datasets
+            datasets=params.datasets,
+            coord_uncertainty=params.coord_uncertainty
         )
 
         async with pool.connection() as conn:

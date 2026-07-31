@@ -25,36 +25,35 @@
     type RouteDefinition = {
         pathname: RouterPath;
         component: Component; // Corresponding page component
-        relevantParams: string[];
+        showParams: boolean;
     };
 
-    // Possible routes and their relevant parameters (and default values)
-    // This determines which params to show in the URL (or populate from the URL on page-load)
+    // Possible routes and their relevant components. showParams determines if URL params should be included in the URL.
     export const routeDefinitions: RouteDefinition[] = [
         {
             pathname: '/map',
             component: MapPage,
-            relevantParams: ['taxon', 'inat', 'source', 'd1', 'd2'],
+            showParams: true,
         },
         {
             pathname: '/backbone',
             component: BackbonePage,
-            relevantParams: ['taxon', 'inat'],
+            showParams: true,
         },
         {
             pathname: '/rankings',
             component: RankingPage,
-            relevantParams: ['taxon', 'inat', 'status', 'd1', 'd2', 'region'],
+            showParams: true,
         },
         {
             pathname: '/about/txinverts',
             component: AboutPage,
-            relevantParams: [],
+            showParams: false,
         },
         {
             pathname: '/about/walkthrough',
             component: WalkthroughPage,
-            relevantParams: [],
+            showParams: false,
         },
     ];
 
@@ -69,8 +68,9 @@
         const currentRoute = getCurrentRoute(baseURL);
         if (!currentRoute) return baseURL;
 
-        const { relevantParams } = currentRoute;
         const params = new URLSearchParams();
+
+        console.log(params);
 
         for (const { getContext, keys } of Object.values(routerSyncedKeys)) {
             const context = getContext();
@@ -78,12 +78,10 @@
                 // Get param value
                 const value = (context as any)[contextKey];
 
-                // If param is irrelevant, skip it
-                if (!relevantParams.includes(param)) continue;
-
                 // Convert to URL string
                 const serialized = codec.toURL(value);
                 if (!serialized) continue;
+
                 // Add to collected URL params
                 params.delete(param);
                 for (const v of serialized) params.append(param, v);
@@ -110,14 +108,9 @@
             return;
         }
 
-        const { relevantParams } = currentRoute;
-
         for (const { getContext, keys } of Object.values(routerSyncedKeys)) {
             const context = getContext();
             for (const [contextKey, { param, codec }] of Object.entries(keys)) {
-                // Skip params that are not relevant to requested path
-                if (!relevantParams.includes(param)) continue;
-
                 // Else populate relevant params to their corresponding contexts
                 const values = url.searchParams.getAll(param);
                 if (values.length > 0) {
@@ -145,21 +138,27 @@
         regionParams.forEach(async (id) => {
             const regionInfo: RegionInfo | null = await getRegionInfo(id);
             if (regionInfo) {
-                filtersContext.region.add(regionInfo);
+                filtersContext.regions.add(regionInfo);
             }
         });
+
+        // Special case for initializing coord uncertainty limit (1000m)
+        const uncertaintyParam = url.searchParams.get('uncertainty');
+        if (!uncertaintyParam) {
+            filtersContext.coordUncertainty == 1000;
+        }
 
         // Set initial page component
         PageComponent = currentRoute.component;
     });
 
-    // Set initial URL in context for parsing into various contexts
-    onMount(() => {});
+    // START HERE: Why don't we populate uncertainty on first load???
 
     // When any routerSyncedKey changes in their respective context, update URL
     // Also, when changing pages, set irrelevant params to null
     $effect(() => {
         const newURL = buildURLFromContext(routerContext.url);
+        console.warn('what is going on here');
         if (routerContext.url.toString() !== newURL.toString()) {
             routerContext.navigate(newURL.toString(), true);
         }

@@ -1,12 +1,12 @@
 <script lang="ts">
     import SearchbarCard from '../../common/SearchbarCard.svelte';
+    import type { FiltersDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
-    import { getFiltersContext } from '../../contexts/filtersContext';
     import { isItalicizedRank } from '../../util/taxa';
     import TaxaSearch from '../TaxaSearch.svelte';
 
     type TaxonFilterProps = {
-        domain: 'taxa' | 'observations';
+        domain: FiltersDomain;
         header?: string;
         excludeSpecies?: boolean; // Determines whether or not to exclude species and below
     };
@@ -18,19 +18,24 @@
     }: TaxonFilterProps = $props();
 
     const taxaContext = getActiveTaxaContext();
-    const filtersContext = getFiltersContext();
 
     function handleRemoveTaxon(taxonID: string | null) {
         if (!taxonID) return;
         taxaContext.taxa.remove(Number(taxonID));
     }
+
+    const higherTaxaActive = $derived(
+        taxaContext.taxa.ids.some((id) => {
+            const taxon = taxaContext.taxa.get(id);
+            const taxonRank = taxon?.info.taxonRank;
+            return taxonRank && !['species', 'subspecies'].includes(taxonRank);
+        })
+    );
 </script>
 
 <div
     class="taxon-filter filters-section"
-    class:active={domain === 'taxa'
-        ? filtersContext.filterTaxonIDs.length
-        : false}
+    class:active={domain === 'taxa' ? higherTaxaActive : false}
 >
     <div class="filters-section-header">{header}</div>
     <div class="filters-section-content">
@@ -80,7 +85,6 @@
     #taxon-cards-wrapper {
         display: flex;
         flex-direction: column;
-        /* border-radius: 3px; */
         gap: 0.25rem;
         width: fit-content;
         width: 100%;
@@ -96,9 +100,11 @@
         flex-direction: column;
         gap: 0.5rem;
         max-width: 350px;
+        height: fit-content;
     }
     .taxon-filter {
         width: 100%;
         min-width: 250px;
+        flex-basis: 75%;
     }
 </style>

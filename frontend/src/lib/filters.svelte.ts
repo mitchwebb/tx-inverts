@@ -1,6 +1,6 @@
 import {
     SIDEBAR_FILTER_META,
-    type FilterDomain,
+    type FiltersDomain,
     type SidebarFilterMetaItem,
 } from '../constants/sidebarFilters';
 import { type FiltersState } from '../contexts/filtersContext';
@@ -10,7 +10,7 @@ import { type FiltersState } from '../contexts/filtersContext';
 // Optionally, count only those filters with a defined domain or path
 export function countActiveFilters(
     filters: FiltersState,
-    domain?: FilterDomain | null // Include only filters relevant to domain
+    domain?: FiltersDomain | null // Include only filters relevant to domain
     // path?: RouterPath | null // Include only filters relevant to path
 ): number {
     let activeGroups = new Set<string>();

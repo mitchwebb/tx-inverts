@@ -14,9 +14,14 @@
     type FiltersWrapperProps = {
         header: string;
         children: Snippet;
+        includeButtons?: boolean;
     };
 
-    const { header, children }: FiltersWrapperProps = $props();
+    const {
+        header,
+        children,
+        includeButtons = true,
+    }: FiltersWrapperProps = $props();
 
     const modalContext = getModalContext();
     const taxaContext = getActiveTaxaContext();
@@ -42,25 +47,26 @@
     <div id="filters-content">
         {@render children?.()}
     </div>
-    <div class="apply-filters-section">
-        <div class="filters-buttons-wrapper">
-            <button
-                class="clear-filters-button button"
-                onclick={handleClearFilters}>Clear All</button
-            >
-            <button
-                class="apply-filters-button button"
-                onclick={handleApplyFilters}>Apply Filters</button
-            >
+    {#if includeButtons}
+        <div class="apply-filters-section">
+            <div class="filters-buttons-wrapper">
+                <button
+                    class="clear-filters-button button"
+                    onclick={handleClearFilters}>Clear All</button
+                >
+                <button
+                    class="apply-filters-button button"
+                    onclick={handleApplyFilters}>Apply Filters</button
+                >
+            </div>
         </div>
-    </div>
+    {/if}
 </div>
 
 <style>
     .filters-header {
-        margin: 0.5rem;
+        margin: 0.5rem 0.5rem 0 0.5rem;
         display: flex;
-        justify-content: center;
         user-select: none;
     }
     .filters-content-wrapper {
@@ -73,10 +79,8 @@
         min-width: 200px;
         width: fit-content;
         max-width: 800px;
-        /* max-height: 80dvh; */
     }
     #filters-content {
-        /* overflow-y: auto; */
         flex: 1;
         min-height: 0;
         display: flex;

@@ -5,10 +5,11 @@
         type AirDatepickerPayload,
     } from '../../common/DatePicker.svelte';
     import { isMobile } from '../../contexts/device';
-    import type { FilterDomain } from '../../constants/sidebarFilters';
+    import type { FiltersDomain } from '../../constants/sidebarFilters';
+    import LoadingIcon from '../../assets/LoadingIcon.svelte';
 
     type DateFilterProps = {
-        domain?: FilterDomain; // Determines min/max behavior
+        domain?: FiltersDomain; // Determines min/max behavior
         header?: string;
     };
 
@@ -53,16 +54,28 @@
         if (domain === 'taxa') return undefined;
         return getTaxonDates('dateMax').sort((a, b) => (a < b ? 1 : -1))[0];
     });
+    
+    // Determine if observationsMetrics are loading for any taxa
+    const observationsMetricsLoading = $derived(
+        Object.values(taxonContext.taxa.items).some(
+            (taxon) => taxon.observationMetricsLoading
+        )
+    )
 
-    // TODO: Once we add mobile support, AirDatepicker has an isMobile arg
 </script>
 
 <div
     class="date-filters-section filters-section"
     class:active={filtersContext.dateStart || filtersContext.dateEnd}
+    class:loading-blink={observationsMetricsLoading}
 >
     <div class="filters-section-header">
         <span>{header}</span>
+        {#if observationsMetricsLoading}
+            <div class="loading-icon icon">
+                <LoadingIcon />
+            </div>
+        {/if}
     </div>
     <div class="filters-section-content">
         <div class="date-filters-wrapper">
@@ -102,6 +115,9 @@
 <style>
     .filters-section-header {
         width: 100%;
+        display: flex;
+        gap: .5rem;
+
     }
     .date-filters-wrapper {
         display: flex;
@@ -109,9 +125,11 @@
         gap: 0.5rem;
         flex-wrap: wrap;
         position: relative;
+        font-size: .8rem;
     }
     :global(#date-start-filter),
     :global(#date-end-filter) {
+        min-width: 125px;
         max-width: 200px;
         flex: 1 1 75px;
     }

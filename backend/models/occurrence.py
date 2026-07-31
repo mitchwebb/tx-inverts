@@ -21,6 +21,7 @@ class OccurrenceFilters(BaseModel):
     date_start: date | str | None = None
     date_end: date | str | None = None
     regions: List[str] | None = None
+    coord_uncertainty: int | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

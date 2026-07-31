@@ -22,17 +22,19 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
     """
 
     # Create taxon_filter (unless skip_taxa == True, then set to 'TRUE' as a no-op condition)
-    taxon_filter = sql.SQL('TRUE') if skip_taxa else create_occurrence_taxon_filter(
-        filter.taxon_ids, filter.include_invasives)
+    taxon_filter = sql.SQL("TRUE") if skip_taxa else create_occurrence_taxon_filter(
+        filter.taxon_ids,
+        filter.include_invasives
+    )
 
     # If no individual datasets are selected, datasets_clause is empty
     if not filter.datasets:
         datasets_clause = sql.SQL("")
     # Else, require dataset_key in datasets filter
     else:
-        dataset_literals = sql.SQL(', ').join(
+        dataset_literals = sql.SQL(", ").join(
             sql.Literal(p) for p in filter.datasets)
-        datasets_clause = sql.SQL('AND dataset_key IN ({datasets})').format(
+        datasets_clause = sql.SQL("AND dataset_key IN ({datasets})").format(
             datasets=dataset_literals
         )
 
@@ -40,21 +42,29 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
     if not filter.date_start:
         date_start_clause = sql.SQL("")
     else:
-        date_start_clause = sql.SQL('AND collection_start_date >= {date_start}').format(
+        date_start_clause = sql.SQL("AND collection_start_date >= {date_start}").format(
             date_start=sql.Literal(filter.date_start))
 
     # Same with date_end
     if not filter.date_end:
         date_end_clause = sql.SQL("")
     else:
-        date_end_clause = sql.SQL('AND collection_end_date <= {date_end}').format(
+        date_end_clause = sql.SQL("AND collection_end_date <= {date_end}").format(
             date_end=sql.Literal(filter.date_end))
+
+    # If coord_uncertainty provided, add clause, else skip
+    if not filter.coord_uncertainty:
+        uncertainty_clause = sql.SQL("")
+    else:
+        uncertainty_clause = sql.SQL(
+            "AND (coordinate_uncertainty_in_meters IS NULL OR coordinate_uncertainty_in_meters <= {coord_uncertainty})"
+        ).format(coord_uncertainty=sql.Literal(filter.coord_uncertainty))
 
     # If regions provided, add clause, else skip
     if not filter.regions:
         region_clause = sql.SQL("")
     else:
-        region_literals = sql.SQL(', ').join(
+        region_literals = sql.SQL(", ").join(
             sql.Literal(r) for r in filter.regions)
         # Observations_regions_table contains each occurrence record matched to region_ids
         region_clause = sql.SQL("""
@@ -77,6 +87,7 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
         AND (collection_start_date) IS NOT NULL
         {date_start_clause}
         {date_end_clause}
+        {uncertainty_clause}
         {region_clause}
     """).format(
         include_inat=sql.Literal(filter.include_inat),
@@ -85,6 +96,7 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
         date_end_clause=date_end_clause,
         region_clause=region_clause,
         taxon_filter=taxon_filter,
+        uncertainty_clause=uncertainty_clause,
         observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
     )
 

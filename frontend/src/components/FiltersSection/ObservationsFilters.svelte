@@ -8,12 +8,14 @@
     import DateFilterSection from './DateFilterSection.svelte';
     import FiltersWrapper from './FiltersWrapper.svelte';
     import TaxonFilterSection from './TaxonFilterSection.svelte';
+    import UncertaintyFilterSection from './UncertaintyFilterSection.svelte';
     import './filtersSection.css';
 </script>
 
 <FiltersWrapper header={'Filter Occurrences'}>
     <div class="horizontal-filter-group">
         <TaxonFilterSection domain="observations" />
+        <UncertaintyFilterSection />
         <DateFilterSection header="Date Range" />
     </div>
     <DatasetFilterSection domain="observations" />

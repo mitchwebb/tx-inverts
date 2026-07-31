@@ -2,23 +2,20 @@ import { datasets } from '../contexts/Datasets';
 import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawDateRange } from '../types/api';
+import { serializeFilters } from '../util/requests';
 
 // Get observation counts for each dataset for current taxon
 export async function getDatasetCounts(
-    activeTaxonID: ActiveTaxon['taxonID'],
-    includeINat: FiltersState['includeINat'],
-    dateStart: FiltersState['dateStart'],
-    dateEnd: FiltersState['dateEnd']
+    taxonID: ActiveTaxon['taxonID'],
+    filters: FiltersState
 ) {
     try {
         const response = await fetch('/server/occurrence/get_dataset_counts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                taxon_id: activeTaxonID,
-                include_inat: includeINat,
-                date_start: dateStart?.toISOString(),
-                date_end: dateEnd?.toISOString(),
+                taxon_id: taxonID,
+                ...serializeFilters(filters),
             }),
         });
         if (!response.ok) {
@@ -72,8 +69,8 @@ export async function loadDatasets() {
 
 // Fetches observation date ranges based on current taxon and inat inclusion
 export async function getObservationDates(
-    activeTaxonID: ActiveTaxon['taxonID'],
-    includeINat: FiltersState['includeINat']
+    taxonID: ActiveTaxon['taxonID'],
+    filters: FiltersState
 ) {
     try {
         const response = await fetch(
@@ -82,8 +79,8 @@ export async function getObservationDates(
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    taxon_id: activeTaxonID,
-                    include_inat: includeINat,
+                    taxon_id: taxonID,
+                    ...serializeFilters(filters),
                 }),
             }
         );
@@ -100,10 +97,3 @@ export async function getObservationDates(
         return null;
     }
 }
-
-// export async function downloadDWCOccurrences(
-//     activeTaxonID: ActiveTaxonState['taxonID'],
-//     includeINat: FiltersState['includeINat'],
-//     dateStart: FiltersState['dateStart'],
-//     dateEnd: FiltersState['dateEnd']
-// );

@@ -12,8 +12,8 @@ export type FiltersState = {
     nSRanks: NSRank[];
     dateStart: Date | null;
     dateEnd: Date | null;
-    region: ReturnType<typeof makeIDCollection<RegionInfo, string>>; // UUIDs for all selected regions
-    filterTaxonIDs: number[];
+    regions: ReturnType<typeof makeIDCollection<RegionInfo, string>>; // UUIDs for all selected regions
+    coordUncertainty: number | null;
 };
 
 export const initialFiltersState: FiltersState = {
@@ -23,8 +23,8 @@ export const initialFiltersState: FiltersState = {
     nSRanks: [],
     dateStart: null,
     dateEnd: null,
-    region: makeIDCollection<RegionInfo, string>((r) => r.id), // Dummy collection
-    filterTaxonIDs: [],
+    regions: makeIDCollection<RegionInfo, string>((r) => r.id), // Dummy collection
+    coordUncertainty: null,
 };
 
 export function setFiltersContext(taxonState: FiltersState) {

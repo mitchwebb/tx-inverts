@@ -33,7 +33,7 @@
         type ModalState,
     } from '../contexts/modalContext';
     import Modal from './Modal.svelte';
-    import { getObservationDates, getDatasetCounts } from '../lib/occurrence';
+    import { getDatasetCounts, getObservationDates } from '../lib/occurrence';
     import {
         getFiltersContext,
         initialFiltersState,
@@ -95,7 +95,7 @@
     const taxaContext = getActiveTaxaContext();
 
     const filtersState: FiltersState = $state(initialFiltersState);
-    filtersState.region = makeIDCollection<RegionInfo, string>((c) => c.id);
+    filtersState.regions = makeIDCollection<RegionInfo, string>((c) => c.id);
     setFiltersContext(filtersState);
     const filtersContext = getFiltersContext();
 
@@ -119,18 +119,10 @@
 
     // Get list of qualified taxonIDs given various filters (for rankings page)
     $effect(() => {
-        const regionIDs = filtersContext.region.ids;
-        const dateStart = filtersContext.dateStart;
-        const dateEnd = filtersContext.dateEnd;
-        const datasets = filtersContext.datasets;
-
         untrack(async () => {
             rankingsState.ranksLoading = true;
             const qualifiedTaxa = await getQualifiedTaxa(
-                dateStart,
-                dateEnd,
-                datasets,
-                regionIDs
+                filtersContext
             );
             rankingsState.qualifiedTaxonIDs = qualifiedTaxa;
             rankingsState.ranksLoading = false;
@@ -171,10 +163,7 @@
 
     // Get NSValues for all taxa on filters change
     $effect(() => {
-        const includeINat = filtersContext.includeINat !== false;
-        const dateStart = filtersContext.dateStart;
-        const dateEnd = filtersContext.dateEnd;
-        const datasets = filtersContext.datasets;
+        const filters = filtersContext;
 
         untrack(() => {
             for (const taxonID of taxaContext.taxa.ids) {
@@ -182,10 +171,7 @@
                 if (!taxon) continue;
                 loadNSValues(
                     taxonID,
-                    includeINat,
-                    dateStart,
-                    dateEnd,
-                    datasets,
+                    filters,
                 );
             }
         });
@@ -194,6 +180,7 @@
     // Get NSValues for currently empty taxa on taxonIDs change
     $effect(() => {
         const taxonIDs = taxaContext.taxa.ids;
+        const filters = filtersContext;
 
         untrack(() => {
             for (const taxonID of taxonIDs) {
@@ -203,16 +190,9 @@
                 // observationCount is the easiest to grab
                 if (!taxon || taxon.nSValues.observationCount !== null) continue;
 
-                const includeINat = filtersContext.includeINat !== false;
-                const dateStart = filtersContext.dateStart;
-                const dateEnd = filtersContext.dateEnd;
-                const datasets = filtersContext.datasets;
                 loadNSValues(
                     taxonID,
-                    includeINat,
-                    dateStart,
-                    dateEnd,
-                    datasets,
+                    filters
                 );
             }
         });
@@ -220,10 +200,7 @@
 
     async function loadNSValues(
         taxonID: ActiveTaxaState['taxa']['items'][0]['taxonID'],
-        includeINat: FiltersState['includeINat'],
-        dateStart: FiltersState['dateStart'],
-        dateEnd: FiltersState['dateEnd'],
-        datasets: FiltersState['datasets'],
+        filters: FiltersState
     ) {
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
@@ -232,10 +209,7 @@
         try {
             const rawNSResult = await getNSMetrics(
                 taxonID,
-                includeINat,
-                dateStart,
-                dateEnd,
-                datasets,
+                filters,
                 abortController.signal
             );
             taxon.nSValues = normalizeAPIResponse<NSValues>(
@@ -251,10 +225,6 @@
 
     // Get institution counts in context (on activeTaxonID and select filter changes)
     $effect(() => {
-        const includeINat = filtersContext.includeINat !== false;
-        const dateStart = filtersContext.dateStart;
-        const dateEnd = filtersContext.dateEnd;
-
         for (const taxonID of taxaContext.taxa.ids) {
             const taxon = taxaContext.taxa.get(taxonID);
             if (!taxon) return;
@@ -265,13 +235,8 @@
                 try {
                     // Run both async calls concurrently
                     const [datasetCounts, dateRange] = await Promise.all([
-                        getDatasetCounts(
-                            taxonID,
-                            includeINat,
-                            dateStart,
-                            dateEnd
-                        ),
-                        getObservationDates(taxonID, includeINat),
+                        getDatasetCounts(taxonID, filtersContext),
+                        getObservationDates(taxonID, filtersContext),
                     ]);
                     // If publishers are already selected, but they do not have this taxon,
                     // make sure to include them in the dataset counts with a value of 0
@@ -298,15 +263,6 @@
                 }
             })();
         }
-    });
-
-    // Derive filterTaxonIDs from taxaContext.taxa ABOVE species rank
-    $effect(() => {
-        filtersContext.filterTaxonIDs = taxaContext.taxa.ids.filter((id) => {
-            const taxon = taxaContext.taxa.get(id);
-            const taxonRank = taxon?.info.taxonRank;
-            return taxonRank && !['species', 'subspecies'].includes(taxonRank);
-        });
     });
 </script>
 

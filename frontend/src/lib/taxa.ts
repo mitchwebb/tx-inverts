@@ -3,6 +3,7 @@ import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawNSValues, RawTaxonInfo, TaxonNodeType } from '../types/api';
 import { deduplicateStringArray } from '../util/deduplicateArray';
+import { serializeFilters } from '../util/requests';
 
 /**
  * Simple request to GBIF API to get common names for a given taxonID
@@ -64,10 +65,7 @@ let abortController = new AbortController();
 // Get nSMetrics of activeSpecies (plus observationCount since it's convenient)
 export async function getNSMetrics(
     taxonID: ActiveTaxon['taxonID'],
-    includeINat: FiltersState['includeINat'],
-    dateStart: FiltersState['dateStart'],
-    dateEnd: FiltersState['dateEnd'],
-    datasets: FiltersState['datasets'],
+    filters: FiltersState,
     signal?: AbortSignal
 ) {
     // Cancel previous request if necessary
@@ -81,10 +79,7 @@ export async function getNSMetrics(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             taxon_id: taxonID,
-            include_inat: includeINat,
-            date_start: dateStart?.toISOString(),
-            date_end: dateEnd?.toISOString(),
-            datasets: [...datasets],
+            ...serializeFilters(filters),
         }),
     });
     if (!response.ok) {
@@ -121,14 +116,16 @@ export async function loadBackbone() {
 
 // Get list of qualified taxon_ids from backend, given various taxa/observation filters
 export async function getQualifiedTaxa(
-    dateStart: FiltersState['dateStart'],
-    dateEnd: FiltersState['dateEnd'],
-    datasets: FiltersState['datasets'],
-    regionIDs: string[],
+    filters: FiltersState,
     signal?: AbortSignal
 ) {
     const url = 'server/taxa/get_qualified_taxa';
-    if (!dateStart && !dateEnd && !datasets.length && !regionIDs.length)
+    if (
+        !filters.dateStart &&
+        !filters.dateEnd &&
+        !filters.datasets.length &&
+        !filters.regions.items.length
+    )
         return null;
     try {
         const response = await fetch(url, {
@@ -136,11 +133,7 @@ export async function getQualifiedTaxa(
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                taxon_ids: [1],
-                date_start: dateStart?.toISOString(),
-                date_end: dateEnd?.toISOString(),
-                datasets: [...datasets],
-                regions: regionIDs,
+                ...serializeFilters(filters),
             }),
         });
         if (!response.ok) {

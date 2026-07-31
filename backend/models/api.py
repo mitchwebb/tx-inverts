@@ -27,6 +27,7 @@ class ObsRequestParams(BaseModel):
     date_end: str | None = None
     include_invasives: bool | None = False
     regions: List[str] | None = None
+    coord_uncertainty: int | None = None
 
 
 # Class for observations requests for multiple taxa
@@ -41,7 +42,7 @@ class SingleTaxonObsRequestParams(TaxonRequestParams, ObsRequestParams):
 
 # Params used to make download request queries
 class DownloadRequestParams(MultiTaxaObsRequestParams):
-    estimate: bool = False  # If true, trigger query size estimate
+    get_estimate: bool = False  # If true, trigger query size estimate
 
 
 class TextData(BaseModel):
