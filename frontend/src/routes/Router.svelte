@@ -70,8 +70,6 @@
 
         const params = new URLSearchParams();
 
-        console.log(params);
-
         for (const { getContext, keys } of Object.values(routerSyncedKeys)) {
             const context = getContext();
             for (const [contextKey, { param, codec }] of Object.entries(keys)) {
@@ -158,7 +156,7 @@
     // Also, when changing pages, set irrelevant params to null
     $effect(() => {
         const newURL = buildURLFromContext(routerContext.url);
-        console.warn('what is going on here');
+
         if (routerContext.url.toString() !== newURL.toString()) {
             routerContext.navigate(newURL.toString(), true);
         }

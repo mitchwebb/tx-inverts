@@ -215,13 +215,14 @@ async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request
     try:
         # Create occurrence filter item
         filter_payload = OccurrenceFilters(
-            # taxonID defaults to [1], which is correct here
+            taxon_ids=params.taxon_ids,  # Derive qualified taxa from ALL taxa
             include_inat=params.include_inat,
             date_start=params.date_start,
             date_end=params.date_end,
-            datasets=params.datasets
-            # Coord uncertainty not used here
-        )
+            datasets=params.datasets,
+            coord_uncertainty=params.coord_uncertainty)
+
+        print(params.datasets)
         # Create occurrence filter sql chunk
         occurrence_filter = create_occurrence_filter_sql(filter_payload)
 

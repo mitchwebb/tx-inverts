@@ -115,16 +115,18 @@ export async function loadBackbone() {
 }
 
 // Get list of qualified taxon_ids from backend, given various taxa/observation filters
+// DOES NOT filter by parent taxa (uses Animalia explicitly)
 export async function getQualifiedTaxa(
-    filters: FiltersState,
+    filters: Partial<FiltersState>,
     signal?: AbortSignal
 ) {
     const url = 'server/taxa/get_qualified_taxa';
     if (
         !filters.dateStart &&
         !filters.dateEnd &&
-        !filters.datasets.length &&
-        !filters.regions.items.length
+        !filters?.datasets?.length &&
+        !filters?.regions?.items.length &&
+        !filters.coordUncertainty
     )
         return null;
     try {
@@ -133,6 +135,7 @@ export async function getQualifiedTaxa(
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                taxon_ids: [1],
                 ...serializeFilters(filters),
             }),
         });

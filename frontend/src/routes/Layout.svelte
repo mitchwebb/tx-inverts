@@ -119,11 +119,23 @@
 
     // Get list of qualified taxonIDs given various filters (for rankings page)
     $effect(() => {
+        const regionsIDs = filtersContext.regions.ids;
+        const dateStart = filtersContext.dateStart;
+        const dateEnd = filtersContext.dateEnd;
+        const datasets = filtersContext.datasets;
+        const taxonRank = filtersContext.taxonRank;
+        const coordUncertainty = filtersContext.coordUncertainty;
+
         untrack(async () => {
             rankingsState.ranksLoading = true;
-            const qualifiedTaxa = await getQualifiedTaxa(
-                filtersContext
-            );
+            const qualifiedTaxa = await getQualifiedTaxa({
+                regions: filtersContext.regions,
+                dateStart,
+                dateEnd,
+                datasets,
+                taxonRank,
+                coordUncertainty,
+            });
             rankingsState.qualifiedTaxonIDs = qualifiedTaxa;
             rankingsState.ranksLoading = false;
         });
@@ -169,10 +181,7 @@
             for (const taxonID of taxaContext.taxa.ids) {
                 const taxon = taxaContext.taxa.get(taxonID);
                 if (!taxon) continue;
-                loadNSValues(
-                    taxonID,
-                    filters,
-                );
+                loadNSValues(taxonID, filters);
             }
         });
     });
@@ -188,12 +197,10 @@
 
                 // Check to make sure taxon exists and that it doesn't already have values
                 // observationCount is the easiest to grab
-                if (!taxon || taxon.nSValues.observationCount !== null) continue;
+                if (!taxon || taxon.nSValues.observationCount !== null)
+                    continue;
 
-                loadNSValues(
-                    taxonID,
-                    filters
-                );
+                loadNSValues(taxonID, filters);
             }
         });
     });
