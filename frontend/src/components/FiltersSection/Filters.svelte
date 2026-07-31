@@ -40,10 +40,10 @@
         {/if}
     </div>
     <div class="vertical-filter-group">
-        <div class="date-filter-section">
-            <DateFilterSection {domain} header="Dates Present" />
-        </div>
-        <GeoFilterSection />
+        <DateFilterSection {domain} header="Dates Present" />
+        {#if domain == 'taxa'}
+            <GeoFilterSection />
+        {/if}
     </div>
     <div class="horizontal-filter-group">
         <DatasetFilterSection {domain} showCounts={domain == 'observations'} />

@@ -14,32 +14,32 @@
     const { header = 'Regions' }: GeoFiltersProps = $props();
 
     type RawCountySuggestion = {
-        'county': string,
-        'id': string,
-    }
+        county: string;
+        id: string;
+    };
     type CountySuggestion = RegionInfo;
 
     // TODO: Make raw type
     type RawParkSuggestion = {
-        'id': string,
-        'prop_name': string,
-        'alt_prop_name': string,
-        'prop_class': string,
-        'owner': string
-    }
+        id: string;
+        prop_name: string;
+        alt_prop_name: string;
+        prop_class: string;
+        owner: string;
+    };
 
     type ParkSuggestion = RegionInfo & {
-        'altPropName': string,
-        'propClass': string,
-        'owner': string
-    }
+        altPropName: string;
+        propClass: string;
+        owner: string;
+    };
 
     function parseCounties(json: RawCountySuggestion[]): CountySuggestion[] {
         return json.map((suggestion) => {
             return {
                 id: suggestion.id,
                 name: suggestion.county,
-                regionType: 'county'
+                regionType: 'county',
             };
         });
     }
@@ -49,17 +49,17 @@
             return {
                 id: result.id,
                 name: result.prop_name,
-                altPropName: result.alt_prop_name, 
+                altPropName: result.alt_prop_name,
                 propClass: result.prop_class,
                 owner: result.owner,
-                regionType: 'park'
-            }
-        })
+                regionType: 'park',
+            };
+        });
     }
 
     function handleRegionSelect(suggestion: RegionInfo) {
         if (!suggestion.id) return;
-        filtersContext.regions.add(suggestion)
+        filtersContext.regions.add(suggestion);
     }
 
     function handleRemoveRegion(id: string | null) {
@@ -86,44 +86,63 @@
     </div>
 {/snippet}
 
-<div
-    class="geographic-filter filters-section"
->
+<div class="geo-filter-section filters-section">
     <div class="filters-section-header">
         {header}
         <InfoButton type="tooltip">
             <span>
-                Filter to those taxa which have been found in the regions specified below. Only the coordinates of the record are considered for this filter—not the record's uncertainty radius.
+                Filter to those taxa which have been found in the regions
+                specified below. Only the coordinates of the record are
+                considered for this filter—not the record's uncertainty radius.
             </span>
         </InfoButton>
     </div>
     <div id="geo-filters" class="filters-section-content">
-        <div class="geo-filters-item filters-section" class:active={filtersContext.regions.items.some((r) => r.regionType === "county")}>
-            <span> County </span>
-            <GeoSearch 
-                placeholder="Search counties..." 
+        <div
+            class="geo-filters-item filters-section"
+            class:active={filtersContext.regions.items.some(
+                (r) => r.regionType === 'county'
+            )}
+        >
+            <span class="filters-subheader"> County </span>
+            <GeoSearch
+                placeholder="Search counties..."
                 pathSuffix="counties"
-                parseJSON={parseCounties} 
-                suggestionRow={countyRow} 
-                handleSelect={handleRegionSelect}/>
+                parseJSON={parseCounties}
+                suggestionRow={countyRow}
+                handleSelect={handleRegionSelect}
+            />
             <div class="county-cards">
                 {#each filtersContext.regions.items.filter((r) => r.regionType === 'county') as county}
-                    <SearchbarCard label={county.name} value={county.id} handleRemoveCard={handleRemoveRegion}/>
+                    <SearchbarCard
+                        label={county.name}
+                        value={county.id}
+                        handleRemoveCard={handleRemoveRegion}
+                    />
                 {/each}
             </div>
         </div>
-        <div class="geo-filters-item filters-section" class:active={filtersContext.regions.items.some((r) => r.regionType === "park")}>
-            <span> Park </span>
-            <GeoSearch 
+        <div
+            class="geo-filters-item filters-section"
+            class:active={filtersContext.regions.items.some(
+                (r) => r.regionType === 'park'
+            )}
+        >
+            <span class="filters-subheader"> Park </span>
+            <GeoSearch
                 placeholder="Search parks..."
                 pathSuffix="parks"
                 parseJSON={parseParks}
                 suggestionRow={parkRow}
                 handleSelect={handleRegionSelect}
-                />
+            />
             <div class="parks-cards">
                 {#each filtersContext.regions.items.filter((r) => r.regionType === 'park') as park}
-                    <SearchbarCard label={park.name} value={park.id} handleRemoveCard={handleRemoveRegion}/>
+                    <SearchbarCard
+                        label={park.name}
+                        value={park.id}
+                        handleRemoveCard={handleRemoveRegion}
+                    />
                 {/each}
             </div>
         </div>
@@ -131,17 +150,22 @@
 </div>
 
 <style>
-    .county-cards, .parks-cards {
+    .geo-filter-section {
+        flex-basis: 75%;
+        width: 100%;
+    }
+    .county-cards,
+    .parks-cards {
         display: flex;
         flex-direction: column;
-        gap: .25rem;
+        gap: 0.25rem;
         width: 100%;
         /* max-width: 250px; */
     }
     .prop-name {
         grid-row: 1;
         grid-column: 1/3;
-        font-size: .9rem;
+        font-size: 0.9rem;
         flex-shrink: 1;
         min-width: 0;
         text-overflow: ellipsis;
@@ -168,9 +192,9 @@
         grid-column: 1/3;
         justify-content: space-between;
         font-style: italic;
-        font-size: .8rem;
+        font-size: 0.8rem;
         width: 100%;
-        gap: .5rem;
+        gap: 0.5rem;
     }
     #geo-filters {
         display: flex;
@@ -181,10 +205,7 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: .5rem;
-        width: 100%;
-    }
-    .geographic-filter {
+        gap: 0.5rem;
         width: 100%;
     }
 </style>

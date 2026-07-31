@@ -252,7 +252,6 @@
     }
     .inat-label {
         text-align: left;
-        /* white-space: nowrap; */
         font-size: 1rem;
     }
     #datasets-header {
@@ -278,7 +277,6 @@
     }
     .institution-name {
         align-self: left;
-        /* white-space: nowrap; */
         min-width: 0;
         text-overflow: ellipsis;
         overflow: hidden;

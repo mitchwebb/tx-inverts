@@ -48,7 +48,7 @@ export const SIDEBAR_FILTER_META: Record<
     },
     includeINat: {
         default: FILTER_DEFAULTS.includeINat,
-        domain: ['observations'],
+        domain: ['observations', 'taxa'],
         count: true,
     },
     taxonRank: {
@@ -56,6 +56,7 @@ export const SIDEBAR_FILTER_META: Record<
         domain: ['taxa'],
         count: true,
     },
+    // TODO: It might make sense to integrate this into observations as well
     regions: {
         default: FILTER_DEFAULTS.regions,
         domain: ['taxa'],
@@ -64,7 +65,7 @@ export const SIDEBAR_FILTER_META: Record<
     },
     coordUncertainty: {
         default: FILTER_DEFAULTS.coordUncertainty,
-        domain: ['observations'],
+        domain: ['observations', 'taxa'],
         count: true,
     },
 } satisfies {

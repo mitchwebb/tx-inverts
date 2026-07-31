@@ -54,14 +54,13 @@
         if (domain === 'taxa') return undefined;
         return getTaxonDates('dateMax').sort((a, b) => (a < b ? 1 : -1))[0];
     });
-    
+
     // Determine if observationsMetrics are loading for any taxa
     const observationsMetricsLoading = $derived(
         Object.values(taxonContext.taxa.items).some(
             (taxon) => taxon.observationMetricsLoading
         )
-    )
-
+    );
 </script>
 
 <div
@@ -113,11 +112,13 @@
 </div>
 
 <style>
+    .date-filters-section {
+        flex-basis: 25%;
+    }
     .filters-section-header {
         width: 100%;
         display: flex;
-        gap: .5rem;
-
+        gap: 0.5rem;
     }
     .date-filters-wrapper {
         display: flex;
@@ -125,7 +126,8 @@
         gap: 0.5rem;
         flex-wrap: wrap;
         position: relative;
-        font-size: .8rem;
+        font-size: 0.8rem;
+        height: 100%;
     }
     :global(#date-start-filter),
     :global(#date-end-filter) {

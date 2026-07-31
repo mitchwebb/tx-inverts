@@ -7,6 +7,7 @@
     width: 100%;
     box-sizing: border-box;
     flex: 1 1;
+    height: 100%;
 }
 .filters-section.active {
     box-shadow: inset 3px 0px 0px 0px var(--accent-color);
@@ -20,8 +21,8 @@
     /* gap: 0.5rem; */
 }
 .filters-section-content {
-    /* margin: 0 0.5rem; */
     font-weight: 400;
+    font-size: 0.8rem;
 }
 
 .vertical-filter-group {
@@ -36,4 +37,8 @@
     gap: 0.5rem;
     width: 100%;
     flex-wrap: wrap;
+}
+
+.filters-subheader {
+    font-size: 1rem;
 }
