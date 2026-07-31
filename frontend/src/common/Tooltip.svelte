@@ -77,12 +77,12 @@
         if (!tooltipContext.visible) return;
 
         updatePosition();
-        window.addEventListener('click', handleDocumentClick);
+        window.addEventListener('click', handleDocumentClick, true);
         window.addEventListener('scroll', handleScroll, true);
         window.addEventListener('resize', updatePosition);
 
         return () => {
-            window.removeEventListener('click', handleDocumentClick);
+            window.removeEventListener('click', handleDocumentClick, true);
             window.removeEventListener('scroll', handleScroll, true);
             window.removeEventListener('resize', updatePosition);
         };
