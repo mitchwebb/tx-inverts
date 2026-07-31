@@ -45,7 +45,13 @@
 {/snippet}
 
 <div id="about-page-wrapper">
-    <h1 id="about-header">Welcome to Texas Inverts!</h1>
+    <div id="welcome-banner-wrapper">
+        <img
+            id="welcome-banner"
+            alt="Welcome to Texas Inverts"
+            src="/static/welcome_banner.png"
+        />
+    </div>
     <div class="about-page-body">
         <div class="about-page-summary">
             <p>
@@ -207,6 +213,22 @@
 </div>
 
 <style>
+    #welcome-banner-wrapper {
+        border-radius: 3px;
+        background-color: #056565;
+        margin: 1rem 0;
+        width: 100%;
+        max-width: 1000px;
+        box-sizing: border-box;
+    }
+    #welcome-banner {
+        padding: 1rem 0;
+        object-fit: cover;
+        max-width: 100%;
+        box-sizing: border-box;
+        max-height: 100%;
+        min-height: 200px;
+    }
     #about-taxa-diagram {
         height: 250px;
         max-width: 100%;
