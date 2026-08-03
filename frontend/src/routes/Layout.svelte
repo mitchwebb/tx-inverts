@@ -239,12 +239,25 @@
 
             taxon.observationMetricsLoading = true;
 
+            // Make empty regions collection to prevent counting regions filtering
+            // We're not using this filter for occurrences
+            const emptyRegions = makeIDCollection<RegionInfo, string>(
+                (c) => c.id
+            );
+
             (async () => {
                 try {
                     // Run both async calls concurrently
                     const [datasetCounts, dateRange] = await Promise.all([
-                        getDatasetCounts(taxonID, filtersContext),
-                        getObservationDates(taxonID, filtersContext),
+                        // Get counts and dates ignoring any background region filters from taxon
+                        getDatasetCounts(taxonID, {
+                            ...filtersContext,
+                            regions: emptyRegions,
+                        }),
+                        getObservationDates(taxonID, {
+                            ...filtersContext,
+                            regions: emptyRegions,
+                        }),
                     ]);
                     // If publishers are already selected, but they do not have this taxon,
                     // make sure to include them in the dataset counts with a value of 0
