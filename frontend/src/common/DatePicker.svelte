@@ -129,7 +129,7 @@
         border: 1px solid var(--border);
         border-radius: 3px;
         min-width: 75px;
-        font-size: .8rem;
+        font-size: 1rem;
     }
     input:focus {
         outline: 1px solid var(--accent-color);

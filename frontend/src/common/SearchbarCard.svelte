@@ -1,12 +1,12 @@
 <script lang="ts">
-    import type { Snippet } from "svelte";
-    import XIcon from "../assets/XIcon.svelte";
+    import type { Snippet } from 'svelte';
+    import XIcon from '../assets/XIcon.svelte';
 
     type SearchCardProps = {
         label: string | Snippet;
         value: string | number;
         handleRemoveCard: (value: string | null) => void;
-    }
+    };
 
     const { label, value, handleRemoveCard }: SearchCardProps = $props();
 
@@ -15,7 +15,6 @@
         const cardValue = target.dataset.cardValue;
         handleRemoveCard(cardValue ?? null);
     }
-
 </script>
 
 <div class="searchbar-card">
@@ -60,16 +59,14 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        /* margin-right: 0.25rem; */
     }
     .searchbar-card {
         display: flex;
-        /* gap: 0.5rem; */
         background-color: var(--container-mid);
         cursor: unset;
         justify-content: space-between;
         border: 1px solid var(--border);
-        font-size: .8rem;
+        font-size: 0.8rem;
         align-items: center;
         height: 30px;
         border-radius: 3px;
