@@ -237,7 +237,7 @@ class TestGetRankedTaxaDownload:
             '/downloads/get_ranked_taxa_download',
             json={
                 'taxon_ids': [5035741],
-                'estimate': True,
+                'get_estimate': True,
             }
         )
         assert response.status_code == 200
@@ -252,7 +252,7 @@ class TestGetRankedTaxaDownload:
             '/downloads/get_ranked_taxa_download',
             json={
                 'taxon_ids': [5035741],
-                'estimate': False,
+                'get_estimate': False,
             }
         )
         assert response.status_code == 200
@@ -266,7 +266,7 @@ class TestGetRankedTaxaDownload:
             '/downloads/get_ranked_taxa_download',
             json={
                 'taxon_ids': [5035741],
-                'estimate': False,
+                'get_estimate': False,
             }
         )
         body = response.text
@@ -280,7 +280,7 @@ class TestGetRankedTaxaDownload:
             '/downloads/get_ranked_taxa_download',
             json={
                 'taxon_ids': [4342],  # Formicidae, rank='family'
-                'estimate': True,
+                'get_estimate': True,
             }
         )
         data = response.json()
@@ -294,7 +294,7 @@ class TestGetRankedTaxaDownload:
             json={
                 # matches both taxon_id and accepted_name_usage_id here
                 'taxon_ids': [5035741],
-                'estimate': True,
+                'get_estimate': True,
             }
         )
         data = response.json()
@@ -308,7 +308,7 @@ class TestGetRankedTaxaDownload:
             json={
                 # 2 species + 2 families
                 'taxon_ids': [5035741, 1315867, 4342, 4084],
-                'estimate': True,
+                'get_estimate': True,
             }
         )
         data = response.json()
