@@ -119,6 +119,7 @@
 
     // Get list of qualified taxonIDs given various filters (for rankings page)
     $effect(() => {
+        // Call filters to trigger reactivity
         const regionsIDs = filtersContext.regions.ids;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
@@ -303,7 +304,6 @@
         display: flex;
         flex-direction: column;
         position: relative;
-        /* overflow: auto; */
         width: 100%;
         min-width: 320px;
         background-color: var(--container-shadow);

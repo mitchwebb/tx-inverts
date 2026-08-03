@@ -140,12 +140,6 @@
             }
         });
 
-        // Special case for initializing coord uncertainty limit (1000m)
-        const uncertaintyParam = url.searchParams.get('uncertainty');
-        if (!uncertaintyParam) {
-            filtersContext.coordUncertainty == 1000;
-        }
-
         // Set initial page component
         PageComponent = currentRoute.component;
     });

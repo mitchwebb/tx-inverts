@@ -9,9 +9,9 @@
         "preview": "vite preview",
         "format": "prettier \"**/*.{ts,js,tsx,jsx,svelte,css,scss,html,json,md}\" --write",
         "vitest": "vitest",
-        "test:chrome": "npx playwright test --headed --browser=chromium",
-        "test:firefox": "npx playwright test --headed --browser=firefox",
-        "test:safari": "npx playwright test --headed --browser=webkit"
+        "test:chrome": "npx playwright test ./ui-tests --headed --browser=chromium",
+        "test:firefox": "npx playwright test ./ui-tests --headed --browser=firefox",
+        "test:safari": "npx playwright test ./ui-tests --headed --browser=webkit"
     },
     "devDependencies": {
         "@playwright/test": "^1.58.2",
