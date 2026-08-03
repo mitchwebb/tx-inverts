@@ -222,7 +222,6 @@ async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request
             datasets=params.datasets,
             coord_uncertainty=params.coord_uncertainty)
 
-        print(params.datasets)
         # Create occurrence filter sql chunk
         occurrence_filter = create_occurrence_filter_sql(filter_payload)
 

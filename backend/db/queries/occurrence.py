@@ -53,7 +53,7 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
             date_end=sql.Literal(filter.date_end))
 
     # If coord_uncertainty provided, add clause, else skip
-    if not filter.coord_uncertainty:
+    if filter.coord_uncertainty is None:
         uncertainty_clause = sql.SQL("")
     else:
         uncertainty_clause = sql.SQL(
