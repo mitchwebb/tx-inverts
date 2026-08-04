@@ -128,6 +128,21 @@
                     </button>
                 </li>
             </ul>
+            <p>
+                When visiting the
+                <a
+                    class="page-link"
+                    href={'/rankings'}
+                    onclick={handlePageLink}
+                    onkeydown={handlePageLink}
+                >
+                    Rankings Page
+                </a>
+                page, you'll be able to search, filter, and sort Texas species from
+                our database with pre-calculated rankings. The rankings on this page
+                use a 4km² grid cell, minimum collection year of 1800, and maximum
+                1000 meter uncertainty radius.
+            </p>
         </div>
         <div class="about-page-section">
             <h3 class="about-page-subheader">Our Data</h3>

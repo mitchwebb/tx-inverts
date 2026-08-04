@@ -63,9 +63,9 @@
                 search bar. By clicking the filters button, you'll be presented
                 with optional filters, which are dependent on your current page
                 and currently selected taxa—in this case, you'll see filters for
-                observation data. On the Rankings page, you will see filters for
-                taxa instead. The search bar operates in the same way as the
-                header search bar.
+                observation data. On the Rankings page, you will see some
+                additional filters for taxa. The search bar operates in the same
+                way as the header search bar.
             </p>
             <p>
                 Below this toolbar is the display for a sample taxon. The top
@@ -147,11 +147,11 @@
             </h3>
             <p>This page hosts all of our species (and subspecies) rankings!</p>
             <p>
-                You'll find that the sidebar filters are different on this page.
-                As mentioned above, the filters on this page filter taxa as
-                opposed to observation data. Along with these filters, you can
-                filter the list of taxa shown on this page by searching for a
-                parent taxon of genus or higher taxonomic rank.
+                You'll find that there are a few additional sidebar filters on
+                this page. The filters on this page filter the rankings table to
+                relevant taxa. Along with these filters, you can filter the list
+                of taxa shown on this page by searching for a parent taxon of
+                genus or higher taxonomic rank.
             </p>
             <p>
                 As an important note, the suggested rankings found on this site
@@ -168,9 +168,10 @@
             </p>
             <p>
                 The rankings shown in the leftmost column of this table are
-                rankings made with no additional filters to our data. These
-                rankings update when toggling iNaturalist data on or off, but do
-                not otherwise take any filtering into account. By clicking on a
+                precalculated with a 4km² grid cell, minimum collection year of
+                1800, and maximum 1000 meter uncertainty radius. These rankings
+                update when toggling iNaturalist data on or off, but do not
+                otherwise take any filtering into account. By clicking on a
                 column header, you can sort the list by the selected column. You
                 can also use this page to select species in the sidebar by
                 hovering on a name and clicking the <span

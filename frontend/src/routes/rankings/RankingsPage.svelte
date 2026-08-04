@@ -36,7 +36,7 @@
     const tableHeaders = $derived([
         {
             label: iNatLabel,
-            info: 'The rankings in this column are precalculated using a 4km2 grid cell. Aside from toggling iNaturalist data, they do not respond to further filtering, and instead reflect all available data.',
+            info: 'The rankings in this column use a 4km² grid cell, minimum collection year of 1800, and maximum 1000m uncertainty radius. Aside from toggling iNaturalist data, they do not respond to further filtering.',
             sortKey: filtersContext.includeINat
                 ? 'ns_rank_state'
                 : 'ns_rank_state_no_inat',
