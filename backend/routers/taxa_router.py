@@ -220,12 +220,16 @@ async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request
             date_start=params.date_start,
             date_end=params.date_end,
             datasets=params.datasets,
-            coord_uncertainty=params.coord_uncertainty)
+            coord_uncertainty=params.coord_uncertainty,
+            include_invasives=params.include_invasives
+            # EXCLUDE regions—use the special join below
+        )
 
         # Create occurrence filter sql chunk
         occurrence_filter = create_occurrence_filter_sql(filter_payload)
 
         # If regions specified, include special taxa-by-region join
+        # This asks whether a taxon is found in the region, avoiding filtering each occurrence
         if params.regions:
             region_literals = sql.SQL(', ').join(
                 sql.Literal(r) for r in params.regions)

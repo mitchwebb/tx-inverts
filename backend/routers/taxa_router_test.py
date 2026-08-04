@@ -1,9 +1,7 @@
-from httpx import ASGITransport, AsyncClient
-import psycopg
 from psycopg import sql
 import pytest
-import pandas as pd
 import pytest_asyncio
+import inspect
 
 from backend.conftest import insert_rows
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -14,7 +12,8 @@ from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.jobs.tasks.views import refresh_materialized_view
-from backend.main import app
+from backend.models.occurrence import OccurrenceFilters
+from backend.routers.taxa_router import get_qualified_taxa
 
 
 @pytest_asyncio.fixture
@@ -381,3 +380,100 @@ class TestGetQualifiedTaxa:
         })
         results = response.json()
         assert len(results) == len(set(results))
+
+    @pytest.mark.asyncio
+    async def test_each_filter_individually(self, setup_gbif_schema, occurrence_filter_data, client):
+        """
+        One test, one section per filter. Each section changes exactly
+        one field off the base payload and checks the result set narrows
+        as expected. Sections are independent — if one fails, the others
+        still tell you whether their filter is fine.
+        """
+
+        base_payload = {
+            # family — covers both species (5035741, 9999001)
+            'taxon_ids': [4342],
+            'include_inat': True,
+            'include_invasives': True,
+            'date_start': None,
+            'date_end': None,
+            'datasets': None,
+            'coord_uncertainty': None,
+            'regions': None,
+        }
+
+        # --- baseline: no filters beyond taxon lineage ---
+        response = await client.post('/taxa/get_qualified_taxa', json=base_payload)
+        assert response.status_code == 200
+        assert set(response.json()) == {5035741, 9999001}
+
+        # --- include_invasives=False excludes taxon 9999001 (invasive) ---
+        payload = {**base_payload, 'include_invasives': False}
+        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        assert response.status_code == 200
+        assert set(response.json()) == {5035741}
+
+        # --- include_inat=False excludes row 2, taxon 5035741 still
+        # qualifies via rows 1/3/4 ---
+        payload = {**base_payload, 'include_inat': False}
+        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        assert response.status_code == 200
+        assert set(response.json()) == {5035741, 9999001}
+
+        # --- datasets=['dataset-b'] leaves only rows 2 and 5
+        # (taxon 5035741 only — row 6/9999001 is dataset-a) ---
+        payload = {**base_payload, 'datasets': ['dataset-b']}
+        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        assert response.status_code == 200
+        assert set(response.json()) == {5035741}
+
+        # --- date_start excludes row 4 (2019) and row 1 (2020),
+        # leaves row 5 (2022, taxon 5035741) and row 6 (2022, taxon 9999001) ---
+        payload = {**base_payload, 'date_start': '2022-01-01'}
+        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        assert response.status_code == 200
+        assert set(response.json()) == {5035741, 9999001}
+
+        # --- date_end excludes row 5/row 6 (2022), leaves rows 1/2/4 (<=2021) ---
+        payload = {**base_payload, 'date_end': '2021-12-31'}
+        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        assert response.status_code == 200
+        assert set(response.json()) == {5035741}
+
+        # --- coord_uncertainty=100 keeps row 1 (100) and row 4 (NULL,
+        # passes via IS NULL OR), excludes nothing here since no row
+        # exceeds 100 — use a tighter bound to prove exclusion ---
+        payload = {**base_payload, 'coord_uncertainty': 10}
+        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        assert response.status_code == 200
+        # Only row 4 (NULL uncertainty) and row 2 (50, excluded) —
+        # row 1/3/5/6 all have uncertainty=100, excluded by the <=10 bound.
+        # taxon 5035741 still qualifies via row 4 (NULL); 9999001 has no
+        # row under the bound, excluded.
+        assert set(response.json()) == {5035741}
+
+        # --- coord_uncertainty=0 explicitly: confirms `is None` check,
+        # not a falsy check, on the backend. Row 5 (uncertainty=0) must
+        # NOT be treated as "no filter" — only NULL or <=0 rows pass ---
+        payload = {**base_payload, 'coord_uncertainty': 0}
+        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        assert response.status_code == 200
+        # taxon 5035741 passes via row 4 (NULL); taxon 9999001 has only
+        # row 6 (uncertainty=100), excluded.
+        assert set(response.json()) == {5035741}
+
+        # --- regions=[REGION_A_ID] restricts to taxa present in that
+        # region via TAXON_PRESENCE_TABLE (observation 1 tagged there) ---
+        payload = {**base_payload,
+                   'regions': ['11111111-1111-1111-1111-111111111111']}
+        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        assert response.status_code == 200
+        assert set(response.json()) == {5035741}
+
+    def test_get_qualified_taxa_covers_all_filters(self):
+        source = inspect.getsource(get_qualified_taxa)
+        fields = set(OccurrenceFilters.model_fields.keys())
+        # regions are handled via TAXON_PRESENCE_TABLE join, not region_clause
+        excluded = {'regions'}
+        missing = [f for f in fields - excluded if f not in source]
+        assert not missing, f"get_qualified_taxa is missing: {missing}"

@@ -151,13 +151,13 @@ class TestGetNSMetrics:
 
 class TestGetRangeExtentGeom:
     @pytest.mark.asyncio
-    async def test_get_range_extent_geom(self, client, tx_bounding_box, simple_tx_taxa):
+    async def test_get_texas_range_extent_geom(self, client, tx_bounding_box, simple_tx_taxa):
         """For an existing taxon, get basic range_extent_geom matching provided points"""
 
         test_taxon_key = 5035741
 
         response = await client.post(
-            '/rankings/get_range_extent_geom',
+            '/rankings/get_texas_range_extent_geom',
             json={
                 'taxon_id': test_taxon_key,
                 'include_inat': True,
@@ -191,7 +191,7 @@ class TestGetRangeExtentGeom:
         test_taxon_key = 9999999
 
         response = await client.post(
-            '/rankings/get_range_extent_geom',
+            '/rankings/get_texas_range_extent_geom',
             json={
                 'taxon_id': test_taxon_key,
                 'include_inat': True,
@@ -211,7 +211,7 @@ class TestGetRangeExtentGeom:
         test_taxon_key = 4084
 
         response = await client.post(
-            '/rankings/get_range_extent_geom',
+            '/rankings/get_texas_range_extent_geom',
             json={
                 'taxon_id': test_taxon_key,
                 'include_inat': True,

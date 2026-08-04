@@ -34,8 +34,10 @@
     } from '../../lib/map/mapFeatures';
     import { untrack } from 'svelte';
     import { isMobile } from '../../contexts/device';
-    import { buildTileURL } from '../../util/map'
+    import { buildTileURL } from '../../util/map';
     import { serializeFilters } from '../../util/requests';
+    import { makeIDCollection } from '../../util/collection.svelte';
+    import type { RegionInfo } from '../../types/api';
 
     // ---------------------------------------------
     // Contexts & reactive state
@@ -379,20 +381,25 @@
 
     // Get range extent geometry per-taxon
     // This needs to be done when observations change (from filtering)
-    async function fetchRangeExtentGeom(taxonID: number, filters: FiltersState) {
-
-        const response = await fetch('/server/rankings/get_range_extent_geom', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                taxon_id: taxonID,
-                ...serializeFilters(filters)
-            }),
-        });
+    async function fetchRangeExtentGeom(
+        taxonID: number,
+        filters: FiltersState
+    ) {
+        const response = await fetch(
+            '/server/rankings/get_texas_range_extent_geom',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    taxon_id: taxonID,
+                    ...serializeFilters(filters),
+                }),
+            }
+        );
 
         if (!response.ok) {
             const errData = await response.json();
-            console.error("Error:", response.status, errData.detail);
+            console.error('Error:', response.status, errData.detail);
             return;
         }
 
@@ -434,10 +441,7 @@
         // Add observation source with tile URL
         map.addSource(obsBundle.id, {
             ...obsBundle.source,
-            tiles: [buildTileURL(
-                taxonID, 
-                filters
-            )],
+            tiles: [buildTileURL(taxonID, filters)],
         });
         obsBundle.layers.forEach((layer) => map.addLayer(layer));
 
@@ -464,7 +468,11 @@
         ];
 
         // Fetch range extent geom
-        await fetchRangeExtentGeom(taxonID, filtersContext);
+        await fetchRangeExtentGeom(taxonID, {
+            ...filters,
+            // Don't include regions filter when getting range extent geom
+            regions: makeIDCollection<RegionInfo, string>((r) => r.id),
+        });
 
         mapContext.taxonLayers[taxonID].loaded = true;
     }
@@ -473,7 +481,7 @@
     $effect(() => {
         if (!map || !mapReady) return;
         // Explicit reads register each as a dependency, deep reactivity included
-        const filters = { ...filtersContext }
+        const filters = { ...filtersContext };
 
         let cancelled = false;
 
@@ -491,14 +499,15 @@
                     sourceID
                 ) as mapboxgl.VectorTileSource;
                 if (source) {
-                    source.setTiles([
-                        buildTileURL( 
-                            taxonID,
-                            filters
-                        ),
-                    ]);
+                    source.setTiles([buildTileURL(taxonID, filters)]);
                 }
-                fetchRangeExtentGeom(taxonID, filters);
+
+                // Fetch range extent geom
+                fetchRangeExtentGeom(taxonID, {
+                    ...filters,
+                    // Don't include regions filter when getting range extent geom
+                    regions: makeIDCollection<RegionInfo, string>((r) => r.id),
+                });
             }
         });
 

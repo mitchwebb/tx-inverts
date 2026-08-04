@@ -17,7 +17,7 @@ class OccurrenceFilters(BaseModel):
     ] = [1]
     include_inat: bool | None = True
     datasets: List[str] | None = None
-    include_invasives: bool = False
+    include_invasives: bool | None = False
     date_start: date | str | None = None
     date_end: date | str | None = None
     regions: List[str] | None = None

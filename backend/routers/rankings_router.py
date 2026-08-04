@@ -81,10 +81,10 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@rankings_router.post('/get_range_extent_geom', response_class=JSONResponse)
-async def get_range_extent_geom(params: SingleTaxonObsRequestParams, request: Request) -> JSONResponse:
+@rankings_router.post('/get_texas_range_extent_geom', response_class=JSONResponse)
+async def get_texas_range_extent_geom(params: SingleTaxonObsRequestParams, request: Request) -> JSONResponse:
     """
-    Get hull geometry representing range extent for a given species' filtered observation data
+    Get hull geometry representing range extent for a given species' filtered observation data, always filtered to Texas
 
     Args:
         params (SingleTaxonObsRequestParams): Collection of filters to filter occurrence records
@@ -105,7 +105,8 @@ async def get_range_extent_geom(params: SingleTaxonObsRequestParams, request: Re
             date_end=params.date_end,
             date_start=params.date_start,
             datasets=params.datasets,
-            coord_uncertainty=params.coord_uncertainty
+            coord_uncertainty=params.coord_uncertainty,
+            regions=params.regions
         )
 
         async with pool.connection() as conn:

@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import sys
+import uuid
 from unittest.mock import AsyncMock, MagicMock
 
 from httpx import ASGITransport, AsyncClient
@@ -12,9 +13,16 @@ import pytest_asyncio
 
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema import ALL_TABLES
+from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
+from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
+from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
+from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.tables import initialize_all_tables
 
+from backend.jobs.tasks.views import refresh_materialized_view
 from backend.main import app
 
 
@@ -148,3 +156,136 @@ async def tx_bounding_box(setup_gbif_schema, conn):
         'geometry': 'MULTIPOLYGON(((-106.65 25.8, -93.5 25.8, -93.5 36.5, -106.65 36.5, -106.65 25.8)))'
     }]
     await insert_rows(rows, TEXAS_GEOMETRY_TABLE.name, conn)
+
+
+# Larger, filters-ready occurrence fixture for testing various endpoint behaviors
+
+# Region UUIDs — fixed and readable so test assertions can reference them
+# without recomputing anything at read time
+REGION_A_ID = uuid.UUID('11111111-1111-1111-1111-111111111111')
+REGION_B_ID = uuid.UUID('22222222-2222-2222-2222-222222222222')
+
+taxa = [
+    {
+        # non-invasive species, matches family 4342 for lineage/ancestor tests
+        'scientific_name': 'Atta texana',
+        'canonical_name': 'Atta texana',
+        'taxon_id': 5035741,
+        'accepted_name_usage_id': 5035741,
+        'parent_name_usage_id': 4342,
+        'taxon_rank': 'species',
+        'us_invasive': False,
+        'taxonomic_status': 'accepted',
+        'kingdom_id': 1,
+        'family_id': 4342,
+        'genus_id': 1323108,
+        'species_id': 5035741,
+    },
+    {
+        # family row — required for taxon_lineage to resolve ancestor_id=4342
+        # when a test filters by family-level taxon_id
+        'scientific_name': 'Formicidae',
+        'canonical_name': 'Formicidae',
+        'taxon_id': 4342,
+        'accepted_name_usage_id': 4342,
+        'parent_name_usage_id': 1,
+        'taxon_rank': 'family',
+        'us_invasive': False,
+        'taxonomic_status': 'accepted',
+        'kingdom_id': 1,
+        'family_id': 4342,
+        'genus_id': None,
+        'species_id': None,
+    },
+    {
+        # invasive species, same family — exercises include_invasives branches
+        'scientific_name': 'Solenopsis invicta',
+        'canonical_name': 'Solenopsis invicta',
+        'taxon_id': 9999001,
+        'accepted_name_usage_id': 9999001,
+        'parent_name_usage_id': 4342,
+        'taxon_rank': 'species',
+        'us_invasive': True,
+        'taxonomic_status': 'accepted',
+        'kingdom_id': 1,
+        'family_id': 4342,
+        'genus_id': 9999000,
+        'species_id': 9999001,
+    },
+]
+
+occ = [
+    {
+        # baseline row — passes every filter at defaults
+        'gbif_id': 1, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
+        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+    },
+    {
+        # iNaturalist origin — tests include_inat=False exclusion
+        'gbif_id': 2, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': '2021-03-04', 'collection_end_date': '2021-03-05',
+        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
+        'coordinate_uncertainty_in_meters': 50,
+    },
+    {
+        # collection_start_date NULL — tests hardcoded IS NOT NULL clause
+        'gbif_id': 3, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': None, 'collection_end_date': None,
+        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+    },
+    {
+        # second dataset_key, distinct date, tagged to REGION_B_ID
+        'gbif_id': 4, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': '2019-03-04', 'collection_end_date': '2019-03-05',
+        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': None,  # tests "IS NULL OR <=" branch
+    },
+    {
+        # coordinate_uncertainty_in_meters == 0 — tests `is None` vs falsy bug
+        'gbif_id': 5, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': '2022-01-01', 'collection_end_date': '2022-01-02',
+        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'dataset_key': 'dataset-b', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 0,
+    },
+    {
+        # invasive taxon — tests include_invasives true/false branches
+        'gbif_id': 6, 'taxon_key': 9999001, 'accepted_taxon_key': 9999001,
+        'collection_start_date': '2022-06-01', 'collection_end_date': '2022-06-02',
+        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 9999000, 'species_id': 9999001,
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+    },
+]
+
+observation_regions = [
+    {'observation_id': 1, 'region_id': REGION_A_ID},
+    {'observation_id': 4, 'region_id': REGION_B_ID},
+]
+
+
+@pytest_asyncio.fixture()
+async def occurrence_filter_data(conn):
+    """
+    Minimal shared dataset covering every branch in
+    create_occurrence_filter_sql and create_occurrence_taxon_filter.
+    Session-scoped: insert and refresh once, reuse read-only across all
+    filter tests. Do not use this fixture in tests that mutate these
+    tables — switch to function scope if that changes.
+    """
+    await insert_rows(taxa, GBIF_INVERTS_BACKBONE.name, conn)
+    await insert_rows(occ, GBIF_OBSERVATIONS_TABLE.name, conn)
+    await insert_rows(observation_regions, OBSERVATION_REGIONS_TABLE.name, conn)
+
+    await refresh_materialized_view(conn, TX_TAXA_TABLE.name)
+    await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
+    await refresh_materialized_view(conn, TAXON_PRESENCE_TABLE.name)
+
+    return conn

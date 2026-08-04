@@ -339,7 +339,9 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
                 filters = OccurrenceFilters(
                     taxon_ids=[taxon_id],
                     include_inat=include_inat,
-                    coord_uncertainty=1000
+                    coord_uncertainty=1000,
+                    include_invasives=False,
+                    date_start="1800-01-01"
                 )
 
                 values = await ns.calculate_ns_values(conn, filters)
