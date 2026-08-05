@@ -68,6 +68,7 @@
     import { makeIDCollection } from '../util/collection.svelte';
     import { isNarrowView } from '../contexts/device';
     import MobileSidebar from '../components/Sidebar/MobileSidebar.svelte';
+    import { getRankAffectingFilterValues } from '../constants/sidebarFilters';
 
     // Intialize contexts
 
@@ -126,6 +127,7 @@
         const datasets = filtersContext.datasets;
         const taxonRank = filtersContext.taxonRank;
         const coordUncertainty = filtersContext.coordUncertainty;
+        const includeINat = filtersContext.includeINat;
 
         untrack(async () => {
             rankingsState.ranksLoading = true;
@@ -136,6 +138,7 @@
                 datasets,
                 taxonRank,
                 coordUncertainty,
+                includeINat,
             });
             rankingsState.qualifiedTaxonIDs = qualifiedTaxa;
             rankingsState.ranksLoading = false;
@@ -176,13 +179,13 @@
 
     // Get NSValues for all taxa on filters change
     $effect(() => {
-        const filters = filtersContext;
+        const trackedValues = getRankAffectingFilterValues(filtersContext);
 
         untrack(() => {
             for (const taxonID of taxaContext.taxa.ids) {
                 const taxon = taxaContext.taxa.get(taxonID);
                 if (!taxon) continue;
-                loadNSValues(taxonID, filters);
+                loadNSValues(taxonID, { ...filtersContext, ...trackedValues });
             }
         });
     });
@@ -239,50 +242,55 @@
 
             taxon.observationMetricsLoading = true;
 
+            const reactiveFilters =
+                getRankAffectingFilterValues(filtersContext);
+
             // Make empty regions collection to prevent counting regions filtering
             // We're not using this filter for occurrences
             const emptyRegions = makeIDCollection<RegionInfo, string>(
                 (c) => c.id
             );
 
-            (async () => {
-                try {
-                    // Run both async calls concurrently
-                    const [datasetCounts, dateRange] = await Promise.all([
-                        // Get counts and dates ignoring any background region filters from taxon
-                        getDatasetCounts(taxonID, {
-                            ...filtersContext,
-                            regions: emptyRegions,
-                        }),
-                        getObservationDates(taxonID, {
-                            ...filtersContext,
-                            regions: emptyRegions,
-                        }),
-                    ]);
-                    // If publishers are already selected, but they do not have this taxon,
-                    // make sure to include them in the dataset counts with a value of 0
-                    if (filtersContext.datasets && datasetCounts) {
-                        const existingDatasets = new Set(
-                            Object.keys(datasetCounts)
-                        );
-                        for (const dataset of filtersContext.datasets) {
-                            if (!existingDatasets.has(dataset)) {
-                                datasetCounts[dataset] = 0;
+            untrack(() => {
+                (async () => {
+                    try {
+                        // Run both async calls concurrently
+                        const [datasetCounts, dateRange] = await Promise.all([
+                            // Get counts and dates ignoring any background region filters from taxon
+                            getDatasetCounts(taxonID, {
+                                ...filtersContext,
+                                regions: emptyRegions,
+                            }),
+                            getObservationDates(taxonID, {
+                                ...filtersContext,
+                                regions: emptyRegions,
+                            }),
+                        ]);
+                        // If publishers are already selected, but they do not have this taxon,
+                        // make sure to include them in the dataset counts with a value of 0
+                        if (filtersContext.datasets && datasetCounts) {
+                            const existingDatasets = new Set(
+                                Object.keys(datasetCounts)
+                            );
+                            for (const dataset of filtersContext.datasets) {
+                                if (!existingDatasets.has(dataset)) {
+                                    datasetCounts[dataset] = 0;
+                                }
                             }
                         }
-                    }
-                    taxon.datasetCounts = datasetCounts;
+                        taxon.datasetCounts = datasetCounts;
 
-                    if (dateRange) {
-                        taxon.dateMin = new Date(dateRange?.minDate);
-                        taxon.dateMax = new Date(dateRange?.maxDate);
+                        if (dateRange) {
+                            taxon.dateMin = new Date(dateRange?.minDate);
+                            taxon.dateMax = new Date(dateRange?.maxDate);
+                        }
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        taxon.observationMetricsLoading = false;
                     }
-                } catch (error) {
-                    console.error(error);
-                } finally {
-                    taxon.observationMetricsLoading = false;
-                }
-            })();
+                })();
+            });
         }
     });
 </script>

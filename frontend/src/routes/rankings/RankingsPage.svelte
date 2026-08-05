@@ -234,7 +234,7 @@
                 </div>
             {:else if !filteredTaxaNodes.length}
                 <div class="no-species-error">
-                    No valid rankings found for selected taxon
+                    No valid species found for active filters
                 </div>
             {:else if filteredTaxaNodes.length}
                 <VirtualizedTable
@@ -359,6 +359,7 @@
         opacity: 1 !important;
     }
     .no-species-error {
+        text-align: left;
         margin: 1rem;
         opacity: 0.5;
     }

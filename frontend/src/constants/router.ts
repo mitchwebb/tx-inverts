@@ -16,7 +16,6 @@ import {
     collectionObjectURLCodec,
     stringArrayURLCodec,
     stringURLCodec,
-    numberArrayURLCodec,
     numberURLCodec,
 } from '../util/router';
 import type { TaxonomicRank } from '../types/taxa';
@@ -46,7 +45,10 @@ export const routerSyncedKeys = {
     filters: {
         getContext: getFiltersContext,
         keys: makeSyncedKeys<FiltersState>({
-            includeINat: { param: 'inat', codec: booleanURLCodec(true) },
+            includeINat: {
+                param: 'inat',
+                codec: booleanURLCodec(true),
+            },
             datasets: {
                 param: 'dataset',
                 codec: stringArrayURLCodec() as URLParamCodec<string[]>,

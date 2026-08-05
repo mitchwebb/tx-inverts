@@ -114,16 +114,10 @@
         class="datasets-section filters-section"
         class:active={!!filtersContext.datasets?.length ||
             !filtersContext.includeINat}
-        class:loading-blink={observationsMetricsLoading}
     >
         <div id="datasets-header" class="filters-section-header">
             <div class="datasets-header-and-icon">
                 <span>{header}</span>
-                {#if observationsMetricsLoading}
-                    <div class="loading-icon icon">
-                        <LoadingIcon />
-                    </div>
-                {/if}
             </div>
             <div class="inat-toggle-wrapper">
                 <div class="inat-toggle">
@@ -170,8 +164,19 @@
                                         </div>
                                     </div>
                                     {#if showCounts && count !== null}
-                                        <div class="institution-count">
-                                            ({count})
+                                        <div
+                                            class="institution-count"
+                                            class:loading-blink={observationsMetricsLoading}
+                                        >
+                                            {#if observationsMetricsLoading}
+                                                <div
+                                                    class="count-loading-icon icon"
+                                                >
+                                                    <LoadingIcon />
+                                                </div>
+                                            {:else}
+                                                ({count})
+                                            {/if}
                                         </div>
                                     {/if}
                                 </div>
@@ -197,6 +202,9 @@
 {/if}
 
 <style>
+    .count-loading-icon {
+        height: 0.8rem;
+    }
     .datasets-header-and-icon {
         display: flex;
         gap: 0.5rem;
