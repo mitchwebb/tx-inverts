@@ -1,7 +1,7 @@
 <!-- Middle component for extracting geographic search logic (for multiple API routes) -->
 <script lang="ts" generics="T">
-    import type { Snippet } from "svelte";
-    import SearchSuggestBar from "../common/SearchSuggestBar.svelte";
+    import type { Snippet } from 'svelte';
+    import SearchSuggestBar from '../common/SearchSuggestBar.svelte';
 
     type GeoSearchProps = {
         placeholder?: string | null;
@@ -10,13 +10,13 @@
         parseJSON: (json: any) => T[];
         suggestionRow: Snippet<[T, number]>;
         handleSelect: (suggestion: T) => void;
-    }
-    const { 
-        placeholder='Search for a region...',
+    };
+    const {
+        placeholder = 'Search for a region...',
         pathSuffix,
         parseJSON,
         suggestionRow,
-        handleSelect
+        handleSelect,
     }: GeoSearchProps = $props();
 
     let isLoading: boolean = $state(false);
@@ -31,7 +31,7 @@
         // Create new AbortController
         abortController = new AbortController();
         const signal = abortController.signal;
-        const url = `/server/regions/search_${pathSuffix}?search_term=${inputText}`;
+        const url = `/server/region/search_${pathSuffix}?search_term=${inputText}`;
         try {
             // Set is loading
             isLoading = true;
@@ -39,7 +39,7 @@
             const response = await fetch(url, {
                 signal,
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
             });
             // Error
             if (!response.ok) {
@@ -47,10 +47,10 @@
             }
             // Parse and set new suggestions
             const json = await response.json();
-            
+
             // End loading
             isLoading = false;
-            suggestions= parseJSON(json);
+            suggestions = parseJSON(json);
         } catch (error) {
             console.error(error);
         }
@@ -62,16 +62,15 @@
 </script>
 
 <div class="geo-searchbar">
-    <SearchSuggestBar 
+    <SearchSuggestBar
         {placeholder}
-        handleSearchSuggest={handleSearchSuggest}
-        handleSelect={handleGeoSelect} 
-        suggestions={suggestions} 
-        row={suggestionRow} 
-        {isLoading} 
+        {handleSearchSuggest}
+        handleSelect={handleGeoSelect}
+        {suggestions}
+        row={suggestionRow}
+        {isLoading}
     />
 </div>
-
 
 <style>
     .geo-searchbar {

@@ -44,7 +44,7 @@
         // Create new AbortController
         abortController = new AbortController();
         const signal = abortController.signal;
-        const url = `/server/taxa/taxon_search_suggest?search_term=${inputText}&exclude_species=${excludeSpecies}`;
+        const url = `/server/taxon/taxon_search_suggest?search_term=${inputText}&exclude_species=${excludeSpecies}`;
         try {
             // Set is loading
             isLoading = true;
@@ -61,17 +61,15 @@
             // Ending loading
             isLoading = false;
             const json = await response.json();
-            suggestions = json.map(
-                (result: RawTaxonSearchSuggestion) => {
-                    return {
-                        scientificName: result.scientific_name,
-                        canonicalName: result.canonical_name,
-                        taxonID: result.taxon_id,
-                        taxonRank: result.taxon_rank,
-                        usInvasive: result.us_invasive,
-                    };
-                }
-            );
+            suggestions = json.map((result: RawTaxonSearchSuggestion) => {
+                return {
+                    scientificName: result.scientific_name,
+                    canonicalName: result.canonical_name,
+                    taxonID: result.taxon_id,
+                    taxonRank: result.taxon_rank,
+                    usInvasive: result.us_invasive,
+                };
+            });
         } catch (error) {
             console.error(error);
         }

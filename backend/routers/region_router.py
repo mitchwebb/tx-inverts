@@ -14,7 +14,7 @@ import re
 from backend.models.regions import County, Park
 
 
-regions_router = APIRouter()
+region_router = APIRouter()
 
 
 class RegionInfo(BaseModel):
@@ -23,7 +23,7 @@ class RegionInfo(BaseModel):
     name: str
 
 
-@regions_router.get('/get_region_info', response_model=RegionInfo)
+@region_router.get('/get_region_info', response_model=RegionInfo)
 async def get_region_info(region_id: str, request: Request) -> RegionInfo:
     """
     Get basic region information from region_id
@@ -59,7 +59,7 @@ async def get_region_info(region_id: str, request: Request) -> RegionInfo:
     return RegionInfo(**dict(results))
 
 
-@regions_router.get('/search_counties')
+@region_router.get('/search_counties')
 async def search_counties(request: Request, search_term: str) -> list[County]:
     """
     Using a search term, search through counties table by county name (case insensitive)
@@ -84,7 +84,7 @@ async def search_counties(request: Request, search_term: str) -> list[County]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@regions_router.get('/search_parks')
+@region_router.get('/search_parks')
 async def search_parks(request: Request, search_term: str) -> list[Park]:
     """
     Using a search term, search through parks table by park name (case insensitive)

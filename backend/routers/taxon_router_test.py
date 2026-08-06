@@ -13,7 +13,7 @@ from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.jobs.tasks.views import refresh_materialized_view
 from backend.models.occurrence import OccurrenceFilters
-from backend.routers.taxa_router import get_qualified_taxa
+from backend.routers.taxon_router import get_qualified_taxa
 
 
 @pytest_asyncio.fixture
@@ -174,7 +174,7 @@ class TestTaxonSearchSuggest:
     async def test_string_start_search(self, setup_gbif_schema, simple_tx_taxa, client):
         search_term = 'atta'
         response = await client.get(
-            '/taxa/taxon_search_suggest',
+            '/taxon/taxon_search_suggest',
             params={'search_term': search_term, 'exclude_species': False},
         )
 
@@ -191,7 +191,7 @@ class TestTaxonSearchSuggest:
 
         search_term = 'atta'
         response = await client.get(
-            '/taxa/taxon_search_suggest',
+            '/taxon/taxon_search_suggest',
             params={'search_term': search_term, 'exclude_species': True},
         )
 
@@ -209,7 +209,7 @@ class TestTaxonSearchSuggest:
 
         search_term = 'cowboy'
         response = await client.get(
-            '/taxa/taxon_search_suggest',
+            '/taxon/taxon_search_suggest',
             params={'search_term': search_term, 'exclude_species': False},
         )
 
@@ -224,7 +224,7 @@ class TestTaxonSearchSuggest:
     async def test_ignore_mid_string_search(self, setup_gbif_schema, simple_tx_taxa, client):
         search_term = 'exana'
         response = await client.get(
-            '/taxa/taxon_search_suggest',
+            '/taxon/taxon_search_suggest',
             params={'search_term': search_term, 'exclude_species': False},
         )
 
@@ -238,7 +238,7 @@ class TestTaxonSearchSuggest:
     async def test_searches_include_species_resolved_to_higher_taxa(self, setup_gbif_schema, simple_tx_taxa, client):
         search_term = 'igiveup'
         response = await client.get(
-            '/taxa/taxon_search_suggest',
+            '/taxon/taxon_search_suggest',
             params={'search_term': search_term, 'exclude_species': True},
         )
 
@@ -253,7 +253,7 @@ class TestTaxonSearchSuggest:
 class TestGetTaxonInfo:
     @pytest.mark.asyncio
     async def test_get_taxon_info_returns_correct_fields(self, setup_gbif_schema, simple_tx_taxa, client):
-        response = await client.get('/taxa/get_taxon_info', params={'taxon_id': 5035741})
+        response = await client.get('/taxon/get_taxon_info', params={'taxon_id': 5035741})
 
         assert response.status_code == 200
         result = response.json()
@@ -262,7 +262,7 @@ class TestGetTaxonInfo:
 
     @pytest.mark.asyncio
     async def test_missing_taxon_returns_404(self, setup_gbif_schema, simple_tx_taxa, client):
-        response = await client.get('/taxa/get_taxon_info', params={'taxon_id': 0})
+        response = await client.get('/taxon/get_taxon_info', params={'taxon_id': 0})
 
         assert response.status_code == 404
 
@@ -270,7 +270,7 @@ class TestGetTaxonInfo:
 class TestGetBackbone:
     @pytest.mark.asyncio
     async def test_get_flat_backbone(self, setup_gbif_schema, simple_tx_taxa, client):
-        response = await client.get('/taxa/get_backbone', params={})
+        response = await client.get('/taxon/get_backbone', params={})
 
         assert response.status_code == 200
 
@@ -295,7 +295,7 @@ class TestGetQualifiedTaxa:
     @pytest.mark.asyncio
     async def test_get_children_from_higher(self, setup_gbif_schema, simple_tx_taxa, conn, client):
         await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
-        response = await client.post('/taxa/get_qualified_taxa', json={
+        response = await client.post('/taxon/get_qualified_taxa', json={
             'taxon_ids': [1323108],  # Target parent taxon
             'include_inat': True,
             'date_start': None,
@@ -337,7 +337,7 @@ class TestGetQualifiedTaxa:
 
         await refresh_materialized_view(conn, TAXON_PRESENCE_TABLE.name)
 
-        response = await client.post('/taxa/get_qualified_taxa', json={
+        response = await client.post('/taxon/get_qualified_taxa', json={
             'taxon_ids': [1],  # Target parent taxon
             'include_inat': True,
             'date_start': None,
@@ -350,7 +350,7 @@ class TestGetQualifiedTaxa:
         results = response.json()
         assert set(results) == set([1323108, 5035741])
 
-        response = await client.post('/taxa/get_qualified_taxa', json={
+        response = await client.post('/taxon/get_qualified_taxa', json={
             'taxon_ids': [1],  # Target parent taxon
             'include_inat': True,
             'date_start': None,
@@ -365,7 +365,7 @@ class TestGetQualifiedTaxa:
 
     async def test_no_matches_returns_empty_list(self, setup_gbif_schema, simple_tx_taxa, conn, client):
         await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
-        response = await client.post('/taxa/get_qualified_taxa', json={
+        response = await client.post('/taxon/get_qualified_taxa', json={
             'taxon_ids': [123456789], 'include_inat': True,
             'date_start': None, 'date_end': None, 'datasets': None, 'regions': None,
         })
@@ -374,7 +374,7 @@ class TestGetQualifiedTaxa:
 
     async def test_no_duplicate_taxon_ids_in_response(self, setup_gbif_schema, simple_tx_taxa, conn, client):
         await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
-        response = await client.post('/taxa/get_qualified_taxa', json={
+        response = await client.post('/taxon/get_qualified_taxa', json={
             'taxon_ids': [9999999], 'include_inat': True,
             'date_start': None, 'date_end': None, 'datasets': None, 'regions': None,
         })
@@ -403,40 +403,40 @@ class TestGetQualifiedTaxa:
         }
 
         # --- baseline: no filters beyond taxon lineage ---
-        response = await client.post('/taxa/get_qualified_taxa', json=base_payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=base_payload)
         assert response.status_code == 200
         assert set(response.json()) == {5035741, 9999001}
 
         # --- include_invasives=False excludes taxon 9999001 (invasive) ---
         payload = {**base_payload, 'include_invasives': False}
-        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
         assert set(response.json()) == {5035741}
 
         # --- include_inat=False excludes row 2, taxon 5035741 still
         # qualifies via rows 1/3/4 ---
         payload = {**base_payload, 'include_inat': False}
-        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
         assert set(response.json()) == {5035741, 9999001}
 
         # --- datasets=['dataset-b'] leaves only rows 2 and 5
         # (taxon 5035741 only — row 6/9999001 is dataset-a) ---
         payload = {**base_payload, 'datasets': ['dataset-b']}
-        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
         assert set(response.json()) == {5035741}
 
         # --- date_start excludes row 4 (2019) and row 1 (2020),
         # leaves row 5 (2022, taxon 5035741) and row 6 (2022, taxon 9999001) ---
         payload = {**base_payload, 'date_start': '2022-01-01'}
-        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
         assert set(response.json()) == {5035741, 9999001}
 
         # --- date_end excludes row 5/row 6 (2022), leaves rows 1/2/4 (<=2021) ---
         payload = {**base_payload, 'date_end': '2021-12-31'}
-        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
         assert set(response.json()) == {5035741}
 
@@ -444,7 +444,7 @@ class TestGetQualifiedTaxa:
         # passes via IS NULL OR), excludes nothing here since no row
         # exceeds 100 — use a tighter bound to prove exclusion ---
         payload = {**base_payload, 'coord_uncertainty': 10}
-        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
         # Only row 4 (NULL uncertainty) and row 2 (50, excluded) —
         # row 1/3/5/6 all have uncertainty=100, excluded by the <=10 bound.
@@ -456,7 +456,7 @@ class TestGetQualifiedTaxa:
         # not a falsy check, on the backend. Row 5 (uncertainty=0) must
         # NOT be treated as "no filter" — only NULL or <=0 rows pass ---
         payload = {**base_payload, 'coord_uncertainty': 0}
-        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
         # taxon 5035741 passes via row 4 (NULL); taxon 9999001 has only
         # row 6 (uncertainty=100), excluded.
@@ -466,7 +466,7 @@ class TestGetQualifiedTaxa:
         # region via TAXON_PRESENCE_TABLE (observation 1 tagged there) ---
         payload = {**base_payload,
                    'regions': ['11111111-1111-1111-1111-111111111111']}
-        response = await client.post('/taxa/get_qualified_taxa', json=payload)
+        response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
         assert set(response.json()) == {5035741}
 

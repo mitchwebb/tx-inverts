@@ -110,7 +110,7 @@ class TestGetNSMetrics:
         """See that get_ns_metrics sends back metrics in the right format"""
 
         response = await client.post(
-            '/rankings/get_ns_metrics',
+            '/ranking/get_ns_metrics',
             json={
                 'taxon_id': 5035741,
                 'include_inat': True,
@@ -134,7 +134,7 @@ class TestGetNSMetrics:
         """Test that get_ns_metrics returns None for 'number_of_occurrences' when taxon_rank is great than Genus"""
 
         response = await client.post(
-            '/rankings/get_ns_metrics',
+            '/ranking/get_ns_metrics',
             json={
                 'taxon_id': 4342,  # Target parent taxon
                 'include_inat': True,
@@ -157,7 +157,7 @@ class TestGetRangeExtentGeom:
         test_taxon_key = 5035741
 
         response = await client.post(
-            '/rankings/get_texas_range_extent_geom',
+            '/ranking/get_texas_range_extent_geom',
             json={
                 'taxon_id': test_taxon_key,
                 'include_inat': True,
@@ -191,7 +191,7 @@ class TestGetRangeExtentGeom:
         test_taxon_key = 9999999
 
         response = await client.post(
-            '/rankings/get_texas_range_extent_geom',
+            '/ranking/get_texas_range_extent_geom',
             json={
                 'taxon_id': test_taxon_key,
                 'include_inat': True,
@@ -211,7 +211,7 @@ class TestGetRangeExtentGeom:
         test_taxon_key = 4084
 
         response = await client.post(
-            '/rankings/get_texas_range_extent_geom',
+            '/ranking/get_texas_range_extent_geom',
             json={
                 'taxon_id': test_taxon_key,
                 'include_inat': True,

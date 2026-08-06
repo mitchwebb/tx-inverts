@@ -47,7 +47,7 @@ export async function getCommonNames(taxonID: ActiveTaxon['taxonID']) {
 
 // Get taxon info (triggered by change in taxonContext.activeTaxonID)
 export async function getTaxonInfo(taxonID: ActiveTaxon['taxonID']) {
-    const url = `/server/taxa/get_taxon_info?taxon_id=${taxonID}`;
+    const url = `/server/taxon/get_taxon_info?taxon_id=${taxonID}`;
     const response = await fetch(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -72,7 +72,7 @@ export async function getNSMetrics(
     if (abortController) abortController.abort();
     abortController = new AbortController();
 
-    const nSMetricsURL = '/server/rankings/get_ns_metrics';
+    const nSMetricsURL = '/server/ranking/get_ns_metrics';
     const response = await fetch(nSMetricsURL, {
         signal,
         method: 'POST',
@@ -92,7 +92,7 @@ export async function getNSMetrics(
 
 // Logic for loading backbone structure into browser
 export async function loadBackbone() {
-    const url = 'server/taxa/get_backbone';
+    const url = 'server/taxon/get_backbone';
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -114,13 +114,13 @@ export async function loadBackbone() {
     }
 }
 
-// Get list of qualified taxon_ids from backend, given various taxa/observation filters
+// Get list of qualified taxon_ids from backend, given various taxon/observation filters
 // DOES NOT filter by parent taxa (uses Animalia explicitly)
 export async function getQualifiedTaxa(
     filters: Partial<FiltersState>,
     signal?: AbortSignal
 ) {
-    const url = 'server/taxa/get_qualified_taxa';
+    const url = 'server/taxon/get_qualified_taxa';
     if (
         !filters.dateStart &&
         !filters.dateEnd &&

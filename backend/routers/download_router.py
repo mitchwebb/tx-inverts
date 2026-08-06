@@ -12,7 +12,7 @@ import pandas as pd
 import io
 
 
-downloads_router = APIRouter()
+download_router = APIRouter()
 
 
 async def download_table_and_stream(
@@ -105,7 +105,7 @@ async def estimate_tsv_download_size(conn: AsyncConnection, query: sql.Composed)
     }
 
 
-@downloads_router.post('/get_ranked_taxa_download', response_model=None)
+@download_router.post('/get_ranked_taxa_download', response_model=None)
 async def get_ranked_taxa_download(
     params: DownloadRequestParams,
     request: Request,

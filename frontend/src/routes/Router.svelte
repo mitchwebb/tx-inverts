@@ -11,7 +11,7 @@
     import { getRegionInfo } from '../lib/regions';
     import { getFiltersContext } from '../contexts/filtersContext';
     import type { RegionInfo } from '../types/api';
-    import BackbonePage from './Backbone/BackbonePage.svelte';
+    import BackbonePage from './backbone/BackbonePage.svelte';
     import AboutPage from './AboutPage.svelte';
     import WalkthroughPage from './WalkthroughPage.svelte';
     import type { RouterPath } from '../types/router';

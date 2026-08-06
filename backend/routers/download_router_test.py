@@ -10,7 +10,7 @@ from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.views import refresh_materialized_view
-from backend.routers.downloads_router import download_table_and_stream, estimate_tsv_download_size
+from backend.routers.download_router import download_table_and_stream, estimate_tsv_download_size
 
 from psycopg import sql
 
@@ -234,7 +234,7 @@ class TestGetRankedTaxaDownload:
     async def test_estimate_returns_size_dict(self, simple_tx_taxa, client):
         """estimate=True should return the size/row_count dict, not a stream."""
         response = await client.post(
-            '/downloads/get_ranked_taxa_download',
+            '/download/get_ranked_taxa_download',
             json={
                 'taxon_ids': [5035741],
                 'get_estimate': True,
@@ -249,7 +249,7 @@ class TestGetRankedTaxaDownload:
     async def test_stream_returns_tsv_content_type_and_headers(self, simple_tx_taxa, client):
         """estimate=False should stream a TSV with correct headers."""
         response = await client.post(
-            '/downloads/get_ranked_taxa_download',
+            '/download/get_ranked_taxa_download',
             json={
                 'taxon_ids': [5035741],
                 'get_estimate': False,
@@ -263,7 +263,7 @@ class TestGetRankedTaxaDownload:
     async def test_stream_body_contains_expected_row(self, simple_tx_taxa, client):
         """Confirm the streamed body actually contains the matched taxon, not just headers."""
         response = await client.post(
-            '/downloads/get_ranked_taxa_download',
+            '/download/get_ranked_taxa_download',
             json={
                 'taxon_ids': [5035741],
                 'get_estimate': False,
@@ -277,7 +277,7 @@ class TestGetRankedTaxaDownload:
     async def test_filters_out_non_species_subspecies_ranks(self, simple_tx_taxa, client):
         """Family-rank taxa matching taxon_id should be excluded by the rank filter."""
         response = await client.post(
-            '/downloads/get_ranked_taxa_download',
+            '/download/get_ranked_taxa_download',
             json={
                 'taxon_ids': [4342],  # Formicidae, rank='family'
                 'get_estimate': True,
@@ -290,7 +290,7 @@ class TestGetRankedTaxaDownload:
     async def test_matches_on_accepted_name_usage_id(self, simple_tx_taxa, client):
         """taxon_id OR accepted_name_usage_id should both be valid match paths."""
         response = await client.post(
-            '/downloads/get_ranked_taxa_download',
+            '/download/get_ranked_taxa_download',
             json={
                 # matches both taxon_id and accepted_name_usage_id here
                 'taxon_ids': [5035741],
@@ -304,7 +304,7 @@ class TestGetRankedTaxaDownload:
     async def test_multiple_taxon_ids(self, simple_tx_taxa, client):
         """Multiple taxon_ids in the list should be OR'd via ANY(), not require all to match."""
         response = await client.post(
-            '/downloads/get_ranked_taxa_download',
+            '/download/get_ranked_taxa_download',
             json={
                 # 2 species + 2 families
                 'taxon_ids': [5035741, 1315867, 4342, 4084],

@@ -386,7 +386,7 @@
         filters: FiltersState
     ) {
         const response = await fetch(
-            '/server/rankings/get_texas_range_extent_geom',
+            '/server/ranking/get_texas_range_extent_geom',
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

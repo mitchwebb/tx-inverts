@@ -65,7 +65,7 @@ export async function getDownload(
 //     onProgress?: (received: number) => void
 // ) {
 //     return getDownload(
-//         'server/downloads/get_occurrence_download',
+//         'server/download/get_occurrence_download',
 //         'occurrence_download.tsv',
 //         {
 //             taxon_ids: taxonIDs,
@@ -87,7 +87,7 @@ export async function getTaxaDownload(
     onProgress?: (received: number) => void
 ) {
     return getDownload(
-        'server/downloads/get_ranked_taxa_download',
+        'server/download/get_ranked_taxa_download',
         'taxa_download.tsv',
         {
             taxon_ids: filteredIDs,

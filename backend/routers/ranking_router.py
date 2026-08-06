@@ -19,10 +19,10 @@ from backend.core.logging import api_logger
 import json
 
 
-rankings_router = APIRouter()
+ranking_router = APIRouter()
 
 
-@rankings_router.post('/get_ns_metrics', response_class=JSONResponse)
+@ranking_router.post('/get_ns_metrics', response_class=JSONResponse)
 async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) -> JSONResponse:
     """
     Get conservation metrics (occurrences, range extent, and area of occupancy) 
@@ -81,7 +81,7 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@rankings_router.post('/get_texas_range_extent_geom', response_class=JSONResponse)
+@ranking_router.post('/get_texas_range_extent_geom', response_class=JSONResponse)
 async def get_texas_range_extent_geom(params: SingleTaxonObsRequestParams, request: Request) -> JSONResponse:
     """
     Get hull geometry representing range extent for a given species' filtered observation data, always filtered to Texas

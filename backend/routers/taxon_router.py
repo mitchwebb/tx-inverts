@@ -12,10 +12,10 @@ from backend.core.logging import api_logger
 from backend.models.taxa import TaxonInfo, TaxonSuggestion, TaxonTreeNode
 
 
-taxa_router = APIRouter()
+taxon_router = APIRouter()
 
 
-@taxa_router.get('/taxon_search_suggest',)
+@taxon_router.get('/taxon_search_suggest',)
 async def search_taxon(request: Request, search_term: str, exclude_species: bool = False) -> list[TaxonSuggestion]:
     """
     Get taxon search suggestions given a search term. 
@@ -77,7 +77,7 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@taxa_router.get('/get_taxon_info')
+@taxon_router.get('/get_taxon_info')
 async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
     """
     Get assorted taxon info for a given taxon_id
@@ -147,7 +147,7 @@ async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
 
 
 # Get flat backbone for frontend (excludes synonyms)
-@taxa_router.get('/get_backbone')
+@taxon_router.get('/get_backbone')
 async def get_backbone(request: Request) -> list[TaxonTreeNode]:
     """
     Get backbone from tx_taxa table (excluding synonyms)
@@ -196,7 +196,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
 
 
 # Get list of qualified taxon_ids based on various filters
-@taxa_router.post('/get_qualified_taxa')
+@taxon_router.post('/get_qualified_taxa')
 async def get_qualified_taxa(params: MultiTaxaObsRequestParams, request: Request):
     """
     Get list of taxon ids of taxa represented in observations data given

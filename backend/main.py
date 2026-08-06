@@ -7,10 +7,10 @@ from backend.core.logging import setup_logging
 from fastapi import FastAPI
 from backend.core.logging import api_logger
 from backend.routers.occurrence_router import occurrence_router
-from backend.routers.taxa_router import taxa_router
-from backend.routers.rankings_router import rankings_router
-from backend.routers.downloads_router import downloads_router
-from backend.routers.regions_router import regions_router
+from backend.routers.taxon_router import taxon_router
+from backend.routers.ranking_router import ranking_router
+from backend.routers.download_router import download_router
+from backend.routers.region_router import region_router
 from backend.config import get_settings
 from psycopg_pool import AsyncConnectionPool
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,10 +70,10 @@ app.add_middleware(
 
 # Add routers
 app.include_router(occurrence_router, prefix='/occurrence')
-app.include_router(taxa_router, prefix='/taxa')
-app.include_router(rankings_router, prefix='/rankings')
-app.include_router(downloads_router, prefix='/downloads')
-app.include_router(regions_router, prefix='/regions')
+app.include_router(taxon_router, prefix='/taxon')
+app.include_router(ranking_router, prefix='/ranking')
+app.include_router(download_router, prefix='/download')
+app.include_router(region_router, prefix='/region')
 
 # Register exception handler
 app.add_exception_handler(Exception, global_exception_handler)

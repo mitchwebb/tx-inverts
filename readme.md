@@ -1,6 +1,6 @@
 # Source Code for Texas Inverts
 
-This repo holds the source code for the Texas Inverts website. The site is built to provide preliminary, approximate conservation rankings for the invertebrate species of Texas to help in Texas Parks and Wildlife's effort to track Species of Greatest Conservation Need. This site is built on public data from the GBIF database and runs period downloads/updates for presentation and querying. All of the data is public.
+This repo holds the source code for the Texas Inverts website. The site is built to provide preliminary, approximate conservation rankings for the invertebrate species of Texas to help in Texas Parks and Wildlife's effort to track Species of Greatest Conservation Need. This site is built on public data from the GBIF database and runs period download/updates for presentation and querying. All of the data is public.
 
 ## Implementation
 
