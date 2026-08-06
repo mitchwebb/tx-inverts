@@ -8,8 +8,8 @@ from backend.data_util.taxa import build_lineages
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
-from backend.jobs.tasks.tables import initialize_table
-from backend.jobs.tasks.views import refresh_materialized_view
+from backend.jobs.tasks.table_tasks import initialize_table
+from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.core.logging import data_logger, db_logger
 import csv
 import os

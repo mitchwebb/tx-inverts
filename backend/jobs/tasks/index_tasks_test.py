@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from backend.db.schema.index_definitions import INDEX_DEFINITIONS
-from backend.jobs.tasks.indexes import update_index
+from backend.jobs.tasks.index_tasks import update_index
 
 
 class TestUpdateIndex:

@@ -2,13 +2,13 @@ import os
 from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.db import get_single_db_connection
 from backend.jobs.runners.run_async import run_async
-from backend.jobs.tasks.occurrence import update_observations
+from backend.jobs.tasks.occurrence_tasks import update_observations
 from backend.core.logging import setup_logging
 from backend.core.logging import tasks_logger
-from backend.jobs.tasks.regions import update_observation_regions
-from backend.jobs.tasks.taxa import update_ns_ranks
-from backend.jobs.tasks.indexes import update_indexes
-from backend.jobs.tasks.views import refresh_materialized_views
+from backend.jobs.tasks.region_tasks import update_observation_regions
+from backend.jobs.tasks.taxon_tasks import update_ns_ranks
+from backend.jobs.tasks.index_tasks import update_indexes
+from backend.jobs.tasks.view_tasks import refresh_materialized_views
 
 
 async def main():

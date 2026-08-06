@@ -9,7 +9,7 @@ from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
-from backend.jobs.tasks.views import refresh_materialized_view
+from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.routers.download_router import download_table_and_stream, estimate_tsv_download_size
 
 from psycopg import sql

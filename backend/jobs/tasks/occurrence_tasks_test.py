@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from backend.jobs.tasks.occurrence import update_observations
+from backend.jobs.tasks.occurrence_tasks import update_observations
 
 
 # Helper to return a sample observations DF chunk

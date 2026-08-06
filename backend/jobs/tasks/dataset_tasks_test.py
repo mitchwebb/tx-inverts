@@ -6,7 +6,7 @@ import pytest
 from backend.config import get_settings
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
-from backend.jobs.tasks.datasets import fill_dataset_table
+from backend.jobs.tasks.dataset_tasks import fill_dataset_table
 
 from psycopg import sql
 

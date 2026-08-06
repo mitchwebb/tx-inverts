@@ -20,9 +20,9 @@ from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
-from backend.jobs.tasks.tables import initialize_all_tables
+from backend.jobs.tasks.table_tasks import initialize_all_tables
 
-from backend.jobs.tasks.views import refresh_materialized_view
+from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.main import app
 
 

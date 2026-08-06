@@ -9,7 +9,7 @@ from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
-from backend.jobs.tasks.views import refresh_materialized_view
+from backend.jobs.tasks.view_tasks import refresh_materialized_view
 
 # Values to insert into backbone table, then brought into tx_taxa mat view
 taxa = [

@@ -1,5 +1,5 @@
 from backend.jobs.runners.run_async import run_async
-from backend.jobs.tasks.taxa import update_ns_ranks
+from backend.jobs.tasks.taxon_tasks import update_ns_ranks
 from backend.core.logging import setup_logging, tasks_logger
 from backend.data_util.db import get_single_db_connection
 

@@ -11,7 +11,7 @@ from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
-from backend.jobs.tasks.views import refresh_materialized_view
+from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.models.occurrence import OccurrenceFilters
 from backend.routers.taxon_router import get_qualified_taxa
 

@@ -5,7 +5,7 @@ from backend.conftest import insert_rows
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema.geometries import TEXAS_COUNTIES_TABLE, TEXAS_PARKS_TABLE
 from backend.db.schema.regions import REGIONS_VIEW
-from backend.jobs.tasks.views import refresh_materialized_view
+from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.routers.region_router import format_park
 
 

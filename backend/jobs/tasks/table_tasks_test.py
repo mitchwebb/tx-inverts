@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from backend.db.schema import ALL_TABLES
-from backend.jobs.tasks.tables import initialize_table, table_exists
+from backend.jobs.tasks.table_tasks import initialize_table, table_exists
 
 
 # initialize_table tests
