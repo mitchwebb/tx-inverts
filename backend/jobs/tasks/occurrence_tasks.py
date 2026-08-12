@@ -131,7 +131,11 @@ async def _load_chunk_into_temp_table(conn: AsyncConnection, df_chunk: DataFrame
     async with conn.cursor() as cur:
         copy_sql = sql.SQL("""
             COPY {temp_table} ({column_order})
-            FROM STDIN WITH (FORMAT CSV, DELIMITER E'\t', NULL '\\N')
+            FROM STDIN WITH (
+                FORMAT CSV, 
+                DELIMITER E'\t', 
+                NULL '\\N'
+            )
         """).format(
             temp_table=sql.Identifier(table_name),
             column_order=sql.SQL(', ').join(

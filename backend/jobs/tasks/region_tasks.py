@@ -34,7 +34,6 @@ async def fill_geometry_table(fp: str, table: DBTable, col_map: dict, conn, trun
 
     Returns:
         None
-
     """
 
     try:

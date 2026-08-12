@@ -30,12 +30,12 @@ class TestUpdateObservations:
     ):
         # Processing step not relevant for this test
         mocker.patch(
-            'backend.jobs.tasks.occurrence.process_observations.process_dwc_observations',
+            'backend.jobs.tasks.occurrence_tasks.process_observations.process_dwc_observations',
             return_value=[],
         )
         # Mat views not relevant for this step
         mocker.patch(
-            'backend.jobs.tasks.occurrence.refresh_materialized_views',
+            'backend.jobs.tasks.occurrence_tasks.refresh_materialized_views',
             new=AsyncMock(),
         )
 
@@ -57,11 +57,11 @@ class TestUpdateObservations:
         self,
         mocker,
         conn,
-        setup_gbif_schema
+        setup_gbif_schema  # Make sure tables exist for test
     ):
 
         mock_get_file = mocker.patch(
-            'backend.jobs.tasks.occurrence.get_gbif_inverts_file',
+            'backend.jobs.tasks.occurrence_tasks.get_gbif_inverts_file',
             return_value=''
 
         )

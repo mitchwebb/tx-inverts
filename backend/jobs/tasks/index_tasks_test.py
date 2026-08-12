@@ -22,7 +22,7 @@ class TestUpdateIndex:
 
         # Index existence check returns True, reindex query returns None
         mock_exec = mocker.patch(
-            'backend.jobs.tasks.indexes.execute_psql_query', side_effect=[True, None]
+            'backend.jobs.tasks.index_tasks.execute_psql_query', side_effect=[True, None]
         )
 
         await update_index(conn, index_name, reindex=True)
@@ -47,7 +47,7 @@ class TestUpdateIndex:
 
         # Index existence check returns true, reindex query returns None
         mock_exec = mocker.patch(
-            'backend.jobs.tasks.indexes.execute_psql_query', return_value=True)
+            'backend.jobs.tasks.index_tasks.execute_psql_query', return_value=True)
 
         await update_index(conn, good_index_name, reindex=False)
 
@@ -66,7 +66,7 @@ class TestUpdateIndex:
 
         # Index existence check returns None, create query reutrns None
         mock_exec = mocker.patch(
-            'backend.jobs.tasks.indexes.execute_psql_query', side_effect=[None, None]
+            'backend.jobs.tasks.index_tasks.execute_psql_query', side_effect=[None, None]
         )
 
         await update_index(conn, index_name)

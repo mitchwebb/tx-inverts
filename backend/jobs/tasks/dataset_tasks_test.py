@@ -19,7 +19,7 @@ class TestFillDatasetTable:
         """Happy path: fetched dataset info is written to gbif_dataset_metadata."""
         dataset_key = '07ad9e66-6a83-4054-b176-ef6bc5196b4f'
         mocker.patch(
-            'backend.jobs.tasks.datasets.fetch_data',
+            'backend.jobs.tasks.dataset_tasks.fetch_data',
             new=AsyncMock(return_value={'title': 'Test Dataset Title'})
         )
         await fill_dataset_table(conn, [dataset_key])
@@ -40,7 +40,7 @@ class TestFillDatasetTable:
         """If GBIF returns None for a dataset key, log and continue rather than error."""
         dataset_key = 'nonexistent-key'
         mocker.patch(
-            'backend.jobs.tasks.datasets.fetch_data',
+            'backend.jobs.tasks.dataset_tasks.fetch_data',
             new=AsyncMock(return_value=None)
         )
         # Should not raise
@@ -61,7 +61,7 @@ class TestFillDatasetTable:
         """ON CONFLICT should update dataset_title, not duplicate or error on repeat key."""
         dataset_key = '07ad9e66-6a83-4054-b176-ef6bc5196b4f'
         fetch_mock = mocker.patch(
-            'backend.jobs.tasks.datasets.fetch_data',
+            'backend.jobs.tasks.dataset_tasks.fetch_data',
             new=AsyncMock(return_value={'title': 'Original Title'})
         )
         await fill_dataset_table(conn, [dataset_key])
@@ -92,7 +92,7 @@ class TestFillDatasetTable:
             return {'title': 'Good Dataset'}
 
         mocker.patch(
-            'backend.jobs.tasks.datasets.fetch_data',
+            'backend.jobs.tasks.dataset_tasks.fetch_data',
             new=AsyncMock(side_effect=fake_fetch)
         )
         await fill_dataset_table(conn, [key_ok, key_missing])

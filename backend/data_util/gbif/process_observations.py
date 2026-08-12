@@ -1,7 +1,9 @@
 # Logic for processing/filtering GBIF observations downloads in darwincore format
 import datetime
+import os
 from typing import Iterator, cast
 
+from backend.constants.paths import DATA_OUT_PATH
 from backend.core.logging import data_logger
 from pandas import DataFrame
 from geopandas.geodataframe import GeoDataFrame
@@ -17,26 +19,26 @@ from backend.types.occurrence import GBIFObservationRow
 
 # Map of month names/abbreviations to numbers
 MONTH_LOOKUP = {
-    'january': 1, 'jan': 1, 'i': 1,
-    'february': 2, 'feb': 2, 'ii': 2,
-    'march': 3, 'mar': 3, 'iii': 3,
-    'april': 4, 'apr': 4, 'iv': 4,
-    'may': 5, 'v': 5,
-    'june': 6, 'jun': 6, 'vi': 6,
-    'july': 7, 'jul': 7, 'vii': 7,
-    'august': 8, 'aug': 8, 'viii': 8,
-    'september': 9, 'sep': 9, 'sept': 9, 'ix': 9,
-    'october': 10, 'oct': 10, 'x': 10,
-    'november': 11, 'nov': 11, 'xi': 11,
-    'december': 12, 'dec': 12, 'xii': 12,
+    'january': 1, 'jan': 1, 'jan.': 1, 'i': 1, 'i.': 1,
+    'february': 2, 'feb': 2, 'feb.': 2, 'ii': 2, 'ii.': 2,
+    'march': 3, 'mar': 3, 'mar.': 3, 'iii': 3, 'iii.': 3,
+    'april': 4, 'apr': 4, 'apr.': 4, 'iv': 4, 'iv.': 4,
+    'may': 5, 'v': 5, 'v.': 5,
+    'june': 6, 'jun': 6, 'jun.': 6, 'vi': 6, 'vi.': 6,
+    'july': 7, 'jul': 7, 'jul.': 7, 'vii': 7, 'vii.': 7,
+    'august': 8, 'aug': 8, 'aug.': 8, 'viii': 8, 'viii.': 8,
+    'september': 9, 'sep': 9, 'sept': 9, 'sep.': 9, 'sept.': 9, 'ix': 9, 'ix.': 9,
+    'october': 10, 'oct': 10, 'oct.': 10, 'x': 10, 'x.': 10,
+    'november': 11, 'nov': 11, 'nov.': 11, 'xi': 11, 'xi.': 11,
+    'december': 12, 'dec': 12, 'dec.': 12, 'xii': 12, 'xii.': 12,
 }
 MONTH_NAMES = '|'.join(re.escape(m) for m in MONTH_LOOKUP.keys())
 
 # DWC Should use ISO 8601. This is what GBIF does.
 # Strict YYYY, YYYY-MM, YYYY-MM-DD matching
 ISO_YMD_PATTERN = (
-    # No preceding digits OR letters OR '-' (which prevents erroneous partial matches)
-    rf'(?<![\dA-Za-z\-/])'
+    # No preceding digits OR letters OR '-' (which prevents erroneous partial matches), or '.' (which does reasonably get used)
+    rf'(?<![\dA-Za-z\-/.])'
     # Year (required, four digits, not before 999)
     r'(?P<year>[1-9]\d{3})'
     # Optional group start
@@ -255,6 +257,15 @@ def parse_date_to_date_range_string(range_string: str):
         return [None, None]
 
 
+def parse_yyyy_yyyy_range_string(range_string: str):
+    """Another intentionally specific case for a date range string."""
+
+    match = re.match(r'^(\d{4})\s*-\s*(\d{4})$', range_string.strip())
+    if not match:
+        return [None, None]
+    return [match.group(1), match.group(2)]
+
+
 # TODO: Handling of 'to' ranges needs to be added. This is common enough. Although... GBIF doesn't parse these, and I'd argue that it's for a reason. At the very least, they should be ignored. Currently, they're treated unpredictably.
 # Some basic date parsing for DarwinCore eventDates
 def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
@@ -267,6 +278,11 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     UTIC, for example:
         eventDate: '2001-06-25'
         eventRemarks: '; ended 2001-06-27'
+
+    While the accuracy of individual dates is quite conservative,
+    date ranges may be parsed partially. In these cases, one of the two
+    dates may be taken and assumed as the eventDate, artificially 
+    increasing precision. 
 
     Args:
         df (DataFrame): Pandas dataframe of DWC dataset
@@ -374,6 +390,9 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
                 start_date, end_date = parse_date_to_date_range_string(
                     col_value)
                 if start_date is None:
+                    start_date, end_date = parse_yyyy_yyyy_range_string(
+                        col_value)
+                if start_date is None:
                     start_date = extract_date(col_value)
                 if start_date:
                     break
@@ -396,7 +415,7 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         #     date_audit.append({
         #         'index': idx,
         #         'newDate': start_date,
-        #         'originalDate': original_event_date,
+        #         'originalDate': original,
         #         'eventDate': row.eventDate,
         #         'verbatimEventDate': row.verbatimEventDate,
         #         'year': row.year,
@@ -424,6 +443,8 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
 
 
 def extract_date(string: str):
+    """Attempts to extract unambiguous date from given string"""
+
     ymd_match = ISO_YMD_REGEX.search(string)
     mdy_match = AMBIGUOUS_MDY_PATTERN_REGEX.search(string)
     dmy_match = AMBIGUOUS_DMY_PATTERN_REGEX.search(

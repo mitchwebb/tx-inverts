@@ -56,13 +56,18 @@ class TestParseDWCDates:
         assert result['collectionStartDate'] == '2000-04-02'
 
     # Reject two digit years (can't be fully trusted)
-    def test_rejects_two_digit_year(self):
+    def test_rejects_spelled_month_two_digit_year(self):
         result = parse_single_dwc_row(eventRemarks='22-Apr-00')
         assert result['collectionStartDate'] == None
 
     # Reject two digit roman years (can't be fully trusted)
-    def test_rejects_two_digit_roman_year(self):
+    def test_rejects_roman_month_two_digit_year(self):
         result = parse_single_dwc_row(verbatimEventDate='22-VI-97')
+        assert result['collectionStartDate'] == None
+
+    # Reject two digit years (can't be fully trusted)
+    def test_rejects_number_month_two_digit_year(self):
+        result = parse_single_dwc_row(eventRemarks='22-04-00')
         assert result['collectionStartDate'] == None
 
     def test_parses_unambiguous_dot_separated_date(self):
@@ -169,25 +174,58 @@ class TestParseDWCDates:
         assert result['collectionStartDate'] == '2021-04-23'
         assert result['collectionEndDate'] == '2021-05-28'
 
+    def test_ignore_coord_garbage(self):
+        result = parse_single_dwc_row(eventDate='N 333.7806 W95.5833')
+        assert result['collectionStartDate'] is None
+        assert result['collectionEndDate'] is None
+
+    def test_parses_year_range(self):
+        df = make_row(verbatimEventDate='2001-2002')
+        result = parse_dwc_dates(df).iloc[0]
+        assert result['collectionStartDate'] == '2001'
+        assert result['collectionEndDate'] == '2002'
+
+    def test_parses_year_range_with_gaps(self):
+        result = parse_single_dwc_row(eventDate='1947 - 1950')
+        assert result['collectionStartDate'] == '1947'
+        assert result['collectionEndDate'] == '1950'
+
+    def test_partial_match_on_human_format(self):
+        """
+        While this is an easily recognizable format, opening up asymmetrical separator matches is dangerous.
+        We'll stick to just year matches.
+        """
+        result = parse_single_dwc_row(eventDate='August 30, 2003')
+        assert result['collectionStartDate'] == '2003'
+
+    def test_abbreviation_with_period_matches(self):
+        result = parse_single_dwc_row(eventDate='15 Sept. 1969')
+        assert result['collectionStartDate'] == '1969-09-15'
+
+    def test_abbreviated_with_period_bug(self):
+        """
+        This is a very silly pattern that DOES show up.
+        More importantly, the function was parsing these dates incorrectly.
+        """
+        result = parse_single_dwc_row(eventDate='VII. 4 1933')
+        assert result['collectionStartDate'] == '1933-07-04'
+
     # Uncaught Date Types
     # 'X-1971--III-1972' (Catching -- as a range feels... questionable)
     # '10 to 24 August' 2009 OR '25 April to 24 June 2013' (Opening up this door would be dangerous)
     # We currently get uncertain ranges like this unpredictably. In the above cases, we get the end date as the collection date.
+    # '1948-16-12' (While this is theoretically unambiguous, this is NOT a recognized format)
 
-    # NOTE: While this behavior would be ideal, we're letting these
-    # cases go for now. This opens up additional doors more than it recovers dates
+    ###
+    # NOTE: While this behavior would be ideal, we're letting these cases go for now.
+    # This opens up additional doors more than it recovers dates.
+    ###
+
     # def test_gets_unambiguous_to_range_string(self):
     #     df = make_row(verbatimEventDate='02 Jan 1999 to 31 Dec 2001')
     #     result = parse_dwc_dates(df).iloc[0]
     #     assert result['collectionStartDate'] == '1999-01-02'
     #     assert result['collectionEndDate'] == '2001-12-31'
-
-    # # Is this behavior that we want? Or will this lead to more false dates?
-    # def test_parses_year_range(self):
-    #     df = make_row(verbatimEventDate='2001-2002')
-    #     result = parse_dwc_dates(df).iloc[0]
-    #     assert result['collectionStartDate'] == '2001'
-    #     assert result['collectionEndDate'] == '2002'
 
 
 class TestParseISODateString:
@@ -235,8 +273,6 @@ class TestParseDatetoDateRangeString:
 
 # Test date range parsing
 # Note: Some of these are just re-testing regex, but... that's not a huge issue
-
-
 class TestParseIsoDateRangeString:
     # Good ranges
     def test_full_ymd_range(self):

@@ -8,8 +8,24 @@ from backend.core.logging import db_logger
 from backend.jobs.tasks.view_tasks import refresh_materialized_views
 
 
-# Check if table already exists (for readable erroring)
+async def truncate_table(conn: AsyncConnection, table_name: str):
+    """Check if table exists and, if so, truncate. Else, give warning."""
+    try:
+        if await table_exists(conn, table_name):
+            truncate_statement = sql.SQL("""
+                    TRUNCATE {table_name}
+                """).format(table_name=sql.Identifier(table_name))
+            await execute_psql_query(conn, truncate_statement)
+        else:
+            raise ValueError(
+                f"Truncate requested, but table '{table_name}' does not exist. Make sure proper tables have been initialized.")
+    except Exception as e:
+        db_logger.exception(f"Error truncating table: {e}")
+        raise
+
+
 async def table_exists(conn: AsyncConnection, table_name: str) -> bool:
+    """Check if table already exists, returning boolean."""
     exists_query = sql.SQL("""
         SELECT EXISTS (
                 SELECT 1

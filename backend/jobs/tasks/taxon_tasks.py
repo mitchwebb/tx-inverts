@@ -3,12 +3,13 @@ from backend.data_util.download_large_file import download_large_file
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.extract_zip import extract_zip_files
 from backend.data_util.invasives import get_invasives_dataset, prep_invasives_dataset
+from backend.data_util.taxa import inverts_mask
 import backend.data_util.ranking as ns
 from backend.data_util.taxa import build_lineages
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
-from backend.jobs.tasks.table_tasks import initialize_table
+from backend.jobs.tasks.table_tasks import initialize_table, truncate_table
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.core.logging import data_logger, db_logger
 import csv
@@ -22,14 +23,13 @@ from backend.models.occurrence import OccurrenceFilters
 
 
 # TODO: If the backbone is updated, we should assume that this needs to be
-# updated as well, considering these taxon_ids would also change
+# updated as well, considering these taxon_ids would also change.
+# In that case, this should be refactored to use the previous download.
 async def create_invasives_table(conn: AsyncConnection, truncate: bool = False):
     try:
         fp = await get_invasives_dataset()
 
         df = await prep_invasives_dataset(fp)
-
-        df = US_INVASIVES_TABLE.coerce_dataframe(df)
 
         columns = US_INVASIVES_TABLE.column_order()
 
@@ -37,16 +37,18 @@ async def create_invasives_table(conn: AsyncConnection, truncate: bool = False):
         df.to_csv(buffer, index=False, sep='\t', header=False, na_rep='\\N')
         buffer.seek(0)
 
+        # Truncate table if desired
         if truncate:
-            truncate_sql = sql.SQL("""
-                TRUNCATE {invasives_table}
-            """).format(invasives_table=sql.Identifier(US_INVASIVES_TABLE.name))
-            await execute_psql_query(conn, truncate_sql)
+            await truncate_table(conn, US_INVASIVES_TABLE.name)
 
-        # Sql for copying to table
+        # Sql for copying to table, assuming GBIF TSV
         copy_sql = sql.SQL("""
             COPY {invasives_table} ({column_order})
-            FROM STDIN WITH (FORMAT CSV, DELIMITER E'\t', NULL '\\N')
+            FROM STDIN WITH (
+                FORMAT CSV, 
+                DELIMITER E'\t', 
+                NULL '\\N'
+            )
         """).format(
             invasives_table=sql.Identifier(US_INVASIVES_TABLE.name),
             column_order=sql.SQL(', ').join(map(sql.Identifier, columns))
@@ -60,55 +62,62 @@ async def create_invasives_table(conn: AsyncConnection, truncate: bool = False):
         await conn.commit()
     except Exception as e:
         db_logger.error(f"Failed to create invasives table: {e}")
+        if conn is not None:
+            await conn.rollback()
+        raise e
 
 
 async def update_invasives(conn: AsyncConnection):
-    # Mark invasive species
-    flag_invasives_query = sql.SQL("""
-            UPDATE {backbone} b
-            SET us_invasive = TRUE
-            FROM {invasives_table} i
-            WHERE i.taxon_id = COALESCE(b.accepted_name_usage_id, b.taxon_id);
-        """).format(
-        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-        invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
-    )
-    db_logger.info("Flagging invasive species...")
-    await execute_psql_query(conn, flag_invasives_query)
-
-    # Correct any incorrectly marked species (from previous lists)
-    unflag_invasives_query = sql.SQL("""
-            UPDATE {backbone} b
-            SET us_invasive = FALSE
-            WHERE us_invasive = TRUE
-            AND NOT EXISTS (
-                SELECT 1
+    try:
+        # Mark invasive species
+        flag_invasives_query = sql.SQL("""
+                UPDATE {backbone} b
+                SET us_invasive = TRUE
                 FROM {invasives_table} i
-                WHERE i.taxon_id = COALESCE(b.accepted_name_usage_id, b.taxon_id)
-            );
-        """).format(
-        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-        invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
-    )
-    db_logger.info(
-        "Unflagging species that are no longer in invasives table...")
-    await execute_psql_query(conn, unflag_invasives_query)
+                WHERE i.taxon_id = COALESCE(b.accepted_name_usage_id, b.taxon_id);
+            """).format(
+            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+            invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
+        )
+        db_logger.info("Flagging invasive species...")
+        await execute_psql_query(conn, flag_invasives_query)
 
-    # Update tx_taxa materialized view
-    await refresh_materialized_view(conn, 'tx_taxa')
+        # Correct any incorrectly marked species (from previous lists)
+        unflag_invasives_query = sql.SQL("""
+                UPDATE {backbone} b
+                SET us_invasive = FALSE
+                WHERE us_invasive = TRUE
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM {invasives_table} i
+                    WHERE i.taxon_id = COALESCE(b.accepted_name_usage_id, b.taxon_id)
+                );
+            """).format(
+            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+            invasives_table=sql.Identifier(US_INVASIVES_TABLE.name)
+        )
+        db_logger.info(
+            "Unflagging species that are no longer in invasives table...")
+        await execute_psql_query(conn, unflag_invasives_query)
 
-    await conn.commit()
+        # Update tx_taxa materialized view
+        await refresh_materialized_view(conn, 'tx_taxa')
+
+        await conn.commit()
+    except Exception as e:
+        db_logger.info(f"Error while flagging invasive species: {e}")
+        raise e
 
 
 # Helper for truncating/replacing backbone rows
 async def _replace_backbone(conn, temp_table_name: str):
     # Truncate backbone
-    truncate_query = sql.SQL("TRUNCATE TABLE {backbone_table}").format(
-        backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
-    )
-    await execute_psql_query(conn, truncate_query)
+    await truncate_table(conn, GBIF_INVERTS_BACKBONE.name)
     # Insert rows
-    insert_query = sql.SQL("INSERT INTO {backbone_table} SELECT * FROM {temp_table}").format(
+    insert_query = sql.SQL("""
+        INSERT INTO {backbone_table}
+        SELECT * FROM {temp_table}
+    """).format(
         backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
         temp_table=sql.Identifier(temp_table_name)
     )
@@ -118,11 +127,30 @@ async def _replace_backbone(conn, temp_table_name: str):
     # Refresh materialized views dependent on table
     await refresh_materialized_view(conn, 'tx_taxa')
     await refresh_materialized_view(conn, 'taxon_region_presence')
-    await conn.commit()
+
+
+async def _fetch_backbone() -> str:
+    """
+    Download GBIF backbone, extract Taxon.tsv from zip, and delete original zip
+    Returns filepath for extracted Taxon.tsv
+    """
+    data_logger.info("Downloading backbone from gbif...")
+    zip_path = download_large_file(
+        'https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip',
+        output_fp=os.path.join(DATA_OUT_PATH, 'backbone.zip')
+    )
+    extract_dir = DATA_OUT_PATH
+
+    # Extract Taxon.tsv from backbone
+    extract_zip_files(zip_path, extract_dir, target_files=[
+        'Taxon.tsv'], delete_zip=True)
+
+    fp = os.path.join(extract_dir, 'Taxon.tsv')
+    return fp
 
 
 # Perform a full update of the gbif_backbone in local database
-async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cleaned: bool = False) -> None:
+async def update_backbone(conn: AsyncConnection, fp: str | None = None) -> None:
     """
     Updates the gbif_inverts_backbone table
     """
@@ -130,20 +158,11 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
     try:
         # If no filepath provided, download and extract
         if fp is None:
-            data_logger.info("Downloading backbone from gbif...")
-            zip_path = download_large_file(
-                'https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip',
-                output_fp=os.path.join(DATA_OUT_PATH, 'backbone.zip')
-            )
-            extract_dir = DATA_OUT_PATH
-
-            # Extract Taxon.tsv from backbone
-            extract_zip_files(zip_path, extract_dir, target_files=[
-                'Taxon.tsv'], delete_zip=True)
-
-            fp = os.path.join(extract_dir, 'Taxon.tsv')
+            fp = await _fetch_backbone()
 
         data_logger.info("Reading backbone...")
+
+        # Read in backbone
         df = pd.read_csv(
             fp,
             delimiter='\t',
@@ -153,18 +172,7 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
             low_memory=True
         )
 
-        # List of exceptional chordate invertebrates
-        chordate_inverts = ['Thaliacea', 'Ascidiacea',
-                            'Appendicularia', 'Leptocardii']
-
-        # Create filter mask
-        mask = (
-            (df['kingdom'] == 'Animalia') &
-            (
-                (df['phylum'] != 'Chordata') |
-                (df['class'].isin(chordate_inverts))
-            )
-        )
+        mask = inverts_mask(df)
 
         data_logger.info("Filtering to inverts...")
         # Apply mask
@@ -187,7 +195,7 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
             "Building taxonomic lineages to fill rank id columns...")
         df = build_lineages(df)
 
-        # Save backbone
+        # Save copy of formatted backbone
         tsv_path = os.path.join(DATA_OUT_PATH, 'backbone.tsv')
         df.to_csv(tsv_path, sep='\t', index=False)
 
@@ -240,6 +248,37 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None, save_cle
         raise
 
 
+async def _ensure_rank_columns(conn: AsyncConnection) -> None:
+    columns_to_check = ['ns_rank_state', 'ns_rank_state_no_inat']
+
+    db_logger.info("Checking for rank columns...")
+    # Check for both relevant columns and add them if they don't exist
+    for col_name in columns_to_check:
+        check_col_query = sql.SQL("""
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = {backbone} AND column_name = {col_name}
+        """).format(
+            backbone=sql.Literal(GBIF_INVERTS_BACKBONE.name),
+            col_name=sql.Literal(col_name)
+        )
+        result = await execute_psql_query(conn, check_col_query, fetch='one')
+
+        # If column missing
+        if result is None:
+            add_col_query = sql.SQL(
+                "ALTER TABLE {backbone} ADD COLUMN {col} TEXT"
+            ).format(
+                backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                col=sql.Identifier(col_name)
+            )
+            await execute_psql_query(conn, add_col_query)
+            db_logger.info(
+                f"Added blank {col_name} column to {GBIF_INVERTS_BACKBONE.name}")
+
+    # Commit possible column changes
+    await conn.commit()
+
+
 async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]] = None) -> None:
     """
     Update conservation ranks for selected (or all) taxa
@@ -249,39 +288,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
     """
 
     try:
-        columns_to_check = ['ns_rank_state', 'ns_rank_state_no_inat']
-
-        # Check for both relevant columns and add them if they don't exist
-        db_logger.info("Checking for rank columns...")
-        for col_name in columns_to_check:
-            # Check if the column exists
-            check_col_query = sql.SQL("""
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_name = {backbone} AND column_name = {col_name}
-            """).format(
-                backbone=sql.Literal(GBIF_INVERTS_BACKBONE.name),
-                col_name=sql.Literal(col_name)
-            )
-
-            result = await execute_psql_query(conn, check_col_query, fetch='one')
-
-            # If column missing
-            if result is None:
-                # Add the missing column
-                add_col_query = sql.SQL(
-                    "ALTER TABLE {backbone} ADD COLUMN {col} TEXT"
-                ).format(
-                    backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-                    col=sql.Identifier(col_name)
-                )
-
-                await execute_psql_query(conn, add_col_query)
-                db_logger.info(
-                    f"Added blank {col_name} column to {GBIF_INVERTS_BACKBONE.name}")
-
-        # Commit possible column changes
-        await conn.commit()
+        await _ensure_rank_columns(conn)
 
         # Refreshing tx_taxa materialized view to make sure we're getting full list of taxa
         await refresh_materialized_view(conn, 'tx_taxa')

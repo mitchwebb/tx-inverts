@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import sys
+from typing import List
 import uuid
 from unittest.mock import AsyncMock, MagicMock
 
@@ -125,7 +126,7 @@ async def client(test_app):
 
 
 @pytest.mark.asyncio
-async def insert_rows(rows, table_name: str, conn: psycopg.AsyncConnection):
+async def insert_rows(rows: List[dict], table_name: str, conn: psycopg.AsyncConnection):
     """
     Insert rows into testing tables.
     Infers column names from row objects.
@@ -222,6 +223,7 @@ occ = [
         'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',  # Austin, TX
     },
     {
         # iNaturalist origin — tests include_inat=False exclusion
@@ -230,6 +232,8 @@ occ = [
         'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
         'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
         'coordinate_uncertainty_in_meters': 50,
+        # Dallas, TX — far enough to swing extent if included
+        'geometry': 'POINT(-96.7970 32.7767)',
     },
     {
         # collection_start_date NULL — tests hardcoded IS NOT NULL clause
@@ -238,6 +242,7 @@ occ = [
         'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
     },
     {
         # second dataset_key, distinct date, tagged to REGION_B_ID
@@ -246,6 +251,7 @@ occ = [
         'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': None,  # tests "IS NULL OR <=" branch
+        'geometry': 'POINT(-95.3698 29.7604)',  # Houston, TX
     },
     {
         # coordinate_uncertainty_in_meters == 0 — tests `is None` vs falsy bug
@@ -254,6 +260,7 @@ occ = [
         'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
         'dataset_key': 'dataset-b', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 0,
+        'geometry': 'POINT(-97.7431 30.2672)',
     },
     {
         # invasive taxon — tests include_invasives true/false branches
@@ -262,6 +269,7 @@ occ = [
         'kingdom_id': 1, 'family_id': 4342, 'genus_id': 9999000, 'species_id': 9999001,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
     },
 ]
 
@@ -276,9 +284,6 @@ async def occurrence_filter_data(conn):
     """
     Minimal shared dataset covering every branch in
     create_occurrence_filter_sql and create_occurrence_taxon_filter.
-    Session-scoped: insert and refresh once, reuse read-only across all
-    filter tests. Do not use this fixture in tests that mutate these
-    tables — switch to function scope if that changes.
     """
     await insert_rows(taxa, GBIF_INVERTS_BACKBONE.name, conn)
     await insert_rows(occ, GBIF_OBSERVATIONS_TABLE.name, conn)

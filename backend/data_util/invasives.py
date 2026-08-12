@@ -8,6 +8,7 @@ from backend.config import get_settings
 from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.gbif.gbif_downloads import gbif_download_request, get_gbif_download
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
+from backend.data_util.taxa import inverts_mask
 
 
 # Simple flow to request and retrieve gbif invasive species dataset
@@ -69,20 +70,13 @@ async def prep_invasives_dataset(data: str | Path | DataFrame) -> DataFrame:
     # Add taxonID column with values of taxonKey column
     df['taxonID'] = df['taxonKey']
 
-    # Build filter to get only inverts of rank genus, species, or subspecies
-    mask = (
-        (df['kingdom'] == 'Animalia') &
-        (
-            (df['phylum'] != 'Chordata') |
-            (df['class'].isin(
-                ['Ascidiacea', 'Leptocardii', 'Appendicularia', 'Thaliacea']))
-        ) &
-        # Reasonably, we're not tagging anything higher than species
-        # This filter eliminates GBIF oddities, like how the red-black
-        # hybrid Solenopsis is resolving to 'Formicidae', causing Formicidae to be
-        # marked as invasive
-        (df['taxonRank'].isin(['GENUS', 'SPECIES', 'SUBSPECIES']))
-    )
+    # Reasonably, we're not tagging anything higher than species
+    # This filter eliminates GBIF oddities, like how the red-black
+    # hybrid Solenopsis is resolving to 'Formicidae', causing Formicidae to be
+    # marked as invasive
+    mask = inverts_mask(df) & df['taxonRank'].isin(
+        ['GENUS', 'SPECIES', 'SUBSPECIES'])
+
     # Apply filter
     filtered_df = df.loc[mask]
 

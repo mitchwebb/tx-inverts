@@ -10,6 +10,20 @@ from typing import List
 from psycopg import AsyncConnection, sql
 
 
+CHORDATE_INVERTS = ('Thaliacea', 'Ascidiacea', 'Appendicularia', 'Leptocardii')
+
+
+def inverts_mask(df: pd.DataFrame) -> pd.Series:
+    """True for Animalia rows that are invertebrates (or the exceptional invert chordates)."""
+    return (
+        (df['kingdom'] == 'Animalia') &
+        (
+            (df['phylum'] != 'Chordata') |
+            (df['class'].isin(CHORDATE_INVERTS))
+        )
+    )
+
+
 async def taxon_exists(conn: AsyncConnection, taxon_id: int) -> bool:
     """Small helper to check existence of taxon_id in backbone"""
 
