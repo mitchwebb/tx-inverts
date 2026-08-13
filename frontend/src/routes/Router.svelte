@@ -144,8 +144,6 @@
         PageComponent = currentRoute.component;
     });
 
-    // START HERE: Why don't we populate uncertainty on first load???
-
     // When any routerSyncedKey changes in their respective context, update URL
     // Also, when changing pages, set irrelevant params to null
     $effect(() => {

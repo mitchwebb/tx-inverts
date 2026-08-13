@@ -8,7 +8,7 @@ from backend.config import get_settings
 from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.gbif.gbif_downloads import gbif_download_request, get_gbif_download
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
-from backend.data_util.taxa import inverts_mask
+from backend.data_util.taxa_data import inverts_mask
 
 
 # Simple flow to request and retrieve gbif invasive species dataset

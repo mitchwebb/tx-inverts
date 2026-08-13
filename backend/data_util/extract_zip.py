@@ -21,6 +21,7 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
         (str) output_fp if files extracted
     """
 
+    # Quick check to see that file is real
     if not os.path.exists(fp):
         data_logger.error(f"{fp} does not exist")
         raise FileNotFoundError(f"{fp} does not exist.")
@@ -33,6 +34,7 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
                 # Normalize target_files to list (if string provided)
                 if isinstance(target_files, str):
                     target_files = [target_files]
+                # Cross referencing a list of available files, attempt to axtract target filtes
                 available_files = zip_ref.namelist()
                 for target_file in target_files:
                     if target_file in available_files:
@@ -44,10 +46,12 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
                             f"{target_file} not found in .zip. Exiting process...")
                         raise FileNotFoundError(
                             f"{target_file} not found in .zip archive.")
+            # If no target files provided, extract all
             else:
                 data_logger.info("Extracting files from zip...")
                 zip_ref.extractall(output_fp)
 
+        # Delete .zip if requested
         if delete_zip:
             data_logger.info("Deleting original zip...")
             try:

@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from backend.data_util.invasives import prep_invasives_dataset
+from backend.data_util.invasives_data import prep_invasives_dataset
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
 
 # Test taxon data for

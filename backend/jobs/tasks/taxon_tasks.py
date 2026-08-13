@@ -2,10 +2,10 @@ from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.download_large_file import download_large_file
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.extract_zip import extract_zip_files
-from backend.data_util.invasives import get_invasives_dataset, prep_invasives_dataset
-from backend.data_util.taxa import inverts_mask
+from backend.data_util.invasives_data import get_invasives_dataset, prep_invasives_dataset
+from backend.data_util.taxa_data import inverts_mask
 import backend.data_util.ranking as ns
-from backend.data_util.taxa import build_lineages
+from backend.data_util.taxa_data import build_lineages
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE

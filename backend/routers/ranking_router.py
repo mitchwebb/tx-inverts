@@ -1,9 +1,6 @@
 # Conservation rank related API endpoints
-from typing import cast
-
-from backend.constants.taxa import TaxonomicRank
 from backend.core.exception_handler import TaxonNotFoundError
-from backend.data_util.taxa import taxon_exists
+from backend.data_util.taxa_data import taxon_exists
 from backend.db.queries.taxa import get_taxon_rank
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE

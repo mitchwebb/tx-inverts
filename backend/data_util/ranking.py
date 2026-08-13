@@ -1,5 +1,5 @@
 from backend.core.exception_handler import TaxonNotFoundError
-from backend.data_util.taxa import taxon_exists
+from backend.data_util.taxa_data import taxon_exists
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.models.api import NSRank
@@ -105,8 +105,7 @@ def calculate_rank(number_of_occurrences: int, range_extent: int, area_of_occupa
 # With our parameters, there is no estimate range, hence 'zero_range'
 def _get_zero_range_rank(three_average_score: float) -> NSRank:
     """
-    Helper for calculating rank from taxon score using 3AVG method
-    This method uses weighting for each metric
+    Helper for calculating rank from taxon score using 3AVG method.
 
     Args:
         three_average_score (float): Weighted average of conservation metrics
@@ -127,7 +126,6 @@ def _get_zero_range_rank(three_average_score: float) -> NSRank:
 
 
 # TODO: Minimum convex polygon vs a-hull (https://help.natureserve.org/biotics/Content/Record_Management/Element_Files/Element_Ranking/ERANK_Definitions_of_Extent_of_Occurrence_and_Area_of_Occupancy.htm)
-# TODO: Round up Range Extent to match AOO minimum
 # Separated from router to allow command line or other direct access
 async def calculate_ns_values(
     conn: AsyncConnection,

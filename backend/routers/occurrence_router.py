@@ -3,7 +3,7 @@ from datetime import date
 from typing import Sequence
 import backend.constants.map as map
 from backend.core.exception_handler import TaxonNotFoundError
-from backend.data_util.taxa import taxon_exists
+from backend.data_util.taxa_data import taxon_exists
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Query, Request, HTTPException, Response
