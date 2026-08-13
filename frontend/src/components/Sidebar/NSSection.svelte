@@ -74,7 +74,6 @@
                 const localRank = calculateNSRank(
                     nSValues.numberOfOccurrences,
                     nSValues.rangeExtentKm2,
-                    aOOValue
                 );
                 return localRank;
             } else {
