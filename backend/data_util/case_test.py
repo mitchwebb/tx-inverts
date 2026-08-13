@@ -15,5 +15,6 @@ from backend.data_util.case import camel_to_snake_case
     ('wordsANDAcronyms', 'words_and_acronyms'),
     ('', '')
 ])
+@pytest.mark.asyncio
 async def test_converts_camel_case(input_string, expected):
     assert camel_to_snake_case(input_string) == expected

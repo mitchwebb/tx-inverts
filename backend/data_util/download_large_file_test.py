@@ -1,9 +1,12 @@
 
 import os
+
+import pytest
 from backend.data_util.download_large_file import download_large_temp_file
 
 
 # Test that download_large_temp_file returns requested temp file
+@pytest.mark.asyncio
 async def test_returns_temp_file_context(mocker):
     # Fake download to replace _download_file helper, which normally takes a URL
     def fake_download(url, path, chunk_size, verbose):

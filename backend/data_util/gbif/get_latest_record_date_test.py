@@ -8,6 +8,7 @@ from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 
 
 @pytest.fixture
+@pytest.mark.asyncio
 async def observations_with_dates(conn, setup_gbif_schema):
     async with conn.cursor() as cur:
         await cur.execute(sql.SQL("""
@@ -24,19 +25,21 @@ async def observations_with_dates(conn, setup_gbif_schema):
 
 
 @pytest.mark.db
-@pytest.mark.asyncio
 class TestGetLatestRecordDate:
     # Test that function gets expected 'modified' date
+    @pytest.mark.asyncio
     async def test_gets_reasonable_modified_date(self, conn, setup_gbif_schema, observations_with_dates):
         result = await get_latest_record_date(conn, 'modified')
         assert result == date(2021, 6, 1)
 
     # Test that function gets expected 'last_interpreted' date
+    @pytest.mark.asyncio
     async def test_gets_reasonable_last_interpreted_date(self, conn, setup_gbif_schema, observations_with_dates):
         result = await get_latest_record_date(conn, 'last_interpreted')
         assert result == date(2021, 7, 1)
 
     # Test to make sure dates in the future are thrown out
+    @pytest.mark.asyncio
     async def test_rejects_future_date(self, conn, setup_gbif_schema):
         today = date.today()
         next_year = date(today.year + 1, today.month, today.day)

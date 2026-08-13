@@ -162,6 +162,7 @@ def test_valid_rank_calculations(occurrences, range_extent, area_of_occupancy, e
 
 
 class TestCalculateNSValues:
+    @pytest.mark.asyncio
     async def test_simple_values_calculation(self, conn, tx_bounding_box, simple_tx_taxa):
         """Test successful ns_values calculation with predicted values"""
 
@@ -189,6 +190,7 @@ class TestCalculateNSValues:
         # But not close enough to merge at 1km2
         assert ns_values['area_of_occupancy_1km2_bins'] == 4
 
+    @pytest.mark.asyncio
     async def test_higher_taxon_values(self, conn, tx_bounding_box, simple_tx_taxa):
         """Test requesting a parent genus includes children"""
 
@@ -215,6 +217,7 @@ class TestCalculateNSValues:
         # But not close enough to merge at 1km2
         assert ns_values['area_of_occupancy_1km2_bins'] == 5
 
+    @pytest.mark.asyncio
     async def test_empty_taxon_returns_zeroes(self, conn, tx_bounding_box, simple_tx_taxa):
         await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
         filters = OccurrenceFilters(
@@ -237,6 +240,7 @@ class TestCalculateNSValues:
         assert ns_values['area_of_occupancy_4km2_bins'] == 0
         assert ns_values['area_of_occupancy_1km2_bins'] == 0
 
+    @pytest.mark.asyncio
     async def test_missing_taxon_errors(self, conn, tx_bounding_box, simple_tx_taxa):
         await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
         filters = OccurrenceFilters(
@@ -253,6 +257,7 @@ class TestCalculateNSValues:
                 filters=filters
             )
 
+    @pytest.mark.asyncio
     async def test_dont_compute_occurrences(self, conn, tx_bounding_box, simple_tx_taxa):
         await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
         filters = OccurrenceFilters(

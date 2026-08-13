@@ -8,6 +8,7 @@ SETTINGS = get_settings()
 
 
 # Test bad credentials error on 401 (just testing erroring behavior)
+@pytest.mark.asyncio
 async def test_raises_on_bad_credentials(mocker):
     mock_response = mocker.MagicMock()
     mock_response.status = 401
@@ -30,6 +31,7 @@ async def test_raises_on_bad_credentials(mocker):
 
 
 # Test that gbif_download_request returns download key on 201 (just return behavior)
+@pytest.mark.asyncio
 async def test_returns_download_key(mocker):
     mock_response = mocker.MagicMock()
     mock_response.status = 201
