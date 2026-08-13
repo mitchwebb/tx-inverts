@@ -8,7 +8,6 @@ from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 
 
 @pytest.fixture
-@pytest.mark.asyncio
 async def observations_with_dates(conn, setup_gbif_schema):
     async with conn.cursor() as cur:
         await cur.execute(sql.SQL("""
