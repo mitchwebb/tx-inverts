@@ -6,6 +6,8 @@ from backend.config import get_settings
 
 # Path to data folder (used with GBIF imports)
 DATA_OUT_PATH = os.path.join(get_settings().backend_root, 'data')
+# Make sure directory exists on startup
+os.makedirs(DATA_OUT_PATH, exist_ok=True)
 
 
 # Make paths to various shapefiles for map layers
