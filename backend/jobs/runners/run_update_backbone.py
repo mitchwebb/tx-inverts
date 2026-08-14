@@ -8,11 +8,12 @@ from backend.core.logging import setup_logging, tasks_logger
 # Also replaces invasives table
 async def main():
 
-    conn = await get_single_db_connection()
-
+    conn = None
     try:
         setup_logging()
         tasks_logger.info("Starting update_backbone job...")
+
+        conn = await get_single_db_connection()
 
         await create_invasives_table(conn, truncate=True)
         await update_backbone(conn)
@@ -24,6 +25,7 @@ async def main():
         tasks_logger.exception(f"Update_backbone task failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
+        raise
     finally:
         if conn is not None:
             await conn.close()

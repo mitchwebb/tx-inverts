@@ -10,23 +10,22 @@ from backend.jobs.tasks.view_tasks import refresh_materialized_views
 
 
 async def main():
-    setup_logging()
-    tasks_logger.info("Starting update_database job...")
+    """
+    Automatically update observations table from GBIF.
+    This function grabs new records (determined by latest modified date value currently in table).
+    It also grabs all records with no modified date (as there is no way to vet these).
+    """
 
-    # Automatically update observations table from GBIF
-    # This function grabs new records (determined by latest modified date value currently in table)
-    # and ALSO grabs all records with no modified date (as there is no way to vet these)
     conn = None
     try:
+        setup_logging()
+        tasks_logger.info("Starting update_database job...")
+
         # Insert to database
         conn = await get_single_db_connection()
 
         # Quick check to make sure tables are created
         await initialize_all_tables(conn)
-
-        # Make sure indexes are ready
-        await update_indexes(conn)
-        await conn.commit()
 
         # Update observations, returning new taxon_keys and row_ids
         backbone_update_required, new_row_keys, new_row_ids = await update_observations(conn)
@@ -46,12 +45,11 @@ async def main():
 
         await update_indexes(conn)
 
-        await conn.commit()
-
     except Exception as e:
         tasks_logger.exception(f"Update database task failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
+        raise
     finally:
         if conn is not None:
             await conn.close()

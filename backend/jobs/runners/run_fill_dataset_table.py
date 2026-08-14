@@ -8,6 +8,11 @@ from backend.jobs.tasks.table_tasks import initialize_table
 
 
 async def main():
+    """
+    Job to create and fill dataset metadata table.
+    Calls table initialization and fill_dataset_table functions.
+    """
+
     conn = None
     try:
         setup_logging()
@@ -24,6 +29,7 @@ async def main():
         tasks_logger.exception(f"Fill dataset table task failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
+        raise
     finally:
         if conn is not None:
             await conn.close()

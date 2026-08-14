@@ -496,7 +496,7 @@ class TestUpdateBackbone:
         with pytest.raises(RuntimeError):
             await update_backbone(conn, fp)
 
-        assert fetch_backbone.call_count == 0
+        fetch_backbone.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_update_backbone_rolls_back_on_error(self, mocker, conn):

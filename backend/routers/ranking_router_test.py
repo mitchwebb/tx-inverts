@@ -149,7 +149,7 @@ class TestGetNSMetrics:
         assert result['number_of_occurrences'] == None
 
 
-class TestGetRangeExtentGeom:
+class TestGetTexasRangeExtentGeom:
     @pytest.mark.asyncio
     async def test_get_texas_range_extent_geom(self, client, tx_bounding_box, simple_tx_taxa):
         """For an existing taxon, get basic range_extent_geom matching provided points"""

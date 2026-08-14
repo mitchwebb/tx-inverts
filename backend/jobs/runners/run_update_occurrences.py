@@ -20,11 +20,11 @@ async def main():
 
         conn = await get_single_db_connection()
 
-        _, new_row_keys, affected_observation_ids = await update_observations(conn)
-
-        await update_ns_ranks(conn, new_row_keys)
+        backbone_update_suggested, new_row_keys, affected_observation_ids = await update_observations(conn)
 
         await update_observation_regions(conn, affected_observation_ids)
+
+        await update_ns_ranks(conn, new_row_keys)
 
         # Refresh the materialized views
         await refresh_materialized_views(conn)
@@ -33,10 +33,15 @@ async def main():
 
         tasks_logger.info("update_occurrences job finished")
 
+        if backbone_update_suggested:
+            tasks_logger.info(
+                "update_observations detected new or changed taxon_ids. This indicates the need for a backbone update")
+
     except Exception as e:
         tasks_logger.exception(f"Update_occurrences task failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
+        raise
     finally:
         if conn is not None:
             await conn.close()

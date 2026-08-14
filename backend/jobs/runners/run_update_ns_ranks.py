@@ -18,6 +18,7 @@ async def main():
         tasks_logger.exception(f"Update NS ranks task failed. Exiting. {e}")
         if conn is not None:
             await conn.rollback()
+        raise
     finally:
         if conn is not None:
             await conn.close()
