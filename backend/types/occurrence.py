@@ -52,7 +52,7 @@ class GBIFObservationRow(NamedTuple):
     acceptedTaxonKey: int | None
     kingdom: str | None
     phylum: str | None
-    # NOTE: Class if left out for Python reserved word reasons
+    # NOTE: Class is left out for Python reserved word reasons
     # I've very sorry if you're reading this and needing a typed 'class' column
     order: str | None
     family: str | None

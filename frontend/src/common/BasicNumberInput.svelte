@@ -5,11 +5,6 @@
     - Returns value on change
 -->
 <script lang="ts">
-    // import ChevronDown from "../assets/ChevronDown.svelte";
-    // import ChevronUp from "../assets/ChevronUp.svelte";
-
-    // let isFocused = $state(false);
-
     type InputProps = {
         customClass?: string | null;
         label?: string;
@@ -36,28 +31,15 @@
 
     let val = $derived<number | null>(value ?? null);
 
-    function parseValue(rawValue: string) {
+    function parseValue(rawValue: string): number | null {
         // If value is an empty string, return null
-        return rawValue === '' ? null : rawValue;
+        return rawValue === '' ? null : Number(rawValue);
     }
-
-    // function handleIncrementUp() {
-    //     if (val === null) val = 0
-    //     val += 1;
-    //     handler(val);
-    // }
-
-    // function handleIncrementDown() {
-    //     if (val === null) val = 0
-    //     val -= 1;
-    //     handler(val);
-    // }
 
     function handleChange(e: Event) {
         const raw = (e.target as HTMLInputElement).value;
         const parsed = parseValue(raw);
-        val = parsed === null ? null : Number(parsed);
-        handler(val);
+        handler(parsed);
     }
 
     $effect(() => {
@@ -82,16 +64,6 @@
                 {units}
             </div>
         {/if}
-        <!-- {#if isFocused && showButtons}
-            <div class='increment-buttons'>
-                <button onclick={handleIncrementUp} onmousedown={(e) => e.preventDefault()}>
-                    <ChevronUp/>
-                </button>
-                <button onclick={handleIncrementDown} onmousedown={(e) => e.preventDefault()}>
-                    <ChevronDown/>
-                </button>
-            </div>
-        {/if} -->
     </div>
 </label>
 

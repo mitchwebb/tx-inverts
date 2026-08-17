@@ -20,6 +20,13 @@ export default defineConfig({
         },
     },
     test: {
+        environment: 'jsdom',
         exclude: ['**/node_modules/**', '**/dist/**', 'ui-tests/**'],
     },
+    // Tell Vitest to use the `browser` entry points in `package.json` files, even though it's running in Node
+    resolve: process.env.VITEST
+        ? {
+              conditions: ['browser'],
+          }
+        : undefined,
 });

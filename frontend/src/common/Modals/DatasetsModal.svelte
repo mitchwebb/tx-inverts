@@ -50,8 +50,6 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        /* padding-left: 1rem; */
-        /* list-style: none; */
     }
     .dataset-name {
         text-align: left;

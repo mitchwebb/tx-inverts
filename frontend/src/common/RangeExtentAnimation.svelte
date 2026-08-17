@@ -50,10 +50,6 @@
 
 <div class="range-extent-svg">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="100%">
-        <!-- <polyline
-                    stroke={TAXON_COLORS[0]}
-                    points={[...outerPoints, outerPoints[0]].join(' ')}
-                /> -->
         {#each outerPoints as point, i (i)}
             <circle r="4" cx={point[0]} cy={point[1]} fill={TAXON_COLORS[0]}
             ></circle>
