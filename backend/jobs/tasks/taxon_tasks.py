@@ -25,7 +25,7 @@ from backend.models.occurrence import OccurrenceFilters
 # TODO: If the backbone is updated, we should assume that this needs to be
 # updated as well, considering these taxon_ids would also change.
 # In that case, this should be refactored to use the previous download.
-async def create_invasives_table(conn: AsyncConnection, truncate: bool = False):
+async def fill_invasives_table(conn: AsyncConnection, truncate: bool = False):
     try:
         fp = await get_invasives_dataset()
 

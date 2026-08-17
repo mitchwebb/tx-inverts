@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from backend.jobs.tasks.taxon_tasks import update_ns_ranks, create_invasives_table, update_invasives, _ensure_rank_columns, _replace_backbone, update_backbone
+from backend.jobs.tasks.taxon_tasks import update_ns_ranks, fill_invasives_table, update_invasives, _ensure_rank_columns, _replace_backbone, update_backbone
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
@@ -189,7 +189,7 @@ class TestCreateInvasivesTable:
             }]))
         )
 
-        await create_invasives_table(conn)
+        await fill_invasives_table(conn)
 
         result = await execute_psql_query(
             conn,
@@ -206,7 +206,7 @@ class TestCreateInvasivesTable:
             new=mocker.AsyncMock(return_value=pd.DataFrame([]))
         )
         # With truncate=True, table should be truncated
-        await create_invasives_table(conn, truncate=True)
+        await fill_invasives_table(conn, truncate=True)
         # Now, with no records to add, table should be empty
         result = await execute_psql_query(
             conn,
@@ -226,7 +226,7 @@ class TestCreateInvasivesTable:
         )
         mocker.patch('backend.jobs.tasks.taxon_tasks.db_logger')
         with pytest.raises(Exception):
-            await create_invasives_table(conn)
+            await fill_invasives_table(conn)
 
 
 class TestUpdateInvasives:

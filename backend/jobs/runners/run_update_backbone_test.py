@@ -4,14 +4,14 @@ from backend.jobs.runners.run_update_backbone import main as run_update_backbone
 
 class TestRunUpdateBackbone:
     @pytest.mark.asyncio
-    async def test_create_invasives_table_first(self, mocker):
+    async def test_fill_invasives_table_first(self, mocker):
         mocker.patch(
             'backend.jobs.runners.run_update_backbone.get_single_db_connection',
             new=mocker.AsyncMock()
         )
 
         create_invasives = mocker.patch(
-            'backend.jobs.runners.run_update_backbone.create_invasives_table',
+            'backend.jobs.runners.run_update_backbone.fill_invasives_table',
             new=mocker.AsyncMock(side_effect=RuntimeError("test boom"))
         )
 
@@ -34,7 +34,7 @@ class TestRunUpdateBackbone:
         )
 
         mocker.patch(
-            'backend.jobs.runners.run_update_backbone.create_invasives_table',
+            'backend.jobs.runners.run_update_backbone.fill_invasives_table',
             new=mocker.AsyncMock()
         )
 
