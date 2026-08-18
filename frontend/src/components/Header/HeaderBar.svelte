@@ -46,17 +46,10 @@
         <!-- TODO: Find a more endearing logo -->
         <a id="navbar-logo-wrapper" class="logo" href="/">
             <img
-                id="navbar-logo"
-                alt="Butterfly logo"
-                src="/static/nav_logo_no_text.png"
+                id="logo-text"
+                alt="Texas Inverts"
+                src="/static/nav_logo_just_text.png"
             />
-            {#if !$isNarrowView}
-                <img
-                    id="logo-text"
-                    alt="Texas Inverts"
-                    src="/static/nav_logo_just_text.png"
-                />
-            {/if}
         </a>
         <div id="header-search-bar">
             <TaxaSearch replace={true} onSelect={handleTaxonSearch} />
