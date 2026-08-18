@@ -44,9 +44,19 @@
 <div id="header-bar-wrapper">
     <header id="header-bar">
         <!-- TODO: Find a more endearing logo -->
-        <a class="logo nav-item" href="/">
-            <div>TEXAS</div>
-            <div>INVERTS</div>
+        <a id="navbar-logo-wrapper" class="logo" href="/">
+            <img
+                id="navbar-logo"
+                alt="Butterfly logo"
+                src="/static/nav_logo_no_text.png"
+            />
+            {#if !$isNarrowView}
+                <img
+                    id="logo-text"
+                    alt="Texas Inverts"
+                    src="/static/nav_logo_just_text.png"
+                />
+            {/if}
         </a>
         <div id="header-search-bar">
             <TaxaSearch replace={true} onSelect={handleTaxonSearch} />
@@ -76,6 +86,24 @@
 </div>
 
 <style>
+    #logo-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        filter: brightness(0) saturate(100%) invert(82%) sepia(17%)
+            saturate(360%) hue-rotate(3deg) brightness(94%) contrast(88%);
+        height: 40px;
+    }
+    #navbar-logo {
+        height: 45px;
+    }
+    #navbar-logo-wrapper {
+        display: flex;
+        justify-content: center;
+        gap: 0.25rem;
+        align-items: center;
+        margin: 0 0.25rem;
+    }
     .menu-foldout-button {
         background-color: transparent;
     }
@@ -119,8 +147,8 @@
     .logo {
         color: var(--text-default);
         display: flex;
-        flex-direction: column;
-        padding: 0 0.5rem;
+        /* flex-direction: column; */
+        /* padding: 0 0.5rem; */
         text-align: left;
     }
     .logo > * {

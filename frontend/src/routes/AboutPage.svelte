@@ -49,7 +49,7 @@
         <img
             id="welcome-banner"
             alt="Welcome to Texas Inverts"
-            src="/static/welcome_banner.png"
+            src="/static/welcome_banner_transparent.png"
         />
     </div>
     <div class="about-page-body">
