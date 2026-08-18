@@ -1,5 +1,8 @@
 import { datasets } from '../contexts/Datasets';
-import type { ActiveTaxon } from '../contexts/activeTaxaContext';
+import type {
+    ActiveTaxon,
+    initialActiveTaxaState,
+} from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawDateRange } from '../types/api';
 import { serializeFilters } from '../util/requests';
@@ -96,4 +99,23 @@ export async function getObservationDates(
         console.error(error);
         return null;
     }
+}
+
+// Calculate occurrence totals for each dataset for currently active taxa
+export function getDatasetCountTotals(
+    taxaContext: typeof initialActiveTaxaState
+): Record<string, number> {
+    const totals = Object.values(taxaContext.taxa.items).reduce(
+        (acc, taxon) => {
+            if (!taxon.datasetCounts) return acc;
+            for (const [dataset, count] of Object.entries(
+                taxon.datasetCounts
+            )) {
+                acc[dataset] = (acc[dataset] ?? 0) + count;
+            }
+            return acc;
+        },
+        {} as Record<string, number>
+    );
+    return totals;
 }

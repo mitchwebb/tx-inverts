@@ -1,4 +1,5 @@
 <script lang="ts">
+    import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import SearchbarCard from '../../common/SearchbarCard.svelte';
     import type { FiltersDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
@@ -54,12 +55,19 @@
                     <!-- If excluding species, leave out species and subspecies cards -->
                     {#if !excludeSpecies || (taxonRank && !['species', 'subspecies'].includes(taxonRank))}
                         {#snippet label()}
-                            <div class="filtered-taxon-name">
-                                <span class:italicized={isItalicized}
-                                    >{taxonInfo.canonicalName}</span
-                                >
-                                <div class="filtered-taxon-authorship thin">
-                                    {taxon.info.scientificNameAuthorship}
+                            <div class="taxon-card-label">
+                                {#if taxon.taxonLoading}
+                                    <div class="taxon-loading">
+                                        <LoadingIcon />
+                                    </div>
+                                {/if}
+                                <div class="filtered-taxon-name">
+                                    <span class:italicized={isItalicized}
+                                        >{taxonInfo.canonicalName}</span
+                                    >
+                                    <div class="filtered-taxon-authorship thin">
+                                        {taxon.info.scientificNameAuthorship}
+                                    </div>
                                 </div>
                             </div>
                         {/snippet}
@@ -76,6 +84,16 @@
 </div>
 
 <style>
+    .taxon-card-label {
+        display: flex;
+        width: 100%;
+        height: 100%;
+    }
+    .taxon-loading {
+        height: 1rem;
+        display: flex;
+        align-items: center;
+    }
     .taxa-search-wrapper {
         height: 2.5rem;
     }

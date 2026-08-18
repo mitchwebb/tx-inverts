@@ -7,6 +7,7 @@
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { datasets } from '../../contexts/Datasets';
     import { getFiltersContext } from '../../contexts/filtersContext';
+    import { getDatasetCountTotals } from '../../lib/occurrence';
     import { toggleArrayValue } from '../../util/toggleArrayValue';
 
     type DatasetFilterProps = {
@@ -27,20 +28,7 @@
     const iNatActive = $derived(filtersContext.includeINat);
 
     // Determine datasetCounts added across all taxa
-    let datasetCounts = $derived(
-        Object.values(taxaContext.taxa.items).reduce(
-            (acc, taxon) => {
-                if (!taxon.datasetCounts) return acc;
-                for (const [dataset, count] of Object.entries(
-                    taxon.datasetCounts
-                )) {
-                    acc[dataset] = (acc[dataset] ?? 0) + count;
-                }
-                return acc;
-            },
-            {} as Record<string, number>
-        )
-    );
+    let datasetCounts = $derived(getDatasetCountTotals(taxaContext));
 
     const higherTaxaActive = $derived(
         taxaContext.taxa.ids.some((id) => {
