@@ -29,9 +29,16 @@ export function makeIDCollection<
             return items.find((i) => getID(i) === id);
         },
         async add(item: T) {
+            const id = getID(item);
+
+            if (items.some((i) => getID(i) === id)) {
+                throw new Error(`Item with ID "${id}" already exists`);
+            }
+
             items = [...items, item];
+
             if (onAdd) {
-                await onAdd(getID(item));
+                await onAdd(id);
             }
         },
         remove(id: ID) {
