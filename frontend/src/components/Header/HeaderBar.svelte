@@ -82,8 +82,6 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        filter: brightness(0) saturate(100%) invert(82%) sepia(17%)
-            saturate(360%) hue-rotate(3deg) brightness(94%) contrast(88%);
         height: 40px;
     }
     #navbar-logo-wrapper {

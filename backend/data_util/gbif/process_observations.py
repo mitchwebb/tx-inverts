@@ -560,6 +560,7 @@ def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Iterat
         chunk = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(chunk)
 
         # Convert valid dates to ISO strings, leave missing as None
+        # Note: This will NOT parse dates earlier than 1677-09-21
         for col in ['collection_start_date', 'collection_end_date']:
             chunk[col] = pd.to_datetime(
                 chunk[col], errors='coerce', format='mixed').dt.date
