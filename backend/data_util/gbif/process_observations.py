@@ -566,7 +566,7 @@ def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Iterat
 
         # Drop observations with dates still missing
         chunk = chunk.dropna(
-            subset=['collectionStartDate', 'collectionEndDate'])
+            subset=['collection_start_date', 'collection_end_date'])
 
         data_logger.info(
             f"Processed chunk with {len(chunk)} valid records of {total_count} total records")

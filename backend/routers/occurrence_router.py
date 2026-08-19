@@ -197,6 +197,10 @@ async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Re
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# @occurrence_router.post('/get_date_counts')
+# async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request) -> dict[str, date | None] | None:)
+
+
 @occurrence_router.get('/tiles/{z}/{x}/{y}.mvt', response_class=Response)
 async def get_tile(
     z: int, x: int, y: int,
