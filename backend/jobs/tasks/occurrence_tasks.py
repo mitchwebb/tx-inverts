@@ -263,7 +263,7 @@ async def update_observations(
     gbif_request_key: str | None = None,
     chunk_size: int = 100000,
     full_replace: bool = False,
-    delete_file=True
+    delete_file=False
 ) -> Tuple[bool, Optional[List[int]], Optional[List[int]]]:
     """
         Orchestration function to update gbif_observations table
@@ -280,7 +280,7 @@ async def update_observations(
             gbif_request_key(str | None=None): Key returned by gbif download request. Can be used if a request was already made.
             chunk_size(int=100000): Chunk size to be used when reading in CSV for data cleaning
             full_replace(bool=False): If True, operation will replace observations table with new data
-            delete_download(bool=True): If True, downloaded observations file will not be kept
+            delete_file(bool=False): If True, observations file will not be kept
 
 
         Returns:
@@ -288,9 +288,6 @@ async def update_observations(
     """
 
     try:
-        # Track whether or not we're using a local file or a downloaded file
-        using_download = fp is None
-
         # If no fp to observations file is provided, create GBIF request and download new data
         if fp is None:
             fp = await get_gbif_inverts_file(conn, gbif_request_key, full_replace)
@@ -495,8 +492,8 @@ async def update_observations(
 
         await conn.commit()
 
-        # If we've downloaded a file and delete_file is True, delete it
-        if using_download and delete_file:
+        # If delete_file is True, delete the file
+        if delete_file:
             os.remove(fp)
             # If parent is empty, remove parent directory as well
             parent_directory = os.path.dirname(os.path.abspath(fp))

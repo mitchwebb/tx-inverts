@@ -7,6 +7,8 @@ from backend.jobs.tasks.region_tasks import update_observation_regions
 from backend.jobs.tasks.table_tasks import initialize_all_tables
 from backend.jobs.tasks.taxon_tasks import update_backbone, update_ns_ranks
 from backend.jobs.tasks.view_tasks import refresh_materialized_views
+import os
+from backend.constants.paths import DATA_OUT_PATH
 
 
 async def main():
@@ -28,7 +30,7 @@ async def main():
         await initialize_all_tables(conn)
 
         # Update observations, returning new taxon_keys and row_ids
-        backbone_update_required, new_row_keys, new_row_ids = await update_observations(conn)
+        backbone_update_required, new_row_keys, new_row_ids = await update_observations(conn, delete_file=True, full_replace=True)
 
         await update_observation_regions(conn, new_row_ids)
 
