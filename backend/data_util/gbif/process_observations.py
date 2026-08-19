@@ -545,10 +545,6 @@ def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Iterat
         # STEP 2: FILTER/PARSE DATES
         chunk = parse_dwc_dates(chunk)
 
-        # Drop observations with dates still missing
-        chunk = chunk.dropna(
-            subset=['collectionStartDate', 'collectionEndDate'])
-
         bad_date_count = texas_count - len(chunk)
         if bad_date_count:
             data_logger.info(
@@ -567,6 +563,10 @@ def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Iterat
         for col in ['collection_start_date', 'collection_end_date']:
             chunk[col] = pd.to_datetime(
                 chunk[col], errors='coerce', format='mixed').dt.date
+
+        # Drop observations with dates still missing
+        chunk = chunk.dropna(
+            subset=['collectionStartDate', 'collectionEndDate'])
 
         data_logger.info(
             f"Processed chunk with {len(chunk)} valid records of {total_count} total records")
