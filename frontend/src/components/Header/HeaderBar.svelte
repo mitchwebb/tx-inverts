@@ -43,7 +43,6 @@
 
 <div id="header-bar-wrapper">
     <header id="header-bar">
-        <!-- TODO: Find a more endearing logo -->
         <a id="navbar-logo-wrapper" class="logo" href="/">
             <img
                 id="logo-text"
@@ -86,9 +85,6 @@
         filter: brightness(0) saturate(100%) invert(82%) sepia(17%)
             saturate(360%) hue-rotate(3deg) brightness(94%) contrast(88%);
         height: 40px;
-    }
-    #navbar-logo {
-        height: 45px;
     }
     #navbar-logo-wrapper {
         display: flex;

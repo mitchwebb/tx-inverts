@@ -564,9 +564,9 @@ def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Iterat
         chunk = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(chunk)
 
         # Convert valid dates to ISO strings, leave missing as None
-        data_logger.info("Converting valid dates to ISO format...")
         for col in ['collection_start_date', 'collection_end_date']:
-            chunk[col] = pd.to_datetime(chunk[col], errors='coerce').dt.date
+            chunk[col] = pd.to_datetime(
+                chunk[col], errors='coerce', format='mixed').dt.date
 
         data_logger.info(
             f"Processed chunk with {len(chunk)} valid records of {total_count} total records")

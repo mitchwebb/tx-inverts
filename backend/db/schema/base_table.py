@@ -73,7 +73,7 @@ class DBTable:
         """Get list of columns in snake_case in their defined order."""
         return [camel_to_snake_case(col) for col in self.columns]
 
-    def coerce_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    def coerce_dataframe(self, df: pd.DataFrame, verbose=False) -> pd.DataFrame:
         """
             Renames columns to snake_case.
             Drops unexpected columns.
@@ -92,12 +92,15 @@ class DBTable:
 
         # Remove unwanted columns
         if extra:
-            data_logger.info(f"Removing unwanted columns...")
+            if (verbose):
+                data_logger.info(f"Removing unwanted columns...")
             df = df[[col for col in df.columns if col in allowed_cols]]
 
         # Add missing columns
         if missing:
-            data_logger.info(f"Adding empty missing columns to df: {missing}")
+            if (verbose):
+                data_logger.info(
+                    f"Adding empty missing columns to df: {missing}")
             for col in missing:
                 df[col] = None
 

@@ -155,7 +155,8 @@ async def _filter_temp_table_chunk(conn: AsyncConnection, table_name: str, batch
 
     # This process is chunked to keep our temp_table slim
     # Populate geometry in temp table
-    db_logger.info("Updating geometry column...")
+    db_logger.info(
+        "Updating geometry column and filtering by Texas shapefile...")
     update_geometry_query = sql.SQL("""
             UPDATE {temp_table}
             SET geometry = ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326)
@@ -170,7 +171,6 @@ async def _filter_temp_table_chunk(conn: AsyncConnection, table_name: str, batch
 
     # We could do this locally, but using the DB ensures that these operations
     # and the frontend operations use the same shape/filtering
-    db_logger.info("Filtering by Texas Shapefile...")
     filter_query = sql.SQL("""
             DELETE FROM {temp_table}
             WHERE batch_id={batch_id}
@@ -297,7 +297,7 @@ async def update_observations(
         new_row_keys = []
 
         if full_replace:
-            # If fully replacing observations, we much first truncate the old table as well as
+            # If fully replacing observations, we must first truncate the old table as well as
             # the observations_regions table, as it is a materialized view
             db_logger.info(
                 "Full replace requested. Truncating observations (and observations_regions) table...")

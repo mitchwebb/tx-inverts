@@ -1,9 +1,9 @@
 <script lang="ts">
+    import './header.css';
     import { onDestroy, onMount } from 'svelte';
     import { getRouterContext } from '../../contexts/routerContext';
     import type { NavItem } from '../../types/nav';
     import ChevronDown from '../../assets/ChevronDown.svelte';
-    import './header.css';
     import type { RouterPath } from '../../types/router';
 
     type NavDropdownProps = {
