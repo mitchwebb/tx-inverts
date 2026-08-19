@@ -17,7 +17,7 @@ export function calculateNSRank(
 ): NSRank {
     // If all values are 0, species is data deficient
     // NatureServe doesn't actually have this ranking. This would be presumed extinct
-    if (occurrences == 0 && rangeExtent == 0 && areaOfOccupancy == 0) {
+    if (occurrences == 0 && rangeExtent == 0 && (areaOfOccupancy == 0 || !areaOfOccupancy)) {
         return 'u';
     }
     // According to IUCN, rangeExtent should be AT LEAST equal to areaOfOccupancy (if provided)
