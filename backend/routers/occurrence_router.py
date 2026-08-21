@@ -1,6 +1,8 @@
 # Occurrence related API endpoints
 from datetime import date
 from typing import Sequence
+
+from numpy import number
 import backend.constants.map as map
 from backend.core.exception_handler import TaxonNotFoundError
 from backend.data_util.taxa_data import taxon_exists
@@ -197,8 +199,70 @@ async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Re
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# @occurrence_router.post('/get_date_counts')
-# async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request) -> dict[str, date | None] | None:)
+@occurrence_router.post('/get_date_counts')
+async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request) -> dict[str, int] | None:
+    try:
+        async with request.app.state.db_pool.connection() as conn:
+            if not await taxon_exists(conn, params.taxon_id):
+                raise TaxonNotFoundError(
+                    f'Requested taxon {params.taxon_id} is not found in the backbone')
+
+            filter_payload = OccurrenceFilters(
+                taxon_ids=[params.taxon_id],
+                include_inat=params.include_inat,
+                date_start=params.date_start,
+                date_end=params.date_end,
+                datasets=params.datasets,
+                regions=params.regions,
+                coord_uncertainty=params.coord_uncertainty
+            )
+
+            occurrence_filter = create_occurrence_filter_sql(filter_payload)
+
+            # Aggregate date counts around the middle of each month
+            date_query = sql.SQL("""
+                WITH filtered AS (
+                    SELECT collection_start_date
+                    FROM gbif_observations
+                    WHERE {occurrence_filter}
+                ),
+                counts AS (
+                    SELECT
+                        DATE_TRUNC('month', collection_start_date) AS month_date,
+                        COUNT(*) AS observation_count
+                    FROM filtered
+                    GROUP BY 1
+                ),
+                bounds AS (
+                    SELECT
+                        DATE_TRUNC('month', MIN(collection_start_date)) AS min_month,
+                        DATE_TRUNC('month', MAX(collection_start_date)) AS max_month
+                    FROM filtered
+                )
+                SELECT
+                    TO_CHAR(months.month_date, 'YYYY-MM-15') AS agg_event_date,
+                    COALESCE(counts.observation_count, 0) AS observation_count
+                FROM bounds
+                CROSS JOIN LATERAL generate_series(
+                    bounds.min_month,
+                    bounds.max_month,
+                    '1 month'
+                ) AS months(month_date)
+                LEFT JOIN counts USING (month_date)
+                ORDER BY months.month_date;
+            """).format(
+                occurrence_filter=occurrence_filter
+            )
+
+            result = await execute_psql_query(
+                conn, date_query, fetch='all', dict_cursor=True)
+
+            result = {row['agg_event_date']: row['observation_count']
+                      for row in result} if result else None
+            return result
+    except Exception as e:
+        api_logger.exception(e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @occurrence_router.get('/tiles/{z}/{x}/{y}.mvt', response_class=Response)

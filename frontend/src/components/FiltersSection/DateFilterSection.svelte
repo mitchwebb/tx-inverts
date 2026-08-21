@@ -7,6 +7,8 @@
     import { isMobile } from '../../contexts/device';
     import type { FiltersDomain } from '../../constants/sidebarFilters';
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
+    import DatesChart from '../../common/DatesChart.svelte';
+    import { type ScriptableContext } from 'chart.js/auto';
 
     type DateFilterProps = {
         domain?: FiltersDomain; // Determines min/max behavior
@@ -56,27 +58,50 @@
     });
 
     // Determine if observationsMetrics are loading for any taxa
-    const observationsMetricsLoading = $derived(
+    const dateRangesLoading = $derived(
         Object.values(taxonContext.taxa.items).some(
-            (taxon) => taxon.observationMetricsLoading
+            (taxon) => taxon.dateRangeLoading
         )
+    );
+
+    // Collect all active dateCounts and compile lineChart definitions
+    const allDateDatasets = $derived(
+        taxonContext.taxa.items
+            .filter((taxon) => {
+                if (taxon.taxonLoading) return false;
+                else return true;
+            })
+            .map((taxon) => {
+                return {
+                    // pointRadius: 0,
+                    tension: 0.5,
+                    borderColor: taxon.color,
+                    backgroundColor: taxon.color,
+                    data: taxon.dateCounts ?? [],
+                    label: taxon.info.canonicalName || 'Missing Name',
+                    pointRadius: (ctx: ScriptableContext<'line'>) => {
+                        const value = ctx.parsed?.y;
+                        return value === 0 ? 0 : 3; // 0 = no visible marker, 3 = default-ish size
+                    },
+                };
+            })
     );
 </script>
 
 <div
     class="date-filters-section filters-section"
     class:active={filtersContext.dateStart || filtersContext.dateEnd}
-    class:loading-blink={observationsMetricsLoading}
+    class:loading-blink={dateRangesLoading}
 >
     <div class="filters-section-header">
         <span>{header}</span>
-        {#if observationsMetricsLoading}
+        {#if dateRangesLoading}
             <div class="loading-icon icon">
                 <LoadingIcon />
             </div>
         {/if}
     </div>
-    <div class="filters-section-content">
+    <div id="date-filters-section-content" class="filters-section-content">
         <div class="date-filters-wrapper">
             <DatePicker
                 onSelect={handleStartDate}
@@ -108,10 +133,27 @@
                 dateFormat="yyyy-MM-dd"
             />
         </div>
+        {#if taxonContext.taxa.ids.length && domain == 'observations'}
+            <DatesChart
+                title="Filtered Observations Per Month"
+                data={allDateDatasets}
+                legendPosition={'bottom'}
+                chartID="date-counts-chart"
+                min={filtersContext.dateStart?.toISOString() ||
+                    minDate?.toISOString()}
+                max={filtersContext.dateEnd?.toISOString() ||
+                    maxDate?.toISOString()}
+            />
+        {/if}
     </div>
 </div>
 
 <style>
+    #date-filters-section-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
     .date-filters-section {
         flex-basis: 25%;
     }

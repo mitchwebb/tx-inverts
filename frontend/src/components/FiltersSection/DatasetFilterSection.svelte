@@ -86,9 +86,9 @@
     }
 
     // Determine if observationsMetrics are loading for any taxa
-    const observationsMetricsLoading = $derived(
+    const datasetCountsLoading = $derived(
         Object.values(taxaContext.taxa.items).some(
-            (taxon) => taxon.observationMetricsLoading
+            (taxon) => taxon.datasetCountsLoading
         )
     );
 
@@ -154,9 +154,9 @@
                                     {#if showCounts && count !== null}
                                         <div
                                             class="institution-count"
-                                            class:loading-blink={observationsMetricsLoading}
+                                            class:loading-blink={datasetCountsLoading}
                                         >
-                                            {#if observationsMetricsLoading}
+                                            {#if datasetCountsLoading}
                                                 <div
                                                     class="count-loading-icon icon"
                                                 >

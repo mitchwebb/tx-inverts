@@ -73,6 +73,7 @@
                         {/snippet}
                         <SearchbarCard
                             {label}
+                            tintColor={taxon.color}
                             value={taxon.taxonID}
                             handleRemoveCard={handleRemoveTaxon}
                         />

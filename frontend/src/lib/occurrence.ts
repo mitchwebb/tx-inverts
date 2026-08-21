@@ -101,6 +101,30 @@ export async function getObservationDates(
     }
 }
 
+export async function getDateCounts(
+    taxonID: ActiveTaxon['taxonID'],
+    filters: FiltersState
+) {
+    try {
+        const response = await fetch('server/occurrence/get_date_counts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                taxon_id: taxonID,
+                ...serializeFilters(filters),
+            }),
+        });
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+        const json: Record<string, number>[] = await response.json();
+        return json;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
 // Calculate occurrence totals for each dataset for currently active taxa
 export function getDatasetCountTotals(
     taxaContext: typeof initialActiveTaxaState

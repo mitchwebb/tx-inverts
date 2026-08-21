@@ -8,7 +8,9 @@ export type ActiveTaxon = {
     color: string;
     taxonLoading: boolean;
     taxonError: boolean;
-    observationMetricsLoading: boolean;
+    dateCountsLoading: boolean;
+    dateRangeLoading: boolean;
+    datasetCountsLoading: boolean;
     nSValuesLoading: boolean;
     lastLoadedID: number | null;
     taxonID: number;
@@ -17,6 +19,7 @@ export type ActiveTaxon = {
     datasetCounts: Record<string, number> | null;
     dateMin: Date | null;
     dateMax: Date | null;
+    dateCounts: Record<string, number>[] | null;
 };
 
 // Default state for nSValues
@@ -56,7 +59,9 @@ export const initialTaxonState: ActiveTaxon = {
     color: 'orange',
     taxonLoading: false,
     taxonError: true,
-    observationMetricsLoading: false,
+    dateCountsLoading: false,
+    dateRangeLoading: false,
+    datasetCountsLoading: false,
     nSValuesLoading: false,
     lastLoadedID: null,
     info: EMPTY_TAXON_INFO, // Values retrieved from get_taxon_info call
@@ -70,6 +75,7 @@ export const initialTaxonState: ActiveTaxon = {
     datasetCounts: null,
     dateMin: null, // Minimum obs date in db
     dateMax: null, // Max obs date in db
+    dateCounts: null,
 };
 
 export type ActiveTaxaState = {

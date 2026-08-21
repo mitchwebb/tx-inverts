@@ -33,7 +33,11 @@
         type ModalState,
     } from '../contexts/modalContext';
     import Modal from './Modal.svelte';
-    import { getDatasetCounts, getObservationDates } from '../lib/occurrence';
+    import {
+        getDatasetCounts,
+        getDateCounts,
+        getObservationDates,
+    } from '../lib/occurrence';
     import {
         getFiltersContext,
         initialFiltersState,
@@ -234,64 +238,124 @@
         }
     }
 
-    // Get institution counts in context (on activeTaxonID and select filter changes)
-    $effect(() => {
-        for (const taxonID of taxaContext.taxa.ids) {
+    /**
+     * Helper function for calling and parsing information
+     * from metrics functions for all active taxa, as well
+     *
+     * @param taxonIDs
+     * @param loadingKey
+     * @param request
+     * @param apply
+     */
+    function fetchActiveTaxaMetric<T>(
+        taxonIDs: number[],
+        loadingKey:
+            | 'datasetCountsLoading'
+            | 'dateRangeLoading'
+            | 'dateCountsLoading',
+        request: (taxonID: number) => Promise<T>,
+        apply: (taxonID: number, result: T) => void
+    ) {
+        for (const taxonID of taxonIDs) {
             const taxon = taxaContext.taxa.get(taxonID);
-            if (!taxon) return;
-
-            taxon.observationMetricsLoading = true;
-
-            const reactiveFilters =
-                getRankAffectingFilterValues(filtersContext);
-
-            // Make empty regions collection to prevent counting regions filtering
-            // We're not using this filter for occurrences
-            const emptyRegions = makeIDCollection<RegionInfo, string>(
-                (c) => c.id
-            );
-
-            untrack(() => {
-                (async () => {
-                    try {
-                        // Run both async calls concurrently
-                        const [datasetCounts, dateRange] = await Promise.all([
-                            // Get counts and dates ignoring any background region filters from taxon
-                            getDatasetCounts(taxonID, {
-                                ...filtersContext,
-                                regions: emptyRegions,
-                            }),
-                            getObservationDates(taxonID, {
-                                ...filtersContext,
-                                regions: emptyRegions,
-                            }),
-                        ]);
-                        // If publishers are already selected, but they do not have this taxon,
-                        // make sure to include them in the dataset counts with a value of 0
-                        if (filtersContext.datasets && datasetCounts) {
-                            const existingDatasets = new Set(
-                                Object.keys(datasetCounts)
-                            );
-                            for (const dataset of filtersContext.datasets) {
-                                if (!existingDatasets.has(dataset)) {
-                                    datasetCounts[dataset] = 0;
-                                }
-                            }
-                        }
-                        taxon.datasetCounts = datasetCounts;
-
-                        if (dateRange) {
-                            taxon.dateMin = new Date(dateRange?.minDate);
-                            taxon.dateMax = new Date(dateRange?.maxDate);
-                        }
-                    } catch (error) {
-                        console.error(error);
-                    } finally {
-                        taxon.observationMetricsLoading = false;
-                    }
-                })();
-            });
+            if (taxon) taxon[loadingKey] = true;
         }
+
+        return Promise.all(
+            taxonIDs.map(async (taxonID) => {
+                try {
+                    const result = await request(taxonID);
+                    apply(taxonID, result);
+                } finally {
+                    const taxon = taxaContext.taxa.get(taxonID);
+                    if (taxon) taxon[loadingKey] = false;
+                }
+            })
+        );
+    }
+
+    // Make empty regions collection to prevent counting regions filtering
+    // We're not using this filter our occurrences
+    const emptyRegions = makeIDCollection<RegionInfo, string>((c) => c.id);
+
+    // Get aggregated datasetCounts for each taxon
+    $effect(() => {
+        const filters = getRankAffectingFilterValues(filtersContext, [
+            'datasets',
+        ]);
+
+        const _ = taxaContext.taxa.ids;
+
+        untrack(() =>
+            fetchActiveTaxaMetric(
+                taxaContext.taxa.ids,
+                'datasetCountsLoading',
+                (taxonID) =>
+                    getDatasetCounts(taxonID, {
+                        ...filters,
+                        regions: emptyRegions,
+                    }),
+                (taxonID, counts) => {
+                    const taxon = taxaContext.taxa.get(taxonID);
+                    if (taxon) taxon.datasetCounts = counts;
+                }
+            )
+        );
+    });
+
+    // Get min/max observationDates for each taxon
+    $effect(() => {
+        const filters = getRankAffectingFilterValues(filtersContext, [
+            'dateStart',
+            'dateEnd',
+        ]);
+
+        const _ = taxaContext.taxa.ids;
+
+        untrack(() =>
+            fetchActiveTaxaMetric(
+                taxaContext.taxa.ids,
+                'dateRangeLoading',
+                (taxonID) =>
+                    getObservationDates(taxonID, {
+                        ...filters,
+                        regions: emptyRegions,
+                    }),
+                (taxonID, range) => {
+                    const taxon = taxaContext.taxa.get(taxonID);
+                    if (!taxon || !range) return;
+
+                    taxon.dateMin = new Date(range.minDate);
+                    taxon.dateMax = new Date(range.maxDate);
+                }
+            )
+        );
+    });
+
+    // Get aggregated monthly counts for each taxon
+    $effect(() => {
+        const filters = getRankAffectingFilterValues(filtersContext, [
+            'dateStart',
+            'dateEnd',
+        ]);
+
+        const _ = taxaContext.taxa.ids;
+
+        untrack(() =>
+            fetchActiveTaxaMetric(
+                taxaContext.taxa.ids,
+                'dateCountsLoading',
+                (taxonID) =>
+                    getDateCounts(taxonID, {
+                        ...filters,
+                        regions: emptyRegions,
+                    }),
+                (taxonID, counts) => {
+                    const taxon = taxaContext.taxa.get(taxonID);
+                    if (taxon) taxon.dateCounts = counts;
+                }
+            )
+        );
     });
 </script>
 

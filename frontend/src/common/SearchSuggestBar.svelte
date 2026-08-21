@@ -301,7 +301,6 @@
     }
     .search-close-button {
         cursor: pointer;
-        /* padding: 0; */
         background-color: transparent;
         border-radius: 3px;
         height: 100%;

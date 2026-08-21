@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
         max_size=30,
         open=False
     )
-    await app.state.db_pool.open(wait=True)
+    await app.state.db_pool.open(wait=True, timeout=10)
     api_logger.info("DB pool opened successfully")
 
     yield

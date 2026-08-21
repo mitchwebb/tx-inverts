@@ -120,12 +120,18 @@ export const RANK_AFFECTING_FILTER_KEYS = (
 
 // Accessor function for kicking off reactivity for rank-affecting filters
 // to be used in an $effect
-export function getRankAffectingFilterValues(filters: FiltersState) {
+export function getRankAffectingFilterValues(
+    filters: FiltersState,
+    exclude: (keyof FiltersState)[] = []
+) {
+    const excluded = new Set(exclude);
     return Object.fromEntries(
-        RANK_AFFECTING_FILTER_KEYS.map((key) => {
-            const meta = SIDEBAR_FILTER_META[key];
-            const raw = filters[key];
-            return [key, meta.read ? meta.read(raw as never) : raw];
-        })
+        RANK_AFFECTING_FILTER_KEYS.filter((key) => !excluded.has(key)).map(
+            (key) => {
+                const meta = SIDEBAR_FILTER_META[key];
+                const raw = filters[key];
+                return [key, meta.read ? meta.read(raw as never) : raw];
+            }
+        )
     ) as Pick<FiltersState, (typeof RANK_AFFECTING_FILTER_KEYS)[number]>;
 }

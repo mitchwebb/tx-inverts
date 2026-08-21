@@ -6,9 +6,11 @@
         label: string | Snippet;
         value: string | number;
         handleRemoveCard: (value: string | null) => void;
+        tintColor?: string;
     };
 
-    const { label, value, handleRemoveCard }: SearchCardProps = $props();
+    const { label, value, handleRemoveCard, tintColor }: SearchCardProps =
+        $props();
 
     function removeCard(e: MouseEvent) {
         const target = e.currentTarget as HTMLElement;
@@ -18,6 +20,9 @@
 </script>
 
 <div class="searchbar-card">
+    {#if tintColor}
+        <div class="card-overlay" style:background-color={tintColor}></div>
+    {/if}
     <div class="card-label">
         {#if typeof label === 'string'}
             {label}
@@ -37,6 +42,13 @@
 </div>
 
 <style>
+    .card-overlay {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0.1;
+        pointer-events: none;
+    }
     .card-label {
         padding: 0.25rem 0.5rem;
         user-select: none;
@@ -73,5 +85,6 @@
         max-width: 350px;
         width: 100%;
         box-sizing: border-box;
+        position: relative;
     }
 </style>
