@@ -225,6 +225,8 @@ for rank in RANK_COLS:
 INDEX_DEFINITIONS = {d.name: d for d in _all_indexes}
 
 # View definitions (the order of these matters)
+# These include index definitions for UNIQUE INDEX creation in order to
+# allow CONCURRENT refreshes
 MATERIALIZED_VIEWS = {
     'tx_taxa': {
         'create_sql': sql.SQL("""
@@ -253,7 +255,10 @@ MATERIALIZED_VIEWS = {
             tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
             gbif_inverts_backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
             gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
-        )
+        ),
+        'index_sql': sql.SQL(
+            "CREATE UNIQUE INDEX ON {tx_taxa} (taxon_id)"
+        ).format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name)),
     },
     # TODO: Ecoregions are currently hosted only on mapbox
     # If we want them to be searchable, we'll need to add them to local tables
@@ -267,7 +272,10 @@ MATERIALIZED_VIEWS = {
             regions=sql.Identifier(REGIONS_VIEW.name),
             tx_counties=sql.Identifier(TEXAS_COUNTIES_TABLE.name),
             tx_parks=sql.Identifier(TEXAS_PARKS_TABLE.name),
-        )
+        ),
+        'index_sql': sql.SQL(
+            "CREATE UNIQUE INDEX ON {regions} (region_type, id)"
+        ).format(regions=sql.Identifier(REGIONS_VIEW.name)),
     },
     'taxon_region_presence': {
         'create_sql': sql.SQL("""
@@ -281,7 +289,10 @@ MATERIALIZED_VIEWS = {
             observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
             observation_regions_table=sql.Identifier(
                 OBSERVATION_REGIONS_TABLE.name)
-        )
+        ),
+        'index_sql': sql.SQL(
+            "CREATE UNIQUE INDEX ON {taxon_region_presence} (accepted_taxon_key, region_id)"
+        ).format(taxon_region_presence=sql.Identifier(TAXON_PRESENCE_TABLE.name)),
     },
     'taxon_lineage': {
         'create_sql': sql.SQL("""
@@ -293,6 +304,9 @@ MATERIALIZED_VIEWS = {
         """).format(
             taxon_lineage=sql.Identifier(TAXON_LINEAGE_TABLE.name),
             gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
-        )
+        ),
+        'index_sql': sql.SQL(
+            "CREATE UNIQUE INDEX ON {taxon_lineage} (accepted_taxon_key, ancestor_id)"
+        ).format(taxon_lineage=sql.Identifier(TAXON_LINEAGE_TABLE.name)),
     },
 }

@@ -31,14 +31,22 @@ async def refresh_materialized_view(
         db_logger.info(
             f"{view_name} not yet created, creating now...")
         await execute_psql_query(conn, view_def['create_sql'])
-        db_logger.info(f"{view_name} created.")
-        # Else, refresh
+
+        index_sql = view_def.get('index_sql')
+        if index_sql is None:
+            raise ValueError(
+                f"'{view_name}' has no index_sql defined — "
+                "REFRESH CONCURRENTLY will fail without a unique index."
+            )
+        await execute_psql_query(conn, index_sql)
+        db_logger.info(f"{view_name} created and indexed.")
+    # Else, refresh
     else:
         db_logger.info(
             f"Materialized view {view_name} already created, refreshing...")
 
-        refresh_statement = sql.SQL("REFRESH MATERIALIZED VIEW {}").format(
-            sql.Identifier(view_name))
+        refresh_statement = sql.SQL("REFRESH MATERIALIZED VIEW CONCURRENTLY {view_name}").format(
+            view_name=sql.Identifier(view_name))
 
         await execute_psql_query(conn, refresh_statement)
         db_logger.info(f"{view_name} refreshed.")
