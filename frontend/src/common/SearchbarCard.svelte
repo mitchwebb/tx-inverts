@@ -82,7 +82,7 @@
         align-items: center;
         height: 30px;
         border-radius: 3px;
-        max-width: 350px;
+        max-width: 300px;
         width: 100%;
         box-sizing: border-box;
         position: relative;
