@@ -337,8 +337,8 @@
     }
     .loading-icon {
         color: var(--fill-color);
-        margin: auto;
-        padding: 0.5rem;
+        margin: 0.5rem auto;
+        height: 1.2rem;
     }
     .search-bar {
         min-height: 1.75rem;
