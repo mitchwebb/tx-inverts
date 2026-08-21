@@ -71,6 +71,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        flex-shrink: 0;
     }
     .searchbar-card {
         display: flex;
@@ -86,5 +87,6 @@
         width: 100%;
         box-sizing: border-box;
         position: relative;
+        overflow: hidden;
     }
 </style>

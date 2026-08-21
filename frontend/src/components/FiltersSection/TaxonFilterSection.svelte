@@ -65,9 +65,11 @@
                                     <span class:italicized={isItalicized}
                                         >{taxonInfo.canonicalName}</span
                                     >
-                                    <div class="filtered-taxon-authorship thin">
+                                    <span
+                                        class="filtered-taxon-authorship thin"
+                                    >
                                         {taxon.info.scientificNameAuthorship}
-                                    </div>
+                                    </span>
                                 </div>
                             </div>
                         {/snippet}
@@ -85,6 +87,10 @@
 </div>
 
 <style>
+    .filtered-taxon-authorship {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     .taxon-card-label {
         display: flex;
         width: 100%;
@@ -113,6 +119,7 @@
         display: flex;
         gap: 0.5rem;
         padding: 0.25rem;
+        overflow: hidden;
     }
     .filters-section-content {
         display: flex;
