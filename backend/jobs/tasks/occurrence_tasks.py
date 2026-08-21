@@ -296,24 +296,6 @@ async def update_observations(
         affected_observation_ids = []
         new_row_keys = []
 
-        if full_replace:
-            # If fully replacing observations, we must first truncate the old table as well as
-            # the observations_regions table, as it is a materialized view
-            db_logger.info(
-                "Full replace requested. Truncating observations (and observations_regions) table...")
-            truncate_query = sql.SQL("""
-                TRUNCATE {obs_table}, {obs_regions_table}
-            """).format(
-                obs_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
-                obs_regions_table=sql.Identifier(
-                    OBSERVATION_REGIONS_TABLE.name)
-            )
-            await execute_psql_query(conn, truncate_query)
-
-            # When fully replacing the observations table, it is safest to update the backbone as well
-            # Although the backbone doesn't often actually change
-            backbone_update_suggested = True
-
         # Make sure gbif_observations_table exists
         await initialize_table(conn, GBIF_OBSERVATIONS_TABLE, verbose=True)
 
@@ -378,6 +360,22 @@ async def update_observations(
 
         # If full_replace is true, add all observations
         if full_replace:
+            # If fully replacing observations, we must first truncate the old table as well as
+            # the observations_regions table, as it is a materialized view
+            db_logger.info(
+                "Full replace requested. Truncating observations (and observations_regions) table...")
+            truncate_query = sql.SQL("""
+                TRUNCATE {obs_table}, {obs_regions_table}
+            """).format(
+                obs_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+                obs_regions_table=sql.Identifier(
+                    OBSERVATION_REGIONS_TABLE.name)
+            )
+            await execute_psql_query(conn, truncate_query)
+
+            # When fully replacing the observations table, it is safest to update the backbone as well
+            # Although the backbone doesn't often actually change
+            backbone_update_suggested = True
             db_logger.info(
                 "Adding all accepted observations to observations table...")
             insert_query = sql.SQL("""
