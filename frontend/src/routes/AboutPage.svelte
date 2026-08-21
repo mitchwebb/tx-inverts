@@ -230,7 +230,6 @@
 <style>
     #welcome-banner-wrapper {
         border-radius: 3px;
-        background-color: #056565;
         margin: 1rem 0;
         width: 100%;
         max-width: 1000px;
@@ -288,10 +287,7 @@
         gap: 1rem;
     }
     .about-page-section {
-        /* padding: 1rem; */
-        /* border: 1px solid var(--border); */
         box-sizing: border-box;
-        /* border-radius: 3px; */
     }
     .about-page-subheader {
         padding: 1rem 0;
