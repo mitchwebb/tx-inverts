@@ -1,11 +1,12 @@
 from backend.data_util.db import get_single_db_connection
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.jobs.runners.run_async import run_async
 from backend.core.logging import setup_logging, tasks_logger
 from backend.jobs.tasks.index_tasks import update_indexes
 from backend.jobs.tasks.occurrence_tasks import update_observations
 from backend.jobs.tasks.region_tasks import update_observation_regions
 from backend.jobs.tasks.table_tasks import initialize_all_tables
-from backend.jobs.tasks.taxon_tasks import update_backbone, update_ns_ranks
+from backend.jobs.tasks.taxon_tasks import resolve_taxon_lineage, update_backbone, update_ns_ranks
 from backend.jobs.tasks.view_tasks import refresh_materialized_views
 import os
 from backend.constants.paths import DATA_OUT_PATH
@@ -36,6 +37,7 @@ async def main():
 
         if backbone_update_required:
             await update_backbone(conn)
+            await resolve_taxon_lineage(conn, GBIF_OBSERVATIONS_TABLE.name)
             # A bit deceptive, but new_row_keys == None means update ALL rows
             new_row_keys = None
 

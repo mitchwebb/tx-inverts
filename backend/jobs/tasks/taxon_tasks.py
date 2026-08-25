@@ -1,3 +1,5 @@
+import requests
+
 from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.download_large_file import download_large_file
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -27,6 +29,7 @@ from backend.models.occurrence import OccurrenceFilters
 # In that case, this should be refactored to use the previous download.
 async def fill_invasives_table(conn: AsyncConnection, truncate: bool = False):
     try:
+        db_logger.info("Updating invasives table...")
         fp = await get_invasives_dataset()
 
         df = await prep_invasives_dataset(fp)
@@ -127,6 +130,16 @@ async def _replace_backbone(conn, temp_table_name: str):
     # Refresh materialized views dependent on table
     await refresh_materialized_view(conn, 'tx_taxa')
     await refresh_materialized_view(conn, 'taxon_region_presence')
+
+
+# async def compare_backbone():
+#     """
+#     Using a stored database value, compare the 'last modified' date
+#     of our current backbone to GBIF's hosted backbone.
+#     """
+#     response =  requests.head('https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip')
+#     headers = response.headers
+#     last_modified = headers['Last-Modified']
 
 
 async def _fetch_backbone() -> str:
@@ -391,3 +404,66 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         data_logger.exception(f"Failed to update NS ranks: {e}")
         await conn.rollback()
         raise
+
+
+# TODO: Needs testing
+async def resolve_taxon_lineage(conn: AsyncConnection, occ_table_name: str):
+    """
+    Using the current GBIF_INVERTS_BACKBONE table, resolves the
+    passed table lineage columns to match.
+
+    This can be used for a temp_table when processing new occurrences,
+    or with the observations table when simple resolving lineage for a new
+    backbone.
+    """
+
+    # Create temp table of resolved lineage keys
+    db_logger.info("Creating temp table for taxon lineages udpate...")
+    create_temp_query = sql.SQL("""
+        CREATE TEMP TABLE resolved_keys AS
+            SELECT
+                obs.gbif_id,
+                COALESCE(b1.accepted_name_usage_id, b1.taxon_id, b2.accepted_name_usage_id, b2.taxon_id) AS resolved_taxon_key
+            FROM {occ_table_name} AS obs
+            -- Get observation's matching taxon_id from backbone
+            LEFT JOIN {backbone} AS b1
+                ON obs.accepted_taxon_key = b1.taxon_id
+            -- As fallback, get observation's matching accepted_name_usage_id from backbone
+            LEFT JOIN {backbone} AS b2
+                ON obs.accepted_taxon_key = b2.accepted_name_usage_id
+        ;""").format(
+        occ_table_name=sql.Identifier(occ_table_name),
+        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+    )
+    await execute_psql_query(conn, create_temp_query)
+
+    # Index on gbif_id for insert
+    create_index_query = sql.SQL("""
+        CREATE INDEX idx_resolved_gbif ON resolved_keys(gbif_id);
+    """)
+    await execute_psql_query(conn, create_index_query)
+
+    db_logger.info(f"Writing lineages to {occ_table_name}...")
+    # Apply lineages to temp table
+    update_lineage_query = sql.SQL("""
+        UPDATE {occ_table_name} t
+        SET
+            accepted_taxon_key = r.resolved_taxon_key,
+            kingdom_id = b.kingdom_id,
+            phylum_id = b.phylum_id,
+            class_id = b.class_id,
+            order_id = b.order_id,
+            family_id = b.family_id,
+            genus_id = b.genus_id,
+            species_id = b.species_id,
+            subspecies_id = b.subspecies_id
+        FROM resolved_keys r
+        JOIN {backbone} b ON b.taxon_id = r.resolved_taxon_key
+        WHERE t.gbif_id = r.gbif_id;
+    """).format(
+        occ_table_name=sql.Identifier(occ_table_name),
+        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+    )
+    await execute_psql_query(conn, update_lineage_query)
+
+    await conn.commit()

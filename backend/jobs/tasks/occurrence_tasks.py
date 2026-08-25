@@ -21,6 +21,7 @@ from backend.data_util.gbif import (
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.jobs.tasks.table_tasks import initialize_table
+from backend.jobs.tasks.taxon_tasks import resolve_taxon_lineage
 from backend.jobs.tasks.view_tasks import refresh_materialized_views
 from psycopg import sql, AsyncConnection
 from typing import List, Optional, Tuple
@@ -186,77 +187,6 @@ async def _filter_temp_table_chunk(conn: AsyncConnection, table_name: str, batch
     await execute_psql_query(conn, filter_query)
 
 
-async def _resolve_taxon_lineage(conn: AsyncConnection, table_name: str):
-    # Create a few important indexes on temp table
-    db_logger.info("Creating necessary indexes on temp table...")
-    for col in ('gbif_id', 'accepted_taxon_key', 'taxon_key'):
-        await execute_psql_query(
-            conn,
-            sql.SQL("CREATE INDEX ON {temp} ({col})").format(
-                temp=sql.Identifier(table_name),
-                col=sql.Identifier(col)
-            )
-        )
-
-    # Create indexes on temp table for better traversing ids
-    db_logger.info("Updating lineage columns in temp table...")
-    # Drop batch_id from temp table so INSERT matches target
-    drop_column_query = sql.SQL("""
-        ALTER TABLE {temp_table} DROP COLUMN IF EXISTS batch_id
-    """).format(temp_table=sql.Identifier(table_name))
-    await execute_psql_query(conn, drop_column_query)
-
-    # Create temp table of resolved lineage keys
-    db_logger.info("Creating temp table for lineage...")
-    create_temp_query = sql.SQL("""
-        CREATE TEMP TABLE resolved_keys AS
-            SELECT
-                obs.gbif_id,
-                COALESCE(b1.accepted_name_usage_id, b1.taxon_id, b2.accepted_name_usage_id, b2.taxon_id) AS resolved_taxon_key
-            FROM {temp_table} AS obs
-            -- Get observation's matching taxon_id from backbone
-            LEFT JOIN {backbone} AS b1
-                ON obs.accepted_taxon_key = b1.taxon_id
-            -- As fallback, get observation's matching accepted_name_usage_id from backbone
-            LEFT JOIN {backbone} AS b2
-                ON obs.accepted_taxon_key = b2.accepted_name_usage_id
-        ;""").format(
-        temp_table=sql.Identifier(table_name),
-        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-    )
-    await execute_psql_query(conn, create_temp_query)
-
-    db_logger.info("Creating index on gbif_id...")
-    # Index on gbif_id for insert
-    create_index_query = sql.SQL("""
-        CREATE INDEX idx_resolved_gbif ON resolved_keys(gbif_id);
-    """)
-    await execute_psql_query(conn, create_index_query)
-
-    db_logger.info("Writing lineages to temp_table...")
-    # Apply lineages to temp table
-    update_lineage_query = sql.SQL("""
-        UPDATE {temp_table} t
-        SET
-            accepted_taxon_key = r.resolved_taxon_key,
-            kingdom_id = b.kingdom_id,
-            phylum_id = b.phylum_id,
-            class_id = b.class_id,
-            order_id = b.order_id,
-            family_id = b.family_id,
-            genus_id = b.genus_id,
-            species_id = b.species_id,
-            subspecies_id = b.subspecies_id
-        FROM resolved_keys r
-        JOIN {backbone} b ON b.taxon_id = r.resolved_taxon_key
-        WHERE t.gbif_id = r.gbif_id;
-    """).format(
-        temp_table=sql.Identifier(table_name),
-        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-    )
-    await execute_psql_query(conn, update_lineage_query)
-
-
 async def update_observations(
     conn: AsyncConnection,
     fp: str | None = None,
@@ -353,8 +283,25 @@ async def update_observations(
         # Deduplicate new row keys in compiled table
         new_row_keys = list(set(new_row_keys))
 
+        # Create a few important indexes on temp table
+        db_logger.info("Creating necessary indexes on temp table...")
+        for col in ('gbif_id', 'accepted_taxon_key', 'taxon_key'):
+            await execute_psql_query(
+                conn,
+                sql.SQL("CREATE INDEX ON {temp} ({col})").format(
+                    temp=sql.Identifier(temp_table_name),
+                    col=sql.Identifier(col)
+                )
+            )
+
+        # Drop batch_id from temp table so INSERT matches target
+        drop_column_query = sql.SQL("""
+            ALTER TABLE {temp_table} DROP COLUMN IF EXISTS batch_id
+        """).format(temp_table=sql.Identifier(temp_table_name))
+        await execute_psql_query(conn, drop_column_query)
+
         # Resolve and assign taxonomic lineage in complete temp table (for each observation)
-        await _resolve_taxon_lineage(conn, temp_table_name)
+        await resolve_taxon_lineage(conn, temp_table_name)
 
         ### Insert Operations ###
 
@@ -376,6 +323,9 @@ async def update_observations(
             # When fully replacing the observations table, it is safest to update the backbone as well
             # Although the backbone doesn't often actually change
             backbone_update_suggested = True
+            db_logger.warning(
+                "Observations table is being fully replaced—it is safest to accompany this with a backbone update.")
+
             db_logger.info(
                 "Adding all accepted observations to observations table...")
             insert_query = sql.SQL("""

@@ -1,6 +1,7 @@
 from backend.data_util.db import get_single_db_connection
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.jobs.runners.run_async import run_async
-from backend.jobs.tasks.taxon_tasks import fill_invasives_table, update_backbone, update_ns_ranks
+from backend.jobs.tasks.taxon_tasks import fill_invasives_table, resolve_taxon_lineage, update_backbone, update_ns_ranks
 from backend.core.logging import setup_logging, tasks_logger
 
 
@@ -17,6 +18,7 @@ async def main():
 
         await fill_invasives_table(conn, truncate=True)
         await update_backbone(conn)
+        await resolve_taxon_lineage(conn, GBIF_OBSERVATIONS_TABLE.name)
         await update_ns_ranks(conn)
 
         tasks_logger.info("update_backbone job finished")

@@ -276,6 +276,7 @@
 
     // Make empty regions collection to prevent counting regions filtering
     // We're not using this filter our occurrences
+    // Note: If we ever do want to filter OCCURRENCE data by region, this will need to be changed.
     const emptyRegions = makeIDCollection<RegionInfo, string>((c) => c.id);
 
     // Get aggregated datasetCounts for each taxon

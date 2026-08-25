@@ -1,5 +1,3 @@
-import os
-from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.db import get_single_db_connection
 from backend.jobs.runners.run_async import run_async
 from backend.jobs.tasks.occurrence_tasks import update_observations
@@ -35,7 +33,7 @@ async def main():
 
         if backbone_update_suggested:
             tasks_logger.info(
-                "update_observations detected new or changed taxon_ids. This indicates the need for a backbone update")
+                "Backbone update suggested.")
 
     except Exception as e:
         tasks_logger.exception(f"Update_occurrences task failed. Exiting. {e}")
