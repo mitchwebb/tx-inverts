@@ -39,9 +39,13 @@ class TestUpdateDatabase:
             f'{MODULE}.update_observation_regions',
             new=AsyncMock(side_effect=track('update_observation_regions'))
         )
-        update_backbone = mocker.patch(
+        mocker.patch(
             f'{MODULE}.update_backbone',
             new=AsyncMock(side_effect=track('update_backbone'))
+        )
+        mocker.patch(
+            f'{MODULE}.resolve_taxon_lineage',
+            new=AsyncMock(side_effect=track('resolve_taxon_lineage'))
         )
         mocker.patch(
             f'{MODULE}.update_ns_ranks',
@@ -64,6 +68,7 @@ class TestUpdateDatabase:
             'update_observations',  # Update observations table
             'update_observation_regions',  # Update observations_regions using new observations
             'update_backbone',  # Update backbone (on backbone_update_required)
+            'resolve_taxon_lineage',  # Resolve taxon lineage after backbone update
             'update_ns_ranks',  # Update rankings using new observations
             'refresh_materialized_views',  # Refresh materialized views
             'update_indexes',  # Update indexes at the end
