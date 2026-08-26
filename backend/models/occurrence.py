@@ -3,18 +3,18 @@ from pydantic import BeforeValidator, ConfigDict, field_validator, BaseModel, mo
 from datetime import date, datetime
 
 
-def _normalize_taxon_ids(v: int | List[int] | str | None): return ([1] if v is None else [
-    int(v)] if isinstance(v, (int, str)) else v)
+def _normalize_taxon_ids(v: str | List[str] | None): return (['N'] if v is None else [
+    str(v)] if isinstance(v, (str)) else v)
 
 
 # Model for OccurrenceFilters
 # Includes validation and normalization of various params
 class OccurrenceFilters(BaseModel):
-    # Normalize taxon_ids to list, default to [1] (Animalia) if None provided
+    # Normalize taxon_ids to list, default to ['N'] (Animalia) if None provided
     taxon_ids: Annotated[
-        List[int],
+        List[str],
         BeforeValidator(_normalize_taxon_ids)
-    ] = [1]
+    ] = ['N']
     include_inat: bool | None = True
     datasets: List[str] | None = None
     include_invasives: bool | None = False

@@ -45,6 +45,7 @@ export const EMPTY_TAXON_INFO: TaxonInfo = {
     family: null,
     subfamily: null,
     genus: null,
+    subgenus: null,
     species: null,
     subspecies: null,
     usInvasive: null,

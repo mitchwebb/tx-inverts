@@ -18,7 +18,6 @@ from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
-from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.table_tasks import initialize_all_tables
@@ -177,10 +176,6 @@ taxa = [
         'taxon_rank': 'species',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': 1323108,
-        'species_id': 5035741,
     },
     {
         # family row — required for taxon_lineage to resolve ancestor_id=4342
@@ -192,11 +187,7 @@ taxa = [
         'parent_name_usage_id': 1,
         'taxon_rank': 'family',
         'us_invasive': False,
-        'taxonomic_status': 'accepted',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': None,
-        'species_id': None,
+        'taxonomic_status': 'accepted'
     },
     {
         # invasive species, same family — exercises include_invasives branches
@@ -207,11 +198,7 @@ taxa = [
         'parent_name_usage_id': 4342,
         'taxon_rank': 'species',
         'us_invasive': True,
-        'taxonomic_status': 'accepted',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': 9999000,
-        'species_id': 9999001,
+        'taxonomic_status': 'accepted'
     },
 ]
 
@@ -220,7 +207,7 @@ occ = [
         # baseline row — passes every filter at defaults
         'gbif_id': 1, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
         'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
-        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035741,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
         'geometry': 'POINT(-97.7431 30.2672)',  # Austin, TX
@@ -229,7 +216,7 @@ occ = [
         # iNaturalist origin — tests include_inat=False exclusion
         'gbif_id': 2, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
         'collection_start_date': '2021-03-04', 'collection_end_date': '2021-03-05',
-        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035741,
         'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
         'coordinate_uncertainty_in_meters': 50,
         # Dallas, TX — far enough to swing extent if included
@@ -239,7 +226,7 @@ occ = [
         # collection_start_date NULL — tests hardcoded IS NOT NULL clause
         'gbif_id': 3, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
         'collection_start_date': None, 'collection_end_date': None,
-        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035741,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
         'geometry': 'POINT(-97.7431 30.2672)',
@@ -248,7 +235,7 @@ occ = [
         # second dataset_key, distinct date, tagged to REGION_B_ID
         'gbif_id': 4, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
         'collection_start_date': '2019-03-04', 'collection_end_date': '2019-03-05',
-        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035741,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': None,  # tests "IS NULL OR <=" branch
         'geometry': 'POINT(-95.3698 29.7604)',  # Houston, TX
@@ -257,7 +244,7 @@ occ = [
         # coordinate_uncertainty_in_meters == 0 — tests `is None` vs falsy bug
         'gbif_id': 5, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
         'collection_start_date': '2022-01-01', 'collection_end_date': '2022-01-02',
-        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035741,
         'dataset_key': 'dataset-b', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 0,
         'geometry': 'POINT(-97.7431 30.2672)',
@@ -266,7 +253,7 @@ occ = [
         # invasive taxon — tests include_invasives true/false branches
         'gbif_id': 6, 'taxon_key': 9999001, 'accepted_taxon_key': 9999001,
         'collection_start_date': '2022-06-01', 'collection_end_date': '2022-06-02',
-        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 9999000, 'species_id': 9999001,
+        'kingdom_key': 1, 'family_key': 4342, 'genus_key': 9999000, 'species_key': 9999001,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
         'geometry': 'POINT(-97.7431 30.2672)',
@@ -290,7 +277,6 @@ async def occurrence_filter_data(conn):
     await insert_rows(observation_regions, OBSERVATION_REGIONS_TABLE.name, conn)
 
     await refresh_materialized_view(conn, TX_TAXA_TABLE.name)
-    await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
     await refresh_materialized_view(conn, TAXON_PRESENCE_TABLE.name)
 
     return conn

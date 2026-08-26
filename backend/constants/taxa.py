@@ -4,10 +4,20 @@ from typing import Literal
 RANK_ORDER = [
     'kingdom',
     'phylum',
+    'subphylum',
     'class',
+    'subclass',
+    'infraclass',
+    'subterclass',
+    'superorder',
     'order',
+    'superfamily',
     'family',
+    'subfamily',
+    'tribe',
+    'subtribe',
     'genus',
+    'subgenus',
     'species',
     'subspecies'
 ]
@@ -15,12 +25,22 @@ RANK_ORDER = [
 type TaxonomicRank = Literal[
     'kingdom',
     'phylum',
+    'subphylum',
     'class',
+    'subclass',
+    'infraclass',
+    'subterclass',
+    'superorder',
     'order',
+    'superfamily',
     'family',
+    'subfamily',
+    'tribe',
+    'subtribe',
     'genus',
+    'subgenus',
     'species',
     'subspecies'
 ]
 
-RANK_COLS = [f'{r}_id' for r in RANK_ORDER]
+RANK_COLS = [f'{r}_key' for r in RANK_ORDER]

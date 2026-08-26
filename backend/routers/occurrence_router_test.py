@@ -6,7 +6,6 @@ import pytest
 
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
-from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 taxa = [
@@ -19,10 +18,6 @@ taxa = [
         'taxon_rank': 'species',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': 1323108,
-        'species_id': 5035741,
     },
     {
         'scientific_name': 'Formicidae',
@@ -33,10 +28,6 @@ taxa = [
         'taxon_rank': 'family',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': None,
-        'species_id': None
     },
     {
         'scientific_name': 'Scolopendridae',
@@ -47,10 +38,6 @@ taxa = [
         'taxon_rank': 'family',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
-        'kingdom_id': 1,
-        'family_id': 4084,
-        'genus_id': None,
-        'species_id': None
     }
 ]
 # Include some observations with range_extent adding up to 50km2 (rounded)
@@ -60,10 +47,10 @@ occ = [
         'taxon_key': 5035741,
         'accepted_taxon_key': 5035741,
         'collection_start_date': '2020-03-04',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': 1323108,
-        'species_id': 5035741,
+        'kingdom_key': 1,
+        'family_key': 4342,
+        'genus_key': 1323108,
+        'species_key': 5035741,
         'geometry': 'POINT(-100.0 31.0)',
         'dataset_key': '07ad9e66-6a83-4054-b176-ef6bc5196b4f'
     },
@@ -72,10 +59,10 @@ occ = [
         'taxon_key': 5035741,
         'accepted_taxon_key': 5035741,
         'collection_start_date': '2021-03-04',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': 1323108,
-        'species_id': 5035741,
+        'kingdom_key': 1,
+        'family_key': 4342,
+        'genus_key': 1323108,
+        'species_key': 5035741,
         'geometry': 'POINT(-99.895  31.000)',
         'dataset_key': '07ad9e66-6a83-4054-b176-ef6bc5196b4f'
     },
@@ -84,10 +71,10 @@ occ = [
         'taxon_key': 5035741,
         'accepted_taxon_key': 5035741,
         'collection_start_date': '2019-03-04',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': 1323108,
-        'species_id': 5035741,
+        'kingdom_key': 1,
+        'family_key': 4342,
+        'genus_key': 1323108,
+        'species_key': 5035741,
         'geometry': 'POINT(-100.000 31.090)',
         'dataset_key': '1e3cf1be-3f9c-48d4-8da8-af28d21216ee'
     }
@@ -101,7 +88,6 @@ async def simple_tx_taxa(conn):
     await insert_rows(occ, GBIF_OBSERVATIONS_TABLE.name, conn)
 
     await refresh_materialized_view(conn, TX_TAXA_TABLE.name)
-    await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
 
 datasets = [
     {

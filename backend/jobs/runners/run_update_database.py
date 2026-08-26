@@ -6,10 +6,8 @@ from backend.jobs.tasks.index_tasks import update_indexes
 from backend.jobs.tasks.occurrence_tasks import update_observations
 from backend.jobs.tasks.region_tasks import update_observation_regions
 from backend.jobs.tasks.table_tasks import initialize_all_tables
-from backend.jobs.tasks.taxon_tasks import resolve_taxon_lineage, update_backbone, update_ns_ranks
+from backend.jobs.tasks.taxon_tasks import fill_invasives_table, update_backbone, update_ns_ranks
 from backend.jobs.tasks.view_tasks import refresh_materialized_views
-import os
-from backend.constants.paths import DATA_OUT_PATH
 
 
 async def main():
@@ -30,6 +28,9 @@ async def main():
         # Quick check to make sure tables are created
         await initialize_all_tables(conn)
 
+        # Create invasives table
+        await fill_invasives_table(conn)
+
         # Update observations, returning new taxon_keys and row_ids
         backbone_update_required, new_row_keys, new_row_ids = await update_observations(conn, delete_file=True, full_replace=True)
 
@@ -37,7 +38,7 @@ async def main():
 
         if backbone_update_required:
             await update_backbone(conn)
-            await resolve_taxon_lineage(conn, GBIF_OBSERVATIONS_TABLE.name)
+            # await resolve_taxon_lineage(conn, GBIF_OBSERVATIONS_TABLE.name)
             # A bit deceptive, but new_row_keys == None means update ALL rows
             new_row_keys = None
 

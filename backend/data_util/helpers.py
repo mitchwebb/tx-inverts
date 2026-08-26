@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 def normalize_to_list[T](value: T | list[T]) -> list[T]:
     """
     Helper to normalize simple input value to list.
@@ -12,3 +15,8 @@ def normalize_to_list[T](value: T | list[T]) -> list[T]:
     if not isinstance(value, list):
         return [value]
     return value
+
+
+def strip_dwc_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove dwc: colname prefixes from Catalogue of Life downloads"""
+    return df.rename(columns=lambda c: c.removeprefix('dwc:'))

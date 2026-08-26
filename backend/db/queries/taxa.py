@@ -2,12 +2,12 @@
 from backend.constants.taxa import RANK_ORDER
 from backend.core.exception_handler import InvalidTaxonRankError, TaxonNotFoundError
 from backend.data_util.execute_psql_query import execute_psql_query
-from psycopg import sql
+from psycopg import AsyncConnection, sql
 
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 
 
-async def get_taxon_rank(conn, taxon_id):
+async def get_taxon_rank(conn: AsyncConnection, taxon_id: str) -> str:
     """
     Given a taxon id, determine the taxonomic rank using the tx_taxa table
     """

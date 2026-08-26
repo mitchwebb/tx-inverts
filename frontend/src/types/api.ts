@@ -81,6 +81,7 @@ export type TaxonInfo = {
     family: string | null;
     subfamily?: string | null;
     genus: string | null;
+    subgenus: string | null;
     species: string | null;
     subspecies?: string | null;
     usInvasive: boolean | null;
@@ -108,6 +109,7 @@ export const TAXON_INFO_MAP = {
     family: 'family',
     subfamily: 'subfamily',
     genus: 'genus',
+    subgenus: 'subgenus',
     species: 'species',
     subspecies: 'subspecies',
     us_invasive: 'usInvasive',
@@ -147,25 +149,6 @@ export function normalizeAPIResponse<T extends Record<string, any>>(
 
     return out as T;
 }
-
-// // TODO: This should be merged with contexts if reasonable
-// export type TaxonInfo = {
-// 	taxonRank: TaxonomicRank | null;
-// 	canonicalName: string | null;
-// 	scientificNameAuthorship: string | null;
-// 	kingdom: string;
-// 	phylum: string;
-//     class: string;
-//     order: string;
-//     superfamily?: string;
-//     family: string;
-//     subfamily?: string;
-//     genus: string;
-//     species: string;
-//     subspecies?: string;
-// 	commonNames?: string[] | null;
-// 	usInvasive: boolean | null;
-// };
 
 // We're gonna have to keep these looking RAW in order to prevent renaming
 // tens of thousands of keys

@@ -21,7 +21,7 @@ from backend.data_util.gbif import (
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.jobs.tasks.table_tasks import initialize_table
-from backend.jobs.tasks.taxon_tasks import resolve_taxon_lineage
+# from backend.jobs.tasks.taxon_tasks import resolve_taxon_lineage
 from backend.jobs.tasks.view_tasks import refresh_materialized_views
 from psycopg import sql, AsyncConnection
 from typing import List, Optional, Tuple
@@ -32,7 +32,8 @@ from typing import List, Optional, Tuple
 async def get_gbif_inverts_file(
     conn: AsyncConnection,
     gbif_request_key: str | None = None,
-    get_all: bool = False
+    get_all: bool = False,
+    test: bool = False
 ) -> str:
     """
         Build GBIF inverts request, retrieve, and unzip, returning fp for resulting occurrences.txt.
@@ -42,6 +43,7 @@ async def get_gbif_inverts_file(
             conn (psycopg.AsyncConnection): AsyncConnection used for db call
             gbif_request_key (str): Key returned by gbif download request. Can be used if a request was previously made
             get_all (bool = False): If True, records will not be filtered by date
+            test (bool = False): If True, request builder will use a subset of data
 
         Returns:
             (str) occurrences.txt filepath
@@ -81,6 +83,7 @@ async def get_gbif_inverts_file(
             request_body = observations_request.build_observations_request(
                 user=settings.gbif.user,
                 email=settings.gbif.email,
+                test=test,
                 ** kwargs)  # type: ignore[arg-type]
 
             # Request download and get download key
@@ -194,7 +197,7 @@ async def update_observations(
     chunk_size: int = 100000,
     full_replace: bool = False,
     delete_file=False
-) -> Tuple[bool, Optional[List[int]], Optional[List[int]]]:
+) -> Tuple[bool, Optional[List[str]], Optional[List[int]]]:
     """
         Orchestration function to update gbif_observations table
 
@@ -299,9 +302,6 @@ async def update_observations(
             ALTER TABLE {temp_table} DROP COLUMN IF EXISTS batch_id
         """).format(temp_table=sql.Identifier(temp_table_name))
         await execute_psql_query(conn, drop_column_query)
-
-        # Resolve and assign taxonomic lineage in complete temp table (for each observation)
-        await resolve_taxon_lineage(conn, temp_table_name)
 
         ### Insert Operations ###
 

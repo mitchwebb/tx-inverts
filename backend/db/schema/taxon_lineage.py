@@ -10,8 +10,8 @@ class TaxonLineage(DBTable):
     name = 'taxon_lineage'
     primary_key = None
     columns = {
-        'accepted_taxon_key': 'BIGINT NOT NULL',
-        'ancestor_id': 'BIGINT'
+        'accepted_taxon_key': 'TEXT NOT NULL',
+        'ancestor_id': 'TEXT'
     }
 
 

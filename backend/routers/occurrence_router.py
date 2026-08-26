@@ -269,7 +269,7 @@ async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request)
 async def get_tile(
     z: int, x: int, y: int,
     request: Request,
-    taxon_id: int = Query(),
+    taxon_id: str = Query(),
     include_inat: bool = Query(default=True),
     datasets: list[str] = Query(default=[]),
     date_start: str | None = Query(default=None),

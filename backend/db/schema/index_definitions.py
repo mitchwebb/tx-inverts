@@ -194,23 +194,6 @@ _all_indexes = [
         table=TAXON_PRESENCE_TABLE,
         clause=sql.SQL('(region_id)')
     ),
-
-    ### TAXON LINEAGE ###
-
-    IndexDefinition(
-        name='idx_taxon_lineage_ancestor_id',
-        table=TAXON_LINEAGE_TABLE,
-        clause=sql.SQL('(ancestor_id)')),
-    IndexDefinition(
-        name='idx_taxon_lineage_taxon_key',
-        table=TAXON_LINEAGE_TABLE,
-        clause=sql.SQL('(accepted_taxon_key)')
-    ),
-    IndexDefinition(
-        name='idx_taxon_lineage_ancestor_and_key',
-        table=TAXON_LINEAGE_TABLE,
-        clause=sql.SQL('(ancestor_id, accepted_taxon_key)')
-    )
 ]
 
 # Rank column indexes
@@ -298,11 +281,15 @@ MATERIALIZED_VIEWS = {
         'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW {taxon_lineage} AS
             SELECT DISTINCT accepted_taxon_key,
-            unnest(ARRAY[accepted_taxon_key, kingdom_id, phylum_id, class_id, order_id, family_id, genus_id, species_id, subspecies_id]) AS ancestor_id
+            unnest(array_remove(ARRAY[
+                accepted_taxon_key,
+                {RANK_COLS}
+            ], NULL)) AS ancestor_id
             FROM {gbif_observations}
             WHERE accepted_taxon_key IS NOT NULL;
         """).format(
             taxon_lineage=sql.Identifier(TAXON_LINEAGE_TABLE.name),
+            RANK_COLS=sql.SQL(', ').join(sql.Identifier(c) for c in RANK_COLS),
             gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
         ),
         'index_sql': sql.SQL(

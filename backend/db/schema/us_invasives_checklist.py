@@ -9,7 +9,7 @@ class USInvasivesChecklist(DBTable):
     name = 'us_invasives_checklist'
     primary_key = 'taxon_key'
     columns = {
-        'taxon_id': 'BIGINT',
+        'taxon_id': 'TEXT',
         'scientific_name': 'TEXT',
         'kingdom': 'TEXT',
         'phylum': 'TEXT',

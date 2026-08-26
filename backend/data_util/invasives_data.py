@@ -8,6 +8,7 @@ from backend.config import get_settings
 from backend.core.logging import tasks_logger
 from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.gbif.gbif_downloads import gbif_download_request, get_gbif_download
+from backend.data_util.helpers import strip_dwc_column_names
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
 from backend.data_util.taxa_data import inverts_mask
 
@@ -35,8 +36,11 @@ async def get_invasives_dataset():
             'type': 'equals',
             'key': 'DATASET_KEY',
             'value': dataset_key,
-            'matchCase': False
-        }
+            # TODO: Set back to false. This was a quick workaround for forcing COL processing
+            'matchCase': True
+        },
+        # This is now required to use COL processing and taxonKeys
+        'checklistKey': '7ddf754f-d193-4cc9-b351-99906754a03b'
     }
 
     # Request GBIF download from API
@@ -69,6 +73,9 @@ async def prep_invasives_dataset(data: str | Path | DataFrame) -> DataFrame:
         )
     else:
         df = data
+
+    # Clean dwc: column prefixes
+    df = strip_dwc_column_names(df)
 
     # Add taxonID column with values of taxonKey column
     df['taxonID'] = df['taxonKey']

@@ -33,7 +33,7 @@ class TestUpdateNSRanks:
             'backend.jobs.tasks.taxon_tasks.execute_psql_query',
             new=mocker.AsyncMock(
                 side_effect=[{"exists": 1}, {"exists": 1},
-                             [{"taxon_id": 42}], None]
+                             [{"taxon_id": '42'}], None]
             ),
         )
         mocker.patch(
@@ -41,7 +41,7 @@ class TestUpdateNSRanks:
             new=mocker.AsyncMock(),
         )
 
-        await update_ns_ranks(mocker.AsyncMock(), taxon_keys=[42])
+        await update_ns_ranks(mocker.AsyncMock(), taxon_keys=['42'])
 
         # Check to make sure our default values are being used when calculating
         assert len(captured_filters) == 2
@@ -80,7 +80,7 @@ class TestUpdateNSRanks:
     @pytest.mark.asyncio
     async def test_updates_rank_for_specified_taxon(self, setup_gbif_schema, occurrence_filter_data):
         conn = occurrence_filter_data
-        await update_ns_ranks(conn, taxon_keys=[5035741])
+        await update_ns_ranks(conn, taxon_keys=['5035741'])
 
         result = await execute_psql_query(
             conn,
@@ -88,7 +88,7 @@ class TestUpdateNSRanks:
                 SELECT ns_rank_state, ns_rank_state_no_inat
                 FROM {backbone} WHERE taxon_id = %s
             """).format(backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)),
-            params=(5035741,), fetch='one', dict_cursor=True,
+            params=('5035741',), fetch='one', dict_cursor=True,
         )
 
         assert result
@@ -100,7 +100,7 @@ class TestUpdateNSRanks:
         # gbif_id=2 (taxon 5035741) is iNaturalist-origin — excluding it should
         # change occurrence count / extent enough to differ from the with-inat rank.
         conn = occurrence_filter_data
-        await update_ns_ranks(conn, taxon_keys=[5035741])
+        await update_ns_ranks(conn, taxon_keys=['5035741'])
 
         result = await execute_psql_query(
             conn,
@@ -108,7 +108,7 @@ class TestUpdateNSRanks:
                 SELECT ns_rank_state, ns_rank_state_no_inat
                 FROM {backbone} WHERE taxon_id = %s
             """).format(backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)),
-            params=(5035741,), fetch='one', dict_cursor=True,
+            params=('5035741',), fetch='one', dict_cursor=True,
         )
 
         assert result
@@ -119,14 +119,14 @@ class TestUpdateNSRanks:
         # Formicidae (4342) is taxon_rank='family' — the UPDATE's
         # WHERE ... AND taxon_rank = 'species' clause must exclude it.
         conn = occurrence_filter_data
-        await update_ns_ranks(conn, taxon_keys=[4342])
+        await update_ns_ranks(conn, taxon_keys=['4342'])
 
         result = await execute_psql_query(
             conn,
             sql.SQL("""
                 SELECT ns_rank_state FROM {backbone} WHERE taxon_id = %s
             """).format(backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)),
-            params=(4342,), fetch='one', dict_cursor=True,
+            params=('4342',), fetch='one', dict_cursor=True,
         )
 
         assert result
@@ -135,7 +135,7 @@ class TestUpdateNSRanks:
     @pytest.mark.asyncio
     async def test_no_matching_taxa_returns_without_error(self, occurrence_filter_data):
         conn = occurrence_filter_data
-        await update_ns_ranks(conn, taxon_keys=[999999999])  # no such taxon
+        await update_ns_ranks(conn, taxon_keys=['999999999'])  # no such taxon
 
     @pytest.mark.asyncio
     async def test_rolls_back_and_reraises_on_failure(self, mocker):
@@ -146,7 +146,7 @@ class TestUpdateNSRanks:
         )
 
         with pytest.raises(RuntimeError, match="boom"):
-            await update_ns_ranks(conn, taxon_keys=[1])
+            await update_ns_ranks(conn, taxon_keys=['1'])
 
         conn.rollback.assert_awaited_once()
 
@@ -339,10 +339,6 @@ async def temp_backbone_table(conn):
             'taxon_rank': 'species',
             'us_invasive': True,
             'taxonomic_status': 'accepted',
-            'kingdom_id': None,
-            'family_id': None,
-            'genus_id': None,
-            'species_id': taxon_id,
             **overrides,
         }
         columns = list(row.keys())
@@ -404,10 +400,10 @@ class TestReplaceBackbone:
                     'accepted_taxon_key': 5555557,
                     'collection_start_date': '2020-03-04',
                     'collection_end_date': '2020-03-05',
-                    'kingdom_id': 1,
-                    'family_id': None,
-                    'genus_id': None,
-                    'species_id': 5555557,
+                    'kingdom_key': 1,
+                    'family_key': None,
+                    'genus_key': None,
+                    'species_key': 5555557,
                     'dataset_key': 'dataset-a',
                     'institution_code': 'TxState',
                     'coordinate_uncertainty_in_meters': 100,
@@ -532,7 +528,7 @@ class TestUpdateBackbone:
         # Attempt to select taxon from test row
         select_query = sql.SQL("SELECT * FROM {backbone} WHERE taxon_id = {taxon_id}").format(
             backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-            taxon_id=sql.Literal(5555558)
+            taxon_id=sql.Literal('5555558')
         )
         rows = await execute_psql_query(
             conn, select_query, fetch='all', dict_cursor=True

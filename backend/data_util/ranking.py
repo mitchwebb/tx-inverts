@@ -2,6 +2,7 @@ from backend.core.exception_handler import TaxonNotFoundError
 from backend.data_util.taxa_data import taxon_exists
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
+from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.models.api import NSRank
 from psycopg import AsyncConnection, sql, rows
 from backend.db.queries.occurrence import create_occurrence_filter_sql
@@ -194,7 +195,7 @@ async def calculate_ns_values(
         query = sql.SQL("""
             WITH matching_taxa AS MATERIALIZED (
                 SELECT accepted_taxon_key
-                FROM taxon_lineage
+                FROM {taxon_lineage}
                 WHERE ancestor_id = {taxon_id}
             ),
             filtered_obs AS MATERIALIZED (
@@ -242,6 +243,7 @@ async def calculate_ns_values(
             FROM agg_values, hull, region
         """).format(
             tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
+            taxon_lineage=sql.Identifier(TAXON_LINEAGE_TABLE.name),
             taxon_id=sql.Literal(taxon_id),
             occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
             occurrence_filter=occurrence_filter,

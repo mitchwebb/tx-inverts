@@ -30,10 +30,6 @@ MINIMAL_TAXA = [
         'taxon_rank': 'species',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
-        'kingdom_id': 1,
-        'family_id': 4342,
-        'genus_id': 1323108,
-        'species_id': 5035741,
     },
 ]
 
@@ -41,7 +37,7 @@ MINIMAL_OCC = [
     {
         'gbif_id': 1, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
         'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
-        'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035741,
+        'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035741,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
         'geometry': 'POINT(-97.7431 30.2672)',
@@ -150,8 +146,7 @@ class RefreshMaterializedView:
             (before,) = await cur.fetchone()
 
         await insert_rows(
-            [{'taxon_id': 5035742, 'accepted_name_usage_id': 5035742,
-              'species_id': 5035742, 'scientific_name': 'Atta second',
+            [{'taxon_id': 5035742, 'accepted_name_usage_id': 5035742, 'scientific_name': 'Atta second',
               'canonical_name': 'Atta second'}],
             GBIF_INVERTS_BACKBONE.name,
             conn,
@@ -160,7 +155,7 @@ class RefreshMaterializedView:
             [{
                 'gbif_id': 2, 'taxon_key': 5035742, 'accepted_taxon_key': 5035742,
                 'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
-                'kingdom_id': 1, 'family_id': 4342, 'genus_id': 1323108, 'species_id': 5035742,
+                'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035742,
                 'dataset_key': 'dataset-a', 'institution_code': 'TxState',
                 'coordinate_uncertainty_in_meters': 100,
                 'geometry': 'POINT(-97.7431 30.2672)',

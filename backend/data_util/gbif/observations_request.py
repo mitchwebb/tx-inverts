@@ -197,25 +197,31 @@ def build_observations_request(
                     'predicate': {
                         'type': 'equals',
                         'key': 'PHYLUM_KEY',
-                        'value': '44'
+                        'value': 'CH2',
+                        # This is now required to use COL processing and taxonKeys
+                        'checklistKey': '7ddf754f-d193-4cc9-b351-99906754a03b'
                     }
                 },
                 {
                     'type': 'in',
                     'key': 'CLASS_KEY',
                     'values': [
-                        '207',  # Thaliacea
-                        '356',  # Ascidiacea
-                        '211',  # Appendicularia
-                        '7375758'  # Leptocardii
-                    ]
+                        'L2QHG',  # Thaliacea
+                        'B8V3P',  # Ascidiacea
+                        '622C5',  # Appendicularia
+                        'DR'      # Leptocardii
+                    ],
+                    # This is now required to use COL processing and taxonKeys
+                    'checklistKey': '7ddf754f-d193-4cc9-b351-99906754a03b'
                 }
             ]
         },
         {
             'type': 'equals',
             'key': 'KINGDOM_KEY',
-            'value': '1'
+            'value': 'N',
+            # This is now required to use COL processing and taxonKeys
+            'checklistKey': '7ddf754f-d193-4cc9-b351-99906754a03b'
         },
         {
             'type': 'equals',
@@ -258,6 +264,8 @@ def build_observations_request(
         'sendNotification': True,
         'predicate': {
             'type': 'and',
-            'predicates': [*inverts_predicates, {'type': 'in', 'key': 'DATASET_KEY', 'values': datasets}]
-        }
+            'predicates': [*inverts_predicates, {'type': 'in', 'key': 'DATASET_KEY', 'values': datasets}],
+        },
+        # This is now required to use COL processing and taxonKeys
+        'checklistKey': '7ddf754f-d193-4cc9-b351-99906754a03b'
     }

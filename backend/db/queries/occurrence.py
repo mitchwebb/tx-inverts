@@ -3,6 +3,7 @@ from typing import List, Optional
 from backend.data_util.helpers import normalize_to_list
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
+from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from psycopg import sql
 from backend.models.occurrence import OccurrenceFilters
@@ -105,7 +106,7 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
 
 # This is mostly just used in the occurrence clause, but is used in specific cases to
 # create specialized requests
-def create_occurrence_taxon_filter(taxon_ids: int | List[int] = 1, include_invasives: Optional[bool] = False) -> sql.Composed | sql.SQL:
+def create_occurrence_taxon_filter(taxon_ids: str | List[str] = 'N', include_invasives: Optional[bool] = False) -> sql.Composed | sql.SQL:
     """
     Takes taxon_ids and generates sql formatted clause to find occurrences with
     matching ids in occurrences table. This matches to taxa in any rank as long
@@ -114,7 +115,7 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int] = 1, include_invas
     is, itself, an invasive taxon, or include_invasives is true.
 
     Args:
-        taxon_ids (int | List[int]): Taxon ID of desired taxon. Defaults to 1 (Animalia)
+        taxon_ids (int | List[int]): Taxon ID of desired taxon. Defaults to 'N' (Animalia)
         include_invasives (bool): If True, invasive taxa are included in results. Defaults to False.
 
     Returns:
@@ -125,7 +126,7 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int] = 1, include_invas
     taxon_ids = normalize_to_list(taxon_ids)
 
     # If no taxon_ids provided (Animalia), skip
-    if taxon_ids == [1]:
+    if taxon_ids == ['N']:
         # If include_invasives, skip with 'TRUE' no-op
         if include_invasives:
             return sql.SQL('TRUE')
@@ -152,7 +153,7 @@ def create_occurrence_taxon_filter(taxon_ids: int | List[int] = 1, include_invas
               AND tl.ancestor_id = ANY({taxon_ids})
         )
     """).format(
-        lineage_table=sql.Identifier('taxon_lineage'),
+        lineage_table=sql.Identifier(TAXON_LINEAGE_TABLE.name),
         observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
         taxon_ids=sql.Literal(taxon_ids)
     )

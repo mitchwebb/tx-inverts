@@ -4,10 +4,11 @@ from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.download_large_file import download_large_file
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.extract_zip import extract_zip_files
+from backend.data_util.helpers import strip_dwc_column_names
 from backend.data_util.invasives_data import get_invasives_dataset, prep_invasives_dataset
 from backend.data_util.taxa_data import inverts_mask
 import backend.data_util.ranking as ns
-from backend.data_util.taxa_data import build_lineages
+# from backend.data_util.taxa_data import build_lineages
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
@@ -147,16 +148,31 @@ async def _fetch_backbone() -> str:
     Download GBIF backbone, extract Taxon.tsv from zip, and delete original zip
     Returns filepath for extracted Taxon.tsv
     """
-    data_logger.info("Downloading backbone from gbif...")
+    # Get DOI of in-use CoL backbone from GBIF
+    data_logger.info("Asking GBIF which CoL version they're using...")
+    response = requests.get(
+        'https://api.gbif.org/v1/dataset/7ddf754f-d193-4cc9-b351-99906754a03b/identifier')
+    parsed = response.json()
+    doi = parsed[0]['identifier']
+
+    # Get dataset key value from checklistbank using DOI
+    response = requests.get(f'https://api.checklistbank.org/dataset?q={doi}&limit=5'
+                            )
+    parsed = response.json()
+    result = parsed['result'][0]
+    key = result['key']
+
+    # Download appropriate CoL backbone using key
+    data_logger.info("Downloading backbone from ChecklistBank...")
     zip_path = download_large_file(
-        'https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip',
+        f'https://api.checklistbank.org/dataset/{key}/export.zip?extended=true&format=DwCA',
         output_fp=os.path.join(DATA_OUT_PATH, 'backbone.zip')
     )
     extract_dir = DATA_OUT_PATH
 
     # Extract Taxon.tsv from backbone
     extract_zip_files(zip_path, extract_dir, target_files=[
-        'Taxon.tsv'], delete_zip=True)
+        'Taxon.tsv', 'VernacularName.tsv'], delete_zip=True)
 
     fp = os.path.join(extract_dir, 'Taxon.tsv')
     return fp
@@ -185,6 +201,9 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None) -> None:
             low_memory=True
         )
 
+        # Remove :dwc prefixes from colnames (caused by catalogue of life processing)
+        df = strip_dwc_column_names(df)
+
         mask = inverts_mask(df)
 
         data_logger.info("Filtering to inverts...")
@@ -203,10 +222,10 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None) -> None:
 
         df = GBIF_INVERTS_BACKBONE.coerce_dataframe(df)
 
-        # Build taxonomic lineages and insert rank ids into dataframe
-        data_logger.info(
-            "Building taxonomic lineages to fill rank id columns...")
-        df = build_lineages(df)
+        # # Build taxonomic lineages and insert rank ids into dataframe
+        # data_logger.info(
+        #     "Building taxonomic lineages to fill rank id columns...")
+        # df = build_lineages(df)
 
         # Save copy of formatted backbone
         tsv_path = os.path.join(DATA_OUT_PATH, 'backbone.tsv')
@@ -292,12 +311,12 @@ async def _ensure_rank_columns(conn: AsyncConnection) -> None:
     await conn.commit()
 
 
-async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]] = None) -> None:
+async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[str]] = None) -> None:
     """
     Update conservation ranks for selected (or all) taxa
 
     conn (AsyncConnection): Active async DB connection
-    taxon_keys (int[]): List of taxon_keys to update (if None, updates all)
+    taxon_keys (str[]): List of taxon_keys to update (if None, updates all)
     """
 
     try:
@@ -305,8 +324,6 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
 
         # Refreshing tx_taxa materialized view to make sure we're getting full list of taxa
         await refresh_materialized_view(conn, 'tx_taxa')
-        # Refresh taxon_lineage view to help with speed
-        await refresh_materialized_view(conn, 'taxon_lineage')
 
         # If taxon_keys are provided, selected only those for update (from tx_taxa table)
         if taxon_keys is not None:
@@ -331,7 +348,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
 
         # Get taxon_ids
         rows = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
-        taxa_to_update: List[int] = [row['taxon_id'] for row in rows]
+        taxa_to_update: List[str] = [row['taxon_id'] for row in rows]
 
         if not taxa_to_update:
             data_logger.info("No taxa to update for conservation ranks.")
@@ -342,7 +359,7 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         data_logger.info(f"Updating conservation ranks for {total} taxa...")
 
         # Get list of taxon_ids and ranks for batch update
-        rank_assignments: List[tuple[int, str, str]] = []
+        rank_assignments: List[tuple[str, str, str]] = []
 
         # Calculate ranks for all taxa (with and without inat)
         for index, taxon_id in enumerate(taxa_to_update):
@@ -406,64 +423,74 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[int]]
         raise
 
 
-# TODO: Needs testing
-async def resolve_taxon_lineage(conn: AsyncConnection, occ_table_name: str):
-    """
-    Using the current GBIF_INVERTS_BACKBONE table, resolves the
-    passed table lineage columns to match.
+# # TODO: Needs testing
+# async def resolve_taxon_lineage(conn: AsyncConnection, occ_table_name: str):
+#     """
+#     Using the current GBIF_INVERTS_BACKBONE table, resolves the
+#     passed table lineage columns to match.
 
-    This can be used for a temp_table when processing new occurrences,
-    or with the observations table when simple resolving lineage for a new
-    backbone.
-    """
+#     This can be used for a temp_table when processing new occurrences,
+#     or with the observations table when simple resolving lineage for a new
+#     backbone.
+#     """
 
-    # Create temp table of resolved lineage keys
-    db_logger.info("Creating temp table for taxon lineages udpate...")
-    create_temp_query = sql.SQL("""
-        CREATE TEMP TABLE resolved_keys AS
-            SELECT
-                obs.gbif_id,
-                COALESCE(b1.accepted_name_usage_id, b1.taxon_id, b2.accepted_name_usage_id, b2.taxon_id) AS resolved_taxon_key
-            FROM {occ_table_name} AS obs
-            -- Get observation's matching taxon_id from backbone
-            LEFT JOIN {backbone} AS b1
-                ON obs.accepted_taxon_key = b1.taxon_id
-            -- As fallback, get observation's matching accepted_name_usage_id from backbone
-            LEFT JOIN {backbone} AS b2
-                ON obs.accepted_taxon_key = b2.accepted_name_usage_id
-        ;""").format(
-        occ_table_name=sql.Identifier(occ_table_name),
-        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-    )
-    await execute_psql_query(conn, create_temp_query)
+#     # Create temp table of resolved lineage keys
+#     db_logger.info("Creating temp table for taxon lineages udpate...")
+#     create_temp_query = sql.SQL("""
+#         CREATE TEMP TABLE resolved_keys AS
+#             SELECT
+#                 obs.gbif_id,
+#                 COALESCE(b1.accepted_name_usage_id, b1.taxon_id, b2.accepted_name_usage_id, b2.taxon_id) AS resolved_taxon_key
+#             FROM {occ_table_name} AS obs
+#             -- Get observation's matching taxon_id from backbone
+#             LEFT JOIN {backbone} AS b1
+#                 ON obs.accepted_taxon_key = b1.taxon_id
+#             -- As fallback, get observation's matching accepted_name_usage_id from backbone
+#             LEFT JOIN {backbone} AS b2
+#                 ON obs.accepted_taxon_key = b2.accepted_name_usage_id
+#         ;""").format(
+#         occ_table_name=sql.Identifier(occ_table_name),
+#         backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+#     )
+#     await execute_psql_query(conn, create_temp_query)
 
-    # Index on gbif_id for insert
-    create_index_query = sql.SQL("""
-        CREATE INDEX idx_resolved_gbif ON resolved_keys(gbif_id);
-    """)
-    await execute_psql_query(conn, create_index_query)
+#     # Index on gbif_id for insert
+#     create_index_query = sql.SQL("""
+#         CREATE INDEX idx_resolved_gbif ON resolved_keys(gbif_id);
+#     """)
+#     await execute_psql_query(conn, create_index_query)
 
-    db_logger.info(f"Writing lineages to {occ_table_name}...")
-    # Apply lineages to temp table
-    update_lineage_query = sql.SQL("""
-        UPDATE {occ_table_name} t
-        SET
-            accepted_taxon_key = r.resolved_taxon_key,
-            kingdom_id = b.kingdom_id,
-            phylum_id = b.phylum_id,
-            class_id = b.class_id,
-            order_id = b.order_id,
-            family_id = b.family_id,
-            genus_id = b.genus_id,
-            species_id = b.species_id,
-            subspecies_id = b.subspecies_id
-        FROM resolved_keys r
-        JOIN {backbone} b ON b.taxon_id = r.resolved_taxon_key
-        WHERE t.gbif_id = r.gbif_id;
-    """).format(
-        occ_table_name=sql.Identifier(occ_table_name),
-        backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-    )
-    await execute_psql_query(conn, update_lineage_query)
+#     db_logger.info(f"Writing lineages to {occ_table_name}...")
+#     # Apply lineages to temp table
+#     update_lineage_query = sql.SQL("""
+#         UPDATE {occ_table_name} t
+#         SET
+#             accepted_taxon_key = r.resolved_taxon_key,
+#             kingdom_id = b.kingdom_id,
+#             phylum_id = b.phylum_id,
+#             subphylum_id = b.subphylum_id,
+#             class_id = b.class_id,
+#             subclass_id = b.subclass_id,
+#             infraclass_id = b.infraclass_id,
+#             subterclass_id = b.subterclass_id,
+#             superorder_id = b.superorder_id,
+#             order_id = b.order_id,
+#             superfamily_id = b.superfamily_id,
+#             family_id = b.family_id,
+#             subfamily_id = b.subfamily_id,
+#             tribe_id = b.tribe_id,
+#             subtribe_id = b.subtribe_id,
+#             genus_id = b.genus_id,
+#             subgenus_id = b.subgenus_id,
+#             species_id = b.species_id,
+#             subspecies_id = b.subspecies_id
+#         FROM resolved_keys r
+#         JOIN {backbone} b ON b.taxon_id = r.resolved_taxon_key
+#         WHERE t.gbif_id = r.gbif_id;
+#     """).format(
+#         occ_table_name=sql.Identifier(occ_table_name),
+#         backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+#     )
+#     await execute_psql_query(conn, update_lineage_query)
 
-    await conn.commit()
+#     await conn.commit()

@@ -95,7 +95,7 @@
         switch (taxaContext.taxa.ids.length) {
             // If no active taxonIDs, filter to Animalia
             case 0:
-                filterTaxaIDs = [1];
+                filterTaxaIDs = ['N'];
                 break;
             // If only one active taxonID
             case 1: {
@@ -105,7 +105,7 @@
                     !taxon ||
                     ['species', 'subspecies'].includes(taxon.taxon_rank)
                 ) {
-                    filterTaxaIDs = [1];
+                    filterTaxaIDs = ['N'];
                     scrollToTaxonID = taxon?.taxon_id;
                     break;
                 }
@@ -124,7 +124,7 @@
                         );
                     })
                 ) {
-                    filterTaxaIDs = [1];
+                    filterTaxaIDs = ['N'];
                     scrollToTaxonID = taxaContext.taxa.ids.slice(-1)[0];
                     break;
                 }
