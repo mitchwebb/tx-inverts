@@ -62,7 +62,6 @@ DWC_OCCURRENCE_SELECT_CLAUSE = sql.SQL("""
 DWC_TAXA_SELECT_CLAUSE = sql.SQL("""
     SELECT
         taxon_id AS "taxonID",
-        dataset_id AS "datasetID",
         parent_name_usage_id AS "parentName",
         accepted_name_usage_id AS "acceptedNameUsageID",
         original_name_usage_id AS "originalNameUsageID",

@@ -5,6 +5,7 @@ from backend.core.exception_handler import TaxonNotFoundError
 from backend.data_util.ranking import calculate_ns_values, calculate_rank
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.models.occurrence import OccurrenceFilters
@@ -126,6 +127,7 @@ async def simple_tx_taxa(conn):
     await insert_rows(occ, GBIF_OBSERVATIONS_TABLE.name, conn)
 
     await refresh_materialized_view(conn, TX_TAXA_TABLE.name)
+    await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
 
 
 @pytest.mark.parametrize(

@@ -24,10 +24,13 @@ class TestUpdateDatabase:
             new=AsyncMock(return_value=conn)
         )
         mocker.patch(f'{MODULE}.setup_logging')
-
         mocker.patch(
             f'{MODULE}.initialize_all_tables',
             new=AsyncMock(side_effect=track('initialize_all_tables'))
+        )
+        mocker.patch(
+            f'{MODULE}.fill_invasives_table',
+            new=AsyncMock(side_effect=track('fill_invasives_table'))
         )
         # Return backbone_update_required = True to trigger backbone update
         mocker.patch(
@@ -42,10 +45,6 @@ class TestUpdateDatabase:
         mocker.patch(
             f'{MODULE}.update_backbone',
             new=AsyncMock(side_effect=track('update_backbone'))
-        )
-        mocker.patch(
-            f'{MODULE}.resolve_taxon_lineage',
-            new=AsyncMock(side_effect=track('resolve_taxon_lineage'))
         )
         mocker.patch(
             f'{MODULE}.update_ns_ranks',
@@ -65,10 +64,10 @@ class TestUpdateDatabase:
 
         assert order == [
             'initialize_all_tables',  # Make sure tables exist
+            'fill_invasives_table',
             'update_observations',  # Update observations table
             'update_observation_regions',  # Update observations_regions using new observations
             'update_backbone',  # Update backbone (on backbone_update_required)
-            'resolve_taxon_lineage',  # Resolve taxon lineage after backbone update
             'update_ns_ranks',  # Update rankings using new observations
             'refresh_materialized_views',  # Refresh materialized views
             'update_indexes',  # Update indexes at the end
@@ -88,6 +87,7 @@ class TestUpdateDatabase:
             new=AsyncMock(return_value=conn)
         )
         mocker.patch(f'{MODULE}.setup_logging')
+        mocker.patch(f'{MODULE}.fill_invasives_table', new=AsyncMock())
         mocker.patch(f'{MODULE}.initialize_all_tables', new=AsyncMock())
         mocker.patch(f'{MODULE}.update_indexes', new=AsyncMock())
         # Return backbone_update_required = True and dummy keys
@@ -114,6 +114,7 @@ class TestUpdateDatabase:
                      new=AsyncMock(return_value=conn))
         mocker.patch(f'{MODULE}.setup_logging')
         mocker.patch(f'{MODULE}.initialize_all_tables', new=AsyncMock())
+        mocker.patch(f'{MODULE}.fill_invasives_table', new=AsyncMock())
         mocker.patch(f'{MODULE}.update_indexes', new=AsyncMock())
         # Return backbone_update_required = False and dummy keys
         mocker.patch(f'{MODULE}.update_observations', new=AsyncMock(
@@ -138,6 +139,7 @@ class TestUpdateDatabase:
                      new=AsyncMock(return_value=conn))
         mocker.patch(f'{MODULE}.setup_logging')
         mocker.patch(f'{MODULE}.initialize_all_tables', new=AsyncMock())
+        mocker.patch(f'{MODULE}.fill_invasives_table', new=AsyncMock())
         mocker.patch(f'{MODULE}.update_observations',
                      new=AsyncMock(return_value=(True, [], [])))
         mocker.patch(f'{MODULE}.update_observation_regions',

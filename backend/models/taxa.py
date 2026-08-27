@@ -6,7 +6,7 @@ from backend.constants.taxa import TaxonomicRank
 class TaxonSuggestion(BaseModel):
     scientific_name: str | None
     canonical_name: str | None
-    taxon_id: int | None
+    taxon_id: str | None
     taxon_rank: str | None
     us_invasive: bool | None
     taxonomic_status: str | None
@@ -35,7 +35,7 @@ class TaxonInfo(BaseModel):
 
 
 class TaxonTreeNode(BaseModel):
-    taxon_id: int | None
+    taxon_id: str | None
     taxon_rank: str | None
     parent_name_usage_id: int | None
     accepted_name_usage_id: int | None

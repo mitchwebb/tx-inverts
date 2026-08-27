@@ -1,4 +1,3 @@
-from backend.core.exception_handler import TaxonNotFoundError
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.conftest import insert_rows
 import pytest_asyncio
@@ -12,9 +11,9 @@ taxa = [
     {
         'scientific_name': 'Atta texana',
         'canonical_name': 'Atta texana',
-        'taxon_id': 5035741,
-        'accepted_name_usage_id': 5035741,
-        'parent_name_usage_id': 4342,
+        'taxon_id': '5035741',
+        'accepted_name_usage_id': '5035741',
+        'parent_name_usage_id': '4342',
         'taxon_rank': 'species',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
@@ -22,9 +21,9 @@ taxa = [
     {
         'scientific_name': 'Formicidae',
         'canonical_name': 'Formicidae',
-        'taxon_id': 4342,
-        'accepted_name_usage_id': 4342,
-        'parent_name_usage_id': 1,
+        'taxon_id': '4342',
+        'accepted_name_usage_id': '4342',
+        'parent_name_usage_id': '1',
         'taxon_rank': 'family',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
@@ -32,9 +31,9 @@ taxa = [
     {
         'scientific_name': 'Scolopendridae',
         'canonical_name': 'Scolopendridae',
-        'taxon_id': 4084,
-        'accepted_name_usage_id': 4084,
-        'parent_name_usage_id': 1,
+        'taxon_id': '4084',
+        'accepted_name_usage_id': '4084',
+        'parent_name_usage_id': '1',
         'taxon_rank': 'family',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
@@ -44,37 +43,37 @@ taxa = [
 occ = [
     {
         'gbif_id': 1,
-        'taxon_key': 5035741,
-        'accepted_taxon_key': 5035741,
+        'taxon_key': '5035741',
+        'accepted_taxon_key': '5035741',
         'collection_start_date': '2020-03-04',
-        'kingdom_key': 1,
-        'family_key': 4342,
-        'genus_key': 1323108,
-        'species_key': 5035741,
+        'kingdom_key': '1',
+        'family_key': '4342',
+        'genus_key': '1323108',
+        'species_key': '5035741',
         'geometry': 'POINT(-100.0 31.0)',
         'dataset_key': '07ad9e66-6a83-4054-b176-ef6bc5196b4f'
     },
     {
         'gbif_id': 2,
-        'taxon_key': 5035741,
-        'accepted_taxon_key': 5035741,
+        'taxon_key': '5035741',
+        'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'kingdom_key': 1,
-        'family_key': 4342,
-        'genus_key': 1323108,
-        'species_key': 5035741,
+        'kingdom_key': '1',
+        'family_key': '4342',
+        'genus_key': '1323108',
+        'species_key': '5035741',
         'geometry': 'POINT(-99.895  31.000)',
         'dataset_key': '07ad9e66-6a83-4054-b176-ef6bc5196b4f'
     },
     {
         'gbif_id': 3,
-        'taxon_key': 5035741,
-        'accepted_taxon_key': 5035741,
+        'taxon_key': '5035741',
+        'accepted_taxon_key': '5035741',
         'collection_start_date': '2019-03-04',
-        'kingdom_key': 1,
-        'family_key': 4342,
-        'genus_key': 1323108,
-        'species_key': 5035741,
+        'kingdom_key': '1',
+        'family_key': '4342',
+        'genus_key': '1323108',
+        'species_key': '5035741',
         'geometry': 'POINT(-100.000 31.090)',
         'dataset_key': '1e3cf1be-3f9c-48d4-8da8-af28d21216ee'
     }
@@ -130,11 +129,11 @@ class TestGetDatasets:
 
 class TestGetDatasetCounts:
     @pytest.mark.asyncio
-    async def test_basic_dataset_counts_success(self, simple_tx_taxa, client):
+    async def test_basic_dataset_counts_success(self, simple_tx_taxa, simple_datasets_table, client):
         response = await client.post(
             '/occurrence/get_dataset_counts',
             json={
-                'taxon_id': 4342,
+                'taxon_id': '4342',
                 'include_inat': True,
                 'date_start': None,
                 'date_end': None,
@@ -146,11 +145,11 @@ class TestGetDatasetCounts:
         assert result['1e3cf1be-3f9c-48d4-8da8-af28d21216ee'] == 1
 
     @pytest.mark.asyncio
-    async def test_dataset_counts_responds_to_filters(self, simple_tx_taxa, client):
+    async def test_dataset_counts_responds_to_filters(self, simple_tx_taxa, simple_datasets_table, client):
         response = await client.post(
             '/occurrence/get_dataset_counts',
             json={
-                'taxon_id': 4342,
+                'taxon_id': '4342',
                 'include_inat': True,
                 'date_start': '2020-09-04',
                 'date_end': None,
@@ -162,22 +161,22 @@ class TestGetDatasetCounts:
         assert result['1e3cf1be-3f9c-48d4-8da8-af28d21216ee'] == 0
 
     @pytest.mark.asyncio
-    async def test_dataset_counts_empty_returns_none(self, simple_tx_taxa, client):
+    async def test_dataset_counts_empty_returns_none(self, simple_tx_taxa, simple_datasets_table, client):
         response = await client.post(
             '/occurrence/get_dataset_counts',
             json={
-                'taxon_id': 4084,
+                'taxon_id': '4084',
             }
         )
         result = response.json()
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_dataset_counts_taxon_not_found(self, simple_tx_taxa, client):
+    async def test_dataset_counts_taxon_not_found(self, simple_tx_taxa, simple_datasets_table, client):
         response = await client.post(
             '/occurrence/get_dataset_counts',
             json={
-                'taxon_id': 99999999999,
+                'taxon_id': '99999999999',
             }
         )
         assert response.status_code == 404
@@ -190,7 +189,7 @@ class TestGetObservationDates:
         response = await client.post(
             '/occurrence/get_observation_dates',
             json={
-                'taxon_id': 5035741,
+                'taxon_id': '5035741',
                 'include_inat': True,
                 'date_start': None,
                 'date_end': None,
@@ -205,7 +204,7 @@ class TestGetObservationDates:
         response = await client.post(
             '/occurrence/get_observation_dates',
             json={
-                'taxon_id': 5035741,
+                'taxon_id': '5035741',
                 'include_inat': True,
                 'date_start': None,
                 'date_end': None,
@@ -221,7 +220,7 @@ class TestGetObservationDates:
         response = await client.post(
             '/occurrence/get_observation_dates',
             json={
-                'taxon_id': 99999999999,
+                'taxon_id': '99999999999',
                 'include_inat': True,
                 'date_start': None,
                 'date_end': None,
@@ -239,7 +238,7 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/9/113/209.mvt',
             params=[
-                ('taxon_id', 5035741),
+                ('taxon_id', '5035741'),
                 ('include_inat', True),
                 ('date_start', None),
                 ('date_end', None),
@@ -261,7 +260,7 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/9/309/398.mvt',
             params=[
-                ('taxon_id', 5035741),
+                ('taxon_id', '5035741'),
                 ('include_inat', True),
                 ('date_start', None),
                 ('date_end', None),
@@ -282,7 +281,7 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/10/227/419.mvt',
             params=[
-                ('taxon_id', 5035741),
+                ('taxon_id', '5035741'),
                 ('date_start', '2022-01-01'),
             ],
         )
@@ -296,7 +295,7 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/10/227/419.mvt',
             params=[
-                ('taxon_id', 5035741),
+                ('taxon_id', '5035741'),
                 ('include_inat', True),
                 ('date_start', None),
                 ('date_end', None),
@@ -318,7 +317,7 @@ class TestObservationTiles:
         response = await client.get(
             '/occurrence/tiles/10/309/398.mvt',
             params=[
-                ('taxon_id', 5035741),
+                ('taxon_id', '5035741'),
                 ('include_inat', True),
                 ('date_start', None),
                 ('date_end', None),

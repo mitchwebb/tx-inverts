@@ -19,7 +19,6 @@ async def main():
 
         await fill_invasives_table(conn, truncate=True)
         await update_backbone(conn)
-        # await resolve_taxon_lineage(conn, GBIF_OBSERVATIONS_TABLE.name)
         await update_ns_ranks(conn)
 
         tasks_logger.info("update_backbone job finished")

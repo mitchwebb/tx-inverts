@@ -46,7 +46,7 @@ class TestUpdateNSRanks:
         # Check to make sure our default values are being used when calculating
         assert len(captured_filters) == 2
         for f in captured_filters:
-            assert f.taxon_ids == [42]  # Mock value
+            assert f.taxon_ids == ['42']  # Mock value
             assert f.coord_uncertainty == 1000
             assert f.include_invasives is False
             assert f.date_start == datetime.date(1800, 1, 1)
@@ -80,15 +80,18 @@ class TestUpdateNSRanks:
     @pytest.mark.asyncio
     async def test_updates_rank_for_specified_taxon(self, setup_gbif_schema, occurrence_filter_data):
         conn = occurrence_filter_data
-        await update_ns_ranks(conn, taxon_keys=['5035741'])
+        taxon_id = '5035741'
+        await update_ns_ranks(conn, taxon_keys=[taxon_id])
 
         result = await execute_psql_query(
             conn,
             sql.SQL("""
                 SELECT ns_rank_state, ns_rank_state_no_inat
-                FROM {backbone} WHERE taxon_id = %s
-            """).format(backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)),
-            params=('5035741',), fetch='one', dict_cursor=True,
+                FROM {backbone} WHERE taxon_id = {taxon_id}
+            """).format(
+                backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                taxon_id=sql.Literal(taxon_id)
+            ), fetch='one', dict_cursor=True,
         )
 
         assert result
@@ -100,15 +103,18 @@ class TestUpdateNSRanks:
         # gbif_id=2 (taxon 5035741) is iNaturalist-origin — excluding it should
         # change occurrence count / extent enough to differ from the with-inat rank.
         conn = occurrence_filter_data
-        await update_ns_ranks(conn, taxon_keys=['5035741'])
+        taxon_id = '5035741'
+        await update_ns_ranks(conn, taxon_keys=[taxon_id])
 
         result = await execute_psql_query(
             conn,
             sql.SQL("""
                 SELECT ns_rank_state, ns_rank_state_no_inat
-                FROM {backbone} WHERE taxon_id = %s
-            """).format(backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)),
-            params=('5035741',), fetch='one', dict_cursor=True,
+                FROM {backbone} WHERE taxon_id = {taxon_id}
+            """).format(
+                backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                taxon_id=sql.Literal(taxon_id)
+            ), fetch='one', dict_cursor=True,
         )
 
         assert result
@@ -119,14 +125,17 @@ class TestUpdateNSRanks:
         # Formicidae (4342) is taxon_rank='family' — the UPDATE's
         # WHERE ... AND taxon_rank = 'species' clause must exclude it.
         conn = occurrence_filter_data
-        await update_ns_ranks(conn, taxon_keys=['4342'])
+        taxon_id = '4342'
+        await update_ns_ranks(conn, taxon_keys=[taxon_id])
 
         result = await execute_psql_query(
             conn,
             sql.SQL("""
-                SELECT ns_rank_state FROM {backbone} WHERE taxon_id = %s
-            """).format(backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)),
-            params=('4342',), fetch='one', dict_cursor=True,
+                SELECT ns_rank_state FROM {backbone} WHERE taxon_id = {taxon_id}
+            """).format(
+                backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
+                taxon_id=sql.Literal(taxon_id)
+            ), fetch='one', dict_cursor=True,
         )
 
         assert result
@@ -233,7 +242,7 @@ class TestUpdateInvasives:
     @pytest.mark.asyncio
     async def test_flags_invasives(self, conn, occurrence_filter_data):
         # ID of species in occurrence_filter_data fixture
-        taxon_id = 5035741
+        taxon_id = '5035741'
 
         await insert_rows(
             [{
@@ -276,7 +285,7 @@ class TestUpdateInvasives:
 
     @pytest.mark.asyncio
     async def test_clears_non_invasives(self, conn, occurrence_filter_data):
-        taxon_id = 5035741
+        taxon_id = '5035741'
 
         set_invasive_query = sql.SQL("""
             UPDATE {full_taxa_table}
@@ -369,11 +378,11 @@ class TestReplaceBackbone:
         assert pre_rows
 
         pre_ids = {r['taxon_id'] for r in pre_rows}
-        assert 5555555 not in pre_ids
+        assert '5555555' not in pre_ids
         assert len(pre_ids) > 0
 
         temp_table_name, insert_row = temp_backbone_table
-        await insert_row(taxon_id=5555555)
+        await insert_row(taxon_id='5555555')
 
         await _replace_backbone(conn, temp_table_name)
 
@@ -385,25 +394,25 @@ class TestReplaceBackbone:
         post_ids = {r['taxon_id'] for r in post_rows}
         # Old rows are gone and new ones are added
         assert pre_ids.isdisjoint(post_ids)
-        assert post_ids == {5555555}
+        assert post_ids == {'5555555'}
 
     @pytest.mark.asyncio
     async def test_materialized_views_populated_after_replace(self, conn, setup_gbif_schema, temp_backbone_table):
         temp_table_name, insert_row = temp_backbone_table
-        await insert_row(taxon_id=5555557)
+        await insert_row(taxon_id='5555557')
 
         await insert_rows(
             rows=[
                 {
                     'gbif_id': 1,
-                    'taxon_key': 5555557,
-                    'accepted_taxon_key': 5555557,
+                    'taxon_key': '5555557',
+                    'accepted_taxon_key': '5555557',
                     'collection_start_date': '2020-03-04',
                     'collection_end_date': '2020-03-05',
-                    'kingdom_key': 1,
+                    'kingdom_key': '1',
                     'family_key': None,
                     'genus_key': None,
-                    'species_key': 5555557,
+                    'species_key': '5555557',
                     'dataset_key': 'dataset-a',
                     'institution_code': 'TxState',
                     'coordinate_uncertainty_in_meters': 100,
@@ -433,7 +442,7 @@ class TestReplaceBackbone:
             "SELECT * FROM {tx_taxa} WHERE taxon_id = {taxon_id}"
         ).format(
             tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
-            taxon_id=sql.Literal(5555557)
+            taxon_id=sql.Literal('5555557')
         )
         tx_taxa_rows = await execute_psql_query(
             conn, tx_taxa_query, fetch='all', dict_cursor=True
@@ -445,7 +454,7 @@ class TestReplaceBackbone:
             "SELECT * FROM {presence_table} WHERE accepted_taxon_key={taxon_id}"
         ).format(
             presence_table=sql.Identifier(TAXON_PRESENCE_TABLE.name),
-            taxon_id=sql.Literal(5555557)
+            taxon_id=sql.Literal('5555557')
         )
         region_presence_rows = await execute_psql_query(
             conn, region_presence_query, fetch='all', dict_cursor=True

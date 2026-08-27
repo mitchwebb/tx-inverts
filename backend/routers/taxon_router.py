@@ -78,7 +78,7 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
 
 
 @taxon_router.get('/get_taxon_info')
-async def get_taxon_info(taxon_id: int, request: Request) -> TaxonInfo:
+async def get_taxon_info(taxon_id: str, request: Request) -> TaxonInfo:
     """
     Get assorted taxon info for a given taxon_id
 

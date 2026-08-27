@@ -17,9 +17,9 @@ taxa = [
     {
         'scientific_name': 'Atta texana',
         'canonical_name': 'Atta texana',
-        'taxon_id': 5035741,
-        'accepted_name_usage_id': 5035741,
-        'parent_name_usage_id': 4342,
+        'taxon_id': '5035741',
+        'accepted_name_usage_id': '5035741',
+        'parent_name_usage_id': '4342',
         'taxon_rank': 'species',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
@@ -27,9 +27,9 @@ taxa = [
     {
         'scientific_name': 'Formicidae',
         'canonical_name': 'Formicidae',
-        'taxon_id': 4342,
-        'accepted_name_usage_id': 4342,
-        'parent_name_usage_id': 1,
+        'taxon_id': '4342',
+        'accepted_name_usage_id': '4342',
+        'parent_name_usage_id': '1',
         'taxon_rank': 'family',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
@@ -37,9 +37,9 @@ taxa = [
     {
         'scientific_name': 'Scolopendridae',
         'canonical_name': 'Scolopendridae',
-        'taxon_id': 4084,
-        'accepted_name_usage_id': 4084,
-        'parent_name_usage_id': 1,
+        'taxon_id': '4084',
+        'accepted_name_usage_id': '4084',
+        'parent_name_usage_id': '1',
         'taxon_rank': 'family',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
@@ -47,9 +47,9 @@ taxa = [
     {
         'scientific_name': 'Aphaenogaster cockerelli',
         'canonical_name': 'Aphaenogaster cockerelli',
-        'taxon_id': 1315867,
-        'accepted_name_usage_id': 1315867,
-        'parent_name_usage_id': 1315863,
+        'taxon_id': '1315867',
+        'accepted_name_usage_id': '1315867',
+        'parent_name_usage_id': '1315863',
         'taxon_rank': 'species',
         'us_invasive': False,
         'taxonomic_status': 'accepted',
@@ -60,43 +60,43 @@ taxa = [
 occ = [
     {
         'gbif_id': 1,
-        'taxon_key': 5035741,
-        'accepted_taxon_key': 5035741,
+        'taxon_key': '5035741',
+        'accepted_taxon_key': '5035741',
         'collection_start_date': '2020-03-04',
-        'kingdom_key': 1,
-        'family_key': 4342,
-        'genus_key': 1323108,
-        'species_key': 5035741,
+        'kingdom_key': '1',
+        'family_key': '4342',
+        'genus_key': '1323108',
+        'species_key': '5035741',
     },
     {
         'gbif_id': 2,
-        'taxon_key': 5035741,
-        'accepted_taxon_key': 5035741,
+        'taxon_key': '5035741',
+        'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'kingdom_key': 1,
-        'family_key': 4342,
-        'genus_key': 1323108,
-        'species_key': 5035741,
+        'kingdom_key': '1',
+        'family_key': '4342',
+        'genus_key': '1323108',
+        'species_key': '5035741',
     },
     {
         'gbif_id': 3,
-        'taxon_key': 5035741,
-        'accepted_taxon_key': 5035741,
+        'taxon_key': '5035741',
+        'accepted_taxon_key': '5035741',
         'collection_start_date': '2019-03-04',
-        'kingdom_key': 1,
-        'family_key': 4342,
-        'genus_key': 1323108,
-        'species_key': 5035741,
+        'kingdom_key': '1',
+        'family_key': '4342',
+        'genus_key': '1323108',
+        'species_key': '5035741',
     },
     {
         'gbif_id': 4,
-        'taxon_key': 1315867,
-        'accepted_taxon_key': 1315867,
+        'taxon_key': '1315867',
+        'accepted_taxon_key': '1315867',
         'collection_start_date': '2019-03-04',
-        'kingdom_key': 1,
-        'family_key': 4342,
-        'genus_key': 1315863,
-        'species_key': 1315867,
+        'kingdom_key': '1',
+        'family_key': '4342',
+        'genus_key': '1315863',
+        'species_key': '1315867',
     }
 ]
 
@@ -218,7 +218,7 @@ class TestGetRankedTaxaDownload:
         response = await client.post(
             '/download/get_ranked_taxa_download',
             json={
-                'taxon_ids': [5035741],
+                'taxon_ids': ['5035741'],
                 'get_estimate': True,
             }
         )
@@ -233,7 +233,7 @@ class TestGetRankedTaxaDownload:
         response = await client.post(
             '/download/get_ranked_taxa_download',
             json={
-                'taxon_ids': [5035741],
+                'taxon_ids': ['5035741'],
                 'get_estimate': False,
             }
         )
@@ -247,7 +247,7 @@ class TestGetRankedTaxaDownload:
         response = await client.post(
             '/download/get_ranked_taxa_download',
             json={
-                'taxon_ids': [5035741],
+                'taxon_ids': ['5035741'],
                 'get_estimate': False,
             }
         )
@@ -261,7 +261,7 @@ class TestGetRankedTaxaDownload:
         response = await client.post(
             '/download/get_ranked_taxa_download',
             json={
-                'taxon_ids': [4342],  # Formicidae, rank='family'
+                'taxon_ids': ['4342'],  # Formicidae, rank='family'
                 'get_estimate': True,
             }
         )
@@ -275,7 +275,7 @@ class TestGetRankedTaxaDownload:
             '/download/get_ranked_taxa_download',
             json={
                 # matches both taxon_id and accepted_name_usage_id here
-                'taxon_ids': [5035741],
+                'taxon_ids': ['5035741'],
                 'get_estimate': True,
             }
         )
@@ -289,7 +289,7 @@ class TestGetRankedTaxaDownload:
             '/download/get_ranked_taxa_download',
             json={
                 # 2 species + 2 families
-                'taxon_ids': [5035741, 1315867, 4342, 4084],
+                'taxon_ids': ['5035741', '1315867', '4342', '4084'],
                 'get_estimate': True,
             }
         )

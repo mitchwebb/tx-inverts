@@ -38,7 +38,6 @@ async def main():
 
         if backbone_update_required:
             await update_backbone(conn)
-            # await resolve_taxon_lineage(conn, GBIF_OBSERVATIONS_TABLE.name)
             # A bit deceptive, but new_row_keys == None means update ALL rows
             new_row_keys = None
 
