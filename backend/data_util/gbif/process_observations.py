@@ -550,12 +550,6 @@ def process_dwc_observations(filepath: str, chunk_size: int = 1000000) -> Iterat
             data_logger.info(
                 f"Removed {bad_date_count} records found with invalid collection dates")
 
-        # Overwrite species/subspecies values with epithet column values if they exist
-        for target, source in [('species', 'specificEpithet'), ('subspecies', 'infraspecificEpithet')]:
-            if source in chunk.columns:
-                # If target column exists, overwrite with source; else create it
-                chunk[target] = chunk[source]
-
         # Coerce dataframe to observations table shape
         chunk = GBIF_OBSERVATIONS_TABLE.coerce_dataframe(chunk)
 

@@ -465,10 +465,15 @@ class TestReplaceBackbone:
 class TestUpdateBackbone:
     @pytest.mark.asyncio
     async def test_update_backbone_fetches_backbone(self, mocker, conn):
+        # Patch backbone version check to initiate update
+        fetch_backbone = mocker.patch(
+            "backend.jobs.tasks.taxon_tasks.check_backbone_is_current",
+            new=mocker.AsyncMock(return_value=False),
+        )
         # Keep an eye on the fetch call
         fetch_backbone = mocker.patch(
             "backend.jobs.tasks.taxon_tasks._fetch_backbone",
-            new=mocker.AsyncMock(return_value='na'),
+            new=mocker.Mock(return_value=('', '', '')),
         )
         # Patch to error out of the function early
         mocker.patch(
@@ -479,34 +484,12 @@ class TestUpdateBackbone:
         with pytest.raises(RuntimeError):
             await update_backbone(conn)
 
-        fetch_backbone.assert_awaited_once()
-
-    @pytest.mark.asyncio
-    async def test_update_backbone_skips_fetch(self, mocker, conn, tmp_path):
-        # Make a little fake tsv
-        fp = tmp_path / "backbone.tsv"
-        fp.write_text("id\n1\n")
-
-        # Keep an eye on the fetch call
-        fetch_backbone = mocker.patch(
-            "backend.jobs.tasks.taxon_tasks._fetch_backbone",
-            new=mocker.AsyncMock(return_value=str(fp)),
-        )
-        # Patch to error out of the function early
-        mocker.patch(
-            "backend.jobs.tasks.taxon_tasks.pd.read_csv",
-            side_effect=RuntimeError,
-        )
-
-        with pytest.raises(RuntimeError):
-            await update_backbone(conn, fp)
-
-        fetch_backbone.assert_not_awaited()
+        fetch_backbone.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_update_backbone_rolls_back_on_error(self, mocker, conn):
         mocker.patch(
-            "backend.jobs.tasks.taxon_tasks.pd.read_csv",
+            "backend.jobs.tasks.taxon_tasks.check_backbone_is_current",
             side_effect=RuntimeError,
         )
         rollback = mocker.patch.object(
@@ -517,22 +500,36 @@ class TestUpdateBackbone:
         )
 
         with pytest.raises(RuntimeError):
-            await update_backbone(conn, fp="unused")
+            await update_backbone(conn)
 
         rollback.assert_awaited_once()
         commit.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_update_backbone_end_to_end(self, conn, setup_gbif_schema, tmp_path):
+    async def test_update_backbone_end_to_end(self, conn, setup_gbif_schema, tmp_path, mocker):
         # Create simple test row
         fp = tmp_path / "backbone.tsv"
         fp.write_text(
-            "taxonID\tscientificName\tkingdom\tphylum\tclass\ttaxonRank\tspecificEpithet\tinfraspecificEpithet\n"
-            "5555558\tTurris invicta\tAnimalia\tMollusca\tGastropoda\tspecies\tTurris\tinvicta"
+            "taxonID\tscientificName\tkingdom\tphylum\tclass\ttaxonRank\tgenericName\tinfragenericEpithet\tspecificEpithet\tinfraspecificEpithet\n"
+            "5555558\tTurris invicta\tAnimalia\tMollusca\tGastropoda\tspecies\tTurris\tNull\tinvicta\tNull"
+        )
+
+        mocker.patch(
+            "backend.jobs.tasks.taxon_tasks.check_backbone_is_current",
+            new=mocker.AsyncMock(return_value=False),
+        )
+        mocker.patch(
+            "backend.jobs.tasks.taxon_tasks._fetch_backbone",
+            new=mocker.Mock(return_value=(str(fp), None, "test-doi")),
+        )
+
+        mocker.patch(
+            "backend.jobs.tasks.taxon_tasks.fill_vernacular_names_table",
+            new=mocker.AsyncMock(),
         )
 
         # Use test row for update
-        await update_backbone(conn, fp=str(fp))
+        await update_backbone(conn)
 
         # Attempt to select taxon from test row
         select_query = sql.SQL("SELECT * FROM {backbone} WHERE taxon_id = {taxon_id}").format(

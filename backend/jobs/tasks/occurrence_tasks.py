@@ -326,7 +326,7 @@ async def update_observations(
                 "Observations table is being fully replaced—it is safest to accompany this with a backbone update.")
 
             db_logger.info(
-                "Adding all accepted observations to observations table...")
+                "Adding all accepted observations to observations table. For a full replacement, this can take around 25 minutes...")
             insert_query = sql.SQL("""
                 INSERT INTO {observations_table}
                 SELECT * FROM {temp_table}
@@ -432,8 +432,7 @@ async def update_observations(
 
         if missing_count > 0:
             db_logger.warning(f"""
-                    ⚠ {missing_count} accepted_taxon_keys not found in backbone. Examples: {missing_keys[:10]}
-                    This means the backbone is out of date and needs to be resynced! ⚠
+                    ⚠ {missing_count} accepted_taxon_keys not found in backbone. Examples: {missing_keys[:10]}. This means the backbone is out of date and needs to be resynced! ⚠
             """)
             backbone_update_suggested = True
 
@@ -444,7 +443,8 @@ async def update_observations(
             os.remove(fp)
             # If parent is empty, remove parent directory as well
             parent_directory = os.path.dirname(os.path.abspath(fp))
-            os.rmdir(parent_directory)
+            if not os.listdir(parent_directory):
+                os.rmdir(parent_directory)
 
         return (backbone_update_suggested, new_row_keys or None, affected_observation_ids or None)
 

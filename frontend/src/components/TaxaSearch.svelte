@@ -97,10 +97,13 @@
         class="taxon-suggestion-wrapper"
         class:invasive={suggestion.usInvasive}
     >
-        <div title={suggestion.scientificName} class="scientific-name-wrapper">
-            <span class={['scientific-name', { italicized }]}
-                >{suggestion.scientificName}</span
-            >
+        <div title={suggestion.canonicalName} class="scientific-name-wrapper">
+            <span class={['scientific-name', { italicized }]}>
+                {suggestion.canonicalName}
+            </span>
+            <span class="authorship">
+                {suggestion.scientificNameAuthorship}
+            </span>
             {#if suggestion.usInvasive}
                 <div class="invasive-icon icon">
                     <InvasiveIcon />

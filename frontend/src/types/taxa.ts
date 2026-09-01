@@ -2,9 +2,13 @@ export type TaxonomicRank =
     | 'kingdom'
     | 'phylum'
     | 'class'
+    | 'subclass'
     | 'order'
     | 'family'
+    | 'tribe'
+    | 'subtribe'
     | 'genus'
+    | 'subgenus'
     | 'species'
     | 'subspecies';
 

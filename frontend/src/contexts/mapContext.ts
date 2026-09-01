@@ -43,7 +43,7 @@ export type MapState = {
     hoveredFeatures: HoveredFeatureInfo[] | null;
     hoveredLegendInfo: HoveredLegendInfo[] | null;
     loading: boolean;
-    taxonLayers: Record<number, TaxonLayerState>;
+    taxonLayers: Record<string, TaxonLayerState>;
 };
 
 export const initialMapState: MapState = {

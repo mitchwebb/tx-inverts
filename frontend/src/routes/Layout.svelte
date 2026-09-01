@@ -16,17 +16,11 @@
     } from '../contexts/activeTaxaContext';
     import Router from './Router.svelte';
     import {
-        getRouterContext,
         initialRouterState,
         setRouterContext,
         type RouterState,
     } from '../contexts/routerContext';
-    import {
-        getCommonNames,
-        getNSMetrics,
-        getQualifiedTaxa,
-        getTaxonInfo,
-    } from '../lib/taxa';
+    import { getNSMetrics, getQualifiedTaxa, getTaxonInfo } from '../lib/taxa';
     import {
         initialModalState,
         setModalContext,
@@ -77,7 +71,7 @@
     // Intialize contexts
 
     // Make taxa collection (easier way of managing our lists of objects reactively)
-    const taxaCollection = makeIDCollection<ActiveTaxon, number>(
+    const taxaCollection = makeIDCollection<ActiveTaxon, string>(
         (t) => t.taxonID,
         loadTaxonInfo
     );
@@ -150,7 +144,7 @@
     });
 
     // Retrieve and set taxon info in context
-    async function loadTaxonInfo(taxonID: number) {
+    async function loadTaxonInfo(taxonID: string) {
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon || taxon.taxonID === taxon.lastLoadedID) return;
 
@@ -163,15 +157,11 @@
         taxon.color = taxaContext.getNextColor();
 
         try {
-            const [rawTaxonInfo, commonNamesResult] = await Promise.all([
-                getTaxonInfo(taxonID),
-                getCommonNames(taxonID),
-            ]);
+            const [rawTaxonInfo] = await Promise.all([getTaxonInfo(taxonID)]);
             const taxonInfo = normalizeAPIResponse<TaxonInfo>(
                 rawTaxonInfo,
                 TAXON_INFO_MAP
             );
-            taxonInfo.commonNames = commonNamesResult?.slice(0, 3) ?? null;
             taxon.info = taxonInfo;
             taxon.lastLoadedID = taxonID;
         } catch {
@@ -248,13 +238,13 @@
      * @param apply
      */
     function fetchActiveTaxaMetric<T>(
-        taxonIDs: number[],
+        taxonIDs: string[],
         loadingKey:
             | 'datasetCountsLoading'
             | 'dateRangeLoading'
             | 'dateCountsLoading',
-        request: (taxonID: number) => Promise<T>,
-        apply: (taxonID: number, result: T) => void
+        request: (taxonID: string) => Promise<T>,
+        apply: (taxonID: string, result: T) => void
     ) {
         for (const taxonID of taxonIDs) {
             const taxon = taxaContext.taxa.get(taxonID);

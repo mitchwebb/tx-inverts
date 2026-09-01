@@ -1,6 +1,6 @@
 import type { FiltersState } from '../contexts/filtersContext';
 
-export function buildTileURL(taxonID: number, filters: FiltersState): string {
+export function buildTileURL(taxonID: string, filters: FiltersState): string {
     const query = new URLSearchParams();
     query.set('include_inat', String(filters.includeINat));
     query.set('taxon_id', String(taxonID));

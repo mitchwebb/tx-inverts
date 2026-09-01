@@ -12,8 +12,8 @@ export type ActiveTaxon = {
     dateRangeLoading: boolean;
     datasetCountsLoading: boolean;
     nSValuesLoading: boolean;
-    lastLoadedID: number | null;
-    taxonID: number;
+    lastLoadedID: string | null;
+    taxonID: string;
     info: TaxonInfo;
     nSValues: NSValues;
     datasetCounts: Record<string, number> | null;
@@ -33,30 +33,29 @@ export const EMPTY_NS_VALUES: NSValues = {
 
 // Default state for taxon_info (used for resetting)
 export const EMPTY_TAXON_INFO: TaxonInfo = {
-    acceptedTaxonID: null,
+    acceptedNameUsageID: null,
     canonicalName: null,
+    scientificName: null,
+    vernacularNames: null,
     taxonRank: null,
     scientificNameAuthorship: null,
     kingdom: null,
     phylum: null,
     class: null,
     order: null,
-    superfamily: null,
     family: null,
-    subfamily: null,
-    genus: null,
-    subgenus: null,
-    species: null,
-    subspecies: null,
+    genericName: null,
+    infragenericEpithet: null,
+    specificEphitet: null,
+    infraspecificEpithet: null,
     usInvasive: null,
     taxonomicStatus: null,
-    commonNames: null,
     nSRankDB: null,
     nSRankDBNoINat: null,
 };
 
 export const initialTaxonState: ActiveTaxon = {
-    taxonID: 0, // Placeholder
+    taxonID: '', // Placeholder
     color: 'orange',
     taxonLoading: false,
     taxonError: true,
@@ -80,12 +79,12 @@ export const initialTaxonState: ActiveTaxon = {
 };
 
 export type ActiveTaxaState = {
-    taxa: ReturnType<typeof makeIDCollection<ActiveTaxon, number>>;
+    taxa: ReturnType<typeof makeIDCollection<ActiveTaxon, string>>;
     getNextColor: () => string;
 };
 
 export const initialActiveTaxaState: ActiveTaxaState = {
-    taxa: makeIDCollection<ActiveTaxon, number>((t) => t.taxonID), // Dummy collection
+    taxa: makeIDCollection<ActiveTaxon, string>((t) => t.taxonID), // Dummy collection
     getNextColor: () => '',
 };
 

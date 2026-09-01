@@ -382,7 +382,7 @@
     // Get range extent geometry per-taxon
     // This needs to be done when observations change (from filtering)
     async function fetchRangeExtentGeom(
-        taxonID: number,
+        taxonID: string,
         filters: FiltersState
     ) {
         const response = await fetch(
@@ -419,7 +419,7 @@
     }
 
     // Set up each taxon layer bundle
-    async function setupTaxonLayers(taxonID: number) {
+    async function setupTaxonLayers(taxonID: string) {
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
         const color = taxon.color;
@@ -487,7 +487,7 @@
 
         untrack(() => {
             for (const taxonID of Object.keys(mapContext.taxonLayers).map(
-                Number
+                String
             )) {
                 // Make sure taxon exists and is loaded
                 if (!mapContext.taxonLayers[taxonID].loaded) continue;
@@ -540,7 +540,7 @@
             }
             // Remove old layers
             for (const taxonID of Object.keys(mapContext.taxonLayers).map(
-                Number
+                String
             )) {
                 if (!currentIDs.has(taxonID)) {
                     const layerIDs = mapContext.taxonLayers[taxonID].layerIDs;

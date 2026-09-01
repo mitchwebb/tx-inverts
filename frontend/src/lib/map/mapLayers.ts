@@ -243,7 +243,7 @@ export const staticPerformanceSensitiveLayers = new Set<
     StaticLayerGroupID | StaticMapLayerID
 >([]);
 
-export function createObservationsBundle(taxonID: number, color: string) {
+export function createObservationsBundle(taxonID: string, color: string) {
     const sourceID = `observations-tiles-${taxonID}`;
     return {
         id: sourceID,
@@ -331,7 +331,7 @@ export function createObservationsBundle(taxonID: number, color: string) {
     } satisfies LayerBundle;
 }
 
-export function createRangeExtentBundle(taxonID: number, color: string) {
+export function createRangeExtentBundle(taxonID: string, color: string) {
     const sourceID = `range-extent-${taxonID}`;
     return {
         id: sourceID,

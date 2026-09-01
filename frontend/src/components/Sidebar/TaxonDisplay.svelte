@@ -67,7 +67,7 @@
             {#if activeTaxon.info.canonicalName}
                 <div class="gbif-link-button">
                     <LinkButton
-                        href={`https://www.gbif.org/species/${activeTaxon.taxonID}`}
+                        href={`https://www.gbif.org/taxon/${activeTaxon.taxonID}`}
                         target="_blank"
                     />
                 </div>
@@ -82,11 +82,13 @@
             <XIcon />
         </button>
     </div>
-    {#if activeTaxon.info.commonNames && activeTaxon.info.commonNames?.length > 0}
+    {#if activeTaxon.info.vernacularNames && activeTaxon.info.vernacularNames?.length > 0}
         <div id="common-names" class="thin">
-            {(capitalizeWords(activeTaxon.info.commonNames) as string[]).join(
-                ', '
-            )}
+            {(
+                capitalizeWords(
+                    activeTaxon.info.vernacularNames.slice(0, 3)
+                ) as string[]
+            ).join(', ')}
         </div>
     {/if}
     <div id="aux-taxon-text">
@@ -99,7 +101,8 @@
                 </span>
                 {#if activeTaxon.info.taxonomicStatus.includes('synonym')}
                     <div>
-                        Accepted Taxon ID: {activeTaxon.info.acceptedTaxonID}
+                        Accepted Taxon ID: {activeTaxon.info
+                            .acceptedNameUsageID}
                     </div>
                 {/if}
             </div>

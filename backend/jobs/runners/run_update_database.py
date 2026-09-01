@@ -31,18 +31,15 @@ async def main():
         # Create invasives table
         await fill_invasives_table(conn)
 
+        await update_backbone(conn)
+
         # Update observations, returning new taxon_keys and row_ids
-        backbone_update_required, new_row_keys, new_row_ids = await update_observations(conn, delete_file=True, full_replace=True)
+        _, _, new_row_ids = await update_observations(conn, delete_file=True, full_replace=True)
 
-        await update_observation_regions(conn, new_row_ids)
-
-        if backbone_update_required:
-            await update_backbone(conn)
-            # A bit deceptive, but new_row_keys == None means update ALL rows
-            new_row_keys = None
+        await update_observation_regions(conn)
 
         # Update conservation ranks
-        await update_ns_ranks(conn, new_row_keys)
+        await update_ns_ranks(conn)
 
         # Refresh the materialized views
         await refresh_materialized_views(conn)

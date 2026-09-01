@@ -80,6 +80,7 @@
         overflow: auto;
         border-radius: 3px;
         border: 1px solid var(--border);
+        position: relative;
     }
     .page-wrapper.overlay .body-wrapper {
         border: none;

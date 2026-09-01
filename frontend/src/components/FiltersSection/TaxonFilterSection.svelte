@@ -22,7 +22,7 @@
 
     function handleRemoveTaxon(taxonID: string | null) {
         if (!taxonID) return;
-        taxaContext.taxa.remove(Number(taxonID));
+        taxaContext.taxa.remove(taxonID);
     }
 
     const higherTaxaActive = $derived(

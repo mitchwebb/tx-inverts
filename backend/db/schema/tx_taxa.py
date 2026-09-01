@@ -34,8 +34,10 @@ class TXTaxaTable(DBTable):
         'subtribe': 'TEXT',
         'genus': 'TEXT',
         'subgenus': 'TEXT',
-        'species': 'TEXT',
-        'subspecies': 'TEXT',
+        'generic_name': 'TEXT',
+        'specific_epithet': 'TEXT',
+        'infraspecific_epithet': 'TEXT',
+        'infrageneric_epithet': 'TEXT',
         'ns_rank_state': 'TEXT',
         'ns_rank_state_no_inat': 'TEXT',
         'us_invasive': 'BOOLEAN'

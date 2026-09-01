@@ -66,7 +66,7 @@ async def main():
         await update_backbone(conn)
 
         # Observations table initialization
-        await update_observations(conn, chunk_size=100000)
+        await update_observations(conn, chunk_size=100000, delete_file=True)
 
         # Refresh taxon_lineage view to help with ns_ranks speed
         await refresh_materialized_view(conn, 'taxon_lineage')

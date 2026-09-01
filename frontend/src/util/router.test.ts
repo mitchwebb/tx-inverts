@@ -130,9 +130,9 @@ describe('Date url param codec', () => {
 });
 
 describe('collectionObject url param codec', () => {
-    type Item = { id: number; name: string };
+    type Item = { id: string | number; name: string };
     const getID = (item: Item) => item.id;
-    let collection: ReturnType<typeof makeIDCollection<Item, number>>;
+    let collection: ReturnType<typeof makeIDCollection<Item, number | string>>;
     beforeEach(() => {
         collection = makeIDCollection(getID);
         collection.add({ id: 1, name: 'foo' });

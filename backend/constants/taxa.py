@@ -1,15 +1,46 @@
 # Taxa-related constants
 from typing import Literal
 
-RANK_ORDER = [
+TAXON_RANK_ORDER = [
     'kingdom',
     'phylum',
     'subphylum',
+    'superclass',
     'class',
     'subclass',
     'infraclass',
     'subterclass',
     'superorder',
+    'order',
+    'suborder',
+    'infraorder',
+    'parvorder',
+    'nanorder',
+    'section zoology',
+    'subsection zoology',
+    'superfamily',
+    'epifamily',
+    'series zoology',
+    'family',
+    'subfamily',
+    'supertribe',
+    'tribe',
+    'subtribe',
+    'infratribe',
+    'genus',
+    'subgenus',
+    'species',
+    'subspecies',
+    'infraspecific_name',
+    'variety',
+    'form',
+]
+
+# Including only KEYED columns in DWCA
+KEYED_TAXON_RANK_ORDER = [
+    'kingdom',
+    'phylum',
+    'class',
     'order',
     'superfamily',
     'family',
@@ -19,7 +50,6 @@ RANK_ORDER = [
     'genus',
     'subgenus',
     'species',
-    'subspecies'
 ]
 
 type TaxonomicRank = Literal[
@@ -28,10 +58,10 @@ type TaxonomicRank = Literal[
     'subphylum',
     'class',
     'subclass',
-    'infraclass',
-    'subterclass',
     'superorder',
     'order',
+    'suborder',
+    'infraorder',
     'superfamily',
     'family',
     'subfamily',
@@ -40,7 +70,10 @@ type TaxonomicRank = Literal[
     'genus',
     'subgenus',
     'species',
-    'subspecies'
+    'subspecies',
+    'infraspecific_name',
+    'variety',
+    'form',
 ]
 
-RANK_COLS = [f'{r}_key' for r in RANK_ORDER]
+RANK_COLS = [f'{r}_key' for r in KEYED_TAXON_RANK_ORDER]

@@ -19,11 +19,11 @@ class TestUpdateDatabase:
                 order.append(name)
             return _side_effect
 
+        mocker.patch(f'{MODULE}.setup_logging')
         mocker.patch(
             f'{MODULE}.get_single_db_connection',
             new=AsyncMock(return_value=conn)
         )
-        mocker.patch(f'{MODULE}.setup_logging')
         mocker.patch(
             f'{MODULE}.initialize_all_tables',
             new=AsyncMock(side_effect=track('initialize_all_tables'))
@@ -31,6 +31,10 @@ class TestUpdateDatabase:
         mocker.patch(
             f'{MODULE}.fill_invasives_table',
             new=AsyncMock(side_effect=track('fill_invasives_table'))
+        )
+        mocker.patch(
+            f'{MODULE}.update_backbone',
+            new=AsyncMock(side_effect=track('update_backbone'))
         )
         # Return backbone_update_required = True to trigger backbone update
         mocker.patch(
@@ -41,10 +45,6 @@ class TestUpdateDatabase:
         mocker.patch(
             f'{MODULE}.update_observation_regions',
             new=AsyncMock(side_effect=track('update_observation_regions'))
-        )
-        mocker.patch(
-            f'{MODULE}.update_backbone',
-            new=AsyncMock(side_effect=track('update_backbone'))
         )
         mocker.patch(
             f'{MODULE}.update_ns_ranks',
@@ -65,9 +65,9 @@ class TestUpdateDatabase:
         assert order == [
             'initialize_all_tables',  # Make sure tables exist
             'fill_invasives_table',
+            'update_backbone',  # Update backbone
             'update_observations',  # Update observations table
             'update_observation_regions',  # Update observations_regions using new observations
-            'update_backbone',  # Update backbone (on backbone_update_required)
             'update_ns_ranks',  # Update rankings using new observations
             'refresh_materialized_views',  # Refresh materialized views
             'update_indexes',  # Update indexes at the end
@@ -76,61 +76,61 @@ class TestUpdateDatabase:
         conn.close.assert_awaited_once()
         conn.rollback.assert_not_awaited()
 
-    @pytest.mark.asyncio
-    async def test_backbone_update_required_true(self, mocker):
-        """Make sure backbone update gets triggered correctly"""
+    # @pytest.mark.asyncio
+    # async def test_backbone_update_required_true(self, mocker):
+    #     """Make sure backbone update gets triggered correctly"""
 
-        conn = AsyncMock()
-        # Patch various functions to skip through
-        mocker.patch(
-            f'{MODULE}.get_single_db_connection',
-            new=AsyncMock(return_value=conn)
-        )
-        mocker.patch(f'{MODULE}.setup_logging')
-        mocker.patch(f'{MODULE}.fill_invasives_table', new=AsyncMock())
-        mocker.patch(f'{MODULE}.initialize_all_tables', new=AsyncMock())
-        mocker.patch(f'{MODULE}.update_indexes', new=AsyncMock())
-        # Return backbone_update_required = True and dummy keys
-        mocker.patch(
-            f'{MODULE}.update_observations',
-            new=AsyncMock(return_value=(True, ['key1'], ['id1']))
-        )
-        mocker.patch(f'{MODULE}.update_observation_regions', new=AsyncMock())
-        update_backbone = mocker.patch(
-            f'{MODULE}.update_backbone', new=AsyncMock(side_effect=RuntimeError('big boom')))
+    #     conn = AsyncMock()
+    #     # Patch various functions to skip through
+    #     mocker.patch(
+    #         f'{MODULE}.get_single_db_connection',
+    #         new=AsyncMock(return_value=conn)
+    #     )
+    #     mocker.patch(f'{MODULE}.setup_logging')
+    #     mocker.patch(f'{MODULE}.fill_invasives_table', new=AsyncMock())
+    #     mocker.patch(f'{MODULE}.initialize_all_tables', new=AsyncMock())
+    #     mocker.patch(f'{MODULE}.update_indexes', new=AsyncMock())
+    #     # Return backbone_update_required = True and dummy keys
+    #     mocker.patch(
+    #         f'{MODULE}.update_observations',
+    #         new=AsyncMock(return_value=(True, ['key1'], ['id1']))
+    #     )
+    #     mocker.patch(f'{MODULE}.update_observation_regions', new=AsyncMock())
+    #     update_backbone = mocker.patch(
+    #         f'{MODULE}.update_backbone', new=AsyncMock(side_effect=RuntimeError('big boom')))
 
-        with pytest.raises(RuntimeError, match='big boom'):
-            await run_update_database()
+    #     with pytest.raises(RuntimeError, match='big boom'):
+    #         await run_update_database()
 
-        update_backbone.assert_awaited_once()
+    #     update_backbone.assert_awaited_once()
 
-    @pytest.mark.asyncio
-    async def test_backbone_update_required_false(self, mocker):
-        """Make sure backbone update gets skipped if update_observations returns backbone_update_required=False"""
+    # @pytest.mark.asyncio
+    # async def test_backbone_update_required_false(self, mocker):
+    #     """Make sure backbone update gets skipped if update_observations returns backbone_update_required=False"""
 
-        conn = AsyncMock()
-        # Patch various functions to skip through
-        mocker.patch(f'{MODULE}.get_single_db_connection',
-                     new=AsyncMock(return_value=conn))
-        mocker.patch(f'{MODULE}.setup_logging')
-        mocker.patch(f'{MODULE}.initialize_all_tables', new=AsyncMock())
-        mocker.patch(f'{MODULE}.fill_invasives_table', new=AsyncMock())
-        mocker.patch(f'{MODULE}.update_indexes', new=AsyncMock())
-        # Return backbone_update_required = False and dummy keys
-        mocker.patch(f'{MODULE}.update_observations', new=AsyncMock(
-            return_value=(False, ['key1', 'key2'], ['id1'])))
-        mocker.patch(f'{MODULE}.update_observation_regions', new=AsyncMock())
-        # Keep track of update_backbone to see if it runs
-        update_backbone = mocker.patch(
-            f'{MODULE}.update_backbone', new=AsyncMock())
-        mocker.patch(
-            f'{MODULE}.update_ns_ranks', new=AsyncMock(side_effect=RuntimeError('big boom'))
-        )
+    #     conn = AsyncMock()
+    #     # Patch various functions to skip through
+    #     mocker.patch(f'{MODULE}.get_single_db_connection',
+    #                  new=AsyncMock(return_value=conn))
+    #     mocker.patch(f'{MODULE}.setup_logging')
+    #     mocker.patch(f'{MODULE}.initialize_all_tables', new=AsyncMock())
+    #     mocker.patch(f'{MODULE}.fill_invasives_table', new=AsyncMock())
+    #     mocker.patch(f'{MODULE}.update_indexes', new=AsyncMock())
+    #     # Return backbone_update_required = False and dummy keys
+    #     mocker.patch(f'{MODULE}.update_observations', new=AsyncMock(
+    #         return_value=(False, ['key1', 'key2'], ['id1'])))
+    #     mocker.patch(f'{MODULE}.update_observation_regions', new=AsyncMock())
+    #     # Keep track of update_backbone to see if it runs
+    #     update_backbone = mocker.patch(
+    #         f'{MODULE}.update_backbone', new=AsyncMock())
+    #     mocker.patch(
+    #         f'{MODULE}.update_ns_ranks', new=AsyncMock(side_effect=RuntimeError('big boom'))
+    #     )
 
-        with pytest.raises(RuntimeError, match='big boom'):
-            await run_update_database()
+    #     with pytest.raises(RuntimeError, match='big boom'):
+    #         await run_update_database()
 
-        update_backbone.assert_not_awaited()
+    #     update_backbone.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_exception_mid_sequence_rolls_back_and_reraises(self, mocker):
@@ -158,5 +158,4 @@ class TestUpdateDatabase:
 
         conn.rollback.assert_awaited_once()
         conn.close.assert_awaited_once()
-        update_backbone.assert_not_awaited()
         update_indexes.assert_not_awaited()

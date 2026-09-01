@@ -3,13 +3,14 @@ import type { TaxonomicRank } from '../types/taxa';
 
 export type ItalicizedRank = Extract<
     TaxonomicRank,
-    'genus' | 'species' | 'subspecies'
+    'genus' | 'species' | 'subspecies' | 'subgenus'
 >;
 
 export const italicizedRanks: ItalicizedRank[] = [
     'genus',
     'species',
     'subspecies',
+    'subgenus',
 ];
 
 export const TAXON_COLORS = [
@@ -36,10 +37,11 @@ export const DUMMY_TAXON: ActiveTaxon = {
     dateRangeLoading: false,
     datasetCountsLoading: false,
     nSValuesLoading: false,
-    lastLoadedID: 1025719,
-    taxonID: 1025719,
+    lastLoadedID: '1025719',
+    taxonID: '1025719',
     info: {
-        acceptedTaxonID: 1025719,
+        acceptedNameUsageID: '1025719',
+        scientificName: 'Archispirostreptus gigas',
         canonicalName: 'Archispirostreptus gigas',
         taxonRank: 'species',
         scientificNameAuthorship: '(Peters, 1855)',
@@ -47,16 +49,14 @@ export const DUMMY_TAXON: ActiveTaxon = {
         phylum: 'Arthropoda',
         class: 'Diplopoda',
         order: 'Spirostreptida',
-        superfamily: null,
         family: 'Spirostreptidae',
-        subfamily: null,
-        genus: 'Archispirostreptus',
-        subgenus: null,
-        species: 'gigas',
-        subspecies: null,
+        genericName: 'Archispirostreptus',
+        specificEphitet: 'gigas',
+        infragenericEpithet: null,
+        infraspecificEpithet: null,
         usInvasive: false,
         taxonomicStatus: 'accepted',
-        commonNames: ['Giant African Millipede', 'Shongololo'],
+        vernacularNames: ['Giant African Millipede', 'Shongololo'],
         nSRankDB: null,
         nSRankDBNoINat: null,
     },

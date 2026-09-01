@@ -11,70 +11,80 @@ test_data = [
         'phylum': 'Tracheophyta',
         'class': 'Ascidiacea',
         'taxonRank': 'SPECIES',
-        'taxonKey': '4283320'
+        'taxonKey': '4283320',
+        'scientificName': None
     },
     {
         'kingdom': 'Animalia',
         'phylum': 'Arthropoda',
         'class': 'Leptocardii',
         'taxonRank': 'SPECIES',
-        'taxonKey': '7417639'
+        'taxonKey': '7417639',
+        'scientificName': None
     },
     {
         'kingdom': 'Plantae',
         'phylum': 'Tracheophyta',
         'class': 'Appendicularia',
         'taxonRank': 'SPECIES',
-        'taxonKey': '2337575'
+        'taxonKey': '2337575',
+        'scientificName': None
     },
     {
         'kingdom': 'Viruses',
         'phylum': 'Uroviricota',
         'class': 'Thaliacea',
         'taxonRank': 'SPECIES',
-        'taxonKey': '2273178'
+        'taxonKey': '2273178',
+        'scientificName': None
     },
     {
         'kingdom': 'Animalia',
         'phylum': 'Chordata',
         'class': 'Mammalia',
         'taxonRank': 'SPECIES',
-        'taxonKey': '370529'
+        'taxonKey': '370529',
+        'scientificName': None
     },
     {
         'kingdom': 'Plantae',
         'phylum': 'Tracheophyta',
         'class': 'Appendicularia',
         'taxonRank': 'SPECIES',
-        'taxonKey': '4308480'
+        'taxonKey': '4308480',
+        'scientificName': None
     },
     {
         'kingdom': 'Animalia',
         'phylum': 'Bryozoa',
         'class': 'Leptocardii',
         'taxonRank': 'SPECIES',
-        'taxonKey': '2362833'
+        'taxonKey': '2362833',
+        'scientificName': None
     },
     {
         'kingdom': 'Chromista',
         'phylum': 'Foraminifera',
         'class': 'Ascidiacea',
         'taxonRank': 'SPECIES',
-        'taxonKey': '1539725'
+        'taxonKey': '1539725',
+        'scientificName': None
     },
     {
         'kingdom': 'Animalia',
         'phylum': 'Arthropoda',
         'class': 'Insecta',
         'taxonRank': 'PHYLUM',
-        'taxonKey': '6173164'
+        'taxonKey': '6173164',
+        'scientificName': None
     },
     {
         'kingdom': 'Plantae',
         'phylum': 'Tracheophyta',
         'class': 'Magnoliopsida',
         'taxonRank': 'SPECIES',
-        'taxonKey': '4289850'
+        'taxonKey': '4289850',
+        'scientificName': None
     },
 ]
 

@@ -57,7 +57,7 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
             # We'll include genus as well, because why not
             taxon_rank = await get_taxon_rank(conn, params.taxon_id)
             compute_occurrences = taxon_rank in {
-                'genus', 'species', 'subspecies'} or taxon_rank is None
+                'genus', 'subgenus', 'species', 'subspecies'} or taxon_rank is None
 
             # Calculate various ns_values using filtered observation data
             ns_result = await calculate_ns_values(conn, filters, compute_occurrences)

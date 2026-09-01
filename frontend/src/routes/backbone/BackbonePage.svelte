@@ -18,26 +18,29 @@
     import { getFiltersContext } from '../../contexts/filtersContext';
     import DefaultPage from '../../common/DefaultPage.svelte';
     import type { TaxonomicRank } from '../../types/taxa';
+    import InfoButton from '../../common/InfoButton.svelte';
 
-    const taxaContext = getActiveTaxaContext();
-    const filtersContext = getFiltersContext();
-
-    const rankColumns: TaxonomicRank[] = [
+    const allowedRanks: TaxonomicRank[] = [
         'kingdom',
         'phylum',
         'class',
         'order',
         'family',
+        'tribe',
         'genus',
         'species',
         'subspecies',
     ];
 
+    const taxaContext = getActiveTaxaContext();
+    const filtersContext = getFiltersContext();
+
     let gridCols = $state(
-        `repeat(${rankColumns.length}, minmax(max-content, 1fr)`
+        `repeat(${allowedRanks.length}, minmax(max-content, 1fr)`
     );
 
-    let openNodes: Set<number> = $state.raw(new Set([1]));
+    // Start openNodes as just ['N'] (Animalia)
+    let openNodes: Set<string> = $state.raw(new Set(['N']));
 
     // Minimum pixel movement to count as dragging
     const minMoveThreshold = 5;
@@ -58,7 +61,7 @@
 
         if (!target || !target.id) return;
 
-        const taxonID = parseInt(target.id);
+        const taxonID = target.id;
         const set = new Set(openNodes);
         const isOpen = set.has(taxonID);
 
@@ -88,16 +91,16 @@
 
         if (!target || !parentNode || !parentNode.id) return;
 
-        const targetInt = parseInt(parentNode.id);
+        const targetID = parentNode.id;
 
         // If taxon is already selected, deselect it
-        if (taxaContext.taxa.ids.includes(targetInt)) {
-            taxaContext.taxa.remove(targetInt);
+        if (taxaContext.taxa.ids.includes(targetID)) {
+            taxaContext.taxa.remove(targetID);
             // Otherwise, select it
         } else {
             taxaContext.taxa.add({
                 ...initialTaxonState,
-                taxonID: targetInt,
+                taxonID: targetID,
             });
         }
     }
@@ -206,7 +209,7 @@
     }
 
     // Determine if passed taxonID is a parent node in the taxaTree
-    function taxonIsParent(id: number): boolean {
+    function taxonIsParent(id: string): boolean {
         if (!$taxaTree) return false;
         for (const node of $taxaTree.values()) {
             if (node.parent_name_usage_id === id) return true;
@@ -217,13 +220,18 @@
     // Parse visible nodes tree every render based on dependencies
     $effect(() => {
         if ($taxaTree) {
-            visibleNodes = getVisibleNodes($taxaTree, openNodes);
+            visibleNodes = getVisibleNodes(
+                $taxaTree,
+                openNodes,
+                new Set(allowedRanks)
+            );
         }
+        // console.log(visibleNodes);
     });
 
     // Track previous ids to enable automatic opening when new taxon is selected from an outside source
     // TODO: This feels sloppy, but it prevents issues with closing latest taxon
-    let prevTaxaIds: Set<number> = new Set();
+    let prevTaxaIds: Set<string> = new Set();
 
     $effect(() => {
         const ids = taxaContext.taxa.ids;
@@ -267,9 +275,9 @@
         onpointerdown={handleWindowDrag}
         onkeydown={null}
     >
-        {#each rankColumns as rank, i}
+        {#each allowedRanks as rank, i}
             <!-- Flag last header for styling -->
-            {@const last = i == rankColumns.length - 1}
+            {@const last = i == allowedRanks.length - 1}
             <div
                 class="taxon-rank-header grid-item"
                 class:last
@@ -287,17 +295,17 @@
             {#each visibleNodes as node, i}
                 <!-- Find parent node index -->
                 {@const parentIndex = visibleNodes.findIndex(
-                    (n) => n.taxon_id === node.parent_name_usage_id
+                    (n) => n.taxon_id === node.effective_parent_id
                 )}
                 <!-- Make sure parent node was found, then get rank index -->
                 {@const parentCol =
                     parentIndex >= 0
-                        ? rankColumns.indexOf(
+                        ? allowedRanks.indexOf(
                               visibleNodes[parentIndex].taxon_rank
                           ) + 1
                         : null}
                 <!-- Get current column -->
-                {@const nodeCol = rankColumns.indexOf(node.taxon_rank) + 1}
+                {@const nodeCol = allowedRanks.indexOf(node.taxon_rank) + 1}
                 <!-- Find offset between current and parent -->
                 {@const offset = parentCol !== null ? nodeCol - parentCol : 0}
                 <!-- Determine if we need a horizontal line -->
@@ -409,9 +417,33 @@
             ></div>
         {/if}
     </div>
+    <div class="backbone-disclaimer">
+        <InfoButton type="tooltip">
+            <span>
+                This taxonomic structure is a version of the Catalogue of Life
+                taxonomic backbone. For more information, see our
+                <a
+                    href="/about/txinverts#about-backbone-section"
+                    target="_blank"
+                >
+                    About Page
+                </a>.
+            </span>
+        </InfoButton>
+    </div>
 </DefaultPage>
 
 <style>
+    .backbone-disclaimer {
+        position: absolute;
+        right: 0.25rem;
+        bottom: 0.25rem;
+        opacity: 0.5;
+        transition: opacity 0.25s ease-in-out;
+    }
+    .backbone-disclaimer:hover {
+        opacity: 1;
+    }
     .taxon-icon {
         margin-left: 0.5rem;
     }
@@ -419,7 +451,7 @@
         color: var(--accent-color);
     }
     #taxa-loading-icon {
-        padding: 0.5rem;
+        margin: 0.5rem;
         color: var(--fill-color);
     }
     #backbone-page-body.loading {

@@ -143,6 +143,7 @@ async def update_observation_regions(conn, new_observation_ids: List[int] | None
             await execute_psql_query(conn, insert_query)
         # Else, replace/add only those ids found in new_observation_ids
         else:
+            # Note: For around 3.5 million observations, this can take about 30 minutes
             db_logger.info(
                 f'Updating observation_regions for {len(new_observation_ids)} observations...')
             # Delete any preexisting records

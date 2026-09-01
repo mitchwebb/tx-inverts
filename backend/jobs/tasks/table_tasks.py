@@ -42,7 +42,7 @@ async def initialize_table(conn, table: DBTable, verbose: bool = False, strict: 
         if await table_exists(conn, table.name):
             if verbose:
                 db_logger.info(
-                    f"Table '{table.name}' already exists. Skipping.")
+                    f"Table '{table.name}' already exists. Skipping initialization.")
             return
 
         create_sql = table.create_table_query()

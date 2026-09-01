@@ -18,7 +18,7 @@ async def main():
 
         conn = await get_single_db_connection()
 
-        backbone_update_suggested, new_row_keys, affected_observation_ids = await update_observations(conn, gbif_request_key='0037940-260806074905277', delete_file=True, full_replace=True)
+        backbone_update_suggested, new_row_keys, affected_observation_ids = await update_observations(conn, delete_file=True, full_replace=True)
 
         await update_observation_regions(conn, affected_observation_ids)
 

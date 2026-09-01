@@ -7,11 +7,11 @@ export type RankingsState = {
     ranksLoading: boolean;
     // List of ids from backend, filtered using rankings page filters
     // This currently disregards ranks/parent taxa filters, which are applied later
-    qualifiedTaxonIDs: number[] | null;
+    qualifiedTaxonIDs: string[] | null;
     currSortKey: string | null;
     sortAscending: boolean | null;
     // List of taxonIDs currently visible in table, used for downloads
-    visibleTaxonIDs: number[];
+    visibleTaxonIDs: string[];
 };
 
 export const initialRankingsState: RankingsState = {

@@ -1,3 +1,4 @@
+import asyncio
 import requests
 
 from backend.constants.paths import DATA_OUT_PATH
@@ -6,12 +7,14 @@ from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.extract_zip import extract_zip_files
 from backend.data_util.helpers import strip_dwc_column_names
 from backend.data_util.invasives_data import get_invasives_dataset, prep_invasives_dataset
-from backend.data_util.taxa_data import inverts_mask
+from backend.data_util.taxa_data import create_canonical_names, inverts_mask
 import backend.data_util.ranking as ns
 # from backend.data_util.taxa_data import build_lineages
+from backend.db.schema.data_metadata import DATA_META_TABLE
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
+from backend.db.schema.vernacular_names import VERNACULAR_NAMES_TABLE
 from backend.jobs.tasks.table_tasks import initialize_table, truncate_table
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.core.logging import data_logger, db_logger
@@ -129,36 +132,61 @@ async def _replace_backbone(conn, temp_table_name: str):
     # Update invasives information in new table
     await update_invasives(conn)
     # Refresh materialized views dependent on table
-    await refresh_materialized_view(conn, 'tx_taxa')
+    # tx_taxa is updated in the above query ^^
     await refresh_materialized_view(conn, 'taxon_region_presence')
 
 
-# async def compare_backbone():
-#     """
-#     Using a stored database value, compare the 'last modified' date
-#     of our current backbone to GBIF's hosted backbone.
-#     """
-#     response =  requests.head('https://hosted-datasets.gbif.org/datasets/backbone/current/backbone.zip')
-#     headers = response.headers
-#     last_modified = headers['Last-Modified']
+async def check_backbone_is_current(conn: AsyncConnection):
+    """
+    Using a stored database value, compare the doi
+    of our current backbone to GBIF's hosted backbone.
+    """
+    data_logger.info("Comparing GBIF backbone DOI to database...")
+    current_gbif_doi = get_gbif_backbone_doi()
+
+    db_doi_request = sql.SQL("""
+        SELECT doi FROM {meta_table}
+        WHERE dataset_name = 'backbone'
+    """).format(
+        meta_table=sql.Identifier(DATA_META_TABLE.name)
+    )
+
+    db_value = await execute_psql_query(
+        conn, db_doi_request, fetch='one', dict_cursor=True)
+
+    return bool(db_value and db_value['doi'] == current_gbif_doi)
 
 
-async def _fetch_backbone() -> str:
+def get_gbif_backbone_doi():
+    # Get DOI of in-use CoL backbone from GBIF
+    response = requests.get(
+        'https://api.gbif.org/v1/dataset/7ddf754f-d193-4cc9-b351-99906754a03b/identifier')
+    response.raise_for_status()
+    parsed = response.json()
+    if not parsed:
+        raise ValueError(
+            "GBIF backbone identifier lookup returned no results")
+    doi = parsed[0]['identifier']
+
+    return doi
+
+
+def _fetch_backbone() -> tuple[str, str, str]:
     """
     Download GBIF backbone, extract Taxon.tsv from zip, and delete original zip
     Returns filepath for extracted Taxon.tsv
     """
-    # Get DOI of in-use CoL backbone from GBIF
-    data_logger.info("Asking GBIF which CoL version they're using...")
-    response = requests.get(
-        'https://api.gbif.org/v1/dataset/7ddf754f-d193-4cc9-b351-99906754a03b/identifier')
-    parsed = response.json()
-    doi = parsed[0]['identifier']
+    data_logger.info("Getting GBIF's current backbone version...")
+    current_gbif_doi = get_gbif_backbone_doi()
 
     # Get dataset key value from checklistbank using DOI
-    response = requests.get(f'https://api.checklistbank.org/dataset?q={doi}&limit=5'
-                            )
+    response = requests.get(
+        f'https://api.checklistbank.org/dataset?q={current_gbif_doi}&limit=5')
+    response.raise_for_status()
     parsed = response.json()
+    if not parsed.get('result'):
+        raise ValueError(
+            f"ChecklistBank doi lookup returned no results for doi: {current_gbif_doi}")
     result = parsed['result'][0]
     key = result['key']
 
@@ -174,31 +202,65 @@ async def _fetch_backbone() -> str:
     extract_zip_files(zip_path, extract_dir, target_files=[
         'Taxon.tsv', 'VernacularName.tsv'], delete_zip=True)
 
-    fp = os.path.join(extract_dir, 'Taxon.tsv')
-    return fp
+    taxon_fp = os.path.join(extract_dir, 'Taxon.tsv')
+    vernacular_fp = os.path.join(extract_dir, 'VernacularName.tsv')
+
+    return taxon_fp, vernacular_fp, current_gbif_doi
+
+
+async def _store_doi(conn: AsyncConnection, doi: str):
+    try:
+        doi_query = sql.SQL("""
+            INSERT INTO {meta_table} (dataset_name, last_updated_at, doi)
+            VALUES ('backbone', CURRENT_TIMESTAMP, {doi})
+            ON CONFLICT (dataset_name) DO UPDATE 
+            SET
+                doi = EXCLUDED.doi,
+                last_updated_at = EXCLUDED.last_updated_at
+        """).format(
+            meta_table=sql.Identifier(DATA_META_TABLE.name),
+            doi=sql.Literal(doi)
+        )
+
+        await execute_psql_query(conn, doi_query)
+    except Exception:
+        db_logger.error("Failed to store DOI")
+        raise
 
 
 # Perform a full update of the gbif_backbone in local database
-async def update_backbone(conn: AsyncConnection, fp: str | None = None) -> None:
+async def update_backbone(conn: AsyncConnection, force_update=False) -> None:
     """
     Updates the gbif_inverts_backbone table
     """
 
+    # Potential files for cleanup
+    taxon_fp = None
+    vernacular_fp = None
+    tsv_path = None
+
     try:
-        # If no filepath provided, download and extract
-        if fp is None:
-            fp = await _fetch_backbone()
+        backbone_is_current = await check_backbone_is_current(conn)
+        if backbone_is_current and not force_update:
+            db_logger.info(
+                "Backbone is currently up-to-date with GBIF's version of Catalogue of Life. No update needed.")
+            return
+        elif not backbone_is_current and not force_update:
+            db_logger.info(
+                "GBIF is using a newer Catalogue of Life backbone. Proceeding with update.")
+
+        taxon_fp, vernacular_fp, doi = await asyncio.to_thread(_fetch_backbone)
 
         data_logger.info("Reading backbone...")
 
         # Read in backbone
         df = pd.read_csv(
-            fp,
+            taxon_fp,
             delimiter='\t',
             # no quoting expected (this was causing our parsing errors)
             quoting=csv.QUOTE_NONE,
             on_bad_lines='warn',
-            low_memory=True
+            low_memory=False
         )
 
         # Remove :dwc prefixes from colnames (caused by catalogue of life processing)
@@ -213,19 +275,10 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None) -> None:
         # Add empty ns_rank_state column
         df['ns_rank_state'] = pd.NA
 
-        # Fit dataframe to table definition
-        data_logger.info("Formatting table...")
-        df = df.rename(
-            columns={'specificEpithet': 'species',
-                     'infraspecificEpithet': 'subspecies'}
-        )
+        data_logger.info("Creating canonicalName column...")
+        df = create_canonical_names(df)
 
         df = GBIF_INVERTS_BACKBONE.coerce_dataframe(df)
-
-        # # Build taxonomic lineages and insert rank ids into dataframe
-        # data_logger.info(
-        #     "Building taxonomic lineages to fill rank id columns...")
-        # df = build_lineages(df)
 
         # Save copy of formatted backbone
         tsv_path = os.path.join(DATA_OUT_PATH, 'backbone.tsv')
@@ -261,7 +314,7 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None) -> None:
                     map(sql.Identifier, GBIF_INVERTS_BACKBONE.column_order()))
             )
 
-            with open(os.path.join(DATA_OUT_PATH, 'backbone.tsv'), 'r', encoding='utf8') as f:
+            with open(tsv_path, 'r', encoding='utf8') as f:
                 async with cur.copy(copy_sql) as copy:
                     while chunk := f.read(1024*1024):
                         await copy.write(chunk)
@@ -270,14 +323,21 @@ async def update_backbone(conn: AsyncConnection, fp: str | None = None) -> None:
         db_logger.info("Replacing backbone...")
 
         await _replace_backbone(conn, temp_table_name)
+        await _store_doi(conn, doi)
+
+        await fill_vernacular_names_table(conn, vernacular_fp)
 
         await conn.commit()
 
     except Exception as e:
         db_logger.error(f"Error updating backbone: {e}")
-        if conn is not None:
-            await conn.rollback()
+        await conn.rollback()
         raise
+
+    finally:
+        for fp in (taxon_fp, vernacular_fp, tsv_path):
+            if fp and os.path.exists(fp):
+                os.remove(fp)
 
 
 async def _ensure_rank_columns(conn: AsyncConnection) -> None:
@@ -421,3 +481,62 @@ async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[str]]
         data_logger.exception(f"Failed to update NS ranks: {e}")
         await conn.rollback()
         raise
+
+
+async def fill_vernacular_names_table(conn: AsyncConnection, fp: str):
+    if not os.path.exists(fp):
+        raise ValueError(f"{fp} does not exist")
+
+    try:
+        df = pd.read_csv(
+            fp,
+            delimiter='\t',
+            # no quoting expected (this was causing our parsing errors)
+            quoting=csv.QUOTE_NONE,
+            on_bad_lines='warn',
+            low_memory=False
+        )
+
+        # Rename to our table's names (manual since there are only 3)
+        df = df.rename(
+            columns={
+                'dwc:taxonID': 'taxon_id',
+                'dcterms:language': 'language',
+                'dwc:vernacularName': 'vernacular_name'
+            }
+        )
+
+        columns = VERNACULAR_NAMES_TABLE.column_order()
+        # Enforce exact subset (in case there are ever additional)
+        df = df[columns]
+
+        buffer = io.StringIO()
+        df.to_csv(buffer, index=False, sep='\t', header=False, na_rep='\\N')
+        buffer.seek(0)
+
+        await truncate_table(conn, VERNACULAR_NAMES_TABLE.name)
+
+        # Sql for copying to table
+        copy_sql = sql.SQL("""
+            COPY {invasives_table} ({column_order})
+            FROM STDIN WITH (
+                FORMAT CSV, 
+                DELIMITER E'\t', 
+                NULL '\\N'
+            )
+        """).format(
+            invasives_table=sql.Identifier(VERNACULAR_NAMES_TABLE.name),
+            column_order=sql.SQL(', ').join(map(sql.Identifier, columns))
+        )
+
+        # Using raw cursor for copy
+        async with conn.cursor() as cur:
+            async with cur.copy(copy_sql) as copy:
+                await copy.write(buffer.getvalue())
+
+        await conn.commit()
+
+    except Exception as e:
+        db_logger.error(f"Issue filling vernacular names table: {e}")
+        await conn.rollback()
+        raise e

@@ -349,9 +349,7 @@ def test_process_dwc_observations(tmp_path):
     # Snake case column name, int, return row 1
     assert result.iloc[0]['gbif_id'] == 1
     # Species column populates from specificEpithet
-    assert result.iloc[0]['species'] == 'texanus'
-    # specificEpithet column should be filtered out
-    assert 'specificEpithet' not in result.columns
+    assert result.iloc[0]['specific_epithet'] == 'texanus'
     assert set(result.columns) == set(
         # Columns match observations table column order
         GBIF_OBSERVATIONS_TABLE.column_order())

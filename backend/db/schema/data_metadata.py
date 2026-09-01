@@ -7,10 +7,11 @@ class DataMetadata(DBTable):
     """
 
     name = 'data_metadata'
-    primary_key = 'table_name'
+    primary_key = 'dataset_name'
     columns = {
-        'table_name': 'TEXT PRIMARY KEY',
+        'dataset_name': 'TEXT PRIMARY KEY',
         'last_updated_at': 'TIMESTAMPTZ NOT NULL DEFAULT NOW()',
+        'doi': 'TEXT'
     }
 
 

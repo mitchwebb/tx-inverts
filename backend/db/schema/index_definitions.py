@@ -194,6 +194,23 @@ _all_indexes = [
         table=TAXON_PRESENCE_TABLE,
         clause=sql.SQL('(region_id)')
     ),
+
+    ### TAXON LINEAGE ###
+
+    IndexDefinition(
+        name='idx_taxon_lineage_ancestor_id',
+        table=TAXON_LINEAGE_TABLE,
+        clause=sql.SQL('(ancestor_id)')),
+    IndexDefinition(
+        name='idx_taxon_lineage_taxon_key',
+        table=TAXON_LINEAGE_TABLE,
+        clause=sql.SQL('(accepted_taxon_key)')
+    ),
+    IndexDefinition(
+        name='idx_taxon_lineage_ancestor_and_key',
+        table=TAXON_LINEAGE_TABLE,
+        clause=sql.SQL('(ancestor_id, accepted_taxon_key)')
+    )
 ]
 
 # Rank column indexes

@@ -3,8 +3,9 @@ import type { TaxonomicRank, TaxonomicStatus } from './taxa';
 
 export type RawTaxonSearchSuggestion = {
     scientific_name: string;
+    scientific_name_authorship: string | null;
     canonical_name: string;
-    taxon_id: number;
+    taxon_id: string;
     taxon_rank: TaxonomicRank;
     us_invasive: boolean;
     taxonomic_status: TaxonomicStatus;
@@ -12,8 +13,9 @@ export type RawTaxonSearchSuggestion = {
 
 export type TaxonSearchSuggestion = {
     scientificName: string | null;
+    scientificNameAuthorship: string | null;
     canonicalName: string | null;
-    taxonID: number | null;
+    taxonID: string | null;
     taxonRank: TaxonomicRank | null;
     usInvasive: boolean | null;
     taxonomicStatus: TaxonomicStatus | null;
@@ -48,20 +50,21 @@ export const NS_VALUES_MAP = {
 } as const;
 
 export type RawTaxonInfo = {
-    accepted_name_usage_id: number | null;
+    accepted_name_usage_id: string | null;
     canonical_name: string | null;
-    taxon_rank: TaxonomicRank | null;
+    scientific_name: string | null;
     scientific_name_authorship: string | null;
+    vernacular_names: string[] | null;
+    taxon_rank: TaxonomicRank | null;
     kingdom: string | null;
     phylum: string | null;
     class: string | null;
     order: string | null;
-    superfamily?: string | null;
     family: string | null;
-    subfamily?: string | null;
-    genus: string | null;
-    species: string | null;
-    subspecies?: string | null;
+    generic_name: string | null;
+    infrageneric_epithet: string | null;
+    specific_ephitet: string | null;
+    infraspecific_ephitet: string | null;
     us_invasive: boolean | null;
     taxonomic_status: TaxonomicStatus | null;
     ns_rank_state: NSRank | null;
@@ -69,21 +72,21 @@ export type RawTaxonInfo = {
 } | null;
 
 export type TaxonInfo = {
-    acceptedTaxonID: number | null;
+    acceptedNameUsageID: string | null;
     canonicalName: string | null;
-    taxonRank: TaxonomicRank | null;
+    scientificName: string | null;
     scientificNameAuthorship: string | null;
+    vernacularNames: string[] | null;
+    taxonRank: TaxonomicRank | null;
     kingdom: string | null;
     phylum: string | null;
     class: string | null;
     order: string | null;
-    superfamily?: string | null;
     family: string | null;
-    subfamily?: string | null;
-    genus: string | null;
-    subgenus: string | null;
-    species: string | null;
-    subspecies?: string | null;
+    genericName: string | null;
+    infragenericEpithet: string | null;
+    specificEphitet: string | null;
+    infraspecificEpithet: string | null;
     usInvasive: boolean | null;
     taxonomicStatus: TaxonomicStatus | null;
     nSRankDB: NSRank | null; // NS Rank from Database
@@ -91,27 +94,24 @@ export type TaxonInfo = {
 
     // // Locally calculated rank (derived from nSValues)
     // nSRankLocal: NSRank | null;
-
-    // Merged from separate API call
-    commonNames: string[] | null;
 };
 
 export const TAXON_INFO_MAP = {
-    accepted_name_usage_id: 'acceptedTaxonID',
+    accepted_name_usage_id: 'acceptedNameUsageID',
     canonical_name: 'canonicalName',
-    taxon_rank: 'taxonRank',
+    scientific_name: 'scientificName',
     scientific_name_authorship: 'scientificNameAuthorship',
+    vernacular_names: 'vernacularNames',
+    taxon_rank: 'taxonRank',
     kingdom: 'kingdom',
     phylum: 'phylum',
     class: 'class',
     order: 'order',
-    superfamily: 'superfamily',
     family: 'family',
-    subfamily: 'subfamily',
-    genus: 'genus',
-    subgenus: 'subgenus',
-    species: 'species',
-    subspecies: 'subspecies',
+    generic_name: 'genericName',
+    infrageneric_epithet: 'infragenericEpithet',
+    specific_epithet: 'specificEphitet',
+    infraspecific_epithet: 'infraspecificEpithet',
     us_invasive: 'usInvasive',
     taxonomic_status: 'taxonomicStatus',
     ns_rank_state: 'nSRankDB',
@@ -153,11 +153,13 @@ export function normalizeAPIResponse<T extends Record<string, any>>(
 // We're gonna have to keep these looking RAW in order to prevent renaming
 // tens of thousands of keys
 export type TaxonNodeType = {
-    taxon_id: number;
-    parent_name_usage_id: number;
-    accepted_name_usage_id: number | null;
+    taxon_id: string;
+    parent_name_usage_id: string;
+    effective_parent_id: string | null;
+    accepted_name_usage_id: string | null;
     taxon_rank: TaxonomicRank;
     canonical_name: string | null;
+    scientific_name: string | null;
     scientific_name_authorship: string | null;
     ns_rank_state: NSRank | null;
     ns_rank_state_no_inat: NSRank | null;
@@ -166,7 +168,10 @@ export type TaxonNodeType = {
     class: string | null;
     order: string | null;
     family: string | null;
-    genus: string | null;
+    generic_name: string | null;
+    infrageneric_epithet: string | null;
+    specific_epithet: string | null;
+    infraspecific_epithet: string | null;
     us_invasive: boolean | null;
 };
 
@@ -189,3 +194,5 @@ export type EstimateMetrics = {
     rowCount: number;
     sizeEstimate: number;
 };
+
+// TODO: We really should combine the TaxonNodeType and TaxonInfo type

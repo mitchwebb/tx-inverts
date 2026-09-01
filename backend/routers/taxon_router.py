@@ -2,7 +2,8 @@
 from backend.db.queries.occurrence import create_occurrence_filter_sql
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
-from backend.db.schema.tx_taxa import TX_TAXA_TABLE
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE, TXTaxaTable
+from backend.db.schema.vernacular_names import VERNACULAR_NAMES_TABLE
 from backend.models.occurrence import OccurrenceFilters
 from fastapi import Request, APIRouter, HTTPException
 from backend.data_util.execute_psql_query import execute_psql_query
@@ -46,8 +47,8 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
     # This effectively hides synonyms from search (Searching "Protoxaea texana" shows result for "Mesoxaea texana" instead)
     query = sql.SQL("""
         SELECT DISTINCT ON (COALESCE(a.taxon_id, t.taxon_id))
-            COALESCE(a.scientific_name, t.scientific_name) AS scientific_name,
             COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
+            COALESCE(a.scientific_name_authorship, t.scientific_name_authorship) AS scientific_name_authorship,
             COALESCE(a.taxon_id, t.taxon_id) AS taxon_id,
             COALESCE(a.taxon_rank, t.taxon_rank) AS taxon_rank,
             COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
@@ -88,47 +89,64 @@ async def get_taxon_info(taxon_id: str, request: Request) -> TaxonInfo:
 
     Returns:
         TaxonInfo:
-                canonical_name,
                 scientific_name_authorship,
+                canonical_name,
                 accepted_name_usage_id,
-                kingdom,
-                phylum,
-                taxon_class,
-                order,
-                family,
-                genus,
-                species,
-                subspecies,
+                scientific_name,
                 taxon_rank,
                 us_invasive,
                 taxonomic_status,
                 ns_rank_state,
-                and ns_rank_state_no_inat
+                ns_rank_state_no_inat,
+                kingdom,
+                phylum,
+                class,
+                "order",
+                family,
+                generic_name,
+                infrageneric_epithet,
+                specific_epithet,
+                infraspecific_epithet,
+                vernacular_names,
             of retrieved species
     """
 
     try:
         taxon_query = sql.SQL("""
             SELECT
-                canonical_name,
-                scientific_name_authorship,
-                accepted_name_usage_id,
-                kingdom,
-                phylum,
-                class,
-                "order",
-                family,
-                genus,
-                species,
-                subspecies,
-                taxon_rank,
-                us_invasive,
-                taxonomic_status,
-                ns_rank_state,
-                ns_rank_state_no_inat
-            FROM tx_taxa
-            WHERE taxon_id = {taxon_id}
-        """).format(taxon_id=sql.Literal(taxon_id))
+                t.scientific_name_authorship,
+                t.canonical_name,
+                t.accepted_name_usage_id,
+                t.scientific_name,
+                t.taxon_rank,
+                t.us_invasive,
+                t.taxonomic_status,
+                t.ns_rank_state,
+                t.ns_rank_state_no_inat,
+                t.kingdom,
+                t.phylum,
+                t.class,
+                t."order",
+                t.family,
+                t.generic_name,
+                t.infrageneric_epithet,
+                t.specific_epithet,
+                t.infraspecific_epithet,
+                COALESCE(v.vernacular_names, '{{}}') AS vernacular_names
+            FROM {tx_taxa} t
+            LEFT JOIN (
+                SELECT taxon_id, array_agg(vernacular_name) AS vernacular_names
+                FROM {vernacular_names_table}
+                WHERE language = 'eng'
+                GROUP BY taxon_id
+            ) v ON t.taxon_id = v.taxon_id
+            WHERE t.taxon_id = {taxon_id}
+            LIMIT 5
+        """).format(
+            taxon_id=sql.Literal(taxon_id),
+            tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
+            vernacular_names_table=sql.Identifier(VERNACULAR_NAMES_TABLE.name)
+        )
 
         # Get taxon info
         async with request.app.state.db_pool.connection() as conn:
@@ -169,6 +187,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
                 parent_name_usage_id,
                 accepted_name_usage_id,
                 canonical_name,
+                scientific_name,
                 scientific_name_authorship,
                 ns_rank_state,
                 ns_rank_state_no_inat,
@@ -178,10 +197,13 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
                 class,
                 "order",
                 family,
-                genus
+                generic_name,
+                specific_epithet,
+                infrageneric_epithet,
+                infraspecific_epithet
             FROM {tx_taxa}
-            WHERE taxonomic_status IN ('accepted', 'doubtful')
-                    ORDER BY taxon_rank, canonical_name
+            WHERE taxonomic_status IN ('accepted', 'doubtful', 'provisionally accepted')
+                    ORDER BY taxon_rank, scientific_name
         """).format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name))
 
         async with request.app.state.db_pool.connection() as conn:

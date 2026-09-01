@@ -8,16 +8,43 @@ from psycopg import AsyncConnection, sql
 
 
 CHORDATE_INVERTS = ('Thaliacea', 'Ascidiacea', 'Appendicularia', 'Leptocardii')
+CHORDATE_INVERT_IDS = (
+    # Classes
+    'L2QHG',  # Thaliacea
+    'B8V3P',  # Ascidiacea
+    '622C5',  # Appendicularia
+    'DR',     # Leptocardii
+    # Subphyla
+    '7NF2Q',   # Cephalochordata
+    '7NF2Z',   # Tunicata
+    # Phyla
+    'CH2',     # Chordata
+)
 
 
 def inverts_mask(df: pd.DataFrame) -> pd.Series:
     """True for Animalia rows that are invertebrates (or the exceptional invert chordates)."""
-    return (
-        (df['kingdom'] == 'Animalia') &
-        (
-            (df['phylum'] != 'Chordata') |
-            (df['class'].isin(CHORDATE_INVERTS))
-        )
+
+    # Must be animalia
+    animalia = (
+        (df['kingdom'] == 'Animalia') |
+        # Make sure Animalia itself gets included (Catalogue of Life leaves the 'kingdom' column as NaN)
+        (df['taxonID'] == 'N')
+    )
+
+    # Exceptions to the rule of 'non-chordate'
+    exceptional = (
+        # Any that match class names in scientificName column
+        df['scientificName'].str.split().str[0].isin(CHORDATE_INVERTS) |
+        # Any that match class names in 'class' columns
+        df['class'].isin(CHORDATE_INVERTS) |
+        # And that match taxonID (includes parents)
+        df['taxonID'].isin(CHORDATE_INVERT_IDS)
+    )
+
+    return animalia & (
+        (df['phylum'] != 'Chordata') |
+        exceptional
     )
 
 
@@ -62,6 +89,62 @@ async def get_observation_count(conn: AsyncConnection, taxon_ids: str | List[str
 
     return int(result[0]) if result else None
 
+
+def create_canonical_names(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Using a pandas DataFrame, add a 'canonicalName' column
+    populated with scientific names WITHOUT authorship.
+
+    This is done by combining column data or by stripping
+    the scientificName column, depending on taxonRank. 
+
+    Columns required:
+        'scientificName',
+        'genericName',
+        'infragenericEpithet',
+        'specificEpithet',
+        'infraspecificEpithet',
+        'taxonRank'
+    """
+    required_cols = {
+        'scientificName',
+        'genericName',
+        'infragenericEpithet',
+        'specificEpithet',
+        'infraspecificEpithet',
+        'taxonRank'
+    }
+
+    missing = required_cols - set(df.columns)
+    if missing:
+        raise ValueError(f'DataFrame is missing required columns: {missing}')
+
+    def derive_canonical_name(row):
+        taxon_rank = row['taxonRank']
+        match taxon_rank:
+            case 'species':
+                parts = [row['genericName'], row['specificEpithet']]
+            case 'subspecies':
+                parts = [
+                    row['genericName'],
+                    row['specificEpithet'],
+                    row['infraspecificEpithet']
+                ]
+            case _:
+                if pd.isna(row['scientificName']):
+                    return pd.NA
+                return row['scientificName'].split(' ', 1)[0]
+
+        # If the names we've made contain NaN parts, it has failed and we need to return NaN
+        if any(pd.isna(p) for p in parts):
+            return pd.NA
+
+        return ' '.join(parts)
+
+    df['canonicalName'] = df.apply(
+        lambda row: derive_canonical_name(row), axis=1)
+
+    return df
 
 # # Numpy version of lineage building for backbone
 # def build_lineages(df: pd.DataFrame) -> pd.DataFrame:

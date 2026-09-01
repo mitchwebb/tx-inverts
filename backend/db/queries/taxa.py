@@ -1,5 +1,5 @@
 # Premade taxon-related queries
-from backend.constants.taxa import RANK_ORDER
+from backend.constants.taxa import TAXON_RANK_ORDER
 from backend.core.exception_handler import InvalidTaxonRankError, TaxonNotFoundError
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import AsyncConnection, sql
@@ -32,7 +32,7 @@ async def get_taxon_rank(conn: AsyncConnection, taxon_id: str) -> str:
             f"taxon_rank is NULL for taxon_id={taxon_id}"
         )
 
-    if taxon_rank not in RANK_ORDER:
+    if taxon_rank not in TAXON_RANK_ORDER:
         raise InvalidTaxonRankError(
             f"Invalid taxon_rank '{taxon_rank}' for taxon_id={taxon_id}"
         )

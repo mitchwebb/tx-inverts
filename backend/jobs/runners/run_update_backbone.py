@@ -3,7 +3,6 @@ from backend.data_util.db import get_single_db_connection
 from backend.jobs.runners.run_async import run_async
 from backend.jobs.tasks.taxon_tasks import fill_invasives_table,  update_backbone, update_ns_ranks
 from backend.core.logging import setup_logging, tasks_logger
-import os
 
 
 # Run full update of backbone, starting from scratch download

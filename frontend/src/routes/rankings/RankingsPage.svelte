@@ -52,9 +52,9 @@
         const target = e.currentTarget as HTMLElement;
         const targetID = target.dataset.taxonId;
 
-        if (!targetID || !parseInt(targetID)) return;
+        if (!targetID) return;
 
-        const targetInt = parseInt(targetID);
+        const targetInt = targetID;
 
         // If taxon is already selected, deselect it
         if (taxaContext.taxa.ids.includes(targetInt)) {
@@ -69,7 +69,7 @@
     }
 
     // Active taxon id to scroll table to (has to be species or subspecies id)
-    let scrollToTaxonID: number | undefined | null = $state();
+    let scrollToTaxonID: string | undefined | null = $state();
 
     // Filter taxa to currently active taxa
     $effect(() => {
@@ -151,9 +151,9 @@
                 ? 'ns_rank_state'
                 : 'ns_rank_state_no_inat';
 
-        const filteredMap = new Map<number, TaxonNodeType>();
+        const filteredMap = new Map<string, TaxonNodeType>();
 
-        for (const taxonID of filterTaxaIDs.map(Number)) {
+        for (const taxonID of filterTaxaIDs.map(String)) {
             const parentNode = $taxaTree.get(taxonID);
 
             if (!parentNode) continue;
@@ -312,7 +312,7 @@
                             {taxon.family}
                         </div>
                         <div class="taxon-rank-label">
-                            {taxon.genus}
+                            {taxon.generic_name}
                         </div>
                     {/snippet}
                 </VirtualizedTable>

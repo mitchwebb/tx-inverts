@@ -189,23 +189,24 @@
                 TxDOT) and entered into our database.
             </p>
         </div>
-        <div class="about-page-section">
+        <div id="about-backbone-section" class="about-page-section">
             <h3 class="about-page-subheader">Our Taxonomic Backbone</h3>
             <div id="about-taxa-diagram">
                 <TaxonPyramid />
             </div>
             <p>
-                Our taxonomic backbone, the foundation for how we classify and
-                structure the relationships between species on this site, is
+                Our taxonomic backbone—the foundation for how we classify and
+                structure the relationships between species on this site—is
                 sourced from the
                 <a
-                    href="https://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c"
+                    href="https://www.catalogueoflife.org/about/catalogueoflife"
                     target="_blank"
                 >
-                    GBIF Taxonomic Backbone
-                </a>
-                before being filtered down to those species with occurrence records
-                within Texas. See the
+                    Catalogue of Life
+                </a>. To keep our occurrence data consistent with our taxonomy,
+                we regularly update this project to reflect GBIF's in-use
+                version of the Catalogue of Life, then filter it down to
+                invertebrate species with occurrence records in Texas. See the
                 <a
                     class="page-link"
                     href={'/backbone'}
@@ -217,11 +218,12 @@
                 to browse the structure.
             </p>
             <p>
-                There is no universally accepted taxonomic tree, and taxonomic
-                relationships are constantly in flux as we learn new information
-                and discover new species. In the interest of keeping our
-                occurrence data consistent with our taxonomy, this project bases
-                both on GBIF's conventions.
+                No taxonomic tree is universally accepted or conclusive. The
+                Catalogue of Life states that its own taxonomic structure is
+                "still incomplete and undoubtedly contains errors." That's true
+                of any taxonomic backbone: our understanding of these
+                relationships changes as new information and species come to
+                light.
             </p>
         </div>
     </div>
