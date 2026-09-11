@@ -33,8 +33,8 @@ async def main():
 
         await update_backbone(conn)
 
-        # Update observations, returning new taxon_keys and row_ids
-        _, _, new_row_ids = await update_observations(conn, delete_file=True, full_replace=True)
+        # Update observations
+        await update_observations(conn, delete_file=True)
 
         await update_observation_regions(conn)
 

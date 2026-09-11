@@ -126,13 +126,18 @@
             </h3>
             <p>
                 The backbone page allows you to browse through the taxonomic
-                structure used by Texas Inverts. This is GBIF's taxonomic
-                backbone, pared down to species with observation data in Texas.
-                You can also use this page to select species in the sidebar by
-                hovering on a name and clicking the <span
-                    class="icon magnify-dummy-icon"
-                    ><MagnifyIcon />
-                </span> icon that appears next to it.
+                structure used by Texas Inverts. This is GBIF's current version
+                of the <a
+                    href="https://www.catalogueoflife.org/about/catalogueoflife"
+                    target="_blank"
+                >
+                    Catalogue of Life
+                </a>, pared down to species with observation data in Texas. This
+                hierarchy is updated monthly. You can also use this page to
+                select species in the sidebar by hovering on a name and clicking
+                the
+                <span class="icon magnify-dummy-icon"><MagnifyIcon /></span> icon
+                that appears next to it.
             </p>
         </div>
         <div class="about-page-section">
@@ -180,17 +185,10 @@
                 </span> icon that appears next to it.
             </p>
         </div>
-
-        <p class="progress-alert">
-            This page is still in progress. Thank you for your patience!
-        </p>
     </div>
 </div>
 
 <style>
-    .progress-alert {
-        color: var(--accent-color);
-    }
     .magnify-dummy-icon {
         color: var(--accent-color);
         display: inline-block;

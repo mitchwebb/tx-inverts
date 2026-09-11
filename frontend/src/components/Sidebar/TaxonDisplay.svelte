@@ -1,6 +1,7 @@
 <script lang="ts">
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import XIcon from '../../assets/XIcon.svelte';
+    import InfoButton from '../../common/InfoButton.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
     import {
@@ -37,7 +38,7 @@
     ></div>
     <div
         id="main-header-top"
-        class:invasive={activeTaxon.info.usInvasive}
+        class:invasive-taxon={activeTaxon.info.usInvasive}
         class:loading-blink={isLoading}
     >
         {#if activeTaxon.taxonError}
@@ -93,13 +94,22 @@
     {/if}
     <div id="aux-taxon-text">
         {#if activeTaxon.info.taxonomicStatus && taxonNotAccepted}
-            <div id="taxonomic-status-text" class={'thin dubious-taxon'}>
+            {@const taxonomicStatus = activeTaxon.info.taxonomicStatus}
+            <div class="taxonomic-status-text dubious-taxon">
                 <span>
-                    Taxon Status: {capitalizeWords(
-                        activeTaxon.info.taxonomicStatus
-                    )}
+                    Taxon Status: {capitalizeWords(taxonomicStatus)}
                 </span>
-                {#if activeTaxon.info.taxonomicStatus.includes('synonym')}
+                {#if taxonomicStatus == 'provisionally accepted'}
+                    <InfoButton type="tooltip" hover={true}>
+                        <span
+                            >A "provisionally accepted" status marks a taxon
+                            where more information is required to be certain of
+                            its validity. These taxa are frequently fixed in
+                            Catalogue of Life updates.
+                        </span>
+                    </InfoButton>
+                {/if}
+                {#if taxonomicStatus.includes('synonym')}
                     <div>
                         Accepted Taxon ID: {activeTaxon.info
                             .acceptedNameUsageID}
@@ -169,13 +179,6 @@
     .invasive-icon {
         height: 1.2rem;
         width: 1.2rem;
-        color: var(--accent-color);
-    }
-    .invasive > * {
-        color: var(--accent-color);
-    }
-    .dubious-taxon {
-        color: var(--accent-color);
     }
     #main-header-top {
         display: flex;
@@ -211,7 +214,7 @@
         font-size: 1rem;
         white-space: nowrap;
     }
-    #taxonomic-status-text {
+    .taxonomic-status-text {
         font-size: 1rem;
         line-height: 1;
     }

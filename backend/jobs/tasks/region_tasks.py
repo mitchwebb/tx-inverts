@@ -116,7 +116,11 @@ async def fill_all_geometry_tables(conn, truncate: bool = False):
     db_logger.info("Updated all geometry tables")
 
 
-async def update_observation_regions(conn, new_observation_ids: List[int] | None = None, replace_all: bool = False):
+async def update_observation_regions(
+    conn,
+    new_observation_ids: List[int] | None = None,
+    replace_all: bool = False
+):
     try:
         # Make sure indexes are in place
         await update_index(conn, 'idx_obs_regions_id')

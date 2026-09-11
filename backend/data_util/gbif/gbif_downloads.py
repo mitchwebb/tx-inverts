@@ -7,7 +7,7 @@ from backend.data_util.extract_zip import extract_zip_files
 from backend.core.logging import data_logger
 
 
-async def gbif_download_request(request_body: str, pwd: str, username: str, test: bool = False):
+async def gbif_download_request(request_body: str, pwd: str, username: str, test: bool = False) -> str:
     """
     Creates a download request using GBIF's API
 
@@ -28,10 +28,6 @@ async def gbif_download_request(request_body: str, pwd: str, username: str, test
         GBIF download key (str)
     """
 
-    headers = {
-        'Content-Type': 'application/json'
-    }
-
     gbif_url = 'https://api.gbif.org/v1/occurrence/download/request'
 
     if test:
@@ -43,7 +39,9 @@ async def gbif_download_request(request_body: str, pwd: str, username: str, test
                 gbif_url,
                 data=request_body,
                 auth=aiohttp.BasicAuth(username, pwd),
-                headers=headers
+                headers={
+                    'Content-Type': 'application/json'
+                }
             )
             if response.status == 201:
                 data_logger.info("Download request submitted successfully.")
@@ -69,7 +67,7 @@ async def gbif_download_request(request_body: str, pwd: str, username: str, test
 
 
 # Adaptive formatting of MB logging
-def _fmt_size_string(bytes: int):
+def _fmt_size_string(bytes: int) -> str:
     # If over one GB
     if bytes >= 1024**3:
         return f"{bytes / 1024**3:.2f} GB"
@@ -77,12 +75,18 @@ def _fmt_size_string(bytes: int):
     return f"{bytes / 1024**2:.2f} MB"
 
 
-async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800, target_files: list[str] | None = None, verbose=False) -> str:
+async def get_gbif_download(
+    key: str,
+    output_fp: str,
+    time_to_wait: int = 10800,
+    target_files: list[str] | None = None,
+    verbose=False
+) -> str:
     """
-    Uses a GBIF download key to download and save a GBIF download to a local CSV
+    Uses a GBIF download key to download and save a GBIF download to a local CSV.
 
     This function will attempt to download the provided GBIF download every
-    ten seconds for a given time (time_to_wait)
+    ten seconds for a given time (time_to_wait, default = 3 hours).
 
     This function can be used in conjunction with the
     GBIF_download_request function.
@@ -90,9 +94,9 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
     Args:
         key (str): GBIF download key
         output_fp (str): Desired filepath for resulting CSV (refer to GBIF documentation)
-        time_to_wait (int, optional): The total amount of time to continue
+        time_to_wait (int = 10800): The total amount of time to continue
             pinging the GBIF api (default is 3 hours, as is GBIF high estimate)
-        target_files (string, optional): Specific files to extract (useful for DWCA archives)
+        target_files (list[str] = None): Specific files to extract (useful for DWCA archives)
         verbose (bool): Controls GBIF retry/ping output messages
 
     Returns:
@@ -148,6 +152,7 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                                     next_log_threshold += 50 * 1024 * 1024
                         data_logger.info(
                             f"Download complete ({_fmt_size_string(downloaded)}): {zip_fp}")
+                        # Extract zip files and return output filepath
                         output_fp = extract_zip_files(zip_fp, os.path.join(
                             output_fp, key), target_files, delete_zip=True)
                         return output_fp
@@ -162,6 +167,13 @@ async def get_gbif_download(key: str, output_fp: str, time_to_wait: int = 10800,
                     else:
                         raise RuntimeError(
                             f"Unexpected status code: {response.status}")
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                # Transient network failure (dropped connection, DNS hiccup, etc.)
+                # Prevents killing a potentially multi-hour poll loop over one bad request. Retry.
+                if verbose:
+                    data_logger.warning(
+                        f"Transient network error, will retry in {waiting_interval} seconds: {e}")
+
             except Exception as e:
                 data_logger.exception(f"Error occurred: {e}")
                 raise

@@ -37,10 +37,10 @@ export const DUMMY_TAXON: ActiveTaxon = {
     dateRangeLoading: false,
     datasetCountsLoading: false,
     nSValuesLoading: false,
-    lastLoadedID: '1025719',
-    taxonID: '1025719',
+    lastLoadedID: 'G9Q6',
+    taxonID: 'G9Q6',
     info: {
-        acceptedNameUsageID: '1025719',
+        acceptedNameUsageID: 'G9Q6',
         scientificName: 'Archispirostreptus gigas',
         canonicalName: 'Archispirostreptus gigas',
         taxonRank: 'species',

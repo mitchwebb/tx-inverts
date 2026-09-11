@@ -18,11 +18,11 @@ async def main():
 
         conn = await get_single_db_connection()
 
-        backbone_update_suggested, new_row_keys, affected_observation_ids = await update_observations(conn, delete_file=True, full_replace=True)
+        await update_observations(conn, delete_file=True)
 
-        await update_observation_regions(conn, affected_observation_ids)
+        await update_observation_regions(conn)
 
-        await update_ns_ranks(conn, new_row_keys)
+        await update_ns_ranks(conn)
 
         # Refresh the materialized views
         await refresh_materialized_views(conn)
@@ -30,10 +30,6 @@ async def main():
         await update_indexes(conn)
 
         tasks_logger.info("update_occurrences job finished")
-
-        if backbone_update_suggested:
-            tasks_logger.info(
-                "Backbone update suggested.")
 
     except Exception as e:
         tasks_logger.exception(f"Update_occurrences task failed. Exiting. {e}")

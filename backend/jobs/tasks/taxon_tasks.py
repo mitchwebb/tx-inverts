@@ -371,7 +371,10 @@ async def _ensure_rank_columns(conn: AsyncConnection) -> None:
     await conn.commit()
 
 
-async def update_ns_ranks(conn: AsyncConnection, taxon_keys: Optional[List[str]] = None) -> None:
+async def update_ns_ranks(
+    conn: AsyncConnection,
+    taxon_keys: Optional[List[str]] = None
+) -> None:
     """
     Update conservation ranks for selected (or all) taxa
 

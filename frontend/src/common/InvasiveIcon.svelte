@@ -34,7 +34,7 @@
 </script>
 
 <button
-    class="invasive-tooltip-wrapper"
+    class="invasive-tooltip-wrapper invasive-taxon"
     aria-label="Invasive species information"
     onmouseenter={handleMouseEnter}
     onmouseleave={handleMouseExit}
@@ -55,7 +55,6 @@
         margin: 0;
         padding: 0;
         background-color: transparent;
-        color: var(--accent-color);
         border: none;
     }
 </style>

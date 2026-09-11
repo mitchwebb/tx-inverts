@@ -31,7 +31,6 @@ TAXON_RANK_ORDER = [
     'subgenus',
     'species',
     'subspecies',
-    'infraspecific_name',
     'variety',
     'form',
 ]

@@ -35,11 +35,11 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
             ordered alphabetically
     """
 
-    # Handle species exclusion (or lack thereof)
+    # Handle species and below exclusion (or lack thereof)
     exclude_species_section = sql.SQL("")
     if exclude_species:
         exclude_species_section = sql.SQL(
-            "AND COALESCE(a.taxon_rank, t.taxon_rank) NOT IN ('species', 'subspecies')"
+            "AND COALESCE(a.taxon_rank, t.taxon_rank) NOT IN ('species', 'subspecies', 'variety', 'form')"
         )
 
     # Search by substring (case insensitive)
@@ -58,7 +58,7 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
             ON t.accepted_name_usage_id = a.taxon_id
         WHERE
             t.canonical_name ~* {search_term}
-            AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'doubtful')
+            AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'provisionally accepted')
             {exclude_species_section}
         ORDER BY
             COALESCE(a.taxon_id, t.taxon_id),
@@ -202,7 +202,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
                 infrageneric_epithet,
                 infraspecific_epithet
             FROM {tx_taxa}
-            WHERE taxonomic_status IN ('accepted', 'doubtful', 'provisionally accepted')
+            WHERE taxonomic_status IN ('accepted', 'provisionally accepted')
                     ORDER BY taxon_rank, scientific_name
         """).format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name))
 

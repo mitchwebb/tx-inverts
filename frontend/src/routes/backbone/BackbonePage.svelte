@@ -333,7 +333,6 @@
                         class={[
                             'taxon-node-label',
                             `${hasChildren ? 'branch' : 'leaf'}`,
-                            { invasive: node.us_invasive },
                         ]}
                     >
                         {#if node.us_invasive}
@@ -358,13 +357,29 @@
                                 {/if}
                             </div>
                         {/if}
-                        <span class="taxon-name">
+                        <span
+                            class="taxon-name"
+                            class:dubious-taxon={node.taxonomic_status ==
+                                'provisionally accepted'}
+                            class:invasive-taxon={node.us_invasive}
+                        >
                             <span class={[{ italicized }]}>
                                 {node.canonical_name}
                             </span>
                             <span class="taxon-authorship"
                                 >{node.scientific_name_authorship ?? null}
                             </span>
+                            {#if node.taxonomic_status == 'provisionally accepted'}
+                                <InfoButton type="tooltip" hover={true}>
+                                    <span>
+                                        A "provisionally accepted" status marks
+                                        a taxon where more information is
+                                        required to be certain of its validity.
+                                        These taxa are frequently fixed in
+                                        Catalogue of Life updates.
+                                    </span>
+                                </InfoButton>
+                            {/if}
                         </span>
                     </button>
                     <button
@@ -440,15 +455,14 @@
         bottom: 0.25rem;
         opacity: 0.5;
         transition: opacity 0.25s ease-in-out;
+        height: 0.9rem;
+        color: var(--text-default);
     }
     .backbone-disclaimer:hover {
         opacity: 1;
     }
     .taxon-icon {
         margin-left: 0.5rem;
-    }
-    .invasive > * {
-        color: var(--accent-color);
     }
     #taxa-loading-icon {
         margin: 0.5rem;

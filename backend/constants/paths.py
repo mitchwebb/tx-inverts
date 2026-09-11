@@ -18,6 +18,6 @@ SHAPEFILE_PATHS = {
     'texas':    os.path.join(base, 'tx.geojson'),
     'parks':    os.path.join(base, 'LWRCRP.gdb'),
     'counties': os.path.join(base, 'tx_counties.geojson'),
-    # 'eco_l3':   os.path.join(base, 'tx_eco_l3.shp'),
-    # 'eco_l4':   os.path.join(base, 'tx_eco_l4.shp'),
+    # 'eco_l3':   os.path.join(base, 'tx_eco_l3.shp'), # These are currently only online (mapbox)
+    # 'eco_l4':   os.path.join(base, 'tx_eco_l4.shp'), # These are currently only online (mapbox)
 }

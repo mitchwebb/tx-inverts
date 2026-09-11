@@ -274,11 +274,8 @@
                             {/if}
                         </div>
                         <div
-                            class={[
-                                'taxon-name-wrapper',
-                                { invasive: taxon.us_invasive },
-                                'left-align',
-                            ]}
+                            class="taxon-name-wrapper left-align"
+                            class:invasive-taxon={taxon.us_invasive}
                         >
                             <span class="taxon-name">
                                 <span class={[{ italicized }]}>
@@ -391,9 +388,6 @@
         box-sizing: border-box;
         color: var(--text-default);
         overflow-y: hidden;
-    }
-    .invasive > * {
-        color: var(--accent-color);
     }
     .taxon-select-icon {
         color: transparent;

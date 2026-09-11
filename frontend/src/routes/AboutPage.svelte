@@ -222,7 +222,7 @@
                 Catalogue of Life states that its own taxonomic structure is
                 "still incomplete and undoubtedly contains errors." That's true
                 of any taxonomic backbone: our understanding of these
-                relationships changes as new information and species come to
+                relationships is changing as new information and species come to
                 light.
             </p>
         </div>

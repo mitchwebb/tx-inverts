@@ -48,11 +48,9 @@ class TestRunSetup:
             f'{MODULE}.update_backbone',
             new=AsyncMock(side_effect=track('update_backbone'))
         )
-        # Return backbone_update_required = True to trigger backbone update
         mocker.patch(
             f'{MODULE}.update_observations',
-            new=AsyncMock(side_effect=lambda *a, **
-                          kw: (track('update_observations')(), (True, [], []))[1])
+            new=AsyncMock(side_effect=track('update_observations'))
         )
         taxon_lineage_refresh = mocker.patch(
             f'{MODULE}.refresh_materialized_view',

@@ -14,14 +14,16 @@ from backend.config import get_settings
 from backend.core.logging import db_logger, data_logger
 from backend.data_util.gbif import (
     gbif_downloads,
-    get_latest_record_date,
     observations_request,
     process_observations,
 )
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
+from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
+from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.table_tasks import initialize_table
-from backend.jobs.tasks.view_tasks import refresh_materialized_views
+from backend.jobs.tasks.view_tasks import refresh_materialized_view, refresh_materialized_views
 from psycopg import sql, AsyncConnection
 from typing import List, Optional, Tuple
 
@@ -29,9 +31,7 @@ from typing import List, Optional, Tuple
 # Helper function to build gbif download request, perform request,
 # download the resulting data, unzip, and return fp for occurrences.txt
 async def get_gbif_inverts_file(
-    conn: AsyncConnection,
     gbif_request_key: str | None = None,
-    get_all: bool = False,
     test: bool = False
 ) -> str:
     """
@@ -39,9 +39,7 @@ async def get_gbif_inverts_file(
         If gbif_request_key provided, function will skip the request step.
 
         Args:
-            conn (psycopg.AsyncConnection): AsyncConnection used for db call
             gbif_request_key (str): Key returned by gbif download request. Can be used if a request was previously made
-            get_all (bool = False): If True, records will not be filtered by date
             test (bool = False): If True, request builder will use a subset of data
 
         Returns:
@@ -56,34 +54,16 @@ async def get_gbif_inverts_file(
 
         # Else, create new request
         else:
-            min_date = None
-            kwargs: dict[str, str | date] = {'min_date_type': 'modified'}
-
-            # If get_all is True, run a full request for Texas inverts
-            if get_all:
-                data_logger.info(
-                    "Full replace selected—requesting all records from GBIF...")
-            # TODO: As GBIF forums have revealed, this is not a trustworthy date—it's not reviewed by GBIF
-            # TODO: This can also result in duplicates and stale records, as GBIF doesn't track removed records.
-            # TODO: For now, a full replace seems to be the most sensible option, although it feels wasteful
-            # Else, filter by latest 'modified' date in observations database
-            else:
-                db_logger.info(
-                    "Getting minimum modified date from observations table...")
-                min_date = await get_latest_record_date.get_latest_record_date(conn, 'modified')
-
-                if min_date is not None:
-                    kwargs['min_date'] = min_date
-                    data_logger.info(
-                        f"Using min modified date for GBIF request: {min_date}")
+            data_logger.info(
+                "Requesting all inverts records from GBIF...")
 
             # Build GBIF request
             # Pylance has a tough time with kwarg types, and this is local, so we're just ignoring
             request_body = observations_request.build_observations_request(
                 user=settings.gbif.user,
                 email=settings.gbif.email,
-                test=test,
-                ** kwargs)  # type: ignore[arg-type]
+                test=test
+            )
 
             # Request download and get download key
             key = await gbif_downloads.gbif_download_request(
@@ -194,39 +174,25 @@ async def update_observations(
     fp: str | None = None,
     gbif_request_key: str | None = None,
     chunk_size: int = 100000,
-    full_replace: bool = False,
     delete_file=False
-) -> Tuple[bool, Optional[List[str]], Optional[List[int]]]:
+):
     """
-        Orchestration function to update gbif_observations table
+        Orchestration function to fully update gbif_observations table.
 
-        Uses either local file or gbif download to insert new observations
-        based on latest 'modified' value in gbif_observations table, as well
-        as all records with null 'modified' value(as there is no way to vet these)
-
-        Will overwrite db observation rows which share a gbif_id
+        Uses either local file or gbif download to fully replace observations.
 
         Args:
             conn(psycopg.AsyncConnection): Active psycopg async database connection
             fp(str | None=None): Filepath to observations csv(if provided, function will NOT make a new GBIF request)
             gbif_request_key(str | None=None): Key returned by gbif download request. Can be used if a request was already made.
             chunk_size(int=100000): Chunk size to be used when reading in CSV for data cleaning
-            full_replace(bool=False): If True, operation will replace observations table with new data
             delete_file(bool=False): If True, observations file will not be kept
-
-
-        Returns:
-            (backbone_update_suggested, new_row_keys, affected_observation_ids)
     """
 
     try:
         # If no fp to observations file is provided, create GBIF request and download new data
         if fp is None:
-            fp = await get_gbif_inverts_file(conn, gbif_request_key, full_replace)
-
-        backbone_update_suggested = False
-        affected_observation_ids = []
-        new_row_keys = []
+            fp = await get_gbif_inverts_file(gbif_request_key)
 
         # Make sure gbif_observations_table exists
         await initialize_table(conn, GBIF_OBSERVATIONS_TABLE, verbose=True)
@@ -270,9 +236,6 @@ async def update_observations(
             fp,
             chunk_size,
         ):
-            # Add to list of taxon ids that will be affected by this update (to feed to compiled list)
-            new_row_keys.extend(chunk['accepted_taxon_key'].unique().tolist())
-
             # Create batch_id for this chunk
             batch_id = time.time_ns()
 
@@ -281,9 +244,6 @@ async def update_observations(
 
             # Filter chunk in temp table by Texas Shapefile
             await _filter_temp_table_chunk(conn, temp_table_name, batch_id)
-
-        # Deduplicate new row keys in compiled table
-        new_row_keys = list(set(new_row_keys))
 
         # Create a few important indexes on temp table
         db_logger.info("Creating necessary indexes on temp table...")
@@ -304,137 +264,39 @@ async def update_observations(
 
         ### Insert Operations ###
 
-        # If full_replace is true, add all observations
-        if full_replace:
-            # If fully replacing observations, we must first truncate the old table as well as
-            # the observations_regions table, as it is a materialized view
-            db_logger.info(
-                "Full replace requested. Truncating observations (and observations_regions) table...")
-            truncate_query = sql.SQL("""
-                TRUNCATE {obs_table}, {obs_regions_table}
-            """).format(
-                obs_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
-                obs_regions_table=sql.Identifier(
-                    OBSERVATION_REGIONS_TABLE.name)
-            )
-            await execute_psql_query(conn, truncate_query)
+        # Truncate the old observations table as well as the observations_regions table, as it is a materialized view
+        db_logger.info(
+            "Full replace requested. Truncating observations (and observations_regions) table...")
+        truncate_query = sql.SQL("""
+            TRUNCATE {obs_table}, {obs_regions_table}
+        """).format(
+            obs_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+            obs_regions_table=sql.Identifier(
+                OBSERVATION_REGIONS_TABLE.name)
+        )
+        await execute_psql_query(conn, truncate_query)
 
-            # When fully replacing the observations table, it is safest to update the backbone as well
-            # Although the backbone doesn't often actually change
-            backbone_update_suggested = True
-            db_logger.warning(
-                "Observations table is being fully replaced—it is safest to accompany this with a backbone update.")
+        # Warn about backbone update
+        db_logger.warning(
+            "Observations table is being fully replaced—it is safest to accompany this with a backbone update.")
 
-            db_logger.info(
-                "Adding all accepted observations to observations table. For a full replacement, this can take around 25 minutes...")
-            insert_query = sql.SQL("""
-                INSERT INTO {observations_table}
-                SELECT * FROM {temp_table}
-            """).format(
-                observations_table=sql.Identifier(
-                    GBIF_OBSERVATIONS_TABLE.name),
-                temp_table=sql.Identifier(temp_table_name)
-            )
-            await execute_psql_query(conn, insert_query)
-
-        # Else, compare old and new rows, replacing only those with altered information
-        else:
-            # Compare accepted_taxon_key values to see if backbone needs to be updated
-            db_logger.info("Comparing accepted_taxon_keys for changes...")
-            changed_query = sql.SQL("""
-                SELECT COUNT(*) AS changed_taxa
-                FROM {observations_table} old
-                JOIN {temp_table} new ON old.gbif_id = new.gbif_id
-                WHERE old.accepted_taxon_key IS DISTINCT FROM new.accepted_taxon_key
-                AND old.taxon_key = new.taxon_key
-            """).format(
-                observations_table=sql.Identifier(
-                    GBIF_OBSERVATIONS_TABLE.name),
-                temp_table=sql.Identifier(temp_table_name)
-            )
-            result = await execute_psql_query(conn, changed_query, fetch='one', dict_cursor=True)
-            changed_count = result['changed_taxa'] if result is not None else 0
-
-            # If updated rows with updated accepted_taxon_keys exist, warn...
-            if changed_count > 0:
-                db_logger.warning(f"""
-                    ⚠ Detected {changed_count} observations with changed accepted_taxon_keys.
-                    This suggests the backbone may be outdated and should be updated.
-                """)
-                backbone_update_suggested = True
-            else:
-                backbone_update_suggested = False
-
-            new_row_query = sql.SQL("""
-                SELECT COUNT(*) AS new_row_count FROM {temp_table}
-            """).format(temp_table=sql.Identifier(temp_table_name))
-            result = await execute_psql_query(conn, new_row_query, fetch='one', dict_cursor=True)
-            new_row_count = result['new_row_count'] if result is not None else 0
-
-            # Now update main table
-            db_logger.info(f"Rows to copy: {new_row_count}")
-
-            columns = GBIF_OBSERVATIONS_TABLE.column_order()
-            update_cols = [c for c in columns if c != 'gbif_id']
-
-            # Populate observations table with new rows from temp table
-            # Replace rows with matching gbif_ids
-            db_logger.info(
-                f"Replacing pre-existing rows and adding new to observations_table...")
-            insert_query = sql.SQL("""
-                INSERT INTO {observations_table}
-                SELECT * FROM {temp_table}
-                ON CONFLICT (gbif_id) DO UPDATE SET {updates}
-            """).format(
-                observations_table=sql.Identifier(
-                    GBIF_OBSERVATIONS_TABLE.name),
-                temp_table=sql.Identifier(temp_table_name),
-                updates=sql.SQL(', ').join(
-                    sql.SQL('{col} = EXCLUDED.{col}').format(
-                        col=sql.Identifier(c))
-                    for c in update_cols
-                )
-            )
-            await execute_psql_query(conn, insert_query)
-
-        # Get list of altered occurrence record ids for updating observations regions table
-        db_logger.info("Getting altered occurrence ids...")
-        # Get list of new observation ids
-        updated_ids_query = sql.SQL("""
-                SELECT gbif_id FROM {temp_table}
-            """).format(
+        db_logger.info(
+            "Adding all accepted observations to observations table. For a full replacement, this can take around 25 minutes...")
+        insert_query = sql.SQL("""
+            INSERT INTO {observations_table}
+            SELECT * FROM {temp_table}
+        """).format(
+            observations_table=sql.Identifier(
+                GBIF_OBSERVATIONS_TABLE.name),
             temp_table=sql.Identifier(temp_table_name)
         )
-        result = await execute_psql_query(
-            conn, updated_ids_query, fetch='all', dict_cursor=True)
-        affected_observation_ids = [row['gbif_id'] for row in result or []]
+        await execute_psql_query(conn, insert_query)
 
-        # Refresh materialized views
+        # Refresh dependant materialized views
         db_logger.info("Refreshing materialized views...")
-        await refresh_materialized_views(conn)
-
-        # Check occurrence records with missing taxon_id values
-        # If any are missing, there's an issue with the backbone!
-        missing_id_query = sql.SQL("""
-            SELECT DISTINCT o.accepted_taxon_key
-                FROM {temp_table} o
-            LEFT JOIN {backbone} b
-                ON o.accepted_taxon_key = b.taxon_id
-            WHERE b.taxon_id IS NULL;
-        """).format(
-            temp_table=sql.Identifier(temp_table_name),
-            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
-        )
-
-        missing_taxa = await execute_psql_query(conn, missing_id_query, fetch='all', dict_cursor=True)
-        missing_keys = [row['accepted_taxon_key'] for row in missing_taxa or []]
-        missing_count = len(missing_keys)
-
-        if missing_count > 0:
-            db_logger.warning(f"""
-                    ⚠ {missing_count} accepted_taxon_keys not found in backbone. Examples: {missing_keys[:10]}. This means the backbone is out of date and needs to be resynced! ⚠
-            """)
-            backbone_update_suggested = True
+        await refresh_materialized_view(conn, TX_TAXA_TABLE.name)
+        await refresh_materialized_view(conn, TAXON_PRESENCE_TABLE.name)
+        await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
 
         await conn.commit()
 
@@ -445,8 +307,6 @@ async def update_observations(
             parent_directory = os.path.dirname(os.path.abspath(fp))
             if not os.listdir(parent_directory):
                 os.rmdir(parent_directory)
-
-        return (backbone_update_suggested, new_row_keys or None, affected_observation_ids or None)
 
     except Exception as e:
         data_logger.exception(f"Issue with observations update: {e}")
@@ -513,7 +373,7 @@ async def sync_observations_to_backbone(conn: AsyncConnection):
             db_logger.info(
                 f"Updated {updated_count} rows in gbif_observations")
 
-        # Check for taxon_keys in gbif_obseravations with NO match in backbone
+        # Check for taxon_keys in gbif_observations with NO match in backbone
         db_logger.info("Checking for orphaned taxa...")
         orphans_query = sql.SQL("""
             SELECT DISTINCT o.taxon_key as orphaned_keys

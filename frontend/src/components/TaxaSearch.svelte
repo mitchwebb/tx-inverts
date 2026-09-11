@@ -95,7 +95,7 @@
     {@const italicized = isItalicizedRank(suggestion.taxonRank)}
     <div
         class="taxon-suggestion-wrapper"
-        class:invasive={suggestion.usInvasive}
+        class:invasive-taxon={suggestion.usInvasive}
     >
         <div title={suggestion.canonicalName} class="scientific-name-wrapper">
             <span class={['scientific-name', { italicized }]}>
@@ -108,6 +108,9 @@
                 <div class="invasive-icon icon">
                     <InvasiveIcon />
                 </div>
+            {/if}
+            {#if suggestion.taxonomicStatus != 'accepted'}
+                <span>{suggestion.taxonomicStatus}</span>
             {/if}
         </div>
         <div class="taxon-rank">
@@ -140,9 +143,6 @@
         margin-left: 0.5rem;
         height: 1.5rem;
         width: 1.5rem;
-    }
-    .invasive > * {
-        color: var(--accent-color);
     }
     .scientific-name {
         min-width: 0;

@@ -39,6 +39,14 @@
     }
 }
 
+.invasive-taxon {
+    color: var(--accent-color);
+}
+
+.dubious-taxon {
+    color: rgb(181, 1, 109);
+}
+
 :root {
     height: 100%;
     font-family: 'Inter', sans-serif;

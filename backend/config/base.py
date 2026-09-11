@@ -1,7 +1,6 @@
 # Base app setting management
 from backend.config.cors import CORSSettings
 from pathlib import Path
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from .database import PostgresSettings
 from .gbif import GBIFSettings

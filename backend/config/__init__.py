@@ -9,6 +9,11 @@ load_dotenv(dotenv_path='.env')
 
 @lru_cache()
 def get_settings():
+    """
+    Retrieve prod/dev settings depending on 'ENV' environment variable.
+    Returns ProdSettings if 'prod', DevSettings otherwise.
+    """
+
     env = os.getenv('ENV', 'dev')
     # Ignore needed as pydantic doesn't understand these nested settings
     return ProdSettings() if env == 'prod' else DevSettings()  # type: ignore
