@@ -122,7 +122,7 @@
 
         // Special case for adding taxa based on URL params
         const taxonParams = new Set(
-            url.searchParams.getAll('taxon').map(Number).filter(Boolean)
+            url.searchParams.getAll('taxon').filter(Boolean)
         );
         taxonParams.forEach((id) =>
             taxaContext.taxa.add({
