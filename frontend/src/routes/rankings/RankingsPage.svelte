@@ -282,7 +282,10 @@
                             class:dubious-taxon={taxon.taxonomicStatus !==
                                 'accepted'}
                         >
-                            <NameAndAuthorship info={taxon} />
+                            <div class="name-and-authorship">
+                                <NameAndAuthorship info={taxon} />
+                            </div>
+
                             <button
                                 class="taxon-select-icon icon"
                                 class:active={activeTaxaIDs.some(
@@ -323,6 +326,12 @@
 </DefaultPage>
 
 <style>
+    .name-and-authorship {
+        overflow: clip;
+        flex-grow: 0;
+        min-width: 0;
+        text-overflow: ellipsis;
+    }
     #rank-header-no-inat {
         display: flex;
         flex-direction: column;
