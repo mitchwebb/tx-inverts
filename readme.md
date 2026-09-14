@@ -47,5 +47,6 @@ With a PostgreSQL server running on the port specified above, a functioning test
     CREATE USER test_user WITH ENCRYPTED PASSWORD 'test_pass';
     ALTER SCHEMA public OWNER TO test_user;
     GRANT ALL PRIVILEGES ON DATABASE test_inverts TO test_user;
-    CREATE EXTENSION postgis;
+    CREATE EXTENSION IF NOT EXISTS postgis;
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
 ```

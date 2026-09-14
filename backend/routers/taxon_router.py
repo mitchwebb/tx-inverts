@@ -19,8 +19,8 @@ taxon_router = APIRouter()
 @taxon_router.get('/taxon_search_suggest',)
 async def search_taxon(request: Request, search_term: str, exclude_species: bool = False) -> list[TaxonSuggestion]:
     """
-    Get taxon search suggestions given a search term. 
-    Only searches for beginnings of words.
+    Get taxon search suggestions given a search term.
+    Only searches for beginnings of words in canonical_name and vernacular_names.
     Can conditionally exclude species results (specialized use for parent taxon filtering).
 
     Returns only accepted/doubtful taxa, resolving synonyms automatically.
@@ -46,29 +46,76 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
     # Resolve to accepted_name_usage_id, use this information instead, if available
     # This effectively hides synonyms from search (Searching "Protoxaea texana" shows result for "Mesoxaea texana" instead)
     query = sql.SQL("""
-        SELECT DISTINCT ON (COALESCE(a.taxon_id, t.taxon_id))
-            COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
-            COALESCE(a.scientific_name_authorship, t.scientific_name_authorship) AS scientific_name_authorship,
-            COALESCE(a.taxon_id, t.taxon_id) AS taxon_id,
-            COALESCE(a.taxon_rank, t.taxon_rank) AS taxon_rank,
-            COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
-            COALESCE(a.taxonomic_status, t.taxonomic_status) AS taxonomic_status
-        FROM {tx_taxa} t
-        LEFT JOIN {tx_taxa} a
-            ON t.accepted_name_usage_id = a.taxon_id
-        WHERE
-            t.canonical_name ~* {search_term}
-            AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'provisionally accepted')
-            {exclude_species_section}
+        WITH matches AS (
+            SELECT
+                COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
+                COALESCE(a.scientific_name_authorship, t.scientific_name_authorship) AS scientific_name_authorship,
+                COALESCE(a.taxon_id, t.taxon_id) AS taxon_id,
+                COALESCE(a.taxon_rank, t.taxon_rank) AS taxon_rank,
+                COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
+                COALESCE(a.taxonomic_status, t.taxonomic_status) AS taxonomic_status,
+                0 AS match_priority
+            FROM {tx_taxa} t
+            LEFT JOIN {tx_taxa} a
+                ON t.accepted_name_usage_id = a.taxon_id
+            WHERE
+                t.canonical_name ~* {search_term}
+                AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'provisionally accepted')
+                {exclude_species_section}
+
+            UNION ALL
+
+            SELECT
+                COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
+                COALESCE(a.scientific_name_authorship, t.scientific_name_authorship) AS scientific_name_authorship,
+                COALESCE(a.taxon_id, t.taxon_id) AS taxon_id,
+                COALESCE(a.taxon_rank, t.taxon_rank) AS taxon_rank,
+                COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
+                COALESCE(a.taxonomic_status, t.taxonomic_status) AS taxonomic_status,
+                1 AS match_priority
+            FROM {vernacular_names} v
+            JOIN {tx_taxa} t
+                ON t.taxon_id = v.taxon_id
+            LEFT JOIN {tx_taxa} a
+                ON t.accepted_name_usage_id = a.taxon_id
+            WHERE
+                v.vernacular_name ~* {search_term}
+                AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'provisionally accepted')
+                {exclude_species_section}
+        ),
+        deduped AS (
+            SELECT DISTINCT ON (taxon_id)
+                canonical_name,
+                scientific_name_authorship,
+                taxon_id,
+                taxon_rank,
+                us_invasive,
+                taxonomic_status,
+                match_priority
+            FROM matches
+            ORDER BY
+                taxon_id,
+                match_priority
+        )
+        SELECT
+            canonical_name,
+            scientific_name_authorship,
+            taxon_id,
+            taxon_rank,
+            us_invasive,
+            taxonomic_status
+        FROM deduped
         ORDER BY
-            COALESCE(a.taxon_id, t.taxon_id),
-            COALESCE(a.canonical_name, t.canonical_name)
+            match_priority,
+            canonical_name
         LIMIT 10;
     """).format(
         tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
+        vernacular_names=sql.Identifier(VERNACULAR_NAMES_TABLE.name),
         search_term=sql.Literal('\\m' + search_term.lower()),
         exclude_species_section=exclude_species_section
     )
+
     try:
         async with request.app.state.db_pool.connection() as conn:
             results = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []

@@ -153,6 +153,13 @@ _all_indexes = [
         table=TX_TAXA_TABLE,
         clause=sql.SQL('(us_invasive)')
     ),
+    IndexDefinition(
+        name='idx_tx_taxa_canonical_name_trgm',
+        table=TX_TAXA_TABLE,
+        clause=sql.SQL(
+            'USING gin (canonical_name gin_trgm_ops)'
+        )
+    ),
 
     ### INVASIVES TABLE ###
 
