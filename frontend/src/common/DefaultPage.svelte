@@ -86,7 +86,6 @@
         border: none;
     }
     .page-contents {
-        /* height: 100%; */
         display: flex;
         grid-column: 1;
         overflow: hidden;

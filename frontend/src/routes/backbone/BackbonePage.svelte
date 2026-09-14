@@ -487,7 +487,7 @@
         width: fit-content;
         color: var(--text-default);
         border: none;
-        padding: 0;
+        padding: 0 0.5rem 0 0;
         text-align: left;
         display: flex;
         align-items: center;
