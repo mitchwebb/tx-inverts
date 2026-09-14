@@ -1,49 +1,8 @@
 import { taxaTree } from '../contexts/TaxaTree';
 import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
-import type { RawNSValues, RawTaxonInfo, TaxonNodeType } from '../types/api';
-import { deduplicateStringArray } from '../util/deduplicateArray';
+import type { RawNSValues, TaxonInfo } from '../types/api';
 import { serializeFilters } from '../util/requests';
-
-// /**
-//  * Simple request to GBIF API to get common names for a given taxonID
-//  * Filters to English common names from ITIS. Deduplicates using deduplicateStringArray
-//  * @param taxonID
-//  * @returns {string[]} Array of common name strings
-//  */
-// export async function getCommonNames(taxonID: ActiveTaxon['taxonID']) {
-//     const commonNamesURL = `https://api.gbif.org/v1/species/${taxonID}/vernacularNames?limit=100`;
-//     try {
-//         const response = await fetch(commonNamesURL, {
-//             method: 'GET',
-//             headers: { 'Content-Type': 'application/json' },
-//         });
-//         if (!response.ok) {
-//             throw new Error(`Response status: ${response.status}`);
-//         }
-//         const json = await response.json();
-//         // Filter for English common names
-//         // These parameters yield relatively sane results
-//         let englishNames = json.results
-//             .filter(
-//                 (option: {
-//                     language: string;
-//                     source: string;
-//                     country: string;
-//                 }) =>
-//                     (option.language === 'eng' || option.country === 'US') &&
-//                     option.source ===
-//                         'Integrated Taxonomic Information System (ITIS)'
-//             )
-//             .map((option: { vernacularName: string }) => option.vernacularName);
-//         // Deduplicate English names
-//         englishNames = deduplicateStringArray(englishNames);
-//         return englishNames;
-//     } catch (error) {
-//         console.error(error);
-//         return null;
-//     }
-// }
 
 // Get taxon info (triggered by change in taxonContext.activeTaxonID)
 export async function getTaxonInfo(taxonID: ActiveTaxon['taxonID']) {
@@ -57,7 +16,7 @@ export async function getTaxonInfo(taxonID: ActiveTaxon['taxonID']) {
         const detail = result?.detail ?? 'Unknown error';
         throw new Error(detail);
     }
-    return (await response.json()) as RawTaxonInfo;
+    return (await response.json()) as TaxonInfo;
 }
 
 let abortController = new AbortController();
@@ -101,10 +60,10 @@ export async function loadBackbone() {
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
-        const tree: TaxonNodeType[] = await response.json();
+        const tree: TaxonInfo[] = await response.json();
 
         if (tree) {
-            const taxaMap = new Map(tree.map((node) => [node.taxon_id, node]));
+            const taxaMap = new Map(tree.map((node) => [node.taxonID, node]));
             taxaTree.set(taxaMap);
         }
         return;

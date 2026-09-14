@@ -99,8 +99,6 @@
             }
         );
 
-        console.log(getComputedStyle(chartEl).color);
-
         return () => {
             chartInstance?.destroy();
         };

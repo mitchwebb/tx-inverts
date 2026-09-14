@@ -2,7 +2,7 @@
 from backend.db.queries.occurrence import create_occurrence_filter_sql
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
-from backend.db.schema.tx_taxa import TX_TAXA_TABLE, TXTaxaTable
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.vernacular_names import VERNACULAR_NAMES_TABLE
 from backend.models.occurrence import OccurrenceFilters
 from fastapi import Request, APIRouter, HTTPException
@@ -10,7 +10,7 @@ from backend.data_util.execute_psql_query import execute_psql_query
 from backend.models.api import MultiTaxaObsRequestParams
 from psycopg import sql
 from backend.core.logging import api_logger
-from backend.models.taxa import TaxonInfo, TaxonSuggestion, TaxonTreeNode
+from backend.models.taxa import TaxonInfo, TaxonSuggestion
 
 
 taxon_router = APIRouter()
@@ -89,34 +89,38 @@ async def get_taxon_info(taxon_id: str, request: Request) -> TaxonInfo:
 
     Returns:
         TaxonInfo:
-                scientific_name_authorship,
-                canonical_name,
-                accepted_name_usage_id,
-                scientific_name,
-                taxon_rank,
-                us_invasive,
-                taxonomic_status,
-                ns_rank_state,
-                ns_rank_state_no_inat,
+                taxonID,
+                parentNameUsageID,
+                acceptedNameUsageID,
+                scientificNameAuthorship,
+                canonicalName,
+                scientificName,
+                taxonRank,
+                uSInvasive,
+                taxonomicStatus,
+                nSRankState,
+                nSRankStateNoINat,
                 kingdom,
                 phylum,
                 class,
                 "order",
                 family,
-                generic_name,
-                infrageneric_epithet,
-                specific_epithet,
-                infraspecific_epithet,
-                vernacular_names,
+                genericName,
+                infragenericEpithet,
+                specificEpithet,
+                infraspecificEpithet,
+                vernacularNames,
             of retrieved species
     """
 
     try:
         taxon_query = sql.SQL("""
             SELECT
+                t.taxon_id,
+                t.parent_name_usage_id,
+                t.accepted_name_usage_id,
                 t.scientific_name_authorship,
                 t.canonical_name,
-                t.accepted_name_usage_id,
                 t.scientific_name,
                 t.taxon_rank,
                 t.us_invasive,
@@ -165,8 +169,8 @@ async def get_taxon_info(taxon_id: str, request: Request) -> TaxonInfo:
 
 
 # Get flat backbone for frontend (excludes synonyms)
-@taxon_router.get('/get_backbone')
-async def get_backbone(request: Request) -> list[TaxonTreeNode]:
+@taxon_router.get('/get_backbone', response_model=list[TaxonInfo])
+async def get_backbone(request: Request) -> list[TaxonInfo]:
     """
     Get backbone from tx_taxa table (excluding synonyms)
 
@@ -174,7 +178,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
         request (fastapi.Request): FastAPI request object
 
     Returns:
-        list[TaxonTreeNode]:
+        list[TaxonInfo]:
             A list of taxon information, used for creating/navigating/displaying
             taxaTree on frontend
     """
@@ -183,23 +187,25 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
         query = sql.SQL("""
             SELECT
                 taxon_id,
-                taxon_rank,
+                scientific_name_authorship,
                 parent_name_usage_id,
                 accepted_name_usage_id,
                 canonical_name,
                 scientific_name,
-                scientific_name_authorship,
+                NULL as vernacular_names,
+                taxon_rank,
+                us_invasive,
+                taxonomic_status,
                 ns_rank_state,
                 ns_rank_state_no_inat,
-                taxonomic_status,
-                us_invasive,
+                kingdom,
                 phylum,
                 class,
                 "order",
                 family,
                 generic_name,
-                specific_epithet,
                 infrageneric_epithet,
+                specific_epithet,
                 infraspecific_epithet
             FROM {tx_taxa}
             WHERE taxonomic_status IN ('accepted', 'provisionally accepted')
@@ -208,7 +214,7 @@ async def get_backbone(request: Request) -> list[TaxonTreeNode]:
 
         async with request.app.state.db_pool.connection() as conn:
             result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
-        return [TaxonTreeNode(**row) for row in result]
+        return [TaxonInfo(**row) for row in result]
 
     except HTTPException:
         raise

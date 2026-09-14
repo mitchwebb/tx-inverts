@@ -508,9 +508,9 @@
         left: 0;
     }
     .row:first-child {
-        padding-top: 0.5rem;
+        margin-top: 0.5rem;
     }
     .row:last-child {
-        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 </style>

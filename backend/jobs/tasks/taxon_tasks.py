@@ -9,7 +9,6 @@ from backend.data_util.helpers import strip_dwc_column_names
 from backend.data_util.invasives_data import get_invasives_dataset, prep_invasives_dataset
 from backend.data_util.taxa_data import create_canonical_names, inverts_mask
 import backend.data_util.ranking as ns
-# from backend.data_util.taxa_data import build_lineages
 from backend.db.schema.data_metadata import DATA_META_TABLE
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE

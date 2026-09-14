@@ -19,6 +19,7 @@
     import DefaultPage from '../../common/DefaultPage.svelte';
     import type { TaxonomicRank } from '../../types/taxa';
     import InfoButton from '../../common/InfoButton.svelte';
+    import NameAndAuthorship from '../../common/NameAndAuthorship.svelte';
 
     const allowedRanks: TaxonomicRank[] = [
         'kingdom',
@@ -105,7 +106,7 @@
         }
     }
 
-    function openTaxon(taxonID: TaxonNodeType['taxon_id']) {
+    function openTaxon(taxonID: TaxonNodeType['taxonID']) {
         if (openNodes.has(taxonID)) return; // already open, do nothing
 
         const set = new Set(openNodes);
@@ -114,8 +115,8 @@
         while (currentID) {
             set.add(currentID);
             const currentNode = $taxaTree?.get(currentID);
-            if (!currentNode || !currentNode.parent_name_usage_id) break;
-            currentID = currentNode.parent_name_usage_id;
+            if (!currentNode || !currentNode.parentNameUsageID) break;
+            currentID = currentNode.parentNameUsageID;
         }
         openNodes = set;
 
@@ -123,7 +124,7 @@
     }
 
     // Function to slide taxonomic tree window to selected taxon
-    async function moveToTaxon(targetID: TaxonNodeType['taxon_id'] | string) {
+    async function moveToTaxon(targetID: TaxonNodeType['taxonID'] | string) {
         await tick();
 
         const idString = targetID.toString();
@@ -212,7 +213,7 @@
     function taxonIsParent(id: string): boolean {
         if (!$taxaTree) return false;
         for (const node of $taxaTree.values()) {
-            if (node.parent_name_usage_id === id) return true;
+            if (node.parentNameUsageID === id) return true;
         }
         return false;
     }
@@ -226,7 +227,6 @@
                 new Set(allowedRanks)
             );
         }
-        // console.log(visibleNodes);
     });
 
     // Track previous ids to enable automatic opening when new taxon is selected from an outside source
@@ -251,7 +251,7 @@
             visibleNodes.length > 0
         ) {
             const activeNodeExists = visibleNodes.some(
-                (node) => node.taxon_id === lastAddedTaxonID
+                (node) => node.taxonID === lastAddedTaxonID
             );
 
             if (activeNodeExists) {
@@ -295,34 +295,39 @@
             {#each visibleNodes as node, i}
                 <!-- Find parent node index -->
                 {@const parentIndex = visibleNodes.findIndex(
-                    (n) => n.taxon_id === node.effective_parent_id
+                    (n) => n.taxonID === node.effectiveParentID
                 )}
                 <!-- Make sure parent node was found, then get rank index -->
-                {@const parentCol =
+                {@const parentRank =
                     parentIndex >= 0
-                        ? allowedRanks.indexOf(
-                              visibleNodes[parentIndex].taxon_rank
-                          ) + 1
+                        ? visibleNodes[parentIndex].taxonRank
+                        : null}
+                {@const parentCol =
+                    parentRank !== null
+                        ? allowedRanks.indexOf(parentRank) + 1
                         : null}
                 <!-- Get current column -->
-                {@const nodeCol = allowedRanks.indexOf(node.taxon_rank) + 1}
+                {@const nodeCol =
+                    node.taxonRank !== null
+                        ? allowedRanks.indexOf(node.taxonRank) + 1
+                        : 0}
                 <!-- Find offset between current and parent -->
                 {@const offset = parentCol !== null ? nodeCol - parentCol : 0}
                 <!-- Determine if we need a horizontal line -->
                 {@const showHorizontalLine = offset > 0}
                 <!-- Check if node has children -->
-                {@const hasChildren = taxonIsParent(node.taxon_id)}
-                {@const nsRank =
+                {@const hasChildren = taxonIsParent(node.taxonID)}
+                {@const nSRank =
                     filtersContext.includeINat !== false
-                        ? node.ns_rank_state
-                        : node.ns_rank_state_no_inat}
-                {@const italicized = isItalicizedRank(node.taxon_rank)}
+                        ? node.nSRankState
+                        : node.nSRankStateNoINat}
+                {@const italicized = isItalicizedRank(node.taxonRank)}
                 {@const nextColor = taxaContext.getNextColor()}
 
                 <div
                     role="button"
                     tabindex="0"
-                    id={node.taxon_id.toString()}
+                    id={node.taxonID}
                     class="taxon-node-wrapper"
                     style:grid-column={nodeCol}
                     style:grid-row={i + 2}
@@ -335,60 +340,39 @@
                             `${hasChildren ? 'branch' : 'leaf'}`,
                         ]}
                     >
-                        {#if node.us_invasive}
+                        {#if node.uSInvasive}
                             <div class="invasive-icon taxon-icon icon">
                                 <InvasiveIcon />
                             </div>
-                        {:else if node.ns_rank_state && node.taxon_rank == 'species'}
+                        {:else if node.nSRankState && node.taxonRank == 'species'}
                             <div class="rank-circle taxon-icon icon">
                                 <NSCircle
                                     active={true}
-                                    rank={nsRank}
+                                    rank={nSRank}
                                     level="s"
                                 />
                             </div>
                         {/if}
                         {#if hasChildren}
                             <div class="taxon-chevron icon">
-                                {#if openNodes.has(node.taxon_id)}
+                                {#if openNodes.has(node.taxonID)}
                                     <ChevronDown />
                                 {:else}
                                     <ChevronRight />
                                 {/if}
                             </div>
                         {/if}
-                        <span
-                            class="taxon-name"
-                            class:dubious-taxon={node.taxonomic_status ==
-                                'provisionally accepted'}
-                            class:invasive-taxon={node.us_invasive}
-                        >
-                            <span class={[{ italicized }]}>
-                                {node.canonical_name}
-                            </span>
-                            <span class="taxon-authorship"
-                                >{node.scientific_name_authorship ?? null}
-                            </span>
-                            {#if node.taxonomic_status == 'provisionally accepted'}
-                                <InfoButton type="tooltip" hover={true}>
-                                    <span>
-                                        A "provisionally accepted" status marks
-                                        a taxon where more information is
-                                        required to be certain of its validity.
-                                        These taxa are frequently fixed in
-                                        Catalogue of Life updates.
-                                    </span>
-                                </InfoButton>
-                            {/if}
-                        </span>
+                        <div class="name-and-authorship">
+                            <NameAndAuthorship info={node} />
+                        </div>
                     </button>
                     <button
                         class="taxon-select-icon icon"
                         class:active={taxaContext.taxa.ids.some(
-                            (taxonID) => taxonID == node.taxon_id
+                            (taxonID) => taxonID == node.taxonID
                         )}
-                        style:color={taxaContext.taxa.get(node.taxon_id)
-                            ? taxaContext.taxa.get(node.taxon_id)?.color
+                        style:color={taxaContext.taxa.get(node.taxonID)
+                            ? taxaContext.taxa.get(node.taxonID)?.color
                             : nextColor}
                         onclick={setActiveTaxon}
                     >
@@ -408,13 +392,11 @@
 
                 {#if showVerticalLine}
                     {@const siblings = visibleNodes.filter(
-                        (n) =>
-                            n.parent_name_usage_id === node.parent_name_usage_id
+                        (n) => n.parentNameUsageID === node.parentNameUsageID
                     )}
                     {@const isLastChild =
                         siblings.length &&
-                        siblings[siblings.length - 1].taxon_id ===
-                            node.taxon_id}
+                        siblings[siblings.length - 1].taxonID === node.taxonID}
                     {#if isLastChild}
                         <div
                             class="vertical-line"
@@ -461,9 +443,6 @@
     .backbone-disclaimer:hover {
         opacity: 1;
     }
-    .taxon-icon {
-        margin-left: 0.5rem;
-    }
     #taxa-loading-icon {
         margin: 0.5rem;
         color: var(--fill-color);
@@ -475,10 +454,8 @@
         height: 1.5rem;
     }
     .taxon-select-icon {
-        /* color: transparent; */
         background: transparent;
         padding: 0rem;
-        margin-left: 0.5rem;
         flex-shrink: 0;
         visibility: hidden;
     }
@@ -500,11 +477,9 @@
     .spacer-row {
         height: 1rem;
     }
-    .taxon-authorship {
-        font-weight: 200;
-    }
     .taxon-chevron {
         flex-shrink: 0;
+        width: 1.5rem;
     }
     .taxon-node-label {
         position: relative;
@@ -518,6 +493,10 @@
         align-items: center;
         white-space: nowrap;
         padding-top: 4px;
+    }
+    /* TODO: Think about this a little more. This works for spacing but isn't ideal. */
+    .taxon-node-label.leaf > .name-and-authorship {
+        margin: 0 0 0 0.5rem;
     }
     .taxon-node-label.active {
         font-weight: bold;
@@ -569,10 +548,6 @@
         cursor: grab;
         box-sizing: border-box;
         overflow: auto;
-    }
-    .leaf .taxon-name {
-        padding-left: 0.5rem;
-        vertical-align: middle;
     }
 
     .taxon-name > * {

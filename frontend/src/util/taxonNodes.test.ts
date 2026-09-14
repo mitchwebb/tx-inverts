@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import type { TaxonNodeType } from '../types/api';
+import type { TaxonInfo, TaxonNodeType } from '../types/api';
 import {
     getAllChildrenNodes,
     getNestedTree,
@@ -20,9 +20,9 @@ const makeNode = (
     taxonRank: TaxonomicRank
 ): TaxonNodeType =>
     ({
-        taxon_id: id,
-        parent_name_usage_id: parent,
-        taxon_rank: taxonRank,
+        taxonID: id,
+        parentNameUsageID: parent,
+        taxonRank: taxonRank,
     }) as TaxonNodeType;
 
 let flatMap: Map<string, TaxonNodeType>;
@@ -44,33 +44,33 @@ describe('test getNestedTree functionality', () => {
             // Base node
             __root__: [
                 {
-                    parent_name_usage_id: null,
-                    taxon_id: '1',
-                    taxon_rank: 'kingdom',
+                    parentNameUsageID: null,
+                    taxonID: '1',
+                    taxonRank: 'kingdom',
                 },
             ],
             '1': [
                 {
-                    parent_name_usage_id: '1',
-                    taxon_id: '2',
-                    taxon_rank: 'phylum',
+                    parentNameUsageID: '1',
+                    taxonID: '2',
+                    taxonRank: 'phylum',
                 },
                 {
-                    parent_name_usage_id: '1',
-                    taxon_id: '3',
-                    taxon_rank: 'class',
+                    parentNameUsageID: '1',
+                    taxonID: '3',
+                    taxonRank: 'class',
                 },
             ],
             '2': [
                 {
-                    parent_name_usage_id: '2',
-                    taxon_id: '4',
-                    taxon_rank: 'order',
+                    parentNameUsageID: '2',
+                    taxonID: '4',
+                    taxonRank: 'order',
                 },
                 {
-                    parent_name_usage_id: '2',
-                    taxon_id: '5',
-                    taxon_rank: 'family',
+                    parentNameUsageID: '2',
+                    taxonID: '5',
+                    taxonRank: 'family',
                 },
             ],
         };
@@ -88,14 +88,14 @@ describe('test getAllChildrenNodes functionality', () => {
         const childrenNodes = getAllChildrenNodes(flatMap, '2');
         const expectedChildren = [
             {
-                parent_name_usage_id: '2',
-                taxon_id: '4',
-                taxon_rank: 'order',
+                parentNameUsageID: '2',
+                taxonID: '4',
+                taxonRank: 'order',
             },
             {
-                parent_name_usage_id: '2',
-                taxon_id: '5',
-                taxon_rank: 'family',
+                parentNameUsageID: '2',
+                taxonID: '5',
+                taxonRank: 'family',
             },
         ];
         expect(childrenNodes).toEqual(expectedChildren);
@@ -130,7 +130,7 @@ describe('test getVisibleNodes functionality', () => {
             new Set(),
             new Set(allowedRanks)
         );
-        expect(visibleNodes.map((n) => n.taxon_id)).toEqual(['1']);
+        expect(visibleNodes.map((n) => n.taxonID)).toEqual(['1']);
     });
     test('gets basic chain', () => {
         const visibleNodes = getVisibleNodes(
@@ -138,7 +138,7 @@ describe('test getVisibleNodes functionality', () => {
             new Set(['1', '2']),
             new Set(allowedRanks)
         );
-        expect(visibleNodes.map((n) => n.taxon_id)).toEqual(
+        expect(visibleNodes.map((n) => n.taxonID)).toEqual(
             expect.arrayContaining(['1', '2', '3', '4', '5'])
         );
     });
@@ -148,7 +148,7 @@ describe('test getVisibleNodes functionality', () => {
             new Set(['1']),
             new Set(allowedRanks)
         );
-        expect(visible.map((n) => n.taxon_id)).toEqual(
+        expect(visible.map((n) => n.taxonID)).toEqual(
             expect.arrayContaining(['2', '1', '3'])
         );
     });
@@ -158,7 +158,7 @@ describe('test getVisibleNodes functionality', () => {
             new Set(['2']),
             new Set(allowedRanks)
         );
-        expect(visible.map((n) => n.taxon_id)).toEqual(
+        expect(visible.map((n) => n.taxonID)).toEqual(
             expect.arrayContaining(['1'])
         );
     });

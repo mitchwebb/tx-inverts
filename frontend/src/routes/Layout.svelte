@@ -7,7 +7,6 @@
     import HeaderBar from '../components/Header/HeaderBar.svelte';
     import {
         EMPTY_NS_VALUES,
-        EMPTY_TAXON_INFO,
         getActiveTaxaContext,
         initialActiveTaxaState,
         setActiveTaxaContext,
@@ -41,10 +40,8 @@
     import {
         normalizeAPIResponse,
         NS_VALUES_MAP,
-        TAXON_INFO_MAP,
         type NSValues,
         type RegionInfo,
-        type TaxonInfo,
     } from '../types/api';
     import {
         initialSidebarState,
@@ -152,16 +149,12 @@
         taxon.taxonError = false;
 
         // Clear taxonInfo and nSValues in context
-        taxon.info = EMPTY_TAXON_INFO;
+        taxon.info = null;
         taxon.nSValues = EMPTY_NS_VALUES;
         taxon.color = taxaContext.getNextColor();
 
         try {
-            const [rawTaxonInfo] = await Promise.all([getTaxonInfo(taxonID)]);
-            const taxonInfo = normalizeAPIResponse<TaxonInfo>(
-                rawTaxonInfo,
-                TAXON_INFO_MAP
-            );
+            const [taxonInfo] = await Promise.all([getTaxonInfo(taxonID)]);
             taxon.info = taxonInfo;
             taxon.lastLoadedID = taxonID;
         } catch {

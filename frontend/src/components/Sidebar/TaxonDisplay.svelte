@@ -23,7 +23,7 @@
     const isLoading = $derived(activeTaxon.taxonLoading);
 
     const taxonNotAccepted = $derived(
-        activeTaxon.info.taxonomicStatus !== 'accepted'
+        activeTaxon.info?.taxonomicStatus !== 'accepted'
     );
 
     function handleTaxonClose() {
@@ -38,34 +38,34 @@
     ></div>
     <div
         id="main-header-top"
-        class:invasive-taxon={activeTaxon.info.usInvasive}
+        class:invasive-taxon={activeTaxon.info?.uSInvasive}
         class:loading-blink={isLoading}
     >
         {#if activeTaxon.taxonError}
             <div id="taxon-error">Requested Taxon Not Found</div>
         {/if}
         <div id="main-header-name">
-            {#if activeTaxon.info.usInvasive}
+            {#if activeTaxon.info?.uSInvasive}
                 <div class="invasive-icon">
                     <InvasiveIcon />
                 </div>
             {/if}
-            {#if activeTaxon.info.canonicalName}
+            {#if activeTaxon.info?.canonicalName}
                 <span
                     class={'scientific-name'}
                     class:italicized={isItalicizedRank(
-                        activeTaxon.info.taxonRank
+                        activeTaxon.info?.taxonRank
                     )}
                 >
-                    {activeTaxon.info.canonicalName}
+                    {activeTaxon.info?.canonicalName}
                 </span>
             {/if}
-            {#if activeTaxon.info.scientificNameAuthorship}
+            {#if activeTaxon.info?.scientificNameAuthorship}
                 <span class="scientific-authorship thin">
-                    {activeTaxon.info.scientificNameAuthorship}
+                    {activeTaxon.info?.scientificNameAuthorship}
                 </span>
             {/if}
-            {#if activeTaxon.info.canonicalName}
+            {#if activeTaxon.info?.canonicalName}
                 <div class="gbif-link-button">
                     <LinkButton
                         href={`https://www.gbif.org/taxon/${activeTaxon.taxonID}`}
@@ -83,18 +83,18 @@
             <XIcon />
         </button>
     </div>
-    {#if activeTaxon.info.vernacularNames && activeTaxon.info.vernacularNames?.length > 0}
+    {#if activeTaxon.info?.vernacularNames && activeTaxon.info?.vernacularNames?.length > 0}
         <div id="common-names" class="thin">
             {(
                 capitalizeWords(
-                    activeTaxon.info.vernacularNames.slice(0, 3)
+                    activeTaxon.info?.vernacularNames.slice(0, 3)
                 ) as string[]
             ).join(', ')}
         </div>
     {/if}
     <div id="aux-taxon-text">
-        {#if activeTaxon.info.taxonomicStatus && taxonNotAccepted}
-            {@const taxonomicStatus = activeTaxon.info.taxonomicStatus}
+        {#if activeTaxon.info?.taxonomicStatus && taxonNotAccepted}
+            {@const taxonomicStatus = activeTaxon.info?.taxonomicStatus}
             <div class="taxonomic-status-text dubious-taxon">
                 <span>
                     Taxon Status: {capitalizeWords(taxonomicStatus)}
@@ -117,9 +117,9 @@
                 {/if}
             </div>
         {/if}
-        {#if activeTaxon.info.taxonRank}
+        {#if activeTaxon.info?.taxonRank}
             <span id="taxon-rank" class="thin">
-                {activeTaxon.info.taxonRank}
+                {activeTaxon.info?.taxonRank}
             </span>
         {/if}
     </div>

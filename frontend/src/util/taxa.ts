@@ -1,9 +1,11 @@
 import { italicizedRanks, type ItalicizedRank } from '../constants/taxa';
-import type { TaxonNodeType } from '../types/api';
+import type { TaxonInfo } from '../types/api';
 import type { TaxonomicRank } from '../types/taxa';
 
 // Helper function to check if a provided value is a member of italicizedRanks
-export function isItalicizedRank(value: unknown): value is ItalicizedRank {
+export function isItalicizedRank(
+    value: TaxonomicRank | null
+): value is ItalicizedRank {
     return (
         typeof value === 'string' &&
         italicizedRanks.includes(value.toLowerCase() as ItalicizedRank)
@@ -11,25 +13,25 @@ export function isItalicizedRank(value: unknown): value is ItalicizedRank {
 }
 
 export function constructItalicizedName(
-    taxonNode: TaxonNodeType
+    taxonNode: TaxonInfo
 ): string | undefined {
-    const rank = taxonNode.taxon_rank;
+    const rank = taxonNode.taxonRank;
     if (!isItalicizedRank(rank)) return;
 
-    let nameString = taxonNode.generic_name || '';
+    let nameString = taxonNode.genericName || '';
 
     switch (rank) {
         case 'genus':
             break;
         case 'subgenus':
-            nameString += ` (${taxonNode.infrageneric_epithet})`;
+            nameString += ` (${taxonNode.infragenericEpithet})`;
             break;
         case 'species':
-            nameString += ` ${taxonNode.specific_epithet}`;
+            nameString += ` ${taxonNode.specificEpithet}`;
             break;
         case 'subspecies':
-            nameString += ` ${taxonNode.specific_epithet}`;
-            nameString += ` ${taxonNode.infraspecific_epithet}`;
+            nameString += ` ${taxonNode.specificEpithet}`;
+            nameString += ` ${taxonNode.infraspecificEpithet}`;
             break;
     }
     return nameString;

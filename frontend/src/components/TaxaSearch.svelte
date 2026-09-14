@@ -1,15 +1,12 @@
 <script lang="ts">
     import InvasiveIcon from '../common/InvasiveIcon.svelte';
+    import NameAndAuthorship from '../common/NameAndAuthorship.svelte';
     import SearchSuggestBar from '../common/SearchSuggestBar.svelte';
     import {
         getActiveTaxaContext,
         initialTaxonState,
     } from '../contexts/activeTaxaContext';
-    import type {
-        RawTaxonSearchSuggestion,
-        TaxonSearchSuggestion,
-    } from '../types/api';
-    import { isItalicizedRank } from '../util/taxa';
+    import type { TaxonSearchSuggestion } from '../types/api';
 
     type TaxaSearchProps = {
         placeholder?: string | null;
@@ -61,15 +58,7 @@
             // Ending loading
             isLoading = false;
             const json = await response.json();
-            suggestions = json.map((result: RawTaxonSearchSuggestion) => {
-                return {
-                    scientificName: result.scientific_name,
-                    canonicalName: result.canonical_name,
-                    taxonID: result.taxon_id,
-                    taxonRank: result.taxon_rank,
-                    usInvasive: result.us_invasive,
-                };
-            });
+            suggestions = json;
         } catch (error) {
             console.error(error);
         }
@@ -92,25 +81,16 @@
 </script>
 
 {#snippet row(suggestion: TaxonSearchSuggestion)}
-    {@const italicized = isItalicizedRank(suggestion.taxonRank)}
     <div
         class="taxon-suggestion-wrapper"
-        class:invasive-taxon={suggestion.usInvasive}
+        class:invasive-taxon={suggestion.uSInvasive}
     >
         <div title={suggestion.canonicalName} class="scientific-name-wrapper">
-            <span class={['scientific-name', { italicized }]}>
-                {suggestion.canonicalName}
-            </span>
-            <span class="authorship">
-                {suggestion.scientificNameAuthorship}
-            </span>
-            {#if suggestion.usInvasive}
+            <NameAndAuthorship info={suggestion} />
+            {#if suggestion.uSInvasive}
                 <div class="invasive-icon icon">
                     <InvasiveIcon />
                 </div>
-            {/if}
-            {#if suggestion.taxonomicStatus != 'accepted'}
-                <span>{suggestion.taxonomicStatus}</span>
             {/if}
         </div>
         <div class="taxon-rank">
@@ -144,19 +124,13 @@
         height: 1.5rem;
         width: 1.5rem;
     }
-    .scientific-name {
-        min-width: 0;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-    }
     .scientific-name-wrapper {
         display: flex;
         align-items: center;
         white-space: nowrap;
         flex-shrink: 1;
         overflow: hidden;
-        /* display: block; */
+        gap: 0.25rem;
     }
     .taxon-rank {
         opacity: 0.5;

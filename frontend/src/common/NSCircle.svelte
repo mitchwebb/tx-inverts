@@ -15,9 +15,9 @@
         rank: NSRank;
     };
 
-    let { active, level, rank, activeFilters }: CircleProps = $props();
+    let { active, rank, activeFilters }: CircleProps = $props();
 
-    type NSRankKeyItem = (typeof nSRankKey)[number];
+    type nSRankKeyItem = (typeof nSRankKey)[number];
 
     class UnknownNSRankError extends Error {
         constructor(rank: string | null) {
@@ -27,7 +27,7 @@
     }
 
     // Get rank attributes from key
-    const { color, description } = $derived.by<NSRankKeyItem>(() => {
+    const { color, description } = $derived.by<nSRankKeyItem>(() => {
         const rankProps = nSRankKey.find((row) => row.rank === rank);
         if (!rankProps) throw new UnknownNSRankError(rank);
         return rankProps;

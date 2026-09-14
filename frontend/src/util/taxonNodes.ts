@@ -17,14 +17,14 @@ export function getVisibleNodes(
         const promoted: TaxonNodeType[] = [];
 
         for (const child of childrenByParent[parentID] || []) {
-            if (allowedRanks.has(child.taxon_rank)) {
+            if (child.taxonRank !== null && allowedRanks.has(child.taxonRank)) {
                 promoted.push({
                     ...child,
-                    effective_parent_id: effectiveParentID,
+                    effectiveParentID: effectiveParentID,
                 });
             } else {
                 collectPromotedChildren(
-                    child.taxon_id,
+                    child.taxonID,
                     effectiveParentID,
                     promoted
                 );
@@ -34,11 +34,11 @@ export function getVisibleNodes(
         // Sort nodes alphabetically, putting nulls at the end
         function sortNodes(nodes: TaxonNodeType[]): TaxonNodeType[] {
             return nodes.sort((a, b) => {
-                if (a.canonical_name == null) return 1;
-                if (b.canonical_name == null) return -1;
+                if (a.canonicalName == null) return 1;
+                if (b.canonicalName == null) return -1;
 
-                return a.canonical_name.localeCompare(
-                    b.canonical_name,
+                return a.canonicalName.localeCompare(
+                    b.canonicalName,
                     undefined,
                     { sensitivity: 'base' }
                 );
@@ -48,8 +48,8 @@ export function getVisibleNodes(
         // Now sort visible nodes
         for (const child of sortNodes(promoted)) {
             visible.push(child);
-            if (openSet.has(child.taxon_id)) {
-                addChildren(child.taxon_id, child.taxon_id);
+            if (openSet.has(child.taxonID)) {
+                addChildren(child.taxonID, child.taxonID);
             }
         }
 
@@ -59,14 +59,17 @@ export function getVisibleNodes(
             result: TaxonNodeType[]
         ) {
             for (const child of childrenByParent[parentID] || []) {
-                if (allowedRanks.has(child.taxon_rank)) {
+                if (
+                    child.taxonRank !== null &&
+                    allowedRanks.has(child.taxonRank)
+                ) {
                     result.push({
                         ...child,
-                        effective_parent_id: effectiveParentID,
+                        effectiveParentID: effectiveParentID,
                     });
                 } else {
                     collectPromotedChildren(
-                        child.taxon_id,
+                        child.taxonID,
                         effectiveParentID,
                         result
                     );
@@ -89,7 +92,7 @@ export function getNestedTree(
     // Group nodes by parent_id
     for (const node of flatMap.values()) {
         // Get parentID from parent_name_usage_id column
-        let parentID = node.parent_name_usage_id;
+        let parentID = node.parentNameUsageID;
 
         // If there is no parentID, or the parentID isn't present in our tree, mark the parentID as 'root'
         parentID = parentID && flatMap.has(parentID) ? parentID : '__root__';
@@ -114,7 +117,7 @@ export function getAllChildrenNodes(
         const children = childrenByParent[id] || [];
         for (const child of children) {
             result.push(child);
-            dfs(child.taxon_id);
+            dfs(child.taxonID);
         }
     }
 

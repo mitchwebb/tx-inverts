@@ -15,9 +15,9 @@ export type TaxonSearchSuggestion = {
     scientificName: string | null;
     scientificNameAuthorship: string | null;
     canonicalName: string | null;
-    taxonID: string | null;
+    taxonID: string;
     taxonRank: TaxonomicRank | null;
-    usInvasive: boolean | null;
+    uSInvasive: boolean | null;
     taxonomicStatus: TaxonomicStatus | null;
 };
 
@@ -49,29 +49,9 @@ export const NS_VALUES_MAP = {
     observation_count: 'observationCount',
 } as const;
 
-export type RawTaxonInfo = {
-    accepted_name_usage_id: string | null;
-    canonical_name: string | null;
-    scientific_name: string | null;
-    scientific_name_authorship: string | null;
-    vernacular_names: string[] | null;
-    taxon_rank: TaxonomicRank | null;
-    kingdom: string | null;
-    phylum: string | null;
-    class: string | null;
-    order: string | null;
-    family: string | null;
-    generic_name: string | null;
-    infrageneric_epithet: string | null;
-    specific_ephitet: string | null;
-    infraspecific_ephitet: string | null;
-    us_invasive: boolean | null;
-    taxonomic_status: TaxonomicStatus | null;
-    ns_rank_state: NSRank | null;
-    ns_rank_state_no_inat: NSRank | null;
-} | null;
-
 export type TaxonInfo = {
+    taxonID: string;
+    parentNameUsageID: string;
     acceptedNameUsageID: string | null;
     canonicalName: string | null;
     scientificName: string | null;
@@ -85,38 +65,17 @@ export type TaxonInfo = {
     family: string | null;
     genericName: string | null;
     infragenericEpithet: string | null;
-    specificEphitet: string | null;
+    specificEpithet: string | null;
     infraspecificEpithet: string | null;
-    usInvasive: boolean | null;
+    uSInvasive: boolean | null;
     taxonomicStatus: TaxonomicStatus | null;
-    nSRankDB: NSRank | null; // NS Rank from Database
-    nSRankDBNoINat: NSRank | null; // NS Rank from Database without iNat
-
-    // // Locally calculated rank (derived from nSValues)
-    // nSRankLocal: NSRank | null;
+    nSRankState: NSRank | null; // NS Rank from Database
+    nSRankStateNoINat: NSRank | null; // NS Rank from Database without iNat
 };
 
-export const TAXON_INFO_MAP = {
-    accepted_name_usage_id: 'acceptedNameUsageID',
-    canonical_name: 'canonicalName',
-    scientific_name: 'scientificName',
-    scientific_name_authorship: 'scientificNameAuthorship',
-    vernacular_names: 'vernacularNames',
-    taxon_rank: 'taxonRank',
-    kingdom: 'kingdom',
-    phylum: 'phylum',
-    class: 'class',
-    order: 'order',
-    family: 'family',
-    generic_name: 'genericName',
-    infrageneric_epithet: 'infragenericEpithet',
-    specific_epithet: 'specificEphitet',
-    infraspecific_epithet: 'infraspecificEpithet',
-    us_invasive: 'usInvasive',
-    taxonomic_status: 'taxonomicStatus',
-    ns_rank_state: 'nSRankDB',
-    ns_rank_state_no_inat: 'nSRankDBNoINat',
-} as const;
+export type TaxonNodeType = TaxonInfo & {
+    effectiveParentID?: string | null; // Used to point to the effective parent in a visual hierarchy
+};
 
 export type RawRegionInfo = {
     id: string;
@@ -149,31 +108,6 @@ export function normalizeAPIResponse<T extends Record<string, any>>(
 
     return out as T;
 }
-
-// We're gonna have to keep these looking RAW in order to prevent renaming
-// tens of thousands of keys
-export type TaxonNodeType = {
-    taxon_id: string;
-    parent_name_usage_id: string;
-    effective_parent_id: string | null;
-    accepted_name_usage_id: string | null;
-    taxon_rank: TaxonomicRank;
-    canonical_name: string | null;
-    scientific_name: string | null;
-    scientific_name_authorship: string | null;
-    ns_rank_state: NSRank | null;
-    ns_rank_state_no_inat: NSRank | null;
-    taxonomic_status: TaxonomicStatus;
-    phylum: string | null;
-    class: string | null;
-    order: string | null;
-    family: string | null;
-    generic_name: string | null;
-    infrageneric_epithet: string | null;
-    specific_epithet: string | null;
-    infraspecific_epithet: string | null;
-    us_invasive: boolean | null;
-};
 
 export type RawDateRange = {
     min_date: string;

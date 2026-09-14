@@ -28,7 +28,7 @@
     const higherTaxaActive = $derived(
         taxaContext.taxa.ids.some((id) => {
             const taxon = taxaContext.taxa.get(id);
-            const taxonRank = taxon?.info.taxonRank;
+            const taxonRank = taxon?.info?.taxonRank;
             return taxonRank && !['species', 'subspecies'].includes(taxonRank);
         })
     );
@@ -48,9 +48,9 @@
             <div id="taxon-cards-wrapper">
                 {#each taxaContext.taxa.items as taxon}
                     {@const taxonInfo = taxon.info}
-                    {@const taxonRank = taxonInfo.taxonRank}
+                    {@const taxonRank = taxonInfo?.taxonRank}
                     {@const isItalicized = isItalicizedRank(
-                        taxonInfo.taxonRank
+                        taxonInfo?.taxonRank || null
                     )}
                     <!-- If excluding species, leave out species and subspecies cards -->
                     {#if !excludeSpecies || (taxonRank && !['species', 'subspecies'].includes(taxonRank))}
@@ -63,12 +63,12 @@
                                 {/if}
                                 <div class="filtered-taxon-name">
                                     <span class:italicized={isItalicized}
-                                        >{taxonInfo.canonicalName}</span
+                                        >{taxonInfo?.canonicalName}</span
                                     >
                                     <span
                                         class="filtered-taxon-authorship thin"
                                     >
-                                        {taxon.info.scientificNameAuthorship}
+                                        {taxonInfo?.scientificNameAuthorship}
                                     </span>
                                 </div>
                             </div>

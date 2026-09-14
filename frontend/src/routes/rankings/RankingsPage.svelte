@@ -4,7 +4,7 @@
         initialTaxonState,
     } from '../../contexts/activeTaxaContext';
     import { taxaTree } from '../../contexts/TaxaTree';
-    import { type TaxonNodeType } from '../../types/api';
+    import { type TaxonInfo } from '../../types/api';
     import { isItalicizedRank } from '../../util/taxa';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import NSCircle from '../../common/NSCircle.svelte';
@@ -19,6 +19,8 @@
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
     import { getRankingsContext } from '../../contexts/rankingsContext';
     import { openModal } from '../../lib/modal.svelte';
+    import NameAndAuthorship from '../../common/NameAndAuthorship.svelte';
+    import type { Snippet } from 'svelte';
 
     const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
@@ -26,26 +28,32 @@
     const rankingsContext = getRankingsContext();
 
     // All taxa return from current filters, to be shown in list
-    let filteredTaxaNodes: TaxonNodeType[] = $state([]);
+    let filteredTaxaNodes: TaxonInfo[] = $state([]);
 
     const ranksLoading: boolean = $derived(
         rankingsContext.ranksLoading || !$taxaTree
     );
 
+    type TableHeaderType = {
+        label: string | Snippet;
+        info?: string;
+        sortKey: keyof TaxonInfo;
+    };
+
     // Define headers/sort-keys for virtualized rankings table
-    const tableHeaders = $derived([
+    const tableHeaders: TableHeaderType[] = $derived([
         {
             label: iNatLabel,
             info: 'The rankings in this column use a 4km² grid cell, minimum collection year of 1800, and maximum 1000m uncertainty radius. Aside from toggling iNaturalist data, they do not respond to further filtering.',
             sortKey: filtersContext.includeINat
-                ? 'ns_rank_state'
-                : 'ns_rank_state_no_inat',
+                ? 'nSRankState'
+                : 'nSRankStateNoINat',
         },
-        { label: 'Name', sortKey: 'canonical_name' },
+        { label: 'Name', sortKey: 'canonicalName' },
         { label: 'Class', sortKey: 'class' },
         { label: 'Order', sortKey: 'order' },
         { label: 'Family', sortKey: 'family' },
-        { label: 'Genus', sortKey: 'genus' },
+        { label: 'Genus', sortKey: 'genericName' },
     ]);
 
     function handleTaxonSelect(e: MouseEvent) {
@@ -103,14 +111,14 @@
                 const taxon = $taxaTree.get(taxaContext.taxa.ids[0]);
                 if (
                     !taxon ||
-                    ['species', 'subspecies'].includes(taxon.taxon_rank)
+                    ['species', 'subspecies'].includes(taxon.taxonRank || '')
                 ) {
                     filterTaxaIDs = ['N'];
-                    scrollToTaxonID = taxon?.taxon_id;
+                    scrollToTaxonID = taxon?.taxonID;
                     break;
                 }
                 // Else, filter to taxa
-                filterTaxaIDs = [taxon.taxon_id];
+                filterTaxaIDs = [taxon.taxonID];
                 break;
             }
             // If more than one active taxonID
@@ -132,7 +140,7 @@
                 filterTaxaIDs = taxaContext.taxa.ids;
                 // If any taxa are species/subspecies, scroll to latest (last in list)
                 for (const taxonID of taxaContext.taxa.ids) {
-                    const taxonRank = $taxaTree.get(taxonID)?.taxon_rank;
+                    const taxonRank = $taxaTree.get(taxonID)?.taxonRank;
                     if (
                         taxonRank &&
                         ['species', 'subspecies'].includes(taxonRank)
@@ -146,29 +154,27 @@
         let activeRanks = filtersContext.nSRanks;
 
         // Determine which rank we need (for filtering)
-        const relevantRank: Partial<keyof TaxonNodeType> =
-            filtersContext.includeINat
-                ? 'ns_rank_state'
-                : 'ns_rank_state_no_inat';
+        const relevantRank: Partial<keyof TaxonInfo> =
+            filtersContext.includeINat ? 'nSRankState' : 'nSRankStateNoINat';
 
-        const filteredMap = new Map<string, TaxonNodeType>();
+        const filteredMap = new Map<string, TaxonInfo>();
 
         for (const taxonID of filterTaxaIDs.map(String)) {
             const parentNode = $taxaTree.get(taxonID);
 
             if (!parentNode) continue;
 
-            filteredMap.set(parentNode.taxon_id, parentNode);
+            filteredMap.set(parentNode.taxonID, parentNode);
 
             const children = getAllChildrenNodes($taxaTree, taxonID);
             for (const child of children) {
-                filteredMap.set(child.taxon_id, child);
+                filteredMap.set(child.taxonID, child);
             }
         }
 
-        // Get new taxa nodes from filtereMap (only species)
-        let newTaxa = Array.from(filteredMap.values()).filter((taxonNode) =>
-            ['species'].includes(taxonNode.taxon_rank)
+        // Get new taxa nodes from filteredMap (only species)
+        let newTaxa = Array.from(filteredMap.values()).filter(
+            (taxonNode) => taxonNode.taxonRank === 'species'
         );
 
         // Filter to activeRanks
@@ -182,16 +188,14 @@
         if (qualifiedTaxonIDs) {
             const qualifiedSet = new Set(qualifiedTaxonIDs);
             newTaxa = newTaxa.filter((taxonNode) =>
-                qualifiedSet.has(taxonNode.taxon_id)
+                qualifiedSet.has(taxonNode.taxonID)
             );
         }
 
         filteredTaxaNodes = newTaxa;
 
         // Send ids to context to have a running list of table taxa
-        rankingsContext.visibleTaxonIDs = newTaxa.map(
-            (taxon) => taxon.taxon_id
-        );
+        rankingsContext.visibleTaxonIDs = newTaxa.map((taxon) => taxon.taxonID);
     });
 
     function handleDownloadButton() {
@@ -245,29 +249,28 @@
                     indexCol={'taxon_id'}
                     onSort={handleSort}
                     defaultSortKey={rankingsContext.currSortKey ||
-                        'canonical_name'}
+                        'canonicalName'}
                     defaultAscending={rankingsContext.sortAscending}
                 >
-                    {#snippet row(taxon: TaxonNodeType)}
-                        {@const nsRank =
+                    {#snippet row(taxon: TaxonInfo)}
+                        {@const nSRank =
                             filtersContext.includeINat !== false
-                                ? taxon.ns_rank_state
-                                : taxon.ns_rank_state_no_inat}
-                        {@const italicized = isItalicizedRank(taxon.taxon_rank)}
-                        {@const taxonID = taxon.taxon_id}
+                                ? taxon.nSRankState
+                                : taxon.nSRankStateNoINat}
+                        {@const taxonID = taxon.taxonID}
                         {@const activeTaxa = taxaContext.taxa}
                         {@const activeTaxaIDs = taxaContext.taxa.ids}
                         {@const nextColor = taxaContext.getNextColor()}
                         <div class="taxon-icon-wrapper centered">
-                            {#if taxon.us_invasive}
+                            {#if taxon.uSInvasive}
                                 <div class="invasive-icon taxon-icon icon">
                                     <InvasiveIcon />
                                 </div>
-                            {:else if taxon.ns_rank_state}
+                            {:else if taxon.nSRankState}
                                 <div class="rank-circle taxon-icon icon">
                                     <NSCircle
                                         active={true}
-                                        rank={nsRank}
+                                        rank={nSRank}
                                         level="s"
                                     />
                                 </div>
@@ -275,16 +278,11 @@
                         </div>
                         <div
                             class="taxon-name-wrapper left-align"
-                            class:invasive-taxon={taxon.us_invasive}
+                            class:invasive-taxon={taxon.uSInvasive}
+                            class:dubious-taxon={taxon.taxonomicStatus !==
+                                'accepted'}
                         >
-                            <span class="taxon-name">
-                                <span class={[{ italicized }]}>
-                                    {taxon.canonical_name}
-                                </span>
-                                <span class="taxon-authorship"
-                                    >{taxon.scientific_name_authorship ?? null}
-                                </span>
-                            </span>
+                            <NameAndAuthorship info={taxon} />
                             <button
                                 class="taxon-select-icon icon"
                                 class:active={activeTaxaIDs.some(
@@ -294,7 +292,7 @@
                                     ? activeTaxa.get(taxonID)?.color
                                     : nextColor}
                                 onclick={handleTaxonSelect}
-                                data-taxon-id={taxonID.toString()}
+                                data-taxon-id={taxonID}
                             >
                                 <MagnifyIcon />
                             </button>
@@ -309,7 +307,7 @@
                             {taxon.family}
                         </div>
                         <div class="taxon-rank-label">
-                            {taxon.generic_name}
+                            {taxon.genericName}
                         </div>
                     {/snippet}
                 </VirtualizedTable>
@@ -404,9 +402,6 @@
     .taxon-name {
         text-overflow: ellipsis;
         overflow: hidden;
-    }
-    .taxon-authorship {
-        font-weight: 200;
     }
     /* Never hide icons when on mobile device */
     @media (hover: none) {

@@ -3,9 +3,7 @@
     import EyeOn from '../../assets/EyeOn.svelte';
     import NSScale from '../../common/NSScale.svelte';
     import { getMapContext } from '../../contexts/mapContext';
-    import {
-        type ActiveTaxon,
-    } from '../../contexts/activeTaxaContext';
+    import { type ActiveTaxon } from '../../contexts/activeTaxaContext';
     import { nSRankKey } from '../../constants/natureServe';
     import { handleLayerToggle } from '../../util/handleMapLayerToggle';
     import NSCircle from '../../common/NSCircle.svelte';
@@ -55,16 +53,16 @@
             : nSValues?.areaOfOccupancy1Km2Bins
     );
 
-    // Update nSRankLocal on nSValue changes
+    // Update local rank on nSValue changes
     const localRank = $derived(deriveLocalRank());
 
     // As long as we're not using it anywhere else, the local nSRank can live
     // in this component
     function deriveLocalRank() {
         if (
-            activeTaxon &&
-            activeTaxon.info.taxonRank &&
-            ['species', 'subspecies'].includes(activeTaxon.info.taxonRank)
+            ['species', 'subspecies'].includes(
+                activeTaxon?.info?.taxonRank ?? ''
+            )
         ) {
             if (
                 aOOValue !== null &&
@@ -73,7 +71,7 @@
             ) {
                 const localRank = calculateNSRank(
                     nSValues.numberOfOccurrences,
-                    nSValues.rangeExtentKm2,
+                    nSValues.rangeExtentKm2
                 );
                 return localRank;
             } else {
@@ -89,8 +87,8 @@
     const rank = $derived(
         localRank ||
             (filtersContext.includeINat
-                ? activeTaxon.info.nSRankDB
-                : activeTaxon.info.nSRankDBNoINat)
+                ? activeTaxon.info?.nSRankState
+                : activeTaxon.info?.nSRankStateNoINat)
     );
 
     // According to IUCN, rangeExtent should be at LEAST areaOfOccupancy,
@@ -138,7 +136,7 @@
     bannerText={filtersActive ? 'Using Filtered Data' : undefined}
 >
     {#snippet closedDisplay()}
-        {#if rank && !activeTaxon.info.usInvasive}
+        {#if rank && !activeTaxon.info?.uSInvasive}
             <div>
                 <NSCircle
                     activeFilters={filtersActive}
@@ -150,7 +148,7 @@
         {/if}
     {/snippet}
     <div class="ns-section">
-        {#if rank && !activeTaxon.info.usInvasive}
+        {#if rank && !activeTaxon.info?.uSInvasive}
             <div id="rank-text" class="centered-text">
                 <span>
                     {nSRankKey.find((item) => item.rank === rank)?.description}

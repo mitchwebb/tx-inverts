@@ -14,7 +14,7 @@ export type ActiveTaxon = {
     nSValuesLoading: boolean;
     lastLoadedID: string | null;
     taxonID: string;
-    info: TaxonInfo;
+    info: TaxonInfo | null;
     nSValues: NSValues;
     datasetCounts: Record<string, number> | null;
     dateMin: Date | null;
@@ -31,29 +31,6 @@ export const EMPTY_NS_VALUES: NSValues = {
     observationCount: null,
 };
 
-// Default state for taxon_info (used for resetting)
-export const EMPTY_TAXON_INFO: TaxonInfo = {
-    acceptedNameUsageID: null,
-    canonicalName: null,
-    scientificName: null,
-    vernacularNames: null,
-    taxonRank: null,
-    scientificNameAuthorship: null,
-    kingdom: null,
-    phylum: null,
-    class: null,
-    order: null,
-    family: null,
-    genericName: null,
-    infragenericEpithet: null,
-    specificEphitet: null,
-    infraspecificEpithet: null,
-    usInvasive: null,
-    taxonomicStatus: null,
-    nSRankDB: null,
-    nSRankDBNoINat: null,
-};
-
 export const initialTaxonState: ActiveTaxon = {
     taxonID: '', // Placeholder
     color: 'orange',
@@ -64,7 +41,7 @@ export const initialTaxonState: ActiveTaxon = {
     datasetCountsLoading: false,
     nSValuesLoading: false,
     lastLoadedID: null,
-    info: EMPTY_TAXON_INFO, // Values retrieved from get_taxon_info call
+    info: null, // Values retrieved from get_taxon_info call
     nSValues: {
         numberOfOccurrences: null,
         areaOfOccupancy4Km2Bins: null,

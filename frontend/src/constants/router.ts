@@ -89,7 +89,7 @@ export const routerSyncedKeys = {
             taxa: {
                 param: 'taxon',
                 codec: collectionObjectURLCodec() as URLParamCodec<
-                    ReturnType<typeof makeIDCollection<ActiveTaxon, number>>
+                    ReturnType<typeof makeIDCollection<ActiveTaxon, string>>
                 >,
             },
         }),

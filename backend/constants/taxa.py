@@ -1,7 +1,41 @@
 # Taxa-related constants
-from typing import Literal
+from typing import List, Literal
 
-TAXON_RANK_ORDER = [
+type TaxonomicRank = Literal[
+    'kingdom',
+    'phylum',
+    'subphylum',
+    'superclass',
+    'class',
+    'subclass',
+    'infraclass',
+    'subterclass',
+    'superorder',
+    'order',
+    'suborder',
+    'infraorder',
+    'parvorder',
+    'nanorder',
+    'section zoology',
+    'subsection zoology',
+    'superfamily',
+    'epifamily',
+    'series zoology',
+    'family',
+    'subfamily',
+    'supertribe',
+    'tribe',
+    'subtribe',
+    'infratribe',
+    'genus',
+    'subgenus',
+    'species',
+    'subspecies',
+    'variety',
+    'form'
+]
+
+TAXON_RANK_ORDER: List[TaxonomicRank] = [
     'kingdom',
     'phylum',
     'subphylum',
@@ -49,30 +83,6 @@ KEYED_TAXON_RANK_ORDER = [
     'genus',
     'subgenus',
     'species',
-]
-
-type TaxonomicRank = Literal[
-    'kingdom',
-    'phylum',
-    'subphylum',
-    'class',
-    'subclass',
-    'superorder',
-    'order',
-    'suborder',
-    'infraorder',
-    'superfamily',
-    'family',
-    'subfamily',
-    'tribe',
-    'subtribe',
-    'genus',
-    'subgenus',
-    'species',
-    'subspecies',
-    'infraspecific_name',
-    'variety',
-    'form',
 ]
 
 RANK_COLS = [f'{r}_key' for r in KEYED_TAXON_RANK_ORDER]
