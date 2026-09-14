@@ -159,8 +159,9 @@ class TestTaxonSearchSuggest:
         results = response.json()
 
         # Test that there are results and that all results contain our search term in the canonical name
+        print(results)
         assert len(results) > 0
-        assert all(search_term in r['canonical_name'].lower() for r in results)
+        assert all(search_term in r['canonicalName'].lower() for r in results)
 
     @pytest.mark.asyncio
     async def test_search_excludes_species(self, setup_gbif_schema, simple_tx_taxa, client):
@@ -177,8 +178,8 @@ class TestTaxonSearchSuggest:
 
         # Test that there are results and that no results are 'species' or 'subspecies'
         assert len(results) > 0
-        assert all('species' not in r['taxon_rank'] for r in results)
-        assert all('subspecies' not in r['taxon_rank'] for r in results)
+        assert all('species' not in r['taxonRank'] for r in results)
+        assert all('subspecies' not in r['taxonRank'] for r in results)
 
     @pytest.mark.asyncio
     async def test_search_corrects_synonyms(self, setup_gbif_schema, simple_tx_taxa, client):
@@ -195,7 +196,7 @@ class TestTaxonSearchSuggest:
 
         # Our fake synonym gets resolved to its accepted_name_usage_id taxon
         assert len(results) == 1
-        assert results[0]['taxon_id'] == '9999999'
+        assert results[0]['taxonID'] == '9999999'
 
     @pytest.mark.asyncio
     async def test_ignore_mid_string_search(self, setup_gbif_schema, simple_tx_taxa, client):
@@ -224,7 +225,7 @@ class TestTaxonSearchSuggest:
 
         # Should return result for searched taxon resolved to higher taxon
         assert len(results) == 1
-        assert results[0]['taxon_id'] == '1323108'
+        assert results[0]['taxonID'] == '1323108'
 
 
 class TestGetTaxonInfo:
@@ -234,8 +235,8 @@ class TestGetTaxonInfo:
 
         assert response.status_code == 200
         result = response.json()
-        assert result['canonical_name'] == 'Atta texana'
-        assert result['taxon_rank'] == 'species'
+        assert result['canonicalName'] == 'Atta texana'
+        assert result['taxonRank'] == 'species'
 
     @pytest.mark.asyncio
     async def test_missing_taxon_returns_404(self, setup_gbif_schema, simple_tx_taxa, client):
@@ -252,7 +253,7 @@ class TestGetBackbone:
         assert response.status_code == 200
 
         results = response.json()
-        canonical_names = [r['canonical_name'] for r in results]
+        canonical_names = [r['canonicalName'] for r in results]
 
         # Synonyms excluded entirely
         assert 'Trachymyrmex cowboyii' not in canonical_names
@@ -265,7 +266,7 @@ class TestGetBackbone:
         assert 'Madeitupidae' in canonical_names
 
         # taxonomic_status is never 'synonym'
-        assert all(r['taxonomic_status'] != 'synonym' for r in results)
+        assert all(r['taxonomicStatus'] != 'synonym' for r in results)
 
 
 class TestGetQualifiedTaxa:

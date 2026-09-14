@@ -508,6 +508,9 @@ async def fill_vernacular_names_table(conn: AsyncConnection, fp: str):
             }
         )
 
+        # Filter dataframe to spanish and english results only
+        df = df[df['language'].isin(['spa', 'eng'])]
+
         columns = VERNACULAR_NAMES_TABLE.column_order()
         # Enforce exact subset (in case there are ever additional)
         df = df[columns]

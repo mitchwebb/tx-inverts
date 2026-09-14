@@ -408,10 +408,6 @@
     .taxon-select-icon.active {
         visibility: visible;
     }
-    .taxon-name {
-        text-overflow: ellipsis;
-        overflow: hidden;
-    }
     /* Never hide icons when on mobile device */
     @media (hover: none) {
         .taxon-select-icon {
