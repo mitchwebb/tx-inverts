@@ -1,12 +1,13 @@
 import pandas as pd
 import pytest
-from backend.jobs.tasks.taxon_tasks import update_ns_ranks, fill_invasives_table, update_invasives, _ensure_rank_columns, _replace_backbone, update_backbone
+from backend.jobs.tasks.taxon_tasks import update_ns_ranks, fill_invasives_table, update_invasives, _ensure_rank_columns, _replace_backbone, update_backbone, fill_vernacular_names_table
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
+from backend.db.schema.vernacular_names import VERNACULAR_NAMES_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql
@@ -541,3 +542,74 @@ class TestUpdateBackbone:
         )
         # Assert that a row was selected
         assert rows
+
+
+class TestFillVernacularNamesTable:
+    async def test_filters_to_eng_and_spa(self, conn, tmp_path):
+        # Create simple test row
+        fp = tmp_path / "vernacular.tsv"
+
+        # Test tsv with an english name, a spanish name, and a german name for one species,
+        # and an english name for another
+        fp.write_text(
+            "dwc:taxonID\tdwc:vernacularName\tdcterms:language\n"
+            "AABBCC\tlittle critter\teng\n"
+            "AABBCC\tbichito\tspa\n"
+            "AABBCC\ttierchen\tger\n"
+            "AABBDD\tbig critter\teng\n"
+        )
+
+        await fill_vernacular_names_table(conn, fp)
+
+        select_query = sql.SQL("SELECT * FROM {vernacular_names}").format(
+            vernacular_names=sql.Identifier(VERNACULAR_NAMES_TABLE.name))
+
+        rows = await execute_psql_query(
+            conn, select_query, fetch='all', dict_cursor=True
+        )
+
+        assert rows
+        languages = {row['language'] for row in rows}
+        assert languages == {'eng', 'spa'}
+        assert 'ger' not in languages
+
+        # Double check and verify that German vernacular name was filtered out
+        vernacular_names = {row['vernacular_name'] for row in rows}
+        assert 'tierchen' not in vernacular_names
+
+    async def test_truncates_old_data(self, conn, tmp_path):
+        # Insert some values to imitate the table already having data
+        insert_query = sql.SQL("""
+            INSERT INTO {vernacular_names} (taxon_id, language, vernacular_name)
+                VALUES ('AABBCC', 'eng', 'stale data')
+            """).format(vernacular_names=sql.Identifier(VERNACULAR_NAMES_TABLE.name))
+
+        await execute_psql_query(conn, insert_query, fetch=None)
+
+        select_query = sql.SQL("SELECT * FROM {vernacular_names}").format(
+            vernacular_names=sql.Identifier(VERNACULAR_NAMES_TABLE.name))
+
+        rows = await execute_psql_query(
+            conn, select_query, fetch='all', dict_cursor=True
+        )
+
+        assert rows
+        assert rows[0]['vernacular_name'] == 'stale data'
+
+        # Create simple test row
+        fp = tmp_path / "vernacular.tsv"
+
+        fp.write_text(
+            "dwc:taxonID\tdwc:vernacularName\tdcterms:language\n"
+            "AABBDD\tfresh data\teng\n"
+        )
+
+        await fill_vernacular_names_table(conn, fp)
+
+        rows = await execute_psql_query(
+            conn, select_query, fetch='all', dict_cursor=True
+        )
+
+        assert rows
+        assert len(rows) == 1
+        assert rows[0]['vernacular_name'] == 'fresh data'
