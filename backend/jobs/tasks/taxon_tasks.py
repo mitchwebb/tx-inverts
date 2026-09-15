@@ -228,7 +228,7 @@ async def _store_doi(conn: AsyncConnection, doi: str):
 
 
 # Perform a full update of the gbif_backbone in local database
-async def update_backbone(conn: AsyncConnection, force_update=False) -> None:
+async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=10000) -> None:
     """
     Updates the gbif_inverts_backbone table
     """
@@ -236,7 +236,6 @@ async def update_backbone(conn: AsyncConnection, force_update=False) -> None:
     # Potential files for cleanup
     taxon_fp = None
     vernacular_fp = None
-    tsv_path = None
 
     try:
         backbone_is_current = await check_backbone_is_current(conn)
@@ -250,73 +249,72 @@ async def update_backbone(conn: AsyncConnection, force_update=False) -> None:
 
         taxon_fp, vernacular_fp, doi = await asyncio.to_thread(_fetch_backbone)
 
-        data_logger.info("Reading backbone...")
-
-        # Read in backbone
-        df = pd.read_csv(
-            taxon_fp,
-            delimiter='\t',
-            # no quoting expected (this was causing our parsing errors)
-            quoting=csv.QUOTE_NONE,
-            on_bad_lines='warn',
-            low_memory=False
-        )
-
-        # Remove :dwc prefixes from colnames (caused by catalogue of life processing)
-        df = strip_dwc_column_names(df)
-
-        mask = inverts_mask(df)
-
-        data_logger.info("Filtering to inverts...")
-        # Apply mask
-        df = df[mask]
-
-        # Add empty ns_rank_state column
-        df['ns_rank_state'] = pd.NA
-
-        data_logger.info("Creating canonicalName column...")
-        df = create_canonical_names(df)
-
-        df = GBIF_INVERTS_BACKBONE.coerce_dataframe(df)
-
-        # Save copy of formatted backbone
-        tsv_path = os.path.join(DATA_OUT_PATH, 'backbone.tsv')
-        df.to_csv(tsv_path, sep='\t', index=False)
-
-        temp_table_name = 'temp_' + GBIF_INVERTS_BACKBONE.name
-
-        # Make sure table exists
+        # Make sure backbone table exists
         await initialize_table(conn, GBIF_INVERTS_BACKBONE, verbose=True)
 
-        db_logger.info("Creating temp table for insertion...")
         # Create temp table without indexes/constraints for faster COPY
+        db_logger.info("Creating temp table for insertion...")
+        temp_table_name = 'temp_' + GBIF_INVERTS_BACKBONE.name
+
         create_query = sql.SQL("CREATE TEMP TABLE {temp_table} (LIKE {backbone_table} INCLUDING DEFAULTS)").format(
             temp_table=sql.Identifier(temp_table_name),
             backbone_table=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
         )
         await execute_psql_query(conn, create_query)
 
-        # Copy to temp table
-        # Using raw cursor for copy
-        async with conn.cursor() as cur:
-            db_logger.info("Copying to temp table...")
-            copy_sql = sql.SQL("""
-                COPY {temp_table} ({column_order}) FROM STDIN
-                WITH (
-                    FORMAT csv,
-                    DELIMITER E'\t',
-                    HEADER true,
-                    NULL '')
-            """).format(
-                temp_table=sql.Identifier(temp_table_name),
-                column_order=sql.SQL(', ').join(
-                    map(sql.Identifier, GBIF_INVERTS_BACKBONE.column_order()))
-            )
+        data_logger.info("Reading backbone...")
+        # Read in backbone
+        for chunk in pd.read_csv(
+            taxon_fp,
+            delimiter='\t',
+            # no quoting expected (this was causing our parsing errors)
+            quoting=csv.QUOTE_NONE,
+            on_bad_lines='warn',
+            low_memory=False,
+            chunksize=chunk_size
+        ):
+            # Remove :dwc prefixes from colnames (caused by catalogue of life processing)
+            chunk = strip_dwc_column_names(chunk)
 
-            with open(tsv_path, 'r', encoding='utf8') as f:
+            mask = inverts_mask(chunk)
+
+            data_logger.info("Filtering to inverts...")
+            # Apply mask
+            chunk = chunk[mask]
+
+            # Add empty ns_rank_state column
+            chunk['ns_rank_state'] = pd.NA
+
+            data_logger.info("Creating canonicalName column...")
+            chunk = create_canonical_names(chunk)
+
+            chunk = GBIF_INVERTS_BACKBONE.coerce_dataframe(chunk)
+
+            # Write formatted backbone in-memory
+            buffer = io.StringIO()
+            chunk.to_csv(buffer, sep='\t', index=False)
+            buffer.seek(0)
+
+            # Copy to temp table
+            # Using raw cursor for copy
+            async with conn.cursor() as cur:
+                db_logger.info("Copying to temp table...")
+                copy_sql = sql.SQL("""
+                    COPY {temp_table} ({column_order}) FROM STDIN
+                    WITH (
+                        FORMAT csv,
+                        DELIMITER E'\t',
+                        HEADER true,
+                        NULL '')
+                """).format(
+                    temp_table=sql.Identifier(temp_table_name),
+                    column_order=sql.SQL(', ').join(
+                        map(sql.Identifier, GBIF_INVERTS_BACKBONE.column_order()))
+                )
+
                 async with cur.copy(copy_sql) as copy:
-                    while chunk := f.read(1024*1024):
-                        await copy.write(chunk)
+                    while data := buffer.read(1024 * 1024):
+                        await copy.write(data)
 
         # Replace backbone
         db_logger.info("Replacing backbone...")
@@ -334,7 +332,7 @@ async def update_backbone(conn: AsyncConnection, force_update=False) -> None:
         raise
 
     finally:
-        for fp in (taxon_fp, vernacular_fp, tsv_path):
+        for fp in (taxon_fp, vernacular_fp):
             if fp and os.path.exists(fp):
                 os.remove(fp)
 
