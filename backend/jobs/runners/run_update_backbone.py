@@ -17,7 +17,7 @@ async def main():
         conn = await get_single_db_connection()
 
         await fill_invasives_table(conn, truncate=True)
-        await update_backbone(conn)
+        await update_backbone(conn, force_update=True)
         await update_ns_ranks(conn)
 
         tasks_logger.info("update_backbone job finished")

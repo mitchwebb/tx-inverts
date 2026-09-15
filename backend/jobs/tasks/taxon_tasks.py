@@ -228,7 +228,7 @@ async def _store_doi(conn: AsyncConnection, doi: str):
 
 
 # Perform a full update of the gbif_backbone in local database
-async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=10000, verbose=False) -> None:
+async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=100000, verbose=False) -> None:
     """
     Updates the gbif_inverts_backbone table
     """
