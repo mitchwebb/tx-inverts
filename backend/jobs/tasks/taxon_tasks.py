@@ -228,7 +228,7 @@ async def _store_doi(conn: AsyncConnection, doi: str):
 
 
 # Perform a full update of the gbif_backbone in local database
-async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=10000) -> None:
+async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=10000, verbose=False) -> None:
     """
     Updates the gbif_inverts_backbone table
     """
@@ -250,7 +250,7 @@ async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=
         taxon_fp, vernacular_fp, doi = await asyncio.to_thread(_fetch_backbone)
 
         # Make sure backbone table exists
-        await initialize_table(conn, GBIF_INVERTS_BACKBONE, verbose=True)
+        await initialize_table(conn, GBIF_INVERTS_BACKBONE, verbose=verbose)
 
         # Create temp table without indexes/constraints for faster COPY
         db_logger.info("Creating temp table for insertion...")
@@ -262,7 +262,7 @@ async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=
         )
         await execute_psql_query(conn, create_query)
 
-        data_logger.info("Reading backbone...")
+        data_logger.info("Reading and formatting backbone...")
         # Read in backbone
         for chunk in pd.read_csv(
             taxon_fp,
@@ -278,14 +278,16 @@ async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=
 
             mask = inverts_mask(chunk)
 
-            data_logger.info("Filtering to inverts...")
+            if verbose:
+                data_logger.info("Filtering to inverts...")
             # Apply mask
             chunk = chunk[mask]
 
             # Add empty ns_rank_state column
             chunk['ns_rank_state'] = pd.NA
 
-            data_logger.info("Creating canonicalName column...")
+            if verbose:
+                data_logger.info("Creating canonicalName column...")
             chunk = create_canonical_names(chunk)
 
             chunk = GBIF_INVERTS_BACKBONE.coerce_dataframe(chunk)
@@ -298,7 +300,8 @@ async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=
             # Copy to temp table
             # Using raw cursor for copy
             async with conn.cursor() as cur:
-                db_logger.info("Copying to temp table...")
+                if verbose:
+                    db_logger.info("Copying to temp table...")
                 copy_sql = sql.SQL("""
                     COPY {temp_table} ({column_order}) FROM STDIN
                     WITH (
