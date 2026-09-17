@@ -100,7 +100,11 @@
                     class="modal-button"
                 >
                     range extent
-                </button>.
+                </button>. 
+                
+            <p>
+                Note: Invasive species can be viewed when searched for explicitly, 
+                but their observations aren't included when viewing parent taxa.
             </p>
             <p>
                 When zoomed out, observation points are grouped into squares as
