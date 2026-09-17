@@ -17,26 +17,33 @@
     import { getVisibleNodes } from '../../util/taxonNodes';
     import { getFiltersContext } from '../../contexts/filtersContext';
     import DefaultPage from '../../common/DefaultPage.svelte';
-    import type { TaxonomicRank } from '../../types/taxa';
+    import { RANK_ORDER, type TaxonomicRank } from '../../types/taxa';
     import InfoButton from '../../common/InfoButton.svelte';
     import NameAndAuthorship from '../../common/NameAndAuthorship.svelte';
+    import { getTooltipContext } from '../../contexts/tooltipContext';
+    import CheckboxInput, { type CheckboxPayload } from '../../common/CheckboxInput.svelte';
+    import { toggleArrayValue } from '../../util/toggleArrayValue';
 
-    const allowedRanks: TaxonomicRank[] = [
+    const taxaContext = getActiveTaxaContext();
+    const filtersContext = getFiltersContext();
+    const tooltipContext = getTooltipContext();
+
+    // List of ranks shown in tree (adjustable)
+    let allowedRanks: TaxonomicRank[] = $state([
         'kingdom',
         'phylum',
         'class',
         'order',
         'family',
         'tribe',
+        'subtribe',
         'genus',
+        'subgenus',
         'species',
         'subspecies',
-    ];
+    ]);
 
-    const taxaContext = getActiveTaxaContext();
-    const filtersContext = getFiltersContext();
-
-    let gridCols = $state(
+    let gridCols = $derived(
         `repeat(${allowedRanks.length}, minmax(max-content, 1fr)`
     );
 
@@ -51,6 +58,21 @@
 
     let visibleNodes: TaxonNodeType[] = $state.raw([]);
 
+    function handleHeaderClick(e: MouseEvent | KeyboardEvent) {
+        if (!e.currentTarget) return;
+        const target = e.currentTarget as HTMLElement
+        tooltipContext.content = headerMenu,
+        tooltipContext.visible = true,
+        tooltipContext.target = target,
+        tooltipContext.backgroundColor = getComputedStyle(target).backgroundColor
+    }
+
+    function handleRankToggle(payload: CheckboxPayload) {
+        const newArray: TaxonomicRank[] = toggleArrayValue(allowedRanks, payload.value as TaxonomicRank, payload.checked)
+        newArray.sort((a, b) => RANK_ORDER.indexOf(a) - RANK_ORDER.indexOf(b))
+        allowedRanks = newArray;
+    }
+
     function handleNodeClick(e: MouseEvent | KeyboardEvent) {
         // Ignore clicks while dragging
         if (isDragging) {
@@ -59,13 +81,13 @@
         }
 
         const target = e.currentTarget as HTMLElement;
-
         if (!target || !target.id) return;
 
         const taxonID = target.id;
         const set = new Set(openNodes);
         const isOpen = set.has(taxonID);
 
+        // Toggle node open state
         if (isOpen) {
             set.delete(taxonID);
         } else {
@@ -262,6 +284,20 @@
     });
 </script>
 
+{#snippet headerMenu()}
+    <div>
+        {#each RANK_ORDER as rank}
+        <CheckboxInput 
+            name={rank} 
+            value={rank} 
+            handler={handleRankToggle} 
+            checked={allowedRanks.includes(rank)}>
+            {rank}
+        </CheckboxInput>
+        {/each}
+    </div>
+{/snippet}
+
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <DefaultPage>
@@ -282,6 +318,10 @@
                 class="taxon-rank-header grid-item"
                 class:last
                 style:grid-column={i + 1}
+                onclick={handleHeaderClick}
+                onkeydown={handleHeaderClick}
+                role="columnheader"
+                tabindex={i}
             >
                 {capitalizeWords(rank)}
             </div>
@@ -437,7 +477,7 @@
         bottom: 0.25rem;
         opacity: 0.5;
         transition: opacity 0.25s ease-in-out;
-        height: 0.9rem;
+        height: 1rem;
         color: var(--text-default);
     }
     .backbone-disclaimer:hover {

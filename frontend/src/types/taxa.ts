@@ -1,34 +1,69 @@
 export type TaxonomicRank =
     | 'kingdom'
     | 'phylum'
+    | 'subphylum'
+    | 'superclass'
     | 'class'
     | 'subclass'
+    | 'infraclass'
+    | 'subterclass'
+    | 'superorder'
     | 'order'
+    | 'suborder'
+    | 'infraorder'
+    | 'parvorder'
+    | 'nanorder'
+    | 'section zoology'
+    | 'subsection zoology'
     | 'superfamily'
+    | 'epifamily'
+    | 'series zoology'
     | 'family'
-    | 'sub'
+    | 'subfamily'
+    | 'supertribe'
     | 'tribe'
     | 'subtribe'
+    | 'infratribe'
     | 'genus'
     | 'subgenus'
     | 'species'
-    | 'subspecies';
+    | 'subspecies'
+    | 'variety'
+    | 'form';
 
-// Taxonomic ranks with _key columns in our database
-// These are the only ranks by which occurrences can be hierarchically sorted
-export type KeyedTaxonomicRank =
-    | 'kingdom'
-    | 'phylum'
-    | 'class'
-    | 'order'
-    | 'superfamily'
-    | 'family'
-    | 'subfamily'
-    | 'tribe'
-    | 'subtribe'
-    | 'genus'
-    | 'subgenus'
-    | 'species';
+export const RANK_ORDER: TaxonomicRank[] = [
+    'kingdom',
+    'phylum',
+    'subphylum',
+    'superclass',
+    'class',
+    'subclass',
+    'infraclass',
+    'subterclass',
+    'superorder',
+    'order',
+    'suborder',
+    'infraorder',
+    'parvorder',
+    'nanorder',
+    'section zoology',
+    'subsection zoology',
+    'superfamily',
+    'epifamily',
+    'series zoology',
+    'family',
+    'subfamily',
+    'supertribe',
+    'tribe',
+    'subtribe',
+    'infratribe',
+    'genus',
+    'subgenus',
+    'species',
+    'subspecies',
+    'variety',
+    'form',
+];
 
 export type TaxonomicStatus =
     | 'accepted'
