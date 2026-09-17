@@ -67,8 +67,11 @@
         arrowAdjustment = left - absoluteLeft;
     }
 
-    // Close tooltip on scroll
-    function handleScroll() {
+    // Close tooltip on scroll (if not in tooltip)
+    function handleScroll(e: Event) {
+        if (tooltip && e.target instanceof Node && tooltip.contains(e.target)) {
+            return;
+        }
         tooltipContext.visible = false;
     }
 
