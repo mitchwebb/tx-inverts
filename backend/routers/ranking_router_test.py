@@ -50,10 +50,6 @@ occ = [
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'kingdom_key': '1',
-        'family_key': '4342',
-        'genus_key': '1323108',
-        'species_key': '5035741',
         'geometry': 'POINT(-100.0 31.0)'
     },
     {
@@ -61,10 +57,6 @@ occ = [
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'kingdom_key': '1',
-        'family_key': '4342',
-        'genus_key': '1323108',
-        'species_key': '5035741',
         'geometry': 'POINT(-99.895  31.000)'
     },
     {
@@ -72,10 +64,6 @@ occ = [
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'kingdom_key': '1',
-        'family_key': '4342',
-        'genus_key': '1323108',
-        'species_key': '5035741',
         'geometry': 'POINT(-100.000 31.090)'
     }
 ]

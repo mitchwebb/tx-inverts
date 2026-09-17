@@ -2,7 +2,6 @@
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.constants.taxa import RANK_COLS
 from backend.db.schema.base_table import DBTable
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
@@ -220,15 +219,6 @@ _all_indexes = [
     )
 ]
 
-# Rank column indexes
-for rank in RANK_COLS:
-    _all_indexes.append(
-        IndexDefinition(
-            name=f'idx_gbif_observations_{rank}',
-            table=GBIF_OBSERVATIONS_TABLE,
-            clause=sql.SQL('({rank})').format(rank=sql.Identifier(rank)))
-    )
-
 INDEX_DEFINITIONS = {d.name: d for d in _all_indexes}
 
 # View definitions (the order of these matters)
@@ -301,20 +291,38 @@ MATERIALIZED_VIEWS = {
             "CREATE UNIQUE INDEX ON {taxon_region_presence} (accepted_taxon_key, region_id)"
         ).format(taxon_region_presence=sql.Identifier(TAXON_PRESENCE_TABLE.name)),
     },
+    # View that collects all rank_key columns for all distinct taxa in gbif_observations
+    # TODO: Shouldn't this just be using tx_taxa? Or is that a bad cascade?
     'taxon_lineage': {
         'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW {taxon_lineage} AS
-            SELECT DISTINCT accepted_taxon_key,
-            unnest(array_remove(ARRAY[
-                accepted_taxon_key,
-                {RANK_COLS}
-            ], NULL)) AS ancestor_id
-            FROM {gbif_observations}
-            WHERE accepted_taxon_key IS NOT NULL;
+            WITH RECURSIVE lineage AS (
+                SELECT
+                    o.accepted_taxon_key,
+                    o.accepted_taxon_key AS ancestor_id,
+                    b.parent_name_usage_id AS next_parent
+                FROM {gbif_observations} o
+                JOIN {gbif_inverts_backbone} b
+                    ON b.taxon_id = o.accepted_taxon_key
+                WHERE o.accepted_taxon_key IS NOT NULL
+
+                UNION ALL
+
+                SELECT
+                    l.accepted_taxon_key,
+                    l.next_parent AS ancestor_id,
+                    b.parent_name_usage_id AS next_parent
+                FROM lineage l
+                JOIN {gbif_inverts_backbone} b
+                    ON b.taxon_id = l.next_parent
+                WHERE l.next_parent IS NOT NULL
+            )
+            SELECT DISTINCT accepted_taxon_key, ancestor_id
+            FROM lineage;
         """).format(
             taxon_lineage=sql.Identifier(TAXON_LINEAGE_TABLE.name),
-            RANK_COLS=sql.SQL(', ').join(sql.Identifier(c) for c in RANK_COLS),
-            gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
+            gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+            gbif_inverts_backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
         ),
         'index_sql': sql.SQL(
             "CREATE UNIQUE INDEX ON {taxon_lineage} (accepted_taxon_key, ancestor_id)"

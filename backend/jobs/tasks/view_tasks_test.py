@@ -18,8 +18,7 @@ REGION_A_ID = uuid.UUID('11111111-1111-1111-1111-111111111111')
 REGION_B_ID = uuid.UUID('22222222-2222-2222-2222-222222222222')
 
 # Minimal data — one taxon, one occurrence — enough for tx_taxa/lineage/presence
-# to have something real to select from. These tests
-# are about the refresh mechanics, not query correctness.
+# to have something real to select from. These tests are about the refresh mechanics, not query correctness.
 MINIMAL_TAXA = [
     {
         'scientific_name': 'Atta texana',
@@ -37,15 +36,13 @@ MINIMAL_OCC = [
     {
         'gbif_id': 1, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
         'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
-        'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035741,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
         'geometry': 'POINT(-97.7431 30.2672)',
     },
 ]
 
-# All four real matviews this codebase actually refreshes, in the order
-# occurrence_filter_data refreshes them — treated as the expected dependency order.
+# All four real matviews this codebase actually refreshes, in the order they're refreshed
 REAL_VIEW_NAMES = [TX_TAXA_TABLE.name, REGIONS_VIEW.name, TAXON_PRESENCE_TABLE.name,
                    TAXON_LINEAGE_TABLE.name]
 
@@ -155,7 +152,6 @@ class RefreshMaterializedView:
             [{
                 'gbif_id': 2, 'taxon_key': 5035742, 'accepted_taxon_key': 5035742,
                 'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
-                'kingdom_key': 1, 'family_key': 4342, 'genus_key': 1323108, 'species_key': 5035742,
                 'dataset_key': 'dataset-a', 'institution_code': 'TxState',
                 'coordinate_uncertainty_in_meters': 100,
                 'geometry': 'POINT(-97.7431 30.2672)',

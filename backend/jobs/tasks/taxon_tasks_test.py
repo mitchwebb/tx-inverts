@@ -1,5 +1,9 @@
+import uuid
+
 import pandas as pd
 import pytest
+import pytest_asyncio
+from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.jobs.tasks.taxon_tasks import update_ns_ranks, fill_invasives_table, update_invasives, _ensure_rank_columns, _replace_backbone, update_backbone, fill_vernacular_names_table
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
@@ -14,6 +18,122 @@ from psycopg import sql
 from backend.conftest import insert_rows
 
 import datetime
+
+# Region UUIDs — fixed and readable so test assertions can reference them
+# without recomputing anything at read time
+REGION_A_ID = uuid.UUID('11111111-1111-1111-1111-111111111111')
+REGION_B_ID = uuid.UUID('22222222-2222-2222-2222-222222222222')
+
+taxa = [
+    {
+        # non-invasive species, matches family 4342 for lineage/ancestor tests
+        'scientific_name': 'Atta texana',
+        'canonical_name': 'Atta texana',
+        'taxon_id': 5035741,
+        'accepted_name_usage_id': 5035741,
+        'parent_name_usage_id': 4342,
+        'taxon_rank': 'species',
+        'us_invasive': False,
+        'taxonomic_status': 'accepted',
+    },
+    {
+        # family row — required for taxon_lineage to resolve ancestor_id=4342
+        # when a test filters by family-level taxon_id
+        'scientific_name': 'Formicidae',
+        'canonical_name': 'Formicidae',
+        'taxon_id': 4342,
+        'accepted_name_usage_id': 4342,
+        'parent_name_usage_id': 1,
+        'taxon_rank': 'family',
+        'us_invasive': False,
+        'taxonomic_status': 'accepted'
+    },
+    {
+        # invasive species, same family — exercises include_invasives branches
+        'scientific_name': 'Solenopsis invicta',
+        'canonical_name': 'Solenopsis invicta',
+        'taxon_id': 9999001,
+        'accepted_name_usage_id': 9999001,
+        'parent_name_usage_id': 4342,
+        'taxon_rank': 'species',
+        'us_invasive': True,
+        'taxonomic_status': 'accepted'
+    },
+]
+
+occ = [
+    {
+        # baseline row — passes every filter at defaults
+        'gbif_id': 1, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',  # Austin, TX
+    },
+    {
+        # iNaturalist origin — tests include_inat=False exclusion
+        'gbif_id': 2, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': '2021-03-04', 'collection_end_date': '2021-03-05',
+        'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
+        'coordinate_uncertainty_in_meters': 50,
+        # Dallas, TX — far enough to swing extent if included
+        'geometry': 'POINT(-96.7970 32.7767)',
+    },
+    {
+        # collection_start_date NULL — tests hardcoded IS NOT NULL clause
+        'gbif_id': 3, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': None, 'collection_end_date': None,
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+    {
+        # second dataset_key, distinct date, tagged to REGION_B_ID
+        'gbif_id': 4, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': '2019-03-04', 'collection_end_date': '2019-03-05',
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': None,  # tests "IS NULL OR <=" branch
+        'geometry': 'POINT(-95.3698 29.7604)',  # Houston, TX
+    },
+    {
+        # coordinate_uncertainty_in_meters == 0 — tests `is None` vs falsy bug
+        'gbif_id': 5, 'taxon_key': 5035741, 'accepted_taxon_key': 5035741,
+        'collection_start_date': '2022-01-01', 'collection_end_date': '2022-01-02',
+        'dataset_key': 'dataset-b', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 0,
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+    {
+        # invasive taxon — tests include_invasives true/false branches
+        'gbif_id': 6, 'taxon_key': 9999001, 'accepted_taxon_key': 9999001,
+        'collection_start_date': '2022-06-01', 'collection_end_date': '2022-06-02',
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+]
+
+observation_regions = [
+    {'observation_id': 1, 'region_id': REGION_A_ID},
+    {'observation_id': 4, 'region_id': REGION_B_ID},
+]
+
+
+@pytest_asyncio.fixture()
+async def occurrence_filter_data(conn):
+    """
+    Minimal shared dataset covering every branch in
+    create_occurrence_filter_sql and create_occurrence_taxon_filter.
+    """
+    await insert_rows(taxa, GBIF_INVERTS_BACKBONE.name, conn)
+    await insert_rows(occ, GBIF_OBSERVATIONS_TABLE.name, conn)
+    await insert_rows(observation_regions, OBSERVATION_REGIONS_TABLE.name, conn)
+
+    await refresh_materialized_view(conn, TX_TAXA_TABLE.name)
+    await refresh_materialized_view(conn, TAXON_PRESENCE_TABLE.name)
+    await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
+
+    return conn
 
 
 class TestUpdateNSRanks:
@@ -379,11 +499,11 @@ class TestReplaceBackbone:
         assert pre_rows
 
         pre_ids = {r['taxon_id'] for r in pre_rows}
-        assert '5555555' not in pre_ids
+        assert 'FRESHTAX' not in pre_ids
         assert len(pre_ids) > 0
 
         temp_table_name, insert_row = temp_backbone_table
-        await insert_row(taxon_id='5555555')
+        await insert_row(taxon_id='FRESHTAX')
 
         await _replace_backbone(conn, temp_table_name)
 
@@ -395,25 +515,21 @@ class TestReplaceBackbone:
         post_ids = {r['taxon_id'] for r in post_rows}
         # Old rows are gone and new ones are added
         assert pre_ids.isdisjoint(post_ids)
-        assert post_ids == {'5555555'}
+        assert post_ids == {'FRESHTAX'}
 
     @pytest.mark.asyncio
     async def test_materialized_views_populated_after_replace(self, conn, setup_gbif_schema, temp_backbone_table):
         temp_table_name, insert_row = temp_backbone_table
-        await insert_row(taxon_id='5555557')
+        await insert_row(taxon_id='TESTTAX')
 
         await insert_rows(
             rows=[
                 {
                     'gbif_id': 1,
-                    'taxon_key': '5555557',
-                    'accepted_taxon_key': '5555557',
+                    'taxon_key': 'TESTTAX',
+                    'accepted_taxon_key': 'TESTTAX',
                     'collection_start_date': '2020-03-04',
                     'collection_end_date': '2020-03-05',
-                    'kingdom_key': '1',
-                    'family_key': None,
-                    'genus_key': None,
-                    'species_key': '5555557',
                     'dataset_key': 'dataset-a',
                     'institution_code': 'TxState',
                     'coordinate_uncertainty_in_meters': 100,
@@ -443,7 +559,7 @@ class TestReplaceBackbone:
             "SELECT * FROM {tx_taxa} WHERE taxon_id = {taxon_id}"
         ).format(
             tx_taxa=sql.Identifier(TX_TAXA_TABLE.name),
-            taxon_id=sql.Literal('5555557')
+            taxon_id=sql.Literal('TESTTAX')
         )
         tx_taxa_rows = await execute_psql_query(
             conn, tx_taxa_query, fetch='all', dict_cursor=True
@@ -455,7 +571,7 @@ class TestReplaceBackbone:
             "SELECT * FROM {presence_table} WHERE accepted_taxon_key={taxon_id}"
         ).format(
             presence_table=sql.Identifier(TAXON_PRESENCE_TABLE.name),
-            taxon_id=sql.Literal('5555557')
+            taxon_id=sql.Literal('TESTTAX')
         )
         region_presence_rows = await execute_psql_query(
             conn, region_presence_query, fetch='all', dict_cursor=True
@@ -512,7 +628,7 @@ class TestUpdateBackbone:
         fp = tmp_path / "backbone.tsv"
         fp.write_text(
             "taxonID\tscientificName\tkingdom\tphylum\tclass\ttaxonRank\tgenericName\tinfragenericEpithet\tspecificEpithet\tinfraspecificEpithet\n"
-            "5555558\tTurris invicta\tAnimalia\tMollusca\tGastropoda\tspecies\tTurris\tNull\tinvicta\tNull"
+            "TURRISINV\tTurris invicta\tAnimalia\tMollusca\tGastropoda\tspecies\tTurris\tNull\tinvicta\tNull"
         )
 
         mocker.patch(
@@ -535,7 +651,7 @@ class TestUpdateBackbone:
         # Attempt to select taxon from test row
         select_query = sql.SQL("SELECT * FROM {backbone} WHERE taxon_id = {taxon_id}").format(
             backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name),
-            taxon_id=sql.Literal('5555558')
+            taxon_id=sql.Literal('TURRISINV')
         )
         rows = await execute_psql_query(
             conn, select_query, fetch='all', dict_cursor=True

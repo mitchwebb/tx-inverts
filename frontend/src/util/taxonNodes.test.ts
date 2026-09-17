@@ -116,6 +116,7 @@ const allowedRanks: TaxonomicRank[] = [
     'phylum',
     'class',
     'order',
+    'superfamily',
     'family',
     'tribe',
     'genus',

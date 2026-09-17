@@ -23,9 +23,8 @@ from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.table_tasks import initialize_table
-from backend.jobs.tasks.view_tasks import refresh_materialized_view, refresh_materialized_views
+from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from psycopg import sql, AsyncConnection
-from typing import List, Optional, Tuple
 
 
 # Helper function to build gbif download request, perform request,

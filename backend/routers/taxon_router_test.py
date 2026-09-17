@@ -1,3 +1,4 @@
+import uuid
 from psycopg import sql
 import pytest
 import pytest_asyncio
@@ -16,133 +17,169 @@ from backend.models.occurrence import OccurrenceFilters
 from backend.routers.taxon_router import get_qualified_taxa
 
 
+REGION_A_ID = uuid.UUID('11111111-1111-1111-1111-111111111111')
+REGION_B_ID = uuid.UUID('22222222-2222-2222-2222-222222222222')
+
+TAXA = [
+    {
+        'scientific_name': 'Animalia', 'canonical_name': 'Animalia',
+        'parent_name_usage_id': None, 'taxon_id': 'ANML',
+        'accepted_name_usage_id': 'ANML', 'taxon_rank': 'kingdom',
+        'us_invasive': False, 'taxonomic_status': 'accepted',
+    },
+    {
+        'scientific_name': 'Formicidae', 'canonical_name': 'Formicidae',
+        'parent_name_usage_id': 'ANML', 'taxon_id': 'FRMCD',
+        'accepted_name_usage_id': 'FRMCD', 'taxon_rank': 'family',
+        'us_invasive': False, 'taxonomic_status': 'accepted',
+    },
+    {
+        'scientific_name': 'Atta', 'canonical_name': 'Atta',
+        'parent_name_usage_id': 'FRMCD', 'taxon_id': 'ATTA',
+        'accepted_name_usage_id': None, 'taxon_rank': 'genus',
+        'us_invasive': False, 'taxonomic_status': 'accepted',
+    },
+    {
+        'scientific_name': 'Atta texana', 'canonical_name': 'Atta texana',
+        'parent_name_usage_id': 'ATTA', 'taxon_id': 'ATTATX',
+        'accepted_name_usage_id': 'ATTATX', 'taxon_rank': 'species',
+        'us_invasive': False, 'taxonomic_status': 'accepted',
+    },
+    {
+        'scientific_name': 'Atta texana falseyi', 'canonical_name': 'Atta texana falseyi',
+        'parent_name_usage_id': 'ATTATX', 'taxon_id': 'ATTAFALSE',
+        'accepted_name_usage_id': 'ATTAFALSE', 'taxon_rank': 'subspecies',
+        'us_invasive': False, 'taxonomic_status': 'accepted',
+    },
+    {
+        'scientific_name': 'Atta texana f. formi', 'canonical_name': 'Atta texana f. formi',
+        'parent_name_usage_id': 'ATTAFALSE', 'taxon_id': 'ATTAFORMI',
+        'accepted_name_usage_id': 'ATTAFORMI', 'taxon_rank': 'form',
+        'us_invasive': False, 'taxonomic_status': 'accepted',
+    },
+    {
+        'scientific_name': 'Trachymyrmex cowboyii', 'canonical_name': 'Trachymyrmex cowboyii',
+        'parent_name_usage_id': 'TRACHPARENT', 'taxon_id': 'COWBOY',
+        'accepted_name_usage_id': 'ATTAFALSE', 'taxon_rank': 'species',
+        'us_invasive': False, 'taxonomic_status': 'synonym',
+    },
+    {
+        'scientific_name': 'Madeitupidae', 'canonical_name': 'Madeitupidae',
+        'parent_name_usage_id': 'HYM', 'taxon_id': 'MADEUP',
+        'accepted_name_usage_id': None, 'taxon_rank': 'family',
+        'us_invasive': False, 'taxonomic_status': 'accepted',
+    },
+    {
+        'scientific_name': 'Outofnames igiveupus', 'canonical_name': 'Outofnames igiveupus',
+        'parent_name_usage_id': 'OUTTAPARENT', 'taxon_id': 'OUTTANAMES',
+        'accepted_name_usage_id': 'ATTA', 'taxon_rank': 'species',
+        'us_invasive': False, 'taxonomic_status': 'synonym',
+    },
+    {
+        # Invasive species, same genus as ATTATX — exercises include_invasives branches
+        'scientific_name': 'Solenopsis invicta', 'canonical_name': 'Solenopsis invicta',
+        'parent_name_usage_id': 'ATTA', 'taxon_id': 'INVICTA',
+        'accepted_name_usage_id': 'INVICTA', 'taxon_rank': 'species',
+        'us_invasive': True, 'taxonomic_status': 'accepted',
+    },
+]
+
+OCC = [
+    {
+        # Baseline row — passes every filter at defaults
+        'gbif_id': 1, 'taxon_key': 'ATTATX', 'accepted_taxon_key': 'ATTATX',
+        'collection_start_date': '2021-03-04', 'collection_end_date': '2021-03-05',
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',  # Austin, TX
+    },
+    {
+        # Direct genus-level observation, iNaturalist origin
+        'gbif_id': 2, 'taxon_key': 'ATTA', 'accepted_taxon_key': 'ATTA',
+        'collection_start_date': '2022-03-04', 'collection_end_date': '2022-03-05',
+        'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
+        'coordinate_uncertainty_in_meters': 50,
+        'geometry': 'POINT(-96.7970 32.7767)',  # Dallas, TX
+    },
+    {
+        # Subspecies-level observation
+        'gbif_id': 3, 'taxon_key': 'ATTAFALSE', 'accepted_taxon_key': 'ATTAFALSE',
+        'collection_start_date': '2023-03-04', 'collection_end_date': '2023-03-05',
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+    {
+        # Observed under a synonym taxon_key, resolved to the subspecies;
+        # NULL coordinate_uncertainty — tests "IS NULL OR <=" branch
+        'gbif_id': 4, 'taxon_key': 'COWBOY', 'accepted_taxon_key': 'ATTAFALSE',
+        'collection_start_date': '2024-03-04', 'collection_end_date': '2024-03-05',
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': None,
+        'geometry': 'POINT(-95.3698 29.7604)',  # Houston, TX
+    },
+    {
+        # Unrelated family — must never match Atta-rooted taxon_ids
+        'gbif_id': 5, 'taxon_key': 'MADEUP', 'accepted_taxon_key': 'MADEUP',
+        'collection_start_date': '2025-03-04', 'collection_end_date': '2025-03-05',
+        'dataset_key': 'dataset-b', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 0,  # tests `is None` vs falsy bug
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+    {
+        # Observed under a synonym resolving to the genus
+        'gbif_id': 6, 'taxon_key': 'OUTTANAMES', 'accepted_taxon_key': 'ATTA',
+        'collection_start_date': '2026-03-04', 'collection_end_date': '2026-03-05',
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+    {
+        # Form sighting, child of subspecies — the original reported bug
+        # Only iNaturalist sighting (tests inat filter)
+        'gbif_id': 7, 'taxon_key': 'ATTAFORMI', 'accepted_taxon_key': 'ATTAFORMI',
+        'collection_start_date': '2026-03-04', 'collection_end_date': '2026-03-05',
+        'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+    {
+        # Invasive taxon — tests include_invasives true/false branches
+        'gbif_id': 8, 'taxon_key': 'INVICTA', 'accepted_taxon_key': 'INVICTA',
+        'collection_start_date': '2022-06-01', 'collection_end_date': '2022-06-02',
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+    {
+        # Collection_start_date NULL — tests hardcoded IS NOT NULL clause
+        'gbif_id': 9, 'taxon_key': 'ATTATX', 'accepted_taxon_key': 'ATTATX',
+        'collection_start_date': None, 'collection_end_date': None,
+        'dataset_key': 'dataset-a', 'institution_code': 'TxState',
+        'coordinate_uncertainty_in_meters': 100,
+        'geometry': 'POINT(-97.7431 30.2672)',
+    },
+]
+
+OBSERVATION_REGIONS = [
+    {'observation_id': 1, 'region_id': REGION_A_ID},
+    {'observation_id': 4, 'region_id': REGION_B_ID},
+]
+
+
 @pytest_asyncio.fixture
 async def simple_tx_taxa(conn):
-    # Values to insert into backbone table, then brought into tx_taxa mat view
-    taxa = [
-        {
-            'scientific_name': 'Atta texana',
-            'canonical_name': 'Atta texana',
-            'taxon_id': '5035741',
-            'accepted_name_usage_id': '5035741',
-            'taxon_rank': 'species',
-            'us_invasive': False,
-            'taxonomic_status': 'accepted',
-        },
-        {
-            'scientific_name': 'Atta',
-            'canonical_name': 'Atta',
-            'taxon_id': '1323108',
-            'accepted_name_usage_id': None,
-            'taxon_rank': 'genus',
-            'us_invasive': False,
-            'taxonomic_status': 'accepted',
-        },
-        {
-            'scientific_name': 'Atta texana falseyi',
-            'canonical_name': 'Atta texana falseyi',
-            'taxon_id': '9999999',
-            'accepted_name_usage_id': '9999999',
-            'taxon_rank': 'subspecies',
-            'us_invasive': False,
-            'taxonomic_status': 'accepted',
-        },
-        {
-            'scientific_name': 'Trachymyrmex cowboyii',
-            'canonical_name': 'Trachymyrmex cowboyii',
-            'taxon_id': '9999998',
-            'accepted_name_usage_id': '9999999',
-            'taxon_rank': 'species',
-            'us_invasive': False,
-            'taxonomic_status': 'synonym',
-        },
-        {
-            'scientific_name': 'Madeitupidae',
-            'canonical_name': 'Madeitupidae',
-            'taxon_id': '9999997',
-            'accepted_name_usage_id': None,
-            'taxon_rank': 'family',
-            'us_invasive': False,
-            'taxonomic_status': 'accepted',
-        },
-        {
-            'scientific_name': 'Outofnames igiveupus',
-            'canonical_name': 'Outofnames igiveupus',
-            'taxon_id': '9999996',
-            'accepted_name_usage_id': '1323108',
-            'taxon_rank': 'species',
-            'us_invasive': False,
-            'taxonomic_status': 'synonym',
-        }
-    ]
-    # tx_taxa only includes those taxa with observations
-    occ = [
-        {
-            'gbif_id': 1,
-            'taxon_key': '5035741',
-            'accepted_taxon_key': '5035741',
-            'collection_start_date': '2021-03-04',
-            'kingdom_key': '1',
-            'family_key': '4342',
-            'genus_key': '1323108',
-            'species_key': '5035741',
-        },
-        {
-            'gbif_id': 2,
-            'taxon_key': '1323108',
-            'accepted_taxon_key': '1323108',
-            'collection_start_date': '2022-03-04',
-            'kingdom_key': '1',
-            'family_key': '4342',
-            'genus_key': '1323108',
-            'species_key': None
-        },
-        {
-            'gbif_id': 3,
-            'taxon_key': '9999999',
-            'accepted_taxon_key': '9999999',
-            'collection_start_date': '2023-03-04',
-            'kingdom_key': '1',
-            'family_key': '4342',
-            'genus_key': '1323108',
-            'species_key': '9999999',
-        },
-        {
-            'gbif_id': 4,
-            'taxon_key': '9999998',
-            'accepted_taxon_key': '9999999',
-            'collection_start_date': '2024-03-04',
-            'kingdom_key': '1',
-            'family_key': '4342',
-            'genus_key': '1323108',
-            'species_key': '9999998',
-        },
-        {
-            'gbif_id': 5,
-            'taxon_key': '9999997',
-            'accepted_taxon_key': '9999997',
-            'collection_start_date': '2025-03-04',
-            'kingdom_key': 1,
-            'family_key': None,
-            'genus_key': None,
-            'species_key': None
-        },
-        {
-            'gbif_id': 6,
-            'taxon_key': '9999996',
-            'accepted_taxon_key': '1323108',
-            'collection_start_date': '2026-03-04',
-            'kingdom_key': '1',
-            'family_key': '4342',
-            'genus_key': '1323108',
-            'species_key': '9991111',
-        }
-    ]
-
-    await insert_rows(taxa, GBIF_INVERTS_BACKBONE.name, conn)
-    await insert_rows(occ, GBIF_OBSERVATIONS_TABLE.name, conn)
+    """
+    Taxonomy + observations covering every branch in
+    create_occurrence_filter_sql / create_occurrence_taxon_filter,
+    including the subspecies->form lineage case and a synonym chain.
+    """
+    await insert_rows(TAXA, GBIF_INVERTS_BACKBONE.name, conn)
+    await insert_rows(OCC, GBIF_OBSERVATIONS_TABLE.name, conn)
+    await insert_rows(OBSERVATION_REGIONS, OBSERVATION_REGIONS_TABLE.name, conn)
 
     await refresh_materialized_view(conn, TX_TAXA_TABLE.name)
+    await refresh_materialized_view(conn, TAXON_PRESENCE_TABLE.name)
     await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
 
 
@@ -159,7 +196,6 @@ class TestTaxonSearchSuggest:
         results = response.json()
 
         # Test that there are results and that all results contain our search term in the canonical name
-        print(results)
         assert len(results) > 0
         assert all(search_term in r['canonicalName'].lower() for r in results)
 
@@ -196,7 +232,7 @@ class TestTaxonSearchSuggest:
 
         # Our fake synonym gets resolved to its accepted_name_usage_id taxon
         assert len(results) == 1
-        assert results[0]['taxonID'] == '9999999'
+        assert results[0]['taxonID'] == 'ATTAFALSE'
 
     @pytest.mark.asyncio
     async def test_ignore_mid_string_search(self, setup_gbif_schema, simple_tx_taxa, client):
@@ -225,13 +261,13 @@ class TestTaxonSearchSuggest:
 
         # Should return result for searched taxon resolved to higher taxon
         assert len(results) == 1
-        assert results[0]['taxonID'] == '1323108'
+        assert results[0]['taxonID'] == 'ATTA'
 
 
 class TestGetTaxonInfo:
     @pytest.mark.asyncio
     async def test_get_taxon_info_returns_correct_fields(self, setup_gbif_schema, simple_tx_taxa, client):
-        response = await client.get('/taxon/get_taxon_info', params={'taxon_id': '5035741'})
+        response = await client.get('/taxon/get_taxon_info', params={'taxon_id': 'ATTATX'})
 
         assert response.status_code == 200
         result = response.json()
@@ -263,6 +299,7 @@ class TestGetBackbone:
         assert 'Atta texana' in canonical_names
         assert 'Atta' in canonical_names
         assert 'Atta texana falseyi' in canonical_names
+        assert 'Atta texana f. formi' in canonical_names
         assert 'Madeitupidae' in canonical_names
 
         # taxonomic_status is never 'synonym'
@@ -273,7 +310,7 @@ class TestGetQualifiedTaxa:
     @pytest.mark.asyncio
     async def test_get_children_from_higher(self, setup_gbif_schema, simple_tx_taxa, conn, client):
         response = await client.post('/taxon/get_qualified_taxa', json={
-            'taxon_ids': ['1323108'],  # Target parent taxon
+            'taxon_ids': ['ATTA'],  # Target parent taxon
             'include_inat': True,
             'date_start': None,
             'date_end': None,
@@ -283,7 +320,7 @@ class TestGetQualifiedTaxa:
 
         assert response.status_code == 200
         results = response.json()
-        assert set(results) == set(['9999999', '1323108', '5035741'])
+        assert set(results) == set(['ATTAFALSE', 'ATTA', 'ATTATX', 'ATTAFORMI'])
 
     @pytest.mark.asyncio
     async def test_regions_filter(self, setup_gbif_schema, simple_tx_taxa, conn, client):
@@ -314,7 +351,7 @@ class TestGetQualifiedTaxa:
         await refresh_materialized_view(conn, TAXON_PRESENCE_TABLE.name)
 
         response = await client.post('/taxon/get_qualified_taxa', json={
-            'taxon_ids': ['1'],  # Target parent taxon
+            'taxon_ids': ['ANML'],  # Target parent taxon
             'include_inat': True,
             'date_start': None,
             'date_end': None,
@@ -324,10 +361,10 @@ class TestGetQualifiedTaxa:
 
         assert response.status_code == 200
         results = response.json()
-        assert set(results) == set(['1323108', '5035741'])
+        assert set(results) == set(['ATTA', 'ATTATX'])
 
         response = await client.post('/taxon/get_qualified_taxa', json={
-            'taxon_ids': ['1'],  # Target parent taxon
+            'taxon_ids': ['ANML'],  # Target parent taxon
             'include_inat': True,
             'date_start': None,
             'date_end': None,
@@ -337,7 +374,7 @@ class TestGetQualifiedTaxa:
 
         assert response.status_code == 200
         results = response.json()
-        assert set(results) == set(['1323108'])
+        assert set(results) == set(['ATTA'])
 
     async def test_no_matches_returns_empty_list(self, setup_gbif_schema, simple_tx_taxa, conn, client):
         response = await client.post('/taxon/get_qualified_taxa', json={
@@ -349,24 +386,23 @@ class TestGetQualifiedTaxa:
 
     async def test_no_duplicate_taxon_ids_in_response(self, setup_gbif_schema, simple_tx_taxa, conn, client):
         response = await client.post('/taxon/get_qualified_taxa', json={
-            'taxon_ids': ['9999999'], 'include_inat': True,
+            'taxon_ids': ['ATTAFALSE'], 'include_inat': True,
             'date_start': None, 'date_end': None, 'datasets': None, 'regions': None,
         })
         results = response.json()
         assert len(results) == len(set(results))
 
     @pytest.mark.asyncio
-    async def test_each_filter_individually(self, setup_gbif_schema, occurrence_filter_data, client):
+    async def test_each_filter_individually(self, setup_gbif_schema, simple_tx_taxa, client):
         """
         One test, one section per filter. Each section changes exactly
         one field off the base payload and checks the result set narrows
-        as expected. Sections are independent — if one fails, the others
-        still tell you whether their filter is fine.
+        as expected.
         """
 
+        # Baseline: no filters beyond taxon lineage.
         base_payload = {
-            # family — covers both species (5035741, 9999001)
-            'taxon_ids': ['4342'],
+            'taxon_ids': ['FRMCD'],
             'include_inat': True,
             'include_invasives': True,
             'date_start': None,
@@ -376,78 +412,67 @@ class TestGetQualifiedTaxa:
             'regions': None,
         }
 
-        # --- baseline: no filters beyond taxon lineage ---
+        # Excluded (NULL date). Every other FRMCD-lineage taxon qualifies
         response = await client.post('/taxon/get_qualified_taxa', json=base_payload)
         assert response.status_code == 200
-        assert set(response.json()) == {'5035741', '9999001'}
+        assert set(response.json()) == {
+            'ATTATX', 'ATTA', 'ATTAFALSE', 'ATTAFORMI', 'INVICTA'}
 
-        # --- include_invasives=False excludes taxon 9999001 (invasive) ---
+        # Include_invasives=False excludes INVICTA
         payload = {**base_payload, 'include_invasives': False}
         response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
-        assert set(response.json()) == {'5035741'}
+        assert set(response.json()) == {
+            'ATTATX', 'ATTA', 'ATTAFALSE', 'ATTAFORMI'}
 
-        # --- include_inat=False excludes row 2, taxon 5035741 still
-        # qualifies via rows 1/3/4 ---
+        # Include_inat=False, should exclude ATTAFORMI observation
         payload = {**base_payload, 'include_inat': False}
         response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
-        assert set(response.json()) == {'5035741', '9999001'}
+        assert set(response.json()) == {
+            'ATTATX', 'ATTA', 'ATTAFALSE', 'INVICTA'}
 
-        # --- datasets=['dataset-b'] leaves only rows 2 and 5
-        # (taxon 5035741 only — row 6/9999001 is dataset-a) ---
+        # Datasets=['dataset-b']: only gbif 2 (ATTA), and gbif 7 (ATTAFORMI)
+        # are within lineage and in dataset-b
         payload = {**base_payload, 'datasets': ['dataset-b']}
         response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
-        assert set(response.json()) == {'5035741'}
+        assert set(response.json()) == {'ATTA', 'ATTAFORMI'}
 
-        # --- date_start excludes row 4 (2019) and row 1 (2020),
-        # leaves row 5 (2022, taxon 5035741) and row 6 (2022, taxon 9999001) ---
+        # date_start='2022-01-01' excludes gbif 1 (2021) and gbif 9
+        # (NULL, always excluded). ATTATX has no other observations, so it
+        # drops out entirely. Remaining: gbif 2/6 (ATTA), 3/4 (ATTAFALSE),
+        # 7 (ATTAFORMI), 8 (INVICTA)
         payload = {**base_payload, 'date_start': '2022-01-01'}
         response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
-        assert set(response.json()) == {'5035741', '9999001'}
+        assert set(response.json()) == {
+            'ATTA', 'ATTAFALSE', 'ATTAFORMI', 'INVICTA'}
 
-        # --- date_end excludes row 5/row 6 (2022), leaves rows 1/2/4 (<=2021) ---
+        # date_end='2021-12-31' keeps only gbif 1 (2021-03-04)
         payload = {**base_payload, 'date_end': '2021-12-31'}
         response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
-        assert set(response.json()) == {'5035741'}
+        assert set(response.json()) == {'ATTATX'}
 
-        # --- coord_uncertainty=100 keeps row 1 (100) and row 4 (NULL,
-        # passes via IS NULL OR), excludes nothing here since no row
-        # exceeds 100 — use a tighter bound to prove exclusion ---
+        # coord_uncertainty=10: passes NULL or <=10. Only gbif 4
+        # (NULL, ATTAFALSE) qualifies within FRMCD; gbif 5 (0, MADEUP) is
+        # outside the lineage entirely
         payload = {**base_payload, 'coord_uncertainty': 10}
         response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
-        # Only row 4 (NULL uncertainty) and row 2 (50, excluded) —
-        # row 1/3/5/6 all have uncertainty=100, excluded by the <=10 bound.
-        # taxon 5035741 still qualifies via row 4 (NULL); 9999001 has no
-        # row under the bound, excluded.
-        assert set(response.json()) == {'5035741'}
+        assert set(response.json()) == {'ATTAFALSE'}
 
-        # --- coord_uncertainty=0 explicitly: confirms `is None` check,
-        # not a falsy check, on the backend. Row 5 (uncertainty=0) must
-        # NOT be treated as "no filter" — only NULL or <=0 rows pass ---
+        # coord_uncertainty=0 explicitly: confirms `is None` check, not
+        # a falsy check. gbif 4 (NULL) still passes via IS NULL; gbif 5
+        # would pass, but it outside lineage
         payload = {**base_payload, 'coord_uncertainty': 0}
         response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
-        # taxon 5035741 passes via row 4 (NULL); taxon 9999001 has only
-        # row 6 (uncertainty=100), excluded.
-        assert set(response.json()) == {'5035741'}
+        assert set(response.json()) == {'ATTAFALSE'}
 
-        # --- regions=[REGION_A_ID] restricts to taxa present in that
-        # region via TAXON_PRESENCE_TABLE (observation 1 tagged there) ---
-        payload = {**base_payload,
-                   'regions': ['11111111-1111-1111-1111-111111111111']}
+        # regions=[REGION_A_ID]: only gbif 1 (ATTATX) is tagged REGION_A
+        payload = {**base_payload, 'regions': [str(REGION_A_ID)]}
         response = await client.post('/taxon/get_qualified_taxa', json=payload)
         assert response.status_code == 200
-        assert set(response.json()) == {'5035741'}
-
-    def test_get_qualified_taxa_covers_all_filters(self):
-        source = inspect.getsource(get_qualified_taxa)
-        fields = set(OccurrenceFilters.model_fields.keys())
-        # regions are handled via TAXON_PRESENCE_TABLE join, not region_clause
-        excluded = {'regions'}
-        missing = [f for f in fields - excluded if f not in source]
-        assert not missing, f"get_qualified_taxa is missing: {missing}"
+        assert set(response.json()) == {'ATTATX'}

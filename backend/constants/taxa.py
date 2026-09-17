@@ -68,21 +68,3 @@ TAXON_RANK_ORDER: List[TaxonomicRank] = [
     'variety',
     'form',
 ]
-
-# Including only KEYED columns in DWCA
-KEYED_TAXON_RANK_ORDER = [
-    'kingdom',
-    'phylum',
-    'class',
-    'order',
-    'superfamily',
-    'family',
-    'subfamily',
-    'tribe',
-    'subtribe',
-    'genus',
-    'subgenus',
-    'species',
-]
-
-RANK_COLS = [f'{r}_key' for r in KEYED_TAXON_RANK_ORDER]

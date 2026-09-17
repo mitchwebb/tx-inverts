@@ -276,10 +276,9 @@ async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=
             # Remove :dwc prefixes from colnames (caused by catalogue of life processing)
             chunk = strip_dwc_column_names(chunk)
 
-            mask = inverts_mask(chunk)
-
             if verbose:
                 data_logger.info("Filtering to inverts...")
+            mask = inverts_mask(chunk)
             # Apply mask
             chunk = chunk[mask]
 
