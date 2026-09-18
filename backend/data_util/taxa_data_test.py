@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 
 from backend.conftest import insert_rows
-from backend.data_util.taxa_data import get_observation_count, taxon_exists
+from backend.data_util.taxa_data import get_observation_count, taxon_exists, derive_canonical_name
 import pandas as pd
 
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
@@ -57,61 +57,6 @@ def simple_backbone():
     ])
 
 
-# class TestBuildLineages:
-#     # Test that basic lineages are successfully built
-#     def test_basic_lineage(self, simple_backbone):
-#         result = build_lineages(simple_backbone)
-#         row_a = result[result['taxon_id'] == 4].iloc[0]
-#         assert row_a['kingdom_id'] == 1
-#         assert row_a['phylum_id'] == 2
-
-#         row_b = result[result['taxon_id'] == 5].iloc[0]
-#         assert row_b['kingdom_id'] == 1
-#         assert row_b['phylum_id'] == 3
-
-#         # Species with no phylum (should link straight to kingdom)
-#         row_c = result[result['taxon_id'] == 6].iloc[0]
-#         assert row_c['kingdom_id'] == 1
-#         assert pd.isna(row_c['phylum_id'])
-
-#     # Test that synonyms get routed correctly and get accepted rank_id
-#     def test_synonym_lineage(self, simple_backbone):
-#         result = build_lineages(simple_backbone)
-
-#         row = result[result['taxon_id'] == 7].iloc[0]
-#         assert row['kingdom_id'] == 1
-#         assert row['phylum_id'] == 3
-#         assert row['species_id'] == 5
-
-#     # Test that synonyms are given proper rank_id when being resolved as different taxon_rank
-#     def test_synonym_rank_reassignment(self, simple_backbone):
-#         result = build_lineages(simple_backbone)
-
-#         row = result[result['taxon_id'] == 8].iloc[0]
-
-#         # species_id should now be NA, given that synonym species resolves to phylum
-#         assert pd.isna(row['species_id'])
-#         # phylum_id should resolve to accepted_name_usage_id
-#         assert row['phylum_id'] == 2
-
-#     # Verify that root taxa have empty ids
-#     def test_root_taxa_are_empty(self, simple_backbone):
-#         result = build_lineages(simple_backbone)
-
-#         row = result[result['taxon_id'] == 1].iloc[0]
-
-#         assert pd.isna([row['phylum_id'], row['class_id'], row['order_id'],
-#                        row['family_id'], row['genus_id'], row['species_id'], row['subspecies_id']]).all()
-
-#     # Verify that child of synonym inherits updated lineage
-#     def test_synonym_child_lineage(self, simple_backbone):
-#         result = build_lineages(simple_backbone)
-
-#         row = result[result['taxon_id'] == 7].iloc[0]
-
-#         assert row['species_id'] == 5
-
-
 @pytest_asyncio.fixture
 async def simple_backbone_db(conn):
     # Values to insert into backbone table
@@ -147,3 +92,104 @@ class TestTaxonExists:
     async def test_missing_taxon_returns_false(self, conn, simple_backbone_db):
         result = await taxon_exists(conn, '0000000')
         assert result == False
+
+
+# Real cases from COL backbone
+taxa = [
+    # Odd little quoted infraclass
+    {
+        'scientificName': '"Lower Heterobranchia"',
+        'genericName': None,
+        'infragenericEpithet': None,
+        'specificEpithet': None,
+        'infraspecificEpithet': None,
+        'taxonRank': 'infraclass',
+        'scientificNameAuthorship': None,
+        'expected_canonical': '"Lower Heterobranchia"'
+    },
+    # Broken superfamily case with authorship in scientific_name but not in authorship column
+    {
+        'scientificName': 'Poduroidea sensu Palacios-Vargas, 1994',
+        'genericName': None,
+        'infragenericEpithet': None,
+        'specificEpithet': None,
+        'infraspecificEpithet': None,
+        'taxonRank': 'superfamily',
+        'scientificNameAuthorship': None,
+        'expected_canonical': 'Poduroidea'
+    },
+    # Normal Genus case
+    {
+        'scientificName': 'Campylenchia',
+        'genericName': 'Campylenchia',
+        'infragenericEpithet': None,
+        'specificEpithet': None,
+        'infraspecificEpithet': None,
+        'taxonRank': 'genus',
+        'scientificNameAuthorship': None,
+        'expected_canonical': 'Campylenchia'
+    },
+    # Normal subgenus case
+    {
+        'scientificName': 'Culex (Melanoconion) Theobald, 1903',
+        'genericName': 'Culex',
+        'infragenericEpithet': 'Melanoconion',
+        'specificEpithet': None,
+        'infraspecificEpithet': None,
+        'scientificNameAuthorship': 'Theobald, 1903',
+        'taxonRank': 'subgenus',
+        'expected_canonical': 'Culex (Melanoconion)'
+    },
+    # Normal species case with authorship
+    {
+        'scientificName': 'Atta texana (Buckley, 1860)',
+        'genericName': 'Atta',
+        'infragenericEpithet': None,
+        'specificEpithet': 'texana',
+        'infraspecificEpithet': None,
+        'taxonRank': 'species',
+        'scientificNameAuthorship': '(Buckley, 1860)',
+        'expected_canonical': 'Atta texana'
+    },
+    # Species case where authorship appears WITHIN scientific name
+    {
+        'scientificName': 'Ambulyx moorei',
+        'genericName': 'Ambulyx',
+        'infragenericEpithet': None,
+        'specificEpithet': 'moorei',
+        'infraspecificEpithet': None,
+        'taxonRank': 'species',
+        'scientificNameAuthorship': 'moore',
+        'expected_canonical': 'Ambulyx moorei'
+    },
+    # Normal subspecies case
+    {
+        'scientificName': 'Entypus texanus texanus (Cresson, 1872)',
+        'genericName': 'Entypus',
+        'infragenericEpithet': None,
+        'specificEpithet': 'texanus',
+        'infraspecificEpithet': 'texanus',
+        'scientificNameAuthorship': '(Cresson, 1872)',
+        'taxonRank': 'subspecies',
+        'expected_canonical': 'Entypus texanus texanus'
+    },
+    # Normal form case
+    {
+        'scientificName': 'Polistes apachus f. apachus',
+        'genericName': 'Polistes',
+        'infragenericEpithet': None,
+        'specificEpithet': 'apachus',
+        'infraspecificEpithet': 'apachus',
+        'scientificNameAuthorship': None,
+        'taxonRank': 'form',
+        'expected_canonical': 'Polistes apachus f. apachus'
+    },
+]
+
+
+@pytest.mark.parametrize('taxon', taxa)
+class TestDeriveCanonicalName:
+    def test_taxon(self, taxon):
+        canonical_name = derive_canonical_name(taxon)
+        print(canonical_name)
+        assert canonical_name == taxon['expected_canonical']

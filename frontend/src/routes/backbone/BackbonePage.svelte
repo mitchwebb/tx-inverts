@@ -262,12 +262,16 @@
 
     $effect(() => {
         const ids = taxaContext.taxa.ids;
+        const tree = $taxaTree;
+
         const lastAddedID = ids.slice(-1)[0];
-        if (lastAddedID && !prevTaxaIds.has(lastAddedID) && $taxaTree) {
-            openTaxon(lastAddedID);
-        }
+
+        if (!lastAddedID || prevTaxaIds.has(lastAddedID) || !tree) return;
+
+        openTaxon(lastAddedID);
         prevTaxaIds = new Set(ids);
     });
+
 
     // Check for active taxon node and scroll to it
     $effect(() => {
