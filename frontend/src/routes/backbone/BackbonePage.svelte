@@ -23,6 +23,7 @@
     import { getTooltipContext } from '../../contexts/tooltipContext';
     import CheckboxInput, { type CheckboxPayload } from '../../common/CheckboxInput.svelte';
     import { toggleArrayValue } from '../../util/toggleArrayValue';
+    import { sortRankOrder } from '../../util/backbone_util';
 
     const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
@@ -69,8 +70,7 @@
 
     function handleRankToggle(payload: CheckboxPayload) {
         const newArray: TaxonomicRank[] = toggleArrayValue(allowedRanks, payload.value as TaxonomicRank, payload.checked)
-        newArray.sort((a, b) => RANK_ORDER.indexOf(a) - RANK_ORDER.indexOf(b))
-        allowedRanks = newArray;
+        allowedRanks = sortRankOrder(newArray);
     }
 
     function handleNodeClick(e: MouseEvent | KeyboardEvent) {
@@ -93,7 +93,7 @@
         } else {
             set.add(taxonID);
         }
-
+        // Reassign openNodes
         openNodes = set;
 
         const targetTaxonID = target.id;
@@ -138,6 +138,11 @@
             set.add(currentID);
             const currentNode = $taxaTree?.get(currentID);
             if (!currentNode || !currentNode.parentNameUsageID) break;
+            // If the asked-for node represents a rank that is hidden, show this rank
+            const taxonRank = currentNode.taxonRank;
+            if (taxonRank && !allowedRanks.includes(taxonRank)) {
+                allowedRanks = sortRankOrder([...allowedRanks, taxonRank])
+            }
             currentID = currentNode.parentNameUsageID;
         }
         openNodes = set;
