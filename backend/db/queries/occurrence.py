@@ -144,7 +144,7 @@ def create_occurrence_taxon_filter(taxon_ids: str | List[str] = 'N', include_inv
             )
 
     # Construct main taxon clause to search for taxon_id in each rank_id column
-    # This make sure we get oddly re-classified taxa
+    # This makes sure we get oddly re-classified taxa
     lineage_clause = sql.SQL("""
         EXISTS (
             SELECT 1
