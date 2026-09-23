@@ -28,7 +28,11 @@
     }
 </script>
 
-<div class="download-item-wrapper" class:disabled>
+<div
+    class="download-item-wrapper"
+    class:disabled
+    class:loading-blink={loadingEstimate}
+>
     <form onsubmit={handleSubmit}>
         <!-- Catch some dubious activity -->
         <input
@@ -44,7 +48,6 @@
                     <div class="icon">
                         <LoadingIcon />
                     </div>
-                    <!-- <span> Loading </span> -->
                 {:else}
                     {label}
                 {/if}
@@ -52,7 +55,7 @@
             {#if bytesReceived && fileSize}
                 <div
                     class="loading-bar"
-                    style:width={`${(bytesReceived / fileSize) * 100}%`}
+                    style:width={`${(Math.min(bytesReceived, fileSize) / fileSize) * 100}%`}
                 ></div>
             {/if}
         </button>
@@ -71,7 +74,6 @@
         left: 0;
         top: calc(100% - 3px);
         height: 3px;
-        /* opacity: 50%; */
         border-radius: 1px;
     }
     .download-item-wrapper {
@@ -85,10 +87,10 @@
         position: relative;
     }
     .disabled {
-        opacity: 0.75;
+        opacity: 0.5;
     }
     .download-item-wrapper.disabled {
-        cursor: wait;
+        cursor: not-allowed;
     }
     .download-item-wrapper.disabled button {
         pointer-events: none;

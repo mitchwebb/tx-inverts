@@ -101,8 +101,8 @@
 <style>
     .download-section-wrapper {
         display: flex;
-        justify-content: space-between;
-        height: 65px;
+        justify-content: flex-end;
+        height: 50px;
         margin-top: 0.5rem;
     }
     .retrieval-failed-message {
@@ -125,7 +125,6 @@
         display: flex;
         gap: 1rem;
         flex-shrink: 0;
-        justify-content: right;
         align-items: flex-start;
         height: 50px;
     }
