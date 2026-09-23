@@ -3,7 +3,7 @@ import type { TaxonomicRank } from '../types/taxa';
 
 export type ItalicizedRank = Extract<
     TaxonomicRank,
-    'genus' | 'species' | 'subspecies' | 'subgenus'
+    'genus' | 'species' | 'subspecies' | 'subgenus' | 'form'
 >;
 
 export const italicizedRanks: ItalicizedRank[] = [
@@ -11,6 +11,7 @@ export const italicizedRanks: ItalicizedRank[] = [
     'species',
     'subspecies',
     'subgenus',
+    'form',
 ];
 
 export const TAXON_COLORS = [

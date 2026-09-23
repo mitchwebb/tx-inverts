@@ -50,29 +50,28 @@
                     <InvasiveIcon />
                 </div>
             {/if}
-            {#if activeTaxon.info?.canonicalName}
-                <span
-                    class={'scientific-name'}
-                    class:italicized={isItalicizedRank(
-                        activeTaxon.info?.taxonRank
-                    )}
-                >
-                    {activeTaxon.info?.canonicalName}
-                </span>
-            {/if}
-            {#if activeTaxon.info?.scientificNameAuthorship}
-                <span class="scientific-authorship thin">
-                    {activeTaxon.info?.scientificNameAuthorship}
-                </span>
-            {/if}
-            {#if activeTaxon.info?.canonicalName}
-                <div class="gbif-link-button">
-                    <LinkButton
-                        href={`https://www.gbif.org/taxon/${activeTaxon.taxonID}`}
-                        target="_blank"
-                    />
-                </div>
-            {/if}
+            <span class="name-and-link">
+                {#if activeTaxon.info?.canonicalName}
+                    <span
+                        class="scientific-name"
+                        class:italicized={isItalicizedRank(activeTaxon.info?.taxonRank)}>
+                        {activeTaxon.info?.canonicalName}
+                    </span>
+                {/if}
+                {#if activeTaxon.info?.scientificNameAuthorship}
+                    <span class="scientific-authorship thin">
+                        {activeTaxon.info?.scientificNameAuthorship}
+                    </span>
+                {/if}
+                {#if activeTaxon.info?.canonicalName}
+                    <div class="gbif-link-button">
+                        <LinkButton
+                            href={`https://www.gbif.org/taxon/${activeTaxon.taxonID}`}
+                            target="_blank"
+                        />
+                    </div>
+                {/if}
+            </span>
             {#if isLoading}
                 <div class="loading-icon icon">
                     <LoadingIcon />

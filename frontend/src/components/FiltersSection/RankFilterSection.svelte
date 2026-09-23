@@ -64,4 +64,8 @@
     .rank-filter-label {
         width: fit-content;
     }
+    .filters-section-header {
+        display: flex;
+        gap: 0.25rem;
+    }
 </style>

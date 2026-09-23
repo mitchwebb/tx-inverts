@@ -13,10 +13,10 @@
 <div id="add-taxon-button-wrapper">
     {#if active}
         <TaxaSearch
-            append={true}
             placeholder="Search for Taxon to Add..."
             autoFocus={true}
             handleBlur={handleSearchBlur}
+            replace={false}
         />
     {:else}
         <button id="add-taxon-button" onclick={() => (active = !active)}>

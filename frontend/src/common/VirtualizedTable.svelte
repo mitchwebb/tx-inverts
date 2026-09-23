@@ -407,6 +407,7 @@
         white-space: nowrap;
         display: flex;
         pointer-events: none;
+        gap: 0.25rem;
     }
     .sort-arrow {
         height: 1rem;
