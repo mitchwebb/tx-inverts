@@ -46,6 +46,7 @@
         display: flex;
         flex-direction: column;
         max-width: 325px;
+        min-height: 100px;
     }
     .page-wrapper.overlay #default-sidebar-wrapper {
         background-color: var(--container-back);
