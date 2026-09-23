@@ -32,6 +32,9 @@
 
     async function handleDownload() {
         downloadDisabled = true;
+        await requestHandler(false, (r) => {
+            bytesReceived = r;
+        });
         downloadDisabled = false;
         bytesReceived = null;
     }
@@ -102,7 +105,7 @@
     .download-section-wrapper {
         display: flex;
         justify-content: flex-end;
-        height: 50px;
+        align-items: center;
         margin-top: 0.5rem;
     }
     .retrieval-failed-message {
@@ -123,10 +126,11 @@
     }
     .button-and-metrics-wrapper {
         display: flex;
-        gap: 1rem;
+        gap: 0.5rem;
         flex-shrink: 0;
         align-items: flex-start;
         height: 50px;
+        align-items: center;
     }
     .download-metrics {
         display: flex;

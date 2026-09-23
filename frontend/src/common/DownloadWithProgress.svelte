@@ -90,7 +90,7 @@
         opacity: 0.5;
     }
     .download-item-wrapper.disabled {
-        cursor: not-allowed;
+        cursor: loading;
     }
     .download-item-wrapper.disabled button {
         pointer-events: none;
