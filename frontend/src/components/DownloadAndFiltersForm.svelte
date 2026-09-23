@@ -1,17 +1,14 @@
 <script lang="ts">
-    import { onMount, type Snippet } from 'svelte';
+    import { type Snippet } from 'svelte';
     import DownloadWithProgress from '../common/DownloadWithProgress.svelte';
     import type { EstimateMetrics } from '../types/api';
     import { getHumanReadableBytes } from '../util/bytes';
     import LoadingIcon from '../assets/LoadingIcon.svelte';
 
-    const TURNSTILE_KEY = import.meta.env.VITE_TURNSTILE_KEY;
-
     type DownloadFormProps = {
         header?: string;
         requestHandler: (
             getEstimate: boolean,
-            token?: string | null,
             onProgress?: (received: number) => void
         ) => Promise<any>;
         children?: Snippet;
@@ -23,13 +20,9 @@
     let rowCount: number | null = $state(null);
     let loadingEstimate: boolean = $state(true);
     let bytesReceived: number | null = $state(null);
-    let turnstileToken: string | null = $state(null);
 
     let downloadDisabled: boolean = $derived(
-        rowCount == 0 ||
-            estimateSize == null ||
-            loadingEstimate ||
-            !turnstileToken
+        rowCount == 0 || estimateSize == null || loadingEstimate
     );
 
     // Consider download to be 'large' if is exceeds 50 MB
@@ -39,9 +32,6 @@
 
     async function handleDownload() {
         downloadDisabled = true;
-        await requestHandler(false, turnstileToken, (r) => {
-            bytesReceived = r;
-        });
         downloadDisabled = false;
         bytesReceived = null;
     }
@@ -65,17 +55,6 @@
             loadingEstimate = false;
         })();
     });
-
-    onMount(() => {
-        turnstile.render('#turnstile-widget', {
-            sitekey: TURNSTILE_KEY,
-            theme: 'dark',
-            size: 'normal',
-            callback: function (token: string) {
-                turnstileToken = token;
-            },
-        });
-    });
 </script>
 
 <div id="download-form-wrapper">
@@ -88,7 +67,6 @@
         {@render children?.()}
     </div>
     <div class="download-section-wrapper">
-        <div id="turnstile-widget"></div>
         <div class="button-and-metrics-wrapper">
             {#if estimateSize !== null && rowCount !== null}
                 <div class="download-metrics thin">
@@ -102,7 +80,7 @@
                 <DownloadWithProgress
                     label="Download"
                     downloadHandler={handleDownload}
-                    disabled={downloadDisabled || !turnstileToken}
+                    disabled={downloadDisabled}
                     fileSize={estimateSize}
                     {bytesReceived}
                 />
@@ -126,10 +104,6 @@
         justify-content: space-between;
         height: 65px;
         margin-top: 0.5rem;
-    }
-    #turnstile-widget {
-        display: flex;
-        justify-content: left;
     }
     .retrieval-failed-message {
         margin: 0 0.5rem;

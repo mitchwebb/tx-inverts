@@ -82,7 +82,7 @@ export async function getDownload(
 // }
 
 export async function getTaxaDownload(
-    filteredIDs: number[],
+    filteredIDs: string[],
     getEstimate: boolean,
     onProgress?: (received: number) => void
 ) {

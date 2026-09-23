@@ -133,7 +133,6 @@ async def get_ranked_taxa_download(
 
     taxon_ids = params.taxon_ids
     get_estimate = params.get_estimate
-    token = params.token
 
     query = sql.SQL("""
         {dwc_taxa_select_clause}
@@ -154,40 +153,31 @@ async def get_ranked_taxa_download(
             async with request.app.state.db_pool.connection() as conn:
                 return await estimate_tsv_download_size(conn, query)
         else:
-            validation = validate_turnstile(
-                token, settings.security.turnstile_key)
-            print(validation)
-            if validation['success'] == True:
-                print(validation)
-                return responses.StreamingResponse(
-                    download_table_and_stream(request.app.state.db_pool,
-                                              query, format='tsv'),
-                    media_type='text/tab-separated-values',
-                    headers={
-                        'Content-Disposition': 'attachment; filename=taxa_download.tsv'
-                    }
-                )
-            else:
-                Exception("Turnstile validation failed.")
-                raise HTTPException(status_code=400, detail=str(
-                    "Turnstile validation failed."))
+            return responses.StreamingResponse(
+                download_table_and_stream(request.app.state.db_pool,
+                                          query, format='tsv'),
+                media_type='text/tab-separated-values',
+                headers={
+                    'Content-Disposition': 'attachment; filename=taxa_download.tsv'
+                }
+            )
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def validate_turnstile(token, secret):
-    url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+# def validate_turnstile(token, secret):
+#     url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
-    data = {
-        'secret': secret,
-        'response': token
-    }
+#     data = {
+#         'secret': secret,
+#         'response': token
+#     }
 
-    try:
-        response = requests.post(url, data=data, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        print(f"Turnstile validation error: {e}")
-        return {'success': False, 'error-codes': ['internal-error']}
+#     try:
+#         response = requests.post(url, data=data, timeout=10)
+#         response.raise_for_status()
+#         return response.json()
+#     except requests.RequestException as e:
+#         console.error(f"Turnstile validation error: {e}")
+#         return {'success': False, 'error-codes': ['internal-error']}
