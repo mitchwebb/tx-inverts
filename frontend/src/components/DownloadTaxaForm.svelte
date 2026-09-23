@@ -10,11 +10,13 @@
 
     async function requestTaxaDownload(
         getEstimate: boolean,
+        token?: string | null,
         onProgress?: (received: number) => void
     ) {
         const response = await getTaxaDownload(
             visibleTaxonIDs,
             getEstimate,
+            token,
             onProgress
         );
         if (getEstimate && response) return response;
@@ -25,7 +27,7 @@
 <div id="download-form-wrapper">
     <DownloadAndFiltersForm requestHandler={requestTaxaDownload}>
         <Filters
-            domain="taxa"
+            domain="taxon"
             header="Download Ranked Taxa TSV"
             includeButtons={false}
         />

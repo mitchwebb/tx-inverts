@@ -42,6 +42,7 @@ class SingleTaxonObsRequestParams(TaxonRequestParams, ObsRequestParams):
 
 # Params used to make download request queries
 class DownloadRequestParams(MultiTaxaObsRequestParams):
+    token: str | None = None
     get_estimate: bool = False  # If true, trigger query size estimate
 
 

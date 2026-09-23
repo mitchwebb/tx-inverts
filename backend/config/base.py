@@ -2,6 +2,8 @@
 from backend.config.cors import CORSSettings
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from backend.config.security import SecuritySettings
 from .database import PostgresSettings
 from .gbif import GBIFSettings
 
@@ -21,6 +23,7 @@ class BaseAppSettings(BaseSettings):
     database: PostgresSettings
     gbif: GBIFSettings
     cors: CORSSettings
+    security: SecuritySettings
 
     model_config = SettingsConfigDict(
         env_file='.env',  # Fallback for common variables

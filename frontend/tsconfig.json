@@ -6,7 +6,8 @@
         "pretty": true,
         "noUnusedParameters": true,
         "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true
+        "noFallthroughCasesInSwitch": true,
+        "types": ["cloudflare-turnstile"]
     },
     "include": [
         "**/*.ts",

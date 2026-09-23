@@ -1,6 +1,8 @@
 # Download related API endpoints
 from typing import AsyncIterator, Literal
 from psycopg_pool import AsyncConnectionPool
+import requests
+from backend.config import get_settings
 from backend.db.queries.dwc import DWC_TAXA_SELECT_CLAUSE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.api import DownloadRequestParams
@@ -13,6 +15,8 @@ import io
 
 
 download_router = APIRouter()
+
+settings = get_settings()
 
 
 async def download_table_and_stream(
@@ -83,9 +87,12 @@ async def estimate_tsv_download_size(conn: AsyncConnection, query: sql.Composed)
     result = await execute_psql_query(conn, count_query, fetch='one')
     total_rows = result[0] if result is not None else 0
 
-    # Sample a few rows to get realistic avg byte size including headers
-    sample_query = sql.SQL(
-        "SELECT * FROM ({query}) AS t LIMIT 100").format(query=query)
+    # Sample rows to get realistic avg byte size including headers
+    sample_query = sql.SQL("""
+        SELECT * FROM ({query}) AS t
+        WHERE random() < 0.1
+        LIMIT 10000
+    """).format(query=query)
 
     sample = await execute_psql_query(conn, sample_query, fetch='all')
 
@@ -109,7 +116,7 @@ async def estimate_tsv_download_size(conn: AsyncConnection, query: sql.Composed)
 async def get_ranked_taxa_download(
     params: DownloadRequestParams,
     request: Request,
-) -> responses.StreamingResponse | dict[str, int | float]:
+) -> responses.StreamingResponse | dict[str, int | float] | None:
     """
     Download species/subspecies matching the given taxon IDs as a TSV.
 
@@ -126,6 +133,7 @@ async def get_ranked_taxa_download(
 
     taxon_ids = params.taxon_ids
     get_estimate = params.get_estimate
+    token = params.token
 
     query = sql.SQL("""
         {dwc_taxa_select_clause}
@@ -146,14 +154,40 @@ async def get_ranked_taxa_download(
             async with request.app.state.db_pool.connection() as conn:
                 return await estimate_tsv_download_size(conn, query)
         else:
-            return responses.StreamingResponse(
-                download_table_and_stream(request.app.state.db_pool,
-                                          query, format='tsv'),
-                media_type='text/tab-separated-values',
-                headers={
-                    'Content-Disposition': 'attachment; filename=taxa_download.tsv'
-                }
-            )
+            validation = validate_turnstile(
+                token, settings.security.turnstile_key)
+            print(validation)
+            if validation['success'] == True:
+                print(validation)
+                return responses.StreamingResponse(
+                    download_table_and_stream(request.app.state.db_pool,
+                                              query, format='tsv'),
+                    media_type='text/tab-separated-values',
+                    headers={
+                        'Content-Disposition': 'attachment; filename=taxa_download.tsv'
+                    }
+                )
+            else:
+                Exception("Turnstile validation failed.")
+                raise HTTPException(status_code=400, detail=str(
+                    "Turnstile validation failed."))
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def validate_turnstile(token, secret):
+    url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+
+    data = {
+        'secret': secret,
+        'response': token
+    }
+
+    try:
+        response = requests.post(url, data=data, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        print(f"Turnstile validation error: {e}")
+        return {'success': False, 'error-codes': ['internal-error']}
