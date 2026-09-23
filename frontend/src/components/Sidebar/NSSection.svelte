@@ -39,7 +39,7 @@
 
     // Determine if there are any active observations filters affecting the ranking
     const filtersActive = $derived.by(() => {
-        const count = countActiveFilters(filtersContext, 'observations');
+        const count = countActiveFilters(filtersContext, 'observation');
         return count > 0;
     });
 
@@ -325,6 +325,7 @@
         display: flex;
         justify-content: center;
         font-size: 1.2rem;
+        gap: 0.25rem;
     }
     .rank-scale {
         display: flex;

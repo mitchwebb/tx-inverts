@@ -63,13 +63,17 @@
     import { makeIDCollection } from '../util/collection.svelte';
     import { isNarrowView } from '../contexts/device';
     import MobileSidebar from '../components/Sidebar/MobileSidebar.svelte';
-    import { getRankAffectingFilterValues } from '../constants/sidebarFilters';
+    import {
+        getFilterValues,
+        RANK_AFFECTING_FILTER_KEYS,
+    } from '../constants/sidebarFilters';
 
     // Intialize contexts
 
     // Make taxa collection (easier way of managing our lists of objects reactively)
     const taxaCollection = makeIDCollection<ActiveTaxon, string>(
         (t) => t.taxonID,
+        // Load taxonInfo on add
         loadTaxonInfo
     );
     const taxaState: ActiveTaxaState = $state(initialActiveTaxaState);
@@ -120,7 +124,6 @@
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
         const datasets = filtersContext.datasets;
-        const taxonRank = filtersContext.taxonRank;
         const coordUncertainty = filtersContext.coordUncertainty;
         const includeINat = filtersContext.includeINat;
 
@@ -131,7 +134,6 @@
                 dateStart,
                 dateEnd,
                 datasets,
-                taxonRank,
                 coordUncertainty,
                 includeINat,
             });
@@ -166,7 +168,10 @@
 
     // Get NSValues for all taxa on filters change
     $effect(() => {
-        const trackedValues = getRankAffectingFilterValues(filtersContext);
+        const trackedValues = getFilterValues(
+            RANK_AFFECTING_FILTER_KEYS,
+            filtersContext
+        );
 
         untrack(() => {
             for (const taxonID of taxaContext.taxa.ids) {
@@ -264,9 +269,11 @@
 
     // Get aggregated datasetCounts for each taxon
     $effect(() => {
-        const filters = getRankAffectingFilterValues(filtersContext, [
-            'datasets',
-        ]);
+        const filters = getFilterValues(
+            RANK_AFFECTING_FILTER_KEYS,
+            filtersContext,
+            ['datasets']
+        );
 
         const _ = taxaContext.taxa.ids;
 
@@ -289,10 +296,11 @@
 
     // Get min/max observationDates for each taxon
     $effect(() => {
-        const filters = getRankAffectingFilterValues(filtersContext, [
-            'dateStart',
-            'dateEnd',
-        ]);
+        const filters = getFilterValues(
+            RANK_AFFECTING_FILTER_KEYS,
+            filtersContext,
+            ['dateStart', 'dateEnd']
+        );
 
         const _ = taxaContext.taxa.ids;
 
@@ -318,10 +326,11 @@
 
     // Get aggregated monthly counts for each taxon
     $effect(() => {
-        const filters = getRankAffectingFilterValues(filtersContext, [
-            'dateStart',
-            'dateEnd',
-        ]);
+        const filters = getFilterValues(
+            RANK_AFFECTING_FILTER_KEYS,
+            filtersContext,
+            ['dateStart', 'dateEnd']
+        );
 
         const _ = taxaContext.taxa.ids;
 

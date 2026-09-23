@@ -1,12 +1,11 @@
 import { getContext, setContext } from 'svelte';
 import type { NSRank, RegionInfo } from '../types/api';
-import type { TaxonomicRank } from '../types/taxa';
 import { makeIDCollection } from '../util/collection.svelte';
 
 export const filtersStateKey = 'filters';
 
 export type FiltersState = {
-    taxonRank: TaxonomicRank | null;
+    parentTaxa: { id: string; canonicalName: string }[];
     includeINat: boolean;
     datasets: string[];
     nSRanks: NSRank[];
@@ -17,7 +16,7 @@ export type FiltersState = {
 };
 
 export const initialFiltersState: FiltersState = {
-    taxonRank: null,
+    parentTaxa: [],
     includeINat: true,
     datasets: [],
     nSRanks: [],

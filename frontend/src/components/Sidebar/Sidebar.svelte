@@ -45,9 +45,9 @@
     // Determine which filters menu to open from sidebar
     const filtersDomain = $derived.by(() => {
         if (['/map', '/backbone', '/about/walkthrough'].includes(currPath)) {
-            return 'observations';
+            return 'observation';
         } else {
-            return 'taxa';
+            return 'taxon';
         }
     });
 

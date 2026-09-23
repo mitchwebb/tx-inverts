@@ -32,7 +32,6 @@ export type RouterSyncedKey =
     | 'inat'
     | 'dataset'
     | 'status'
-    | 'rank'
     | 'd1'
     | 'd2'
     | 'region'
@@ -56,10 +55,6 @@ export const routerSyncedKeys = {
             nSRanks: {
                 param: 'status',
                 codec: stringArrayURLCodec() as URLParamCodec<NSRank[]>,
-            },
-            taxonRank: {
-                param: 'rank',
-                codec: stringURLCodec() as URLParamCodec<TaxonomicRank | null>,
             },
             dateStart: {
                 param: 'd1',

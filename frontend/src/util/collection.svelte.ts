@@ -28,15 +28,19 @@ export function makeIDCollection<
         get(id: ID) {
             return items.find((i) => getID(i) === id);
         },
+        // Behavior on add
         async add(item: T) {
+            // Gets ID of added item
             const id = getID(item);
 
             if (items.some((i) => getID(i) === id)) {
                 throw new Error(`Item with ID "${id}" already exists`);
             }
 
+            // Adds item to current items (with provided data)
             items = [...items, item];
 
+            // If onAdd function provided, performs secondary task
             if (onAdd) {
                 await onAdd(id);
             }

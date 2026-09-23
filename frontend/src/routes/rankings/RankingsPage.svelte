@@ -5,7 +5,6 @@
     } from '../../contexts/activeTaxaContext';
     import { taxaTree } from '../../contexts/TaxaTree';
     import { type TaxonInfo } from '../../types/api';
-    import { isItalicizedRank } from '../../util/taxa';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import NSCircle from '../../common/NSCircle.svelte';
     import MagnifyIcon from '../../assets/MagnifyIcon.svelte';
@@ -212,6 +211,34 @@
             rankingsContext.sortAscending = null;
         }
     }
+
+    // Sync parentTaxa filter to active taxa
+    $effect(() => {
+        const items = taxaContext.taxa.items;
+        const infos = items.map((t) => t.info);
+        console.log(items);
+
+        const activeParentTaxa = items.filter(
+            (
+                t
+            ): t is typeof t & {
+                info: {
+                    taxonID: string;
+                    canonicalName: string;
+                    taxonRank: string;
+                };
+            } =>
+                !!t.info?.taxonID &&
+                !!t.info?.canonicalName &&
+                !!t.info?.taxonRank &&
+                !['species', 'subspecies', 'form'].includes(t.info.taxonRank)
+        );
+
+        filtersContext.parentTaxa = activeParentTaxa.map((t) => ({
+            id: t.info.taxonID,
+            canonicalName: t.info.canonicalName,
+        }));
+    });
 </script>
 
 {#snippet downloadTaxaForm()}

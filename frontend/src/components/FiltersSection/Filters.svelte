@@ -27,26 +27,28 @@
     }: TaxaFiltersProps = $props();
 </script>
 
-<FiltersWrapper {header} {includeButtons}>
+<FiltersWrapper {header} {includeButtons} {domain}>
     <div class="vertical-filter-group">
         <TaxonFilterSection
             {domain}
-            header="Selected Taxa"
-            excludeSpecies={domain == 'taxa'}
+            header={domain == 'taxon'
+                ? 'Filter by Parent Taxa'
+                : 'Selected Taxa'}
+            excludeSpecies={domain == 'taxon'}
         />
         <UncertaintyFilterSection />
-        {#if domain == 'taxa'}
+        {#if domain == 'taxon'}
             <RankFilterSection />
         {/if}
     </div>
     <div class="vertical-filter-group">
         <DateFilterSection {domain} header="Dates Present" />
-        {#if domain == 'taxa'}
+        {#if domain == 'taxon'}
             <GeoFilterSection />
         {/if}
     </div>
     <div class="horizontal-filter-group">
-        <DatasetFilterSection {domain} showCounts={domain == 'observations'} />
+        <DatasetFilterSection {domain} showCounts={domain == 'observation'} />
     </div>
 </FiltersWrapper>
 

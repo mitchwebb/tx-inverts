@@ -3,6 +3,7 @@
     import SearchbarCard from '../../common/SearchbarCard.svelte';
     import type { FiltersDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import { getFiltersContext } from '../../contexts/filtersContext';
     import { isItalicizedRank } from '../../util/taxa';
     import TaxaSearch from '../TaxaSearch.svelte';
 
@@ -14,29 +15,22 @@
 
     const {
         domain,
-        header = 'Selected Taxa',
+        header = 'Filter by Parent Taxa:',
         excludeSpecies = false,
     }: TaxonFilterProps = $props();
 
     const taxaContext = getActiveTaxaContext();
+    const filtersContext = getFiltersContext();
 
     function handleRemoveTaxon(taxonID: string | null) {
         if (!taxonID) return;
         taxaContext.taxa.remove(taxonID);
     }
-
-    const higherTaxaActive = $derived(
-        taxaContext.taxa.ids.some((id) => {
-            const taxon = taxaContext.taxa.get(id);
-            const taxonRank = taxon?.info?.taxonRank;
-            return taxonRank && !['species', 'subspecies'].includes(taxonRank);
-        })
-    );
 </script>
 
 <div
     class="taxon-filter filters-section"
-    class:active={domain === 'taxa' ? higherTaxaActive : false}
+    class:active={domain === 'taxon' ? filtersContext.parentTaxa.length : false}
 >
     <div class="filters-section-header">{header}</div>
     <div class="filters-section-content">
@@ -53,7 +47,7 @@
                         taxonInfo?.taxonRank || null
                     )}
                     <!-- If excluding species, leave out species and subspecies cards -->
-                    {#if !excludeSpecies || (taxonRank && !['species', 'subspecies'].includes(taxonRank))}
+                    {#if !excludeSpecies || (taxonRank && !['species', 'subspecies', 'form'].includes(taxonRank))}
                         {#snippet label()}
                             <div class="taxon-card-label">
                                 {#if taxon.taxonLoading}

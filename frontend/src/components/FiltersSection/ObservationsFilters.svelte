@@ -12,13 +12,13 @@
     import './filtersSection.css';
 </script>
 
-<FiltersWrapper header={'Filter Occurrences'}>
+<FiltersWrapper domain="observation" header={'Filter Occurrences'}>
     <div class="horizontal-filter-group">
-        <TaxonFilterSection domain="observations" />
+        <TaxonFilterSection domain="observation" />
         <UncertaintyFilterSection />
         <DateFilterSection header="Date Range" />
     </div>
-    <DatasetFilterSection domain="observations" />
+    <DatasetFilterSection domain="observation" />
 </FiltersWrapper>
 
 <style>

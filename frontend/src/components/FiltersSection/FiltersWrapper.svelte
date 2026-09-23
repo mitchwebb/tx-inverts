@@ -2,7 +2,11 @@
     import type { Snippet } from 'svelte';
     import {
         FILTER_KEYS,
+        getActiveFilterKeys,
+        OCCURRENCE_FILTER_KEYS,
         SIDEBAR_FILTER_META,
+        TAXA_FILTER_KEYS,
+        type FiltersDomain,
     } from '../../constants/sidebarFilters';
     import {
         getFiltersContext,
@@ -10,15 +14,19 @@
     } from '../../contexts/filtersContext';
     import { getModalContext } from '../../contexts/modalContext';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import { capitalizeWords } from '../../util/textHelpers';
+    import { countActiveFilters } from '../../lib/filters.svelte';
 
     type FiltersWrapperProps = {
         header: string;
+        domain: FiltersDomain;
         children: Snippet;
         includeButtons?: boolean;
     };
 
     const {
         header,
+        domain,
         children,
         includeButtons = true,
     }: FiltersWrapperProps = $props();
@@ -40,10 +48,45 @@
         }
         taxaContext.taxa.clear();
     }
+
+    const activeFilterCount: number = $derived(
+        countActiveFilters(filtersContext, domain)
+    );
+
+    const formattedActiveFilters: string[] = $derived(
+        getActiveFilterKeys(
+            domain == 'taxon' ? TAXA_FILTER_KEYS : OCCURRENCE_FILTER_KEYS,
+            filtersContext
+        )
+            .map((key) => {
+                return SIDEBAR_FILTER_META[key].format(filtersContext[key]);
+            })
+            .filter((value) => value !== null)
+    );
 </script>
 
 <div class="filters-content-wrapper">
-    <h3 class="filters-header">{header}</h3>
+    <div class="header-and-subheader">
+        <h3 class="filters-header">{header}</h3>
+        <div
+            class="active-filters-text thin"
+            class:active={formattedActiveFilters?.length}
+        >
+            {#if activeFilterCount === 0}
+                <span>No Active Filters</span>
+            {:else if activeFilterCount < 5}
+                <span
+                    >Active {capitalizeWords(domain)} Filters: {formattedActiveFilters.join(
+                        ', '
+                    )}</span
+                >
+            {:else}
+                <span
+                    >{activeFilterCount} Active {capitalizeWords(domain)} Filters</span
+                >
+            {/if}
+        </div>
+    </div>
     <div id="filters-content">
         {@render children?.()}
     </div>
@@ -64,8 +107,23 @@
 </div>
 
 <style>
-    .filters-header {
+    .header-and-subheader {
         margin: 0.5rem 0.5rem 0 0.5rem;
+        gap: 0.5rem;
+        vertical-align: baseline;
+    }
+    .active-filters-text {
+        display: flex;
+        width: 100%;
+        font-size: 0.9rem;
+        font-style: italic;
+        text-align: left;
+    }
+    .active-filters-text.active {
+        color: var(--accent-color);
+    }
+    .filters-header {
+        margin: 0;
         display: flex;
         user-select: none;
     }

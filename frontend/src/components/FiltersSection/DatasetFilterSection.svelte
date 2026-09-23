@@ -19,7 +19,7 @@
     const {
         header = 'Datasets',
         showCounts = true,
-        domain = 'observations',
+        domain = 'observation',
     }: DatasetFilterProps = $props();
 
     const filtersContext = getFiltersContext();
@@ -33,7 +33,7 @@
     const higherTaxaActive = $derived(
         taxaContext.taxa.ids.some((id) => {
             const taxon = taxaContext.taxa.get(id);
-            const taxonRank = taxon?.info.taxonRank;
+            const taxonRank = taxon?.info?.taxonRank;
             return taxonRank && !['species', 'subspecies'].includes(taxonRank);
         })
     );
@@ -44,8 +44,8 @@
         // If in observations domain and taxa selected,
         // OR if in taxa domain and parent taxa selected
         if (
-            (domain === 'observations' && taxaContext.taxa.ids.length) ||
-            (domain === 'taxa' && higherTaxaActive)
+            (domain === 'observation' && taxaContext.taxa.ids.length) ||
+            (domain === 'taxon' && higherTaxaActive)
         ) {
             // Filter to relevant datasets
             return Object.entries(datasetCounts).map(([key, count]) => ({

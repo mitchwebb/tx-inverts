@@ -15,7 +15,7 @@
         header?: string;
     };
 
-    const { domain = 'observations', header = 'Date Range' }: DateFilterProps =
+    const { domain = 'observation', header = 'Date Range' }: DateFilterProps =
         $props();
 
     const filtersContext = getFiltersContext();
@@ -47,13 +47,13 @@
 
     // Derive minDate using all activeTaxa minDates
     const minDate = $derived.by(() => {
-        if (domain === 'taxa') return undefined;
+        if (domain === 'taxon') return undefined;
         return getTaxonDates('dateMin').sort((a, b) => (a > b ? 1 : -1))[0];
     });
 
     // Derive maxDate using all activeTaxa maxDates
     const maxDate = $derived.by(() => {
-        if (domain === 'taxa') return undefined;
+        if (domain === 'taxon') return undefined;
         return getTaxonDates('dateMax').sort((a, b) => (a < b ? 1 : -1))[0];
     });
 
@@ -78,7 +78,7 @@
                     borderColor: taxon.color,
                     backgroundColor: taxon.color,
                     data: taxon.dateCounts ?? [],
-                    label: taxon.info.canonicalName || 'Missing Name',
+                    label: taxon.info?.canonicalName || 'Missing Name',
                     pointRadius: (ctx: ScriptableContext<'line'>) => {
                         const value = ctx.parsed?.y;
                         return value === 0 ? 0 : 3; // 0 = no visible marker, 3 = default-ish size
@@ -133,7 +133,7 @@
                 dateFormat="yyyy-MM-dd"
             />
         </div>
-        {#if taxonContext.taxa.ids.length && domain == 'observations'}
+        {#if taxonContext.taxa.ids.length && domain == 'observation'}
             <DatesChart
                 title="Filtered Observations Per Month"
                 data={allDateDatasets}
