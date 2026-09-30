@@ -161,7 +161,7 @@ export const countiesLayer = {
 } as const satisfies LayerBundle;
 
 // TODO: This should be linked up with the API. Determine where to store value
-export const observationsZoomCutoff: number = 10;
+export const observationsZoomCutoff: number = 11;
 
 // Collect all static map layers in one place
 export const staticMapLayers = [

@@ -171,6 +171,8 @@
             // Offset for the map's starting center
             center: [center[0] + 3, center[1]],
             zoom: 4.7,
+            minZoom: 4,
+            maxZoom: 16,
             cooperativeGestures: $isMobile ? true : false,
         });
 
