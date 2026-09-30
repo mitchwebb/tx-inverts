@@ -45,16 +45,19 @@
             <div id="taxon-error">Requested Taxon Not Found</div>
         {/if}
         <div id="main-header-name">
-            {#if activeTaxon.info?.uSInvasive}
-                <div class="invasive-icon">
-                    <InvasiveIcon />
-                </div>
-            {/if}
             <span class="name-and-link">
+                {#if activeTaxon.info?.uSInvasive}
+                    <div class="invasive-icon">
+                        <InvasiveIcon />
+                    </div>
+                {/if}
                 {#if activeTaxon.info?.canonicalName}
                     <span
                         class="scientific-name"
-                        class:italicized={isItalicizedRank(activeTaxon.info?.taxonRank)}>
+                        class:italicized={isItalicizedRank(
+                            activeTaxon.info?.taxonRank
+                        )}
+                    >
                         {activeTaxon.info?.canonicalName}
                     </span>
                 {/if}
@@ -145,7 +148,7 @@
         flex-wrap: wrap;
         gap: 0.5rem;
         align-items: center;
-        line-height: 1.3rem;
+        line-height: 1.4rem;
         font-size: 1.4rem;
     }
     #sidebar-main-header {
@@ -178,6 +181,7 @@
     .invasive-icon {
         height: 1.2rem;
         width: 1.2rem;
+        display: inline-block;
     }
     #main-header-top {
         display: flex;
