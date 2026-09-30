@@ -89,10 +89,11 @@ async def estimate_tsv_download_size(conn: AsyncConnection, query: sql.Composed)
 
     # Sample rows to get realistic avg byte size including headers
     sample_query = sql.SQL("""
-        SELECT * FROM ({query}) AS t
-        WHERE random() < 0.1
-        LIMIT 10000
-    """).format(query=query)
+        SELECT * 
+        FROM ({query}) AS t
+        ORDER BY random()
+        LIMIT {sample_size}
+    """).format(query=query, sample_size=sql.Literal(min(total_rows, 10000)))
 
     sample = await execute_psql_query(conn, sample_query, fetch='all')
 
