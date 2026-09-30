@@ -121,7 +121,7 @@ async def get_texas_range_extent_geom(params: SingleTaxonObsRequestParams, reque
                     WHERE state = 'Texas'
                 ),
                 hull AS (
-                    SELECT ST_ConvexHull(ST_Collect(geometry)) AS geom
+                    SELECT ST_ConvexHull(ST_Collect(geometry_4326)) AS geom
                     FROM {occurrence_table}
                     WHERE
                         {occurrence_filter}

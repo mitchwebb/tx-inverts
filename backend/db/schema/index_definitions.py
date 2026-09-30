@@ -50,9 +50,9 @@ _all_indexes = [
         clause=sql.SQL('(taxon_rank)')
     ),
     IndexDefinition(
-        name='idx_gbif_observations_geom',
+        name='idx_gbif_observations_geom_4326',
         table=GBIF_OBSERVATIONS_TABLE,
-        clause=sql.SQL('USING GIST(geometry)')
+        clause=sql.SQL('USING GIST(geometry_4326)')
     ),
     IndexDefinition(
         name='idx_gbif_observations_id',
@@ -78,7 +78,7 @@ _all_indexes = [
     IndexDefinition(
         name='idx_gbif_observations_geom_3857',
         table=GBIF_OBSERVATIONS_TABLE,
-        clause=sql.SQL('USING GIST(ST_Transform(geometry, 3857))')
+        clause=sql.SQL('USING GIST(ST_Transform(geometry_4326, 3857))')
     ),
     IndexDefinition(
         name='idx_gbif_observations_institution_code',

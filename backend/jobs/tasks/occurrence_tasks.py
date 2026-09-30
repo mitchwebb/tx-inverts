@@ -141,7 +141,7 @@ async def _filter_temp_table_chunk(conn: AsyncConnection, table_name: str, batch
         "Updating geometry column and filtering by Texas shapefile...")
     update_geometry_query = sql.SQL("""
             UPDATE {temp_table}
-            SET geometry = ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326)
+            SET geometry_4326 = ST_SetSRID(ST_MakePoint(decimal_longitude, decimal_latitude), 4326)
             WHERE batch_id = {batch_id}
                 AND decimal_latitude IS NOT NULL
                 AND decimal_longitude IS NOT NULL
@@ -157,7 +157,7 @@ async def _filter_temp_table_chunk(conn: AsyncConnection, table_name: str, batch
             DELETE FROM {temp_table}
             WHERE batch_id={batch_id}
                 AND NOT ST_Within(
-                    geometry,
+                    geometry_4326,
                     (SELECT geometry FROM {tx_table} WHERE state = 'Texas')
                 );
         """).format(
@@ -256,8 +256,12 @@ async def update_observations(
             )
 
         # Drop batch_id from temp table so INSERT matches target
+        # Also drop GENERATED columns so that insert all doesn't break
         drop_column_query = sql.SQL("""
-            ALTER TABLE {temp_table} DROP COLUMN IF EXISTS batch_id
+            ALTER TABLE {temp_table} 
+                DROP COLUMN IF EXISTS batch_id,
+                DROP COLUMN IF EXISTS geometry_3857,
+                DROP COLUMN IF EXISTS geometry_5070
         """).format(temp_table=sql.Identifier(temp_table_name))
         await execute_psql_query(conn, drop_column_query)
 
@@ -279,14 +283,24 @@ async def update_observations(
         db_logger.warning(
             "Observations table is being fully replaced—it is safest to accompany this with a backbone update.")
 
+        # Make sure to not include generated columns in insert
+        insert_columns = [
+            col for col in GBIF_OBSERVATIONS_TABLE.column_order()
+            if col not in {"geometry_3857", "geometry_5070"}
+        ]
+
         db_logger.info(
             "Adding all accepted observations to observations table. For a full replacement, this can take around 25 minutes...")
         insert_query = sql.SQL("""
-            INSERT INTO {observations_table}
-            SELECT * FROM {temp_table}
+            INSERT INTO {observations_table} ({columns})
+            SELECT {columns}
+            FROM {temp_table}
         """).format(
             observations_table=sql.Identifier(
                 GBIF_OBSERVATIONS_TABLE.name),
+            columns=sql.SQL(", ").join(
+                sql.Identifier(col) for col in insert_columns
+            ),
             temp_table=sql.Identifier(temp_table_name)
         )
         await execute_psql_query(conn, insert_query)

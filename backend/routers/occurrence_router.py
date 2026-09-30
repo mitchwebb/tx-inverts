@@ -1,4 +1,5 @@
 # Occurrence related API endpoints
+import asyncio
 from datetime import date
 from typing import Sequence
 
@@ -296,6 +297,8 @@ async def get_tile(
         A protobuf-encoded MVT tile. Returns an empty response if no
             observations fall within the requested tile bounds.
     """
+    if await request.is_disconnected():
+        return Response(content=b'', media_type='application/x-protobuf')
 
     try:
         filter_payload = OccurrenceFilters(
@@ -312,21 +315,21 @@ async def get_tile(
         # Get grid size in meters at a given zoom level
         grid_size = map.get_meters_per_pixel(z) * map.PIXELS_PER_GRID
 
-        if z < 10:
+        if z < 11:
             query = sql.SQL("""
                     WITH
                     bbox AS (
                         SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
                     ),
                     obs AS (
-                        SELECT ST_Transform(geometry, 3857) AS geom
+                        SELECT geometry_3857
                         FROM {occurrence_table}
                         WHERE
                             {occurrence_filter}
                     ),
                     bins AS (
                         SELECT
-                            ST_SnapToGrid(obs.geom, {grid_size}) AS grid_geom,
+                            ST_SnapToGrid(obs.geometry_3857, {grid_size}) AS grid_geom,
                             COUNT(*) AS count
                         FROM obs
                         GROUP BY grid_geom
@@ -382,16 +385,16 @@ async def get_tile(
                             gbif_id,
                             collection_start_date,
                             collection_end_date,
-                            ST_Transform(geometry, 3857) AS geom
+                            geometry_3857
                         FROM {occurrence_table}
                         WHERE
                         {occurrence_filter}
                     ),
                     mvt_geom AS (
-                        SELECT ST_AsMVTGeom(obs.geom, bbox.geom, 4096, 64, true) AS geom,
+                        SELECT ST_AsMVTGeom(obs.geometry_3857, bbox.geom, 4096, 64, true) AS geom,
                             obs.*
                         FROM obs, bbox
-                        WHERE ST_Intersects(obs.geom, bbox.geom)
+                        WHERE ST_Intersects(obs.geometry_3857, bbox.geom)
                     )
                     SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
                 """).format(
@@ -404,10 +407,35 @@ async def get_tile(
                     GBIF_OBSERVATIONS_TABLE.name),
                 occurrence_filter=occurrence_filter
             )
+
+        async def watch_disconnect(request: Request):
+            while True:
+                if await request.is_disconnected():
+                    return True
+                await asyncio.sleep(0.5)  # poll interval
+
         async with request.app.state.db_pool.connection() as conn:
-            result = await execute_psql_query(conn, query, fetch='one', dict_cursor=False)
-            tile = result[0] if result else None
-            return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
+            # Create task for query and task to watch for disconnect
+            query_task = asyncio.ensure_future(
+                execute_psql_query(conn, query, fetch='one', dict_cursor=False)
+            )
+            disconnect_task = asyncio.ensure_future(watch_disconnect(request))
+
+            done, pending = await asyncio.wait(
+                {query_task, disconnect_task},
+                return_when=asyncio.FIRST_COMPLETED
+            )
+
+            if query_task in done:
+                disconnect_task.cancel()
+                result = query_task.result()
+                tile = result[0] if result else None
+                return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
+            else:
+                query_task.cancel()
+                for p in pending:
+                    p.cancel()
+                return Response(content=b'', media_type='application/x-protobuf')
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))

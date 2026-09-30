@@ -3,6 +3,7 @@ from backend.data_util.taxa_data import taxon_exists
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.api import NSRank
 from psycopg import AsyncConnection, sql, rows
 from backend.db.queries.occurrence import create_occurrence_filter_sql
@@ -175,15 +176,18 @@ async def calculate_ns_values(
 
         taxon_id = filters.taxon_ids[0]
 
+        # We want to run this on ONE taxon_id at a time
+        # Taxon logic (including invasive filtering) is skipped in the occurrence filter and added to the query
         occurrence_filter = create_occurrence_filter_sql(
             filters, skip_taxa=True)
 
         if compute_occurrences:
             obs_source = sql.SQL("""
                 ( SELECT
-                    geometry,
-                    geom_5070,
-                    ST_ClusterDBSCAN(geom_5070, eps := 1000, minpoints := 1) OVER () AS cluster_id
+                    geometry_4326,
+                    k4,
+                    k1,
+                    ST_ClusterDBSCAN(geometry_5070, eps := 1000, minpoints := 1) OVER () AS cluster_id
                         FROM filtered_obs
                     ) clustered
             """)
@@ -194,17 +198,27 @@ async def calculate_ns_values(
 
         query = sql.SQL("""
             WITH matching_taxa AS MATERIALIZED (
-                SELECT accepted_taxon_key
-                FROM {taxon_lineage}
-                WHERE ancestor_id = {taxon_id}
+                SELECT DISTINCT(tl.accepted_taxon_key)
+                FROM {taxon_lineage} tl
+                LEFT JOIN {taxa_table} t on t.taxon_id = tl.accepted_taxon_key
+                WHERE 
+                    (
+                        ancestor_id = {taxon_id}
+                        AND COALESCE(t.us_invasive, false) = false
+                    )
+                    OR tl.accepted_taxon_key = {taxon_id}
             ),
-            filtered_obs AS MATERIALIZED (
+            filtered_obs AS (
                 SELECT 
-                    {occurrence_table}.geometry, 
-                    ST_Transform({occurrence_table}.geometry, 5070) AS geom_5070,
-                    {occurrence_table}.accepted_taxon_key
+                    {occurrence_table}.geometry_4326, 
+                    {occurrence_table}.geometry_5070,
+                    round(ST_X({occurrence_table}.geometry_5070) / 2000)::bigint * 100000
+                        + round(ST_Y({occurrence_table}.geometry_5070) / 2000)::bigint AS k4,
+                    round(ST_X({occurrence_table}.geometry_5070) / 1000)::bigint * 100000
+                        + round(ST_Y({occurrence_table}.geometry_5070) / 1000)::bigint AS k1
                 FROM {occurrence_table}
-                JOIN matching_taxa t ON {occurrence_table}.accepted_taxon_key = t.accepted_taxon_key
+                JOIN matching_taxa t 
+                    ON {occurrence_table}.accepted_taxon_key = t.accepted_taxon_key
                 WHERE {occurrence_filter}
             ),
             region AS (
@@ -216,9 +230,9 @@ async def calculate_ns_values(
                 SELECT
                     COUNT(*) AS observation_count,
                     {occ_expression} AS number_of_occurrences,
-                    COUNT(DISTINCT ST_SnapToGrid(geom_5070, 2000, 2000)) AS a4_cells,
-                    COUNT(DISTINCT ST_SnapToGrid(geom_5070, 1000, 1000)) AS a1_cells,
-                    ST_Collect(geometry) AS geom_collection
+                    COUNT(DISTINCT k4) AS a4_cells,
+                    COUNT(DISTINCT k1) AS a1_cells,
+                    ST_Collect(geometry_4326) AS geom_collection
                 FROM {obs_source}
             ),
             -- While precise to an acceptable degree, ConvexHull run on a projection isn't PERFECT
@@ -243,6 +257,7 @@ async def calculate_ns_values(
             FROM agg_values, hull, region
         """).format(
             tx_table=sql.Identifier(TEXAS_GEOMETRY_TABLE.name),
+            taxa_table=sql.Identifier(TX_TAXA_TABLE.name),
             taxon_lineage=sql.Identifier(TAXON_LINEAGE_TABLE.name),
             taxon_id=sql.Literal(taxon_id),
             occurrence_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),

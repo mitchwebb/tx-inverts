@@ -138,7 +138,7 @@ async def update_observation_regions(
                 INSERT INTO {observation_regions_table} (observation_id, region_id, region_type)
                 SELECT o.gbif_id, r.id, r.region_type
                 FROM {observations_table} o
-                JOIN regions r ON ST_Intersects(o.geometry, r.geometry)
+                JOIN regions r ON ST_Intersects(o.geometry_4326, r.geometry)
             """).format(
                 observation_regions_table=sql.Identifier(
                     OBSERVATION_REGIONS_TABLE.name),
@@ -166,7 +166,7 @@ async def update_observation_regions(
                 INSERT INTO {observation_regions_table} (observation_id, region_id, region_type)
                 SELECT o.gbif_id, r.id, r.region_type
                 FROM {observations_table} o
-                JOIN regions r ON ST_Intersects(o.geometry, r.geometry)
+                JOIN regions r ON ST_Intersects(o.geometry_4326, r.geometry)
                 WHERE o.gbif_id = ANY({ids})
             """).format(
                 observation_regions_table=sql.Identifier(

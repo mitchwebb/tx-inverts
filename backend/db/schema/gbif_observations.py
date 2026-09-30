@@ -78,7 +78,9 @@ class GBIFObservationsTable(DBTable):
         'accepted_taxon_key': 'TEXT',
         'accepted_scientific_name': 'TEXT',
         'verbatim_scientific_name': 'TEXT',
-        'geometry': 'GEOMETRY(Point, 4326)',
+        'geometry_4326': 'GEOMETRY(Point, 4326)',
+        'geometry_3857': 'GEOMETRY(Point, 3857) GENERATED ALWAYS AS (ST_Transform(geometry_4326, 3857)) STORED',
+        'geometry_5070': 'GEOMETRY(Point, 5070) GENERATED ALWAYS AS (ST_Transform(geometry_4326, 5070)) STORED',
         'collection_start_date': 'DATE',
         'collection_end_date': 'DATE'
     }
