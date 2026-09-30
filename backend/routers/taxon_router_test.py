@@ -91,7 +91,7 @@ OCC = [
         'collection_start_date': '2021-03-04', 'collection_end_date': '2021-03-05',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',  # Austin, TX
+        'geometry_4326': 'POINT(-97.7431 30.2672)',  # Austin, TX
     },
     {
         # Direct genus-level observation, iNaturalist origin
@@ -99,7 +99,7 @@ OCC = [
         'collection_start_date': '2022-03-04', 'collection_end_date': '2022-03-05',
         'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
         'coordinate_uncertainty_in_meters': 50,
-        'geometry': 'POINT(-96.7970 32.7767)',  # Dallas, TX
+        'geometry_4326': 'POINT(-96.7970 32.7767)',  # Dallas, TX
     },
     {
         # Subspecies-level observation
@@ -107,7 +107,7 @@ OCC = [
         'collection_start_date': '2023-03-04', 'collection_end_date': '2023-03-05',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
     {
         # Observed under a synonym taxon_key, resolved to the subspecies;
@@ -116,7 +116,7 @@ OCC = [
         'collection_start_date': '2024-03-04', 'collection_end_date': '2024-03-05',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': None,
-        'geometry': 'POINT(-95.3698 29.7604)',  # Houston, TX
+        'geometry_4326': 'POINT(-95.3698 29.7604)',  # Houston, TX
     },
     {
         # Unrelated family — must never match Atta-rooted taxon_ids
@@ -124,7 +124,7 @@ OCC = [
         'collection_start_date': '2025-03-04', 'collection_end_date': '2025-03-05',
         'dataset_key': 'dataset-b', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 0,  # tests `is None` vs falsy bug
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
     {
         # Observed under a synonym resolving to the genus
@@ -132,7 +132,7 @@ OCC = [
         'collection_start_date': '2026-03-04', 'collection_end_date': '2026-03-05',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
     {
         # Form sighting, child of subspecies — the original reported bug
@@ -141,7 +141,7 @@ OCC = [
         'collection_start_date': '2026-03-04', 'collection_end_date': '2026-03-05',
         'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
     {
         # Invasive taxon — tests include_invasives true/false branches
@@ -149,7 +149,7 @@ OCC = [
         'collection_start_date': '2022-06-01', 'collection_end_date': '2022-06-02',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
     {
         # Collection_start_date NULL — tests hardcoded IS NOT NULL clause
@@ -157,7 +157,7 @@ OCC = [
         'collection_start_date': None, 'collection_end_date': None,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
 ]
 

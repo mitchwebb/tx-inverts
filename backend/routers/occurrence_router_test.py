@@ -46,7 +46,7 @@ occ = [
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2020-03-04',
-        'geometry': 'POINT(-100.0 31.0)',
+        'geometry_4326': 'POINT(-100.0 31.0)',
         'dataset_key': '07ad9e66-6a83-4054-b176-ef6bc5196b4f'
     },
     {
@@ -54,7 +54,7 @@ occ = [
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'geometry': 'POINT(-99.895  31.000)',
+        'geometry_4326': 'POINT(-99.895  31.000)',
         'dataset_key': '07ad9e66-6a83-4054-b176-ef6bc5196b4f'
     },
     {
@@ -62,7 +62,7 @@ occ = [
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2019-03-04',
-        'geometry': 'POINT(-100.000 31.090)',
+        'geometry_4326': 'POINT(-100.000 31.090)',
         'dataset_key': '1e3cf1be-3f9c-48d4-8da8-af28d21216ee'
     }
 ]
@@ -277,11 +277,11 @@ class TestObservationTiles:
         assert response.status_code == 200
         assert response.content == b''
 
-    ### Circle Tiles (z>=10) ###
+    ### Circle Tiles (z>=11) ###
     @pytest.mark.asyncio
     async def test_obs_circles_tile_with_features(self, simple_tx_taxa, client):
         response = await client.get(
-            '/occurrence/tiles/10/227/419.mvt',
+            '/occurrence/tiles/11/455/838.mvt',
             params=[
                 ('taxon_id', '5035741'),
                 ('include_inat', True),
@@ -303,7 +303,7 @@ class TestObservationTiles:
         """Tile without features should be empty bytes (b'')"""
 
         response = await client.get(
-            '/occurrence/tiles/10/309/398.mvt',
+            '/occurrence/tiles/11/309/398.mvt',
             params=[
                 ('taxon_id', '5035741'),
                 ('include_inat', True),

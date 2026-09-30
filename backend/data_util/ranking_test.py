@@ -64,42 +64,42 @@ async def simple_tx_taxa(conn):
             'taxon_key': 'ATTATX',
             'accepted_taxon_key': 'ATTATX',
             'collection_start_date': '2021-03-04',
-            'geometry': 'POINT(-100.0 31.0)'
+            'geometry_4326': 'POINT(-100.0 31.0)'
         },
         {
             'gbif_id': 2,
             'taxon_key': 'ATTATX',
             'accepted_taxon_key': 'ATTATX',
             'collection_start_date': '2021-03-04',
-            'geometry': 'POINT(-99.895  31.000)'
+            'geometry_4326': 'POINT(-99.895  31.000)'
         },
         {
             'gbif_id': 3,
             'taxon_key': 'ATTATX',
             'accepted_taxon_key': 'ATTATX',
             'collection_start_date': '2021-03-04',
-            'geometry': 'POINT(-100.000 31.090)'
+            'geometry_4326': 'POINT(-100.000 31.090)'
         },
         {
             'gbif_id': 4,
             'taxon_key': 'ATTATX',
             'accepted_taxon_key': 'ATTATX',
             'collection_start_date': '2021-03-04',
-            'geometry': 'POINT(-100.000 31.080)'
+            'geometry_4326': 'POINT(-100.000 31.080)'
         },
         {
             'gbif_id': 5,
             'taxon_key': 'ATTA',
             'accepted_taxon_key': 'ATTA',
             'collection_start_date': '2022-03-04',
-            'geometry': 'POINT(-100.0 33.0)'
+            'geometry_4326': 'POINT(-100.0 33.0)'
         },
         {
             'gbif_id': 6,
             'taxon_key': 'SCOLOH',
             'accepted_taxon_key': 'SCOLOH',
             'collection_start_date': '2024-03-04',
-            'geometry': 'POINT(1.0 1.0)'
+            'geometry_4326': 'POINT(1.0 1.0)'
         },
     ]
 

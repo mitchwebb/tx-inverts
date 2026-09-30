@@ -38,7 +38,7 @@ MINIMAL_OCC = [
         'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
 ]
 
@@ -154,7 +154,7 @@ class RefreshMaterializedView:
                 'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
                 'dataset_key': 'dataset-a', 'institution_code': 'TxState',
                 'coordinate_uncertainty_in_meters': 100,
-                'geometry': 'POINT(-97.7431 30.2672)',
+                'geometry_4326': 'POINT(-97.7431 30.2672)',
             }],
             GBIF_OBSERVATIONS_TABLE.name,
             conn

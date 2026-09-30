@@ -50,21 +50,21 @@ occ = [
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'geometry': 'POINT(-100.0 31.0)'
+        'geometry_4326': 'POINT(-100.0 31.0)'
     },
     {
         'gbif_id': 2,
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'geometry': 'POINT(-99.895  31.000)'
+        'geometry_4326': 'POINT(-99.895  31.000)'
     },
     {
         'gbif_id': 3,
         'taxon_key': '5035741',
         'accepted_taxon_key': '5035741',
         'collection_start_date': '2021-03-04',
-        'geometry': 'POINT(-100.000 31.090)'
+        'geometry_4326': 'POINT(-100.000 31.090)'
     }
 ]
 
@@ -153,7 +153,7 @@ class TestGetTexasRangeExtentGeom:
             return (float(lon), float(lat))
 
         # Get set of lat/lon from our passed-in occurrences
-        expected_points = {parse_point(r['geometry'])
+        expected_points = {parse_point(r['geometry_4326'])
                            for r in occ if r['accepted_taxon_key'] == test_taxon_key}
 
         # Geometric equality, not coordinate-order equality

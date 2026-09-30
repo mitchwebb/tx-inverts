@@ -68,7 +68,7 @@ occ = [
         'collection_start_date': '2020-03-04', 'collection_end_date': '2020-03-05',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',  # Austin, TX
+        'geometry_4326': 'POINT(-97.7431 30.2672)',  # Austin, TX
     },
     {
         # iNaturalist origin — tests include_inat=False exclusion
@@ -77,7 +77,7 @@ occ = [
         'dataset_key': 'dataset-b', 'institution_code': 'iNaturalist',
         'coordinate_uncertainty_in_meters': 50,
         # Dallas, TX — far enough to swing extent if included
-        'geometry': 'POINT(-96.7970 32.7767)',
+        'geometry_4326': 'POINT(-96.7970 32.7767)',
     },
     {
         # collection_start_date NULL — tests hardcoded IS NOT NULL clause
@@ -85,7 +85,7 @@ occ = [
         'collection_start_date': None, 'collection_end_date': None,
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
     {
         # second dataset_key, distinct date, tagged to REGION_B_ID
@@ -93,7 +93,7 @@ occ = [
         'collection_start_date': '2019-03-04', 'collection_end_date': '2019-03-05',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': None,  # tests "IS NULL OR <=" branch
-        'geometry': 'POINT(-95.3698 29.7604)',  # Houston, TX
+        'geometry_4326': 'POINT(-95.3698 29.7604)',  # Houston, TX
     },
     {
         # coordinate_uncertainty_in_meters == 0 — tests `is None` vs falsy bug
@@ -101,7 +101,7 @@ occ = [
         'collection_start_date': '2022-01-01', 'collection_end_date': '2022-01-02',
         'dataset_key': 'dataset-b', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 0,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
     {
         # invasive taxon — tests include_invasives true/false branches
@@ -109,7 +109,7 @@ occ = [
         'collection_start_date': '2022-06-01', 'collection_end_date': '2022-06-02',
         'dataset_key': 'dataset-a', 'institution_code': 'TxState',
         'coordinate_uncertainty_in_meters': 100,
-        'geometry': 'POINT(-97.7431 30.2672)',
+        'geometry_4326': 'POINT(-97.7431 30.2672)',
     },
 ]
 
@@ -533,7 +533,7 @@ class TestReplaceBackbone:
                     'dataset_key': 'dataset-a',
                     'institution_code': 'TxState',
                     'coordinate_uncertainty_in_meters': 100,
-                    'geometry': 'POINT(-97.7431 30.2672)'
+                    'geometry_4326': 'POINT(-97.7431 30.2672)'
                 },
             ],
             table_name=GBIF_OBSERVATIONS_TABLE.name,
@@ -627,8 +627,8 @@ class TestUpdateBackbone:
         # Create simple test row
         fp = tmp_path / "backbone.tsv"
         fp.write_text(
-            "taxonID\tscientificName\tkingdom\tphylum\tclass\ttaxonRank\tgenericName\tinfragenericEpithet\tspecificEpithet\tinfraspecificEpithet\n"
-            "TURRISINV\tTurris invicta\tAnimalia\tMollusca\tGastropoda\tspecies\tTurris\tNull\tinvicta\tNull"
+            "taxonID\tscientificName\tscientificNameAuthorship\tkingdom\tphylum\tclass\ttaxonRank\tgenericName\tinfragenericEpithet\tspecificEpithet\tinfraspecificEpithet\n"
+            "TURRISINV\tTurris invicta\tAuthor\tAnimalia\tMollusca\tGastropoda\tspecies\tTurris\tNull\tinvicta\tNull"
         )
 
         mocker.patch(
