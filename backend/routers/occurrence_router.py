@@ -445,7 +445,7 @@ async def get_tile(
                 cached = await get_cached_tile(conn, key)
         except Exception:
             api_logger.exception('Tile cache read failed')
-
+            
         # Return cached tile if data present
         if cached is not None and cached['data'] is not None:
             return Response(content=bytes(cached['data']), media_type='application/x-protobuf', headers=headers)
@@ -460,7 +460,7 @@ async def get_tile(
         tile = bytes(result[0]) if result and result[0] else b''
 
         # Cache slow renders (more than 2 seconds)
-        if cached is None and render_seconds >= MIN_COMPUTE_S:
+        if cached is not None and render_seconds >= MIN_COMPUTE_S:
             try:
                 async with pool.connection() as conn:
                     await store_tile(conn, key, tile, cached['checked_at'])
