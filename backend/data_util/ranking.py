@@ -268,7 +268,7 @@ async def calculate_ns_values(
 
         # Using raw cursor for setting local work mem
         async with conn.cursor(row_factory=rows.dict_row) as cur:
-            await cur.execute("SET LOCAL work_mem = '256MB'")
+            await cur.execute("SET LOCAL work_mem = '64MB'")
             await cur.execute(query)
             result = await cur.fetchone()
             return result
