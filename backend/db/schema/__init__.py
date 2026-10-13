@@ -1,7 +1,6 @@
 # Registry for all tables
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE, ObservationRegions
-from backend.db.schema.tile_cache import TILE_CACHE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
 from .gbif_observations import GBIF_OBSERVATIONS_TABLE
 from .gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
@@ -19,6 +18,5 @@ ALL_TABLES: list[DBTable] = [
     VERNACULAR_NAMES_TABLE,
     GBIF_DATASET_META,
     DATA_META_TABLE,
-    US_INVASIVES_TABLE,
-    TILE_CACHE,
+    US_INVASIVES_TABLE
 ] + GEOMETRY_TABLES + [OBSERVATION_REGIONS_TABLE]

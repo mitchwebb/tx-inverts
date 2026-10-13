@@ -1,5 +1,3 @@
-import asyncio
-
 from psycopg.rows import dict_row, tuple_row, DictRow, TupleRow
 from psycopg import AsyncConnection, sql
 from typing import Literal, Sequence, overload
@@ -90,27 +88,22 @@ async def execute_psql_query(
 
     row_factory_type = dict_row if dict_cursor else tuple_row
     async with conn.cursor(row_factory=row_factory_type) as cur:
-        try:
-            # If batch request, use execute_batch
-            if batch:
-                if params is None:
-                    raise ValueError("Batch operations require params.")
-                await cur.executemany(query, params)
+        # If batch request, use execute_batch
+        if batch:
+            if params is None:
+                raise ValueError("Batch operations require params.")
+            await cur.executemany(query, params)
+        else:
+            if params is not None:
+                await cur.execute(query, params)
             else:
-                if params is not None:
-                    await cur.execute(query, params)
-                else:
-                    await cur.execute(query)
-            # Depending on fetch type, return result(s), or simply commit
-            if fetch == 'one':
-                result = await cur.fetchone()
-            elif fetch == 'all':
-                result = await cur.fetchall()
-            else:
-                result = None
+                await cur.execute(query)
+        # Depending on fetch type, return result(s), or simply commit
+        if fetch == 'one':
+            result = await cur.fetchone()
+        elif fetch == 'all':
+            result = await cur.fetchall()
+        else:
+            result = None
 
-            return result
-        except asyncio.CancelledError:
-            await conn.cancel_safe()
-            await conn.close()
-            raise
+        return result

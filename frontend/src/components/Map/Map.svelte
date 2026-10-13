@@ -38,7 +38,6 @@
     import { serializeFilters } from '../../util/requests';
     import { makeIDCollection } from '../../util/collection.svelte';
     import type { RegionInfo } from '../../types/api';
-    import { registerRequest, resolveRequest } from '../../lib/requestRegistry';
 
     // ---------------------------------------------
     // Contexts & reactive state
@@ -388,49 +387,36 @@
         taxonID: string,
         filters: FiltersState
     ) {
-        const controller = registerRequest(taxonID, 'rangeExtentGeom');
-        try {
-            const response = await fetch(
-                '/server/ranking/get_texas_range_extent_geom',
-                {
-                    signal: controller.signal,
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        taxon_id: taxonID,
-                        ...serializeFilters(filters),
-                    }),
+        const response = await fetch(
+            '/server/ranking/get_texas_range_extent_geom',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    taxon_id: taxonID,
+                    ...serializeFilters(filters),
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            const errData = await response.json();
+            console.error('Error:', response.status, errData.detail);
+            return;
+        }
+
+        const result = await response.json();
+        mapContext.taxonLayers[taxonID].rangeExtentGeom =
+            result.range_extent_geom;
+
+        const source = map.getSource(`range-extent-${taxonID}`);
+        if (source && 'setData' in source) {
+            (source as mapboxgl.GeoJSONSource).setData(
+                result.range_extent_geom ?? {
+                    type: 'FeatureCollection',
+                    features: [],
                 }
             );
-
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error('Error:', response.status, errData.detail);
-                return;
-            }
-
-            const result = await response.json();
-
-            if (!mapContext.taxonLayers[taxonID]) return;
-
-            mapContext.taxonLayers[taxonID].rangeExtentGeom =
-                result.range_extent_geom;
-
-            const source = map.getSource(`range-extent-${taxonID}`);
-            if (source && 'setData' in source) {
-                (source as mapboxgl.GeoJSONSource).setData(
-                    result.range_extent_geom ?? {
-                        type: 'FeatureCollection',
-                        features: [],
-                    }
-                );
-            }
-        } catch (error) {
-            if (error instanceof DOMException && error.name === 'AbortError')
-                return;
-            console.error(error);
-        } finally {
-            resolveRequest(taxonID, 'rangeExtentGeom', controller);
         }
     }
 
@@ -490,7 +476,6 @@
             regions: makeIDCollection<RegionInfo, string>((r) => r.id),
         });
 
-        if (!mapContext.taxonLayers[taxonID]) return;
         mapContext.taxonLayers[taxonID].loaded = true;
     }
 
@@ -499,6 +484,8 @@
         if (!map || !mapReady) return;
         // Explicit reads register each as a dependency, deep reactivity included
         const filters = { ...filtersContext };
+
+        let cancelled = false;
 
         untrack(() => {
             for (const taxonID of Object.keys(mapContext.taxonLayers).map(
@@ -525,6 +512,10 @@
                 });
             }
         });
+
+        return () => {
+            cancelled = true;
+        };
     });
 
     // Add and remove taxaLayers when they are toggled in context
@@ -537,7 +528,7 @@
             for (const taxonID of currentIDs) {
                 if (!(taxonID in mapContext.taxonLayers)) {
                     const taxon = taxaContext.taxa.get(taxonID);
-                    if (!taxon) continue;
+                    if (!taxon) return;
 
                     mapContext.taxonLayers[taxonID] = {
                         color: taxon.color,

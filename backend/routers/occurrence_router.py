@@ -1,17 +1,12 @@
 # Occurrence related API endpoints
 import asyncio
 from datetime import date
-import hashlib
-import json
-import time
 from typing import Sequence
 
 from numpy import number
 import backend.constants.map as map
-from backend.constants.tiles import MIN_COMPUTE_S
 from backend.core.exception_handler import TaxonNotFoundError
 from backend.data_util.taxa_data import taxon_exists
-from backend.db.queries.tile_cache import get_cached_tile, store_tile
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Query, Request, HTTPException, Response
@@ -271,124 +266,6 @@ async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def tile_key(filters: OccurrenceFilters, z: int, x: int, y: int) -> str:
-    """32 hex characters identifying one tile's bytes: path (z/x/y) + filters."""
-    fields = filters.model_dump(mode='json')   # dates become ISO strings
-    for name, value in fields.items():
-        # list fields are sets: [a, b] == [b, a]
-        if isinstance(value, list):
-            fields[name] = sorted(set(value))
-    identity = [z, x, y, fields]
-    return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:32]
-
-
-def build_tile_query(filters: OccurrenceFilters, z: int, x: int, y: int) -> sql.Composed:
-    occurrence_filter = create_occurrence_filter_sql(filters)
-
-    # Get grid size in meters at given zoom level
-    grid_size = map.get_meters_per_pixel(z) * map.PIXELS_PER_GRID
-    # Controls which rows affect cell counts (by expanding past tile edges)
-    expand_by = 2 * grid_size
-
-    if z < 11:
-        return sql.SQL("""
-                WITH
-                bbox AS (
-                    SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
-                ),
-                bins AS (
-                    SELECT
-                        ST_SnapToGrid(geometry_3857, {grid_size}) AS grid_geom,
-                        COUNT(*) AS observation_count
-                    FROM {occurrence_table}
-                    WHERE
-                        geometry_3857 && ST_Expand(
-                            ST_TileEnvelope({z}, {x}, {y}),
-                            {expand_by}
-                        )
-                        AND {occurrence_filter}
-                    GROUP BY ST_SnapToGrid(geometry_3857, {grid_size})
-                ),
-                bins_geom AS (
-                    SELECT
-                        ST_SetSRID(
-                        ST_MakeEnvelope(
-                            ST_X(bins.grid_geom) - ({grid_size} / 2),
-                            ST_Y(bins.grid_geom) - ({grid_size} / 2),
-                            ST_X(bins.grid_geom) + ({grid_size} / 2),
-                            ST_Y(bins.grid_geom) + ({grid_size} / 2)
-                        ),
-                        3857
-                        ) AS geom,
-                        bins.observation_count as observation_count
-                    FROM bins
-                ),
-                mvt_geom AS (
-                    SELECT
-                        ST_AsMVTGeom(bins_geom.geom, bbox.geom, 4096, 64, true) AS geom,
-                        bins_geom.observation_count
-                    FROM bins_geom, bbox
-                )
-                SELECT ST_AsMVT(mvt_geom, 'observations-heatmap', 4096, 'geom') FROM mvt_geom;
-            """).format(
-            include_inat=sql.Literal(filters.include_inat),
-            taxon_id=sql.Literal(filters.taxon_ids),
-            x=sql.Literal(x),
-            y=sql.Literal(y),
-            z=sql.Literal(z),
-            grid_size=sql.Literal(grid_size),
-            expand_by=sql.Literal(expand_by),
-            occurrence_table=sql.Identifier(
-                GBIF_OBSERVATIONS_TABLE.name),
-            occurrence_filter=occurrence_filter
-        )
-    # Return point observations if zoomed in
-    else:
-        return sql.SQL("""
-                WITH
-                bbox AS (
-                    SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
-                ),
-                obs AS (
-                    SELECT 
-                        publisher,
-                        "references",
-                        county,
-                        locality,
-                        decimal_latitude,
-                        decimal_longitude,
-                        accepted_scientific_name,
-                        gbif_id,
-                        collection_start_date,
-                        collection_end_date,
-                        geometry_3857
-                    FROM {occurrence_table}
-                    WHERE
-                    {occurrence_filter}
-                ),
-                mvt_geom AS (
-                    SELECT ST_AsMVTGeom(obs.geometry_3857, bbox.geom, 4096, 64, true) AS geom,
-                        obs.*
-                    FROM obs, bbox
-                    WHERE ST_Intersects(obs.geometry_3857, bbox.geom)
-                )
-                SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
-            """).format(
-            include_inat=sql.Literal(filters.include_inat),
-            taxon_id=sql.Literal(filters.taxon_ids),
-            x=sql.Literal(x),
-            y=sql.Literal(y),
-            z=sql.Literal(z),
-            occurrence_table=sql.Identifier(
-                GBIF_OBSERVATIONS_TABLE.name),
-            occurrence_filter=occurrence_filter
-        )
-
-
-# TODO: This should live somewhere else
-render_slots = asyncio.Semaphore(4)
-
-
 @occurrence_router.get('/tiles/{z}/{x}/{y}.mvt', response_class=Response)
 async def get_tile(
     z: int, x: int, y: int,
@@ -402,8 +279,7 @@ async def get_tile(
 ):
     """
     Get map tiles for observations data as Mapbox Vector Tiles
-    Returns clustered heatmap tiles at zoom levels below 11, and individual point observation at zoom level 11 and above.
-    Tiles that are slow to render are cached.
+    Returns clustered heatmap tiles at zoom levels below 10, and individual point observation at zoom level 10 and above.
 
     Args:
         include_inat (bool): Whether or not to include iNaturalist records
@@ -425,7 +301,7 @@ async def get_tile(
         return Response(content=b'', media_type='application/x-protobuf')
 
     try:
-        filters = OccurrenceFilters(
+        filter_payload = OccurrenceFilters(
             taxon_ids=[taxon_id],
             include_inat=include_inat,
             date_start=date_start,
@@ -434,41 +310,132 @@ async def get_tile(
             coord_uncertainty=coord_uncertainty,
         )
 
-        pool = request.app.state.db_pool
-        key = tile_key(filters, z, x, y)
-        headers = {'Cache-Control': 'public, max-age=600'}
+        occurrence_filter = create_occurrence_filter_sql(filter_payload)
 
-        # First, try cache
-        cached = None
-        try:
-            async with pool.connection() as conn:
-                cached = await get_cached_tile(conn, key)
-        except Exception:
-            api_logger.exception('Tile cache read failed')
+        # Get grid size in meters at a given zoom level
+        grid_size = map.get_meters_per_pixel(z) * map.PIXELS_PER_GRID
 
-        # Return cached tile if data present
-        if cached is not None and cached['data'] is not None:
-            return Response(content=bytes(cached['data']), media_type='application/x-protobuf', headers=headers)
+        if z < 11:
+            query = sql.SQL("""
+                    WITH
+                    bbox AS (
+                        SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
+                    ),
+                    obs AS (
+                        SELECT geometry_3857
+                        FROM {occurrence_table}
+                        WHERE
+                            {occurrence_filter}
+                    ),
+                    bins AS (
+                        SELECT
+                            ST_SnapToGrid(obs.geometry_3857, {grid_size}) AS grid_geom,
+                            COUNT(*) AS count
+                        FROM obs
+                        GROUP BY grid_geom
+                    ),
+                    bins_geom AS (
+                        SELECT
+                            ST_SetSRID(
+                            ST_MakeEnvelope(
+                                ST_X(bins.grid_geom) - ({grid_size} / 2),
+                                ST_Y(bins.grid_geom) - ({grid_size} / 2),
+                                ST_X(bins.grid_geom) + ({grid_size} / 2),
+                                ST_Y(bins.grid_geom) + ({grid_size} / 2)
+                            ),
+                            3857
+                            ) AS geom,
+                            bins.count as observation_count
+                        FROM bins
+                    ),
+                    mvt_geom AS (
+                        SELECT
+                            ST_AsMVTGeom(bins_geom.geom, bbox.geom, 4096, 64, true) AS geom,
+                            bins_geom.observation_count
+                        FROM bins_geom, bbox
+                    )
+                    SELECT ST_AsMVT(mvt_geom, 'observations-heatmap', 4096, 'geom') FROM mvt_geom;
+                """).format(
+                include_inat=sql.Literal(include_inat),
+                taxon_id=sql.Literal(taxon_id),
+                x=sql.Literal(x),
+                y=sql.Literal(y),
+                z=sql.Literal(z),
+                grid_size=sql.Literal(grid_size),
+                occurrence_table=sql.Identifier(
+                    GBIF_OBSERVATIONS_TABLE.name),
+                occurrence_filter=occurrence_filter
+            )
+        # Return point observations if zoomed in
+        else:
+            query = sql.SQL("""
+                    WITH
+                    bbox AS (
+                        SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
+                    ),
+                    obs AS (
+                        SELECT 
+                            publisher,
+                            "references",
+                            county,
+                            locality,
+                            decimal_latitude,
+                            decimal_longitude,
+                            accepted_scientific_name,
+                            gbif_id,
+                            collection_start_date,
+                            collection_end_date,
+                            geometry_3857
+                        FROM {occurrence_table}
+                        WHERE
+                        {occurrence_filter}
+                    ),
+                    mvt_geom AS (
+                        SELECT ST_AsMVTGeom(obs.geometry_3857, bbox.geom, 4096, 64, true) AS geom,
+                            obs.*
+                        FROM obs, bbox
+                        WHERE ST_Intersects(obs.geometry_3857, bbox.geom)
+                    )
+                    SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
+                """).format(
+                include_inat=sql.Literal(include_inat),
+                taxon_id=sql.Literal(taxon_id),
+                x=sql.Literal(x),
+                y=sql.Literal(y),
+                z=sql.Literal(z),
+                occurrence_table=sql.Identifier(
+                    GBIF_OBSERVATIONS_TABLE.name),
+                occurrence_filter=occurrence_filter
+            )
 
-        # If no cache, render
-        query = build_tile_query(filters, z, x, y)
-        async with render_slots:
-            started = time.monotonic()
-            async with pool.connection() as conn:
-                result = await execute_psql_query(conn, query, fetch='one', dict_cursor=False)
-            render_seconds = time.monotonic() - started
-        tile = bytes(result[0]) if result and result[0] else b''
+        async def watch_disconnect(request: Request):
+            while True:
+                if await request.is_disconnected():
+                    return True
+                await asyncio.sleep(0.5)  # poll interval
 
-        # Cache slow renders (more than 2 seconds)
-        if cached is not None and render_seconds >= MIN_COMPUTE_S:
-            try:
-                async with pool.connection() as conn:
-                    await store_tile(conn, key, tile, cached['checked_at'])
-            except Exception:
-                api_logger.exception('Tile cache write failed')
+        async with request.app.state.db_pool.connection() as conn:
+            # Create task for query and task to watch for disconnect
+            query_task = asyncio.ensure_future(
+                execute_psql_query(conn, query, fetch='one', dict_cursor=False)
+            )
+            disconnect_task = asyncio.ensure_future(watch_disconnect(request))
 
-        return Response(content=tile, media_type='application/x-protobuf', headers=headers)
+            done, pending = await asyncio.wait(
+                {query_task, disconnect_task},
+                return_when=asyncio.FIRST_COMPLETED
+            )
 
+            if query_task in done:
+                disconnect_task.cancel()
+                result = query_task.result()
+                tile = result[0] if result else None
+                return Response(content=tile, media_type='application/x-protobuf') if tile else Response(content=b'', media_type='application/x-protobuf')
+            else:
+                query_task.cancel()
+                for p in pending:
+                    p.cancel()
+                return Response(content=b'', media_type='application/x-protobuf')
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))

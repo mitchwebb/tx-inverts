@@ -3,58 +3,50 @@ import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawNSValues, TaxonInfo } from '../types/api';
 import { serializeFilters } from '../util/requests';
-import { registerRequest, resolveRequest } from './requestRegistry';
 
 // Get taxon info (triggered by change in taxonContext.activeTaxonID)
 export async function getTaxonInfo(taxonID: ActiveTaxon['taxonID']) {
     const url = `/server/taxon/get_taxon_info?taxon_id=${taxonID}`;
-
-    const controller = registerRequest(taxonID, 'getTaxonInfo');
-
-    try {
-        const response = await fetch(url, {
-            signal: controller.signal,
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-        if (!response.ok) {
-            const result = await response.json();
-            const detail = result?.detail ?? 'Unknown error';
-            throw new Error(detail);
-        }
-        return (await response.json()) as TaxonInfo;
-    } finally {
-        resolveRequest(taxonID, 'getTaxonInfo', controller);
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) {
+        const result = await response.json();
+        const detail = result?.detail ?? 'Unknown error';
+        throw new Error(detail);
     }
+    return (await response.json()) as TaxonInfo;
 }
+
+let abortController = new AbortController();
 
 // Get nSMetrics of activeSpecies (plus observationCount since it's convenient)
 export async function getNSMetrics(
     taxonID: ActiveTaxon['taxonID'],
-    filters: FiltersState
+    filters: FiltersState,
+    signal?: AbortSignal
 ) {
-    const controller = registerRequest(taxonID, 'getNSMetrics');
+    // Cancel previous request if necessary
+    if (abortController) abortController.abort();
+    abortController = new AbortController();
 
     const nSMetricsURL = '/server/ranking/get_ns_metrics';
-    try {
-        const response = await fetch(nSMetricsURL, {
-            signal: controller.signal,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                taxon_id: taxonID,
-                ...serializeFilters(filters),
-            }),
-        });
-        if (!response.ok) {
-            const result = await response.json();
-            const detail = result?.detail ?? 'Unknown error';
-            throw new Error(detail);
-        }
-        return (await response.json()) as RawNSValues;
-    } finally {
-        resolveRequest(taxonID, 'getNSMetrics', controller);
+    const response = await fetch(nSMetricsURL, {
+        signal,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            taxon_id: taxonID,
+            ...serializeFilters(filters),
+        }),
+    });
+    if (!response.ok) {
+        const result = await response.json();
+        const detail = result?.detail ?? 'Unknown error';
+        throw new Error(detail);
     }
+    return (await response.json()) as RawNSValues;
 }
 
 // Logic for loading backbone structure into browser
@@ -88,6 +80,14 @@ export async function getQualifiedTaxa(
     signal?: AbortSignal
 ) {
     const url = 'server/taxon/get_qualified_taxa';
+    if (
+        !filters.dateStart &&
+        !filters.dateEnd &&
+        !filters?.datasets?.length &&
+        !filters?.regions?.items.length &&
+        !filters.coordUncertainty
+    )
+        return null;
     try {
         const response = await fetch(url, {
             signal,

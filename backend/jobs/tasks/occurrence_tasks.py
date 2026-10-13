@@ -6,7 +6,6 @@ import pandas as pd
 import time
 
 from pandas import DataFrame
-import requests
 from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
@@ -24,7 +23,6 @@ from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.table_tasks import initialize_table
-from backend.jobs.tasks.taxon_tasks import store_doi
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from psycopg import sql, AsyncConnection
 
@@ -34,7 +32,7 @@ from psycopg import sql, AsyncConnection
 async def get_gbif_inverts_file(
     gbif_request_key: str | None = None,
     test: bool = False
-) -> tuple[str, str]:
+) -> str:
     """
         Build GBIF inverts request, retrieve, and unzip, returning fp for resulting occurrences.txt.
         If gbif_request_key provided, function will skip the request step.
@@ -44,9 +42,7 @@ async def get_gbif_inverts_file(
             test (bool = False): If True, request builder will use a subset of data
 
         Returns:
-            A tuple of (observations_fp, gbif_key):
-                observations_fp (str): filepath string to extracted observations file
-                gbif_key(str): gbif download request key (if retrieved)
+            (str) occurrences.txt filepath
     """
     settings = get_settings()
 
@@ -86,7 +82,7 @@ async def get_gbif_inverts_file(
         )
         observations_fp = os.path.join(output_dir, 'occurrence.txt')
 
-        return (observations_fp, key)
+        return observations_fp
 
     except RuntimeError:
         raise
@@ -172,23 +168,6 @@ async def _filter_temp_table_chunk(conn: AsyncConnection, table_name: str, batch
     await execute_psql_query(conn, filter_query)
 
 
-def _get_observations_doi(gbif_request_key: str):
-    try:
-        response = requests.get(
-            f'https://api.gbif.org/v1/occurrence/download/{gbif_request_key}')
-
-        response.raise_for_status()
-        parsed = response.json()
-        if not parsed.get('doi'):
-            raise ValueError(
-                f"GBIF returned DOI info for request key: {gbif_request_key}")
-        doi = parsed['doi']
-        return doi
-
-    except Exception as e:
-        print(e)
-
-
 async def update_observations(
     conn: AsyncConnection,
     fp: str | None = None,
@@ -200,34 +179,19 @@ async def update_observations(
         Orchestration function to fully update gbif_observations table.
 
         Uses either local file or gbif download to fully replace observations.
-        Requires EITHER local fp of gbif observations file or a request key from a 
 
         Args:
             conn(psycopg.AsyncConnection): Active psycopg async database connection
-            fp(str | None=None): Filepath to observations csv (if provided, function will NOT make a new GBIF request)
+            fp(str | None=None): Filepath to observations csv(if provided, function will NOT make a new GBIF request)
             gbif_request_key(str | None=None): Key returned by gbif download request. Can be used if a request was already made.
             chunk_size(int=100000): Chunk size to be used when reading in CSV for data cleaning
             delete_file(bool=False): If True, observations file will not be kept
     """
 
     try:
-        if fp is not None and gbif_request_key is not None:
-            raise ValueError(
-                "Both filepath and gbif_request_key provided: Please provide only one.")
-
-        doi: str | None = None
-
         # If no fp to observations file is provided, create GBIF request and download new data
         if fp is None:
-            # If no request key provided either, retrieve from fresh download
-            if gbif_request_key is None:
-                fp, gbif_request_key = await get_gbif_inverts_file()
-            # Else, use provided request key
-            else:
-                fp, gbif_request_key = await get_gbif_inverts_file(gbif_request_key)
-
-            # Get request DOI from GBIF API
-            doi = _get_observations_doi(gbif_request_key)
+            fp = await get_gbif_inverts_file(gbif_request_key)
 
         # Make sure gbif_observations_table exists
         await initialize_table(conn, GBIF_OBSERVATIONS_TABLE, verbose=True)
@@ -340,9 +304,6 @@ async def update_observations(
             temp_table=sql.Identifier(temp_table_name)
         )
         await execute_psql_query(conn, insert_query)
-
-        # Store observations dataset DOI (if retrieved) and current timestamp
-        await store_doi(conn, 'observations', doi)
 
         # Refresh dependant materialized views
         db_logger.info("Refreshing materialized views...")

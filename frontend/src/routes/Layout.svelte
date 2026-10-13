@@ -67,8 +67,6 @@
         getFilterValues,
         RANK_AFFECTING_FILTER_KEYS,
     } from '../constants/sidebarFilters';
-    import { abortAllIDRequests, abortRequest } from '../lib/requestRegistry';
-    import { countActiveFilters } from '../lib/filters.svelte';
 
     // Intialize contexts
 
@@ -76,8 +74,7 @@
     const taxaCollection = makeIDCollection<ActiveTaxon, string>(
         (t) => t.taxonID,
         // Load taxonInfo on add
-        loadTaxonInfo,
-        cancelTaxonLoading
+        loadTaxonInfo
     );
     const taxaState: ActiveTaxaState = $state(initialActiveTaxaState);
 
@@ -120,49 +117,28 @@
     const rankingsState: RankingsState = $state(initialRankingsState);
     setRankingsContext(rankingsState);
 
-    let qualifiedTaxaController: AbortController;
-
     // Get list of qualified taxonIDs given various filters (for rankings page)
     $effect(() => {
         // Call filters to trigger reactivity
-        const regions = filtersContext.regions;
+        const regionsIDs = filtersContext.regions.ids;
         const dateStart = filtersContext.dateStart;
         const dateEnd = filtersContext.dateEnd;
         const datasets = filtersContext.datasets;
         const coordUncertainty = filtersContext.coordUncertainty;
         const includeINat = filtersContext.includeINat;
 
-        qualifiedTaxaController?.abort();
-        qualifiedTaxaController = new AbortController();
-
-        if (countActiveFilters(filtersState, 'taxon') === 0) {
-            rankingsState.qualifiedTaxonIDs = null;
-            return;
-        }
-
         untrack(async () => {
-            try {
-                rankingsState.ranksLoading = true;
-                const result = await getQualifiedTaxa(
-                    {
-                        regions,
-                        dateStart,
-                        dateEnd,
-                        datasets,
-                        coordUncertainty,
-                        includeINat,
-                    },
-                    qualifiedTaxaController.signal
-                );
-
-                if (qualifiedTaxaController.signal.aborted) return;
-
-                rankingsState.qualifiedTaxonIDs = result ?? null;
-            } finally {
-                if (!qualifiedTaxaController.signal.aborted) {
-                    rankingsState.ranksLoading = false;
-                }
-            }
+            rankingsState.ranksLoading = true;
+            const qualifiedTaxa = await getQualifiedTaxa({
+                regions: filtersContext.regions,
+                dateStart,
+                dateEnd,
+                datasets,
+                coordUncertainty,
+                includeINat,
+            });
+            rankingsState.qualifiedTaxonIDs = qualifiedTaxa;
+            rankingsState.ranksLoading = false;
         });
     });
 
@@ -180,14 +156,12 @@
         taxon.color = taxaContext.getNextColor();
 
         try {
-            const taxonInfo = await getTaxonInfo(taxonID);
+            const [taxonInfo] = await Promise.all([getTaxonInfo(taxonID)]);
             taxon.info = taxonInfo;
             taxon.lastLoadedID = taxonID;
-            taxon.taxonLoading = false;
-        } catch (error) {
-            if (error instanceof DOMException && error.name === 'AbortError')
-                return;
+        } catch {
             taxon.taxonError = true;
+        } finally {
             taxon.taxonLoading = false;
         }
     }
@@ -233,32 +207,23 @@
     ) {
         const taxon = taxaContext.taxa.get(taxonID);
         if (!taxon) return;
-
         taxon.nSValuesLoading = true;
-
+        const abortController = new AbortController();
         try {
-            const rawNSResult = await getNSMetrics(taxonID, filters);
+            const rawNSResult = await getNSMetrics(
+                taxonID,
+                filters,
+                abortController.signal
+            );
             taxon.nSValues = normalizeAPIResponse<NSValues>(
                 rawNSResult,
                 NS_VALUES_MAP
             );
-            if (taxaContext.taxa.get(taxonID)) {
-                taxon.nSValuesLoading = false;
-            }
         } catch (error) {
-            if (error instanceof DOMException && error.name === 'AbortError') {
-                return; // Cancelled on purpose, not a failure
-            }
             console.error(error);
-            if (taxaContext.taxa.get(taxonID)) {
-                taxon.nSValuesLoading = false;
-            }
+        } finally {
+            taxon.nSValuesLoading = false;
         }
-    }
-
-    // Function for clearing an abortController when removing a taxonID
-    export function cancelTaxonLoading(taxonID: string) {
-        abortAllIDRequests(taxonID);
     }
 
     /**

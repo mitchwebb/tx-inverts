@@ -18,8 +18,3 @@ HALF_WORLD = 20037508.342789244
 # Derive meters_per_pixel value from our tile size given a zoom level
 def get_meters_per_pixel(zoom: int) -> float:
     return WEB_MERCATOR_TILE_SIZE / (2 ** zoom)
-
-
-# Basic Texas bounding box for preliminary filtering
-# lon_min, lat_min, lon_max, lat_max
-TEXAS_BBOX = (-106.65, 25.84, -93.51, 36.50)

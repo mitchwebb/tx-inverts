@@ -46,11 +46,6 @@ class TestRunUpdateOccurrences:
             new=AsyncMock(side_effect=track('update_indexes'))
         )
 
-        mocker.patch(
-            f'{MODULE}.rebuild_tile_cache',
-            new=AsyncMock(side_effect=track('rebuild_tile_cache'))
-        )
-
         await run_update_occurrences()
 
         assert order == [
@@ -58,8 +53,7 @@ class TestRunUpdateOccurrences:
             'update_observation_regions',  # Update observations_regions using new observations
             'update_ns_ranks',  # Update rankings using new observations
             'refresh_materialized_views',  # Refresh materialized views
-            'update_indexes',  # Update indexes
-            'rebuild_tile_cache'
+            'update_indexes',  # Update indexes at the end
         ]
         conn.close.assert_awaited_once()
         conn.rollback.assert_not_awaited()
