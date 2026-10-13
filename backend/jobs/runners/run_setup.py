@@ -23,7 +23,7 @@ async def create_test_db(conn):
         # Create test database
         create_test_db_query = sql.SQL("""
             CREATE DATABASE test_inverts;
-            CREATE_USER test_user WITH ENCRYPTED PASSWORD 'test_pass';
+            CREATE USER test_user WITH ENCRYPTED PASSWORD 'test_pass';
             GRANT ALL PRIVILEGES ON DATABASE test_inverts TO test_user;
         """)
         await execute_psql_query(conn, create_test_db_query)
