@@ -56,6 +56,9 @@ async def main():
 
         await update_indexes(conn)
 
+        # Warm initial large taxa tiles
+        await rebuild_tile_cache(conn)
+
         # Update ranks stored in db
         await update_ns_ranks(conn)
 

@@ -460,7 +460,7 @@ async def get_tile(
         tile = bytes(result[0]) if result and result[0] else b''
 
         # Cache slow renders (more than 2 seconds)
-        if cached is not None and render_seconds >= MIN_COMPUTE_S:
+        if cached is None and render_seconds >= MIN_COMPUTE_S:
             try:
                 async with pool.connection() as conn:
                     await store_tile(conn, key, tile, cached['checked_at'])
