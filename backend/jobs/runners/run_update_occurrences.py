@@ -6,6 +6,7 @@ from backend.core.logging import tasks_logger
 from backend.jobs.tasks.region_tasks import update_observation_regions
 from backend.jobs.tasks.taxon_tasks import update_ns_ranks
 from backend.jobs.tasks.index_tasks import update_indexes
+from backend.jobs.tasks.tiles_cache_tasks import rebuild_tile_cache
 from backend.jobs.tasks.view_tasks import refresh_materialized_views
 
 
@@ -28,6 +29,10 @@ async def main():
         await refresh_materialized_views(conn)
 
         await update_indexes(conn)
+
+        # Truncate and rebuild warmed tile cache for large taxa
+        # Takes around 30 minutes
+        await rebuild_tile_cache(conn)
 
         tasks_logger.info("update_occurrences job finished")
 
