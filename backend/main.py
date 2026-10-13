@@ -44,10 +44,17 @@ async def lifespan(app: FastAPI):
         max_size=30,
         open=False
     )
-    await app.state.db_pool.open(wait=True, timeout=10)
-    api_logger.info("DB pool opened successfully")
-
-    yield
+    try:
+        await app.state.db_pool.open(wait=True, timeout=10)
+        api_logger.info("DB pool opened successfully")
+        yield
+    except Exception:
+        api_logger.exception("Application startup/runtime failed")
+        raise
+    finally:
+        api_logger.info("Closing DB pool...")
+        await pool.close()
+        api_logger.info("DB pool closed")
 
     # Shutdown logic
 
