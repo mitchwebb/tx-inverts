@@ -9,7 +9,7 @@ from backend.data_util.helpers import strip_dwc_column_names
 from backend.data_util.invasives_data import get_invasives_dataset, prep_invasives_dataset
 from backend.data_util.taxa_data import create_canonical_names, inverts_mask
 import backend.data_util.ranking as ns
-from backend.db.schema.data_metadata import DATA_META_TABLE
+from backend.db.schema.data_metadata import BACKBONE_DATASET, DATA_META_TABLE
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
@@ -145,9 +145,10 @@ async def check_backbone_is_current(conn: AsyncConnection):
 
     db_doi_request = sql.SQL("""
         SELECT doi FROM {meta_table}
-        WHERE dataset_name = 'backbone'
+        WHERE dataset_name = {backbone_dataset}
     """).format(
-        meta_table=sql.Identifier(DATA_META_TABLE.name)
+        meta_table=sql.Identifier(DATA_META_TABLE.name),
+        backbone_dataset=sql.Literal(BACKBONE_DATASET)
     )
 
     db_value = await execute_psql_query(
@@ -207,16 +208,21 @@ def _fetch_backbone() -> tuple[str, str, str]:
     return taxon_fp, vernacular_fp, current_gbif_doi
 
 
-async def _store_doi(conn: AsyncConnection, doi: str):
+async def store_doi(conn: AsyncConnection, dataset_name: str, doi: str | None):
+    """
+    Store a provided DOI associated with a provided dataset_name and current timestamp to the DATA_META_TABLE
+    """
+
     try:
         doi_query = sql.SQL("""
             INSERT INTO {meta_table} (dataset_name, last_updated_at, doi)
-            VALUES ('backbone', CURRENT_TIMESTAMP, {doi})
+            VALUES ({dataset_name}, CURRENT_TIMESTAMP, {doi})
             ON CONFLICT (dataset_name) DO UPDATE 
             SET
                 doi = EXCLUDED.doi,
                 last_updated_at = EXCLUDED.last_updated_at
         """).format(
+            dataset_name=sql.Literal(dataset_name),
             meta_table=sql.Identifier(DATA_META_TABLE.name),
             doi=sql.Literal(doi)
         )
@@ -322,7 +328,7 @@ async def update_backbone(conn: AsyncConnection, force_update=False, chunk_size=
         db_logger.info("Replacing backbone...")
 
         await _replace_backbone(conn, temp_table_name)
-        await _store_doi(conn, doi)
+        await store_doi(conn, 'backbone', doi)
 
         await fill_vernacular_names_table(conn, vernacular_fp)
 

@@ -3,6 +3,7 @@ import datetime
 import os
 from typing import Iterator, cast
 
+from backend.constants.map import TEXAS_BBOX
 from backend.constants.paths import DATA_OUT_PATH
 from backend.core.logging import data_logger
 from pandas import DataFrame
@@ -490,8 +491,7 @@ def filter_texas_bounding_box(df: DataFrame) -> DataFrame:
     remove rows that fall outside of a basic Texas bounding box.
     """
 
-    min_lon, max_lon = -106.65, -93.5
-    min_lat, max_lat = 25.8, 36.5
+    min_lon, min_lat, max_lon, max_lat = TEXAS_BBOX
 
     original_count = len(df)
 

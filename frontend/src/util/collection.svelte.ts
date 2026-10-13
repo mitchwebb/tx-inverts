@@ -16,7 +16,11 @@
 export function makeIDCollection<
     T,
     ID extends number | string = number | string,
->(getID: (item: T) => ID, onAdd?: (id: ID) => Promise<void>) {
+>(
+    getID: (item: T) => ID,
+    onAdd?: (id: ID) => void | Promise<void>,
+    onRemove?: (id: ID) => void | Promise<void>
+) {
     let items = $state<T[]>([]);
     return {
         get items() {
@@ -45,8 +49,11 @@ export function makeIDCollection<
                 await onAdd(id);
             }
         },
-        remove(id: ID) {
+        async remove(id: ID) {
             items = items.filter((i) => getID(i) !== id);
+            if (onRemove) {
+                await onRemove(id);
+            }
         },
         clear() {
             items = [];

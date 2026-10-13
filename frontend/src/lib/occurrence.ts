@@ -6,14 +6,17 @@ import type {
 import type { FiltersState } from '../contexts/filtersContext';
 import type { RawDateRange } from '../types/api';
 import { serializeFilters } from '../util/requests';
+import { registerRequest, resolveRequest } from './requestRegistry';
 
 // Get observation counts for each dataset for current taxon
 export async function getDatasetCounts(
     taxonID: ActiveTaxon['taxonID'],
     filters: FiltersState
 ) {
+    const controller = registerRequest(taxonID, 'datasetCounts');
     try {
         const response = await fetch('/server/occurrence/get_dataset_counts', {
+            signal: controller.signal,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -30,6 +33,8 @@ export async function getDatasetCounts(
     } catch (error) {
         console.error(error);
         return null;
+    } finally {
+        resolveRequest(taxonID, 'datasetCounts', controller);
     }
 }
 
