@@ -76,9 +76,14 @@ _all_indexes = [
             '(accepted_taxon_key) WHERE collection_start_date IS NOT NULL')
     ),
     IndexDefinition(
-        name='idx_gbif_observations_geom_3857',
+        name='idx_gbif_observations_geom_3857_transform',
         table=GBIF_OBSERVATIONS_TABLE,
         clause=sql.SQL('USING GIST(ST_Transform(geometry_4326, 3857))')
+    ),
+    IndexDefinition(
+        name='idx_gbif_observations_geom_3857',
+        table=GBIF_OBSERVATIONS_TABLE,
+        clause=sql.SQL('USING GIST(geometry_3857)')
     ),
     IndexDefinition(
         name='idx_gbif_observations_institution_code',
