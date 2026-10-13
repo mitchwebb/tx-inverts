@@ -13,23 +13,9 @@ from backend.jobs.tasks.occurrence_tasks import update_observations
 from backend.jobs.tasks.taxon_tasks import fill_invasives_table
 from backend.core.logging import setup_logging, db_logger, data_logger, tasks_logger
 from backend.jobs.tasks.view_tasks import refresh_materialized_views, refresh_materialized_view
-from psycopg import sql
+from psycopg import sql, errors
 from backend.constants.paths import DATA_OUT_PATH
 import os
-
-
-async def create_test_db(conn):
-    try:
-        # Create test database
-        create_test_db_query = sql.SQL("""
-            CREATE DATABASE test_inverts;
-            CREATE USER test_user WITH ENCRYPTED PASSWORD 'test_pass';
-            GRANT ALL PRIVILEGES ON DATABASE test_inverts TO test_user;
-        """)
-        await execute_psql_query(conn, create_test_db_query)
-    except Exception as e:
-        tasks_logger.error(f"Failed to create test database: {e}")
-        raise
 
 
 # Initial script to create and populate database for Texas Inverts
@@ -46,9 +32,6 @@ async def main():
 
         # Get DB connection
         conn = await get_single_db_connection()
-
-        # Create test database
-        await create_test_db(conn)
 
         # Initialize all tables (including mat views) and associated indexes
         await initialize_all_tables(conn, verbose=True, strict=True)
