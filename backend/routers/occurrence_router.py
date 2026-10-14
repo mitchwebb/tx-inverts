@@ -273,12 +273,15 @@ async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request)
 
 def tile_key(filters: OccurrenceFilters, z: int, x: int, y: int) -> str:
     """32 hex characters identifying one tile's bytes: path (z/x/y) + filters."""
+
     fields = filters.model_dump(mode='json')   # dates become ISO strings
+
     for name, value in fields.items():
         # list fields are sets: [a, b] == [b, a]
         if isinstance(value, list):
             fields[name] = sorted(set(value))
     identity = [z, x, y, fields]
+
     return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:32]
 
 

@@ -56,6 +56,7 @@ def _tile_xy(lon: float, lat: float, z: int) -> tuple[int, int]:
 
 
 def tiles_covering_bbox(z: int, bbox=TEXAS_BBOX) -> list[tuple[int, int]]:
+    """Get list of all tile indexes (X and Y) in bbox for a given zoom"""
     lon_min, lat_min, lon_max, lat_max = bbox
     # north-west corner: smallest x and y
     x0, y0 = _tile_xy(lon_min, lat_max, z)
@@ -81,6 +82,11 @@ async def warm_one_tile(
     filters = OccurrenceFilters(taxon_ids=[taxon_id])
     key = tile_key(filters, z, x, y)
 
+    tasks_logger.info(
+        "WARM key: taxon=%s tile=%s/%s/%s key=%s",
+        taxon_id, z, x, y, key,
+    )
+
     cached = await get_cached_tile(conn, key)
 
     if cached['data'] is not None:
@@ -91,7 +97,8 @@ async def warm_one_tile(
     result = await execute_psql_query(conn, query, fetch='one', dict_cursor=False)
 
     render_seconds = time.monotonic() - started
-    tile = bytes(result[0]) if result and result[0] else b''
+
+    tile = bytes(result[0]) if result and result[0] is not None else b''
 
     if render_seconds < MIN_COMPUTE_S:
         return 'fast'

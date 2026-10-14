@@ -33,7 +33,7 @@ class OccurrenceFilters(BaseModel):
     # These validators are really only necessary with our tile request, as nulls are passed as 'null'
     @field_validator('datasets', mode='before')
     def normalize_datasets(cls, v):
-        if v is None or v in ('null', '', 'undefined'):
+        if v is None or v in ('null', '', 'undefined') or v == []:
             return None
         # If it's a comma-separated string, convert to list
         if isinstance(v, str):
