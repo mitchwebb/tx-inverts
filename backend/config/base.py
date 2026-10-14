@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from .database import PostgresSettings
 from .gbif import GBIFSettings
 
+# Determine project root
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # Determine backend root
 DEFAULT_BACKEND_ROOT = Path(__file__).resolve().parent.parent

@@ -1,7 +1,12 @@
 # Logger settings and setup
 import logging
 import logging.config
+from backend.config.base import PROJECT_ROOT
+import os
 
+
+LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
 
 LOGGING_CONFIG = {
     'version': 1,
@@ -19,7 +24,7 @@ LOGGING_CONFIG = {
         'file': {
             'class': 'logging.FileHandler',
             'level': 'INFO',
-            'filename': 'backend.log',
+            'filename': os.path.join(LOG_DIR, 'backend.log'),
             'formatter': 'default',
         }
     },
