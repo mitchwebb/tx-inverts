@@ -12,6 +12,7 @@ from backend.jobs.tasks.taxon_tasks import update_backbone, update_ns_ranks
 from backend.jobs.tasks.occurrence_tasks import update_observations
 from backend.jobs.tasks.taxon_tasks import fill_invasives_table
 from backend.core.logging import setup_logging, db_logger, data_logger, tasks_logger
+from backend.jobs.tasks.tiles_cache_tasks import rebuild_tile_cache
 from backend.jobs.tasks.view_tasks import refresh_materialized_views, refresh_materialized_view
 from psycopg import sql, errors
 from backend.constants.paths import DATA_OUT_PATH

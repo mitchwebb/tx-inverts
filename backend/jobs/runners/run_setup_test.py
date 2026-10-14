@@ -25,10 +25,6 @@ class TestRunSetup:
             new=AsyncMock(return_value=conn)
         )
         mocker.patch(
-            f'{MODULE}.create_test_db',
-            new=AsyncMock(side_effect=track('create_test_db'))
-        )
-        mocker.patch(
             f'{MODULE}.initialize_all_tables',
             new=AsyncMock(side_effect=track('initialize_all_tables'))
         )
@@ -61,6 +57,10 @@ class TestRunSetup:
             new=AsyncMock(side_effect=track('update_indexes'))
         )
         mocker.patch(
+            f'{MODULE}.rebuild_tile_cache',
+            new=AsyncMock(side_effect=track('rebuild_tile_cache'))
+        )
+        mocker.patch(
             f'{MODULE}.update_ns_ranks',
             new=AsyncMock(side_effect=track('update_ns_ranks'))
         )
@@ -79,7 +79,6 @@ class TestRunSetup:
         taxon_lineage_refresh.assert_any_call(conn, 'taxon_lineage')
 
         assert order == [
-            'create_test_db',  # Create test database
             'initialize_all_tables',  # Initialize database tables
             'fill_invasives_table',  # Download invasives dataset and fill
             'fill_all_geometry_tables',  # Fill geometry tables with info
@@ -87,11 +86,13 @@ class TestRunSetup:
             'fill_dataset_table',
             'update_backbone',
             'update_observations',  # Update observations table
-            'create_taxon_lineage',  # Create taxon_lineage mat view
+            'create_taxon_lineage',  # Update taxon_lineage mat view
             'update_indexes',  # Update indexes
+            'rebuild_tile_cache',  # Create tile cache for large taxa
             'update_ns_ranks',  # Update rankings
             'update_observation_regions',  # Update observations_regions
-            'refresh_materialized_views',  # Refresh materialized views
+            # Refresh materialized views
+            'refresh_materialized_views',
         ]
         conn.close.assert_awaited_once()
         conn.rollback.assert_not_awaited()
@@ -102,7 +103,6 @@ class TestRunSetup:
         mocker.patch(f'{MODULE}.get_single_db_connection',
                      new=AsyncMock(return_value=conn))
         mocker.patch(f'{MODULE}.setup_logging')
-        mocker.patch(f'{MODULE}.create_test_db', new=AsyncMock())
         mocker.patch(f'{MODULE}.initialize_all_tables', new=AsyncMock())
         mocker.patch(f'{MODULE}.fill_invasives_table', new=AsyncMock())
         mocker.patch(f'{MODULE}.fill_all_geometry_tables', new=AsyncMock())
