@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from backend.core.exception_handler import global_exception_handler, validation_error_handler
 from backend.core.logging import setup_logging
 from fastapi import FastAPI
+from fastapi.middleware.gzip import GZipMiddleware
 from backend.core.logging import api_logger
 from backend.routers.occurrence_router import occurrence_router
 from backend.routers.taxon_router import taxon_router
@@ -53,7 +54,7 @@ async def lifespan(app: FastAPI):
         raise
     finally:
         api_logger.info("Closing DB pool...")
-        await pool.close()
+        await app.state.db_pool.close()
         api_logger.info("DB pool closed")
 
     # Shutdown logic
@@ -65,6 +66,9 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(lifespan=lifespan)
+
+# Compress responses larger than 500 bytes
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
 # TODO: Limit origins
 app.add_middleware(

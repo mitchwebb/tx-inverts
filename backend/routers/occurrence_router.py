@@ -448,7 +448,7 @@ async def get_tile(
                 cached = await get_cached_tile(conn, key)
         except Exception:
             api_logger.exception('Tile cache read failed')
-            
+
         # Return cached tile if data present
         if cached is not None and cached['data'] is not None:
             return Response(content=bytes(cached['data']), media_type='application/x-protobuf', headers=headers)

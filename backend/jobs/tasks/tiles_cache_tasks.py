@@ -15,7 +15,7 @@ from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.occurrence import OccurrenceFilters
 from backend.routers.occurrence_router import build_tile_query, tile_key
-from backend.core.logging import tasks_logger
+from backend.core.logging import db_logger
 
 
 async def get_large_taxa(conn: AsyncConnection, min_observations: int) -> list[str]:
@@ -42,7 +42,7 @@ async def get_large_taxa(conn: AsyncConnection, min_observations: int) -> list[s
         taxa=sql.Identifier(TX_TAXA_TABLE.name),
         minimum=sql.Literal(min_observations),
     )
-    tasks_logger.info('Getting list of large taxa...')
+    db_logger.info('Getting list of large taxa...')
     rows = await execute_psql_query(conn, query, fetch='all')
     return [row[0] for row in rows or []]
 
@@ -82,10 +82,10 @@ async def warm_one_tile(
     filters = OccurrenceFilters(taxon_ids=[taxon_id])
     key = tile_key(filters, z, x, y)
 
-    tasks_logger.info(
-        "WARM key: taxon=%s tile=%s/%s/%s key=%s",
-        taxon_id, z, x, y, key,
-    )
+    # db_logger.info(
+    #     "WARM key: taxon=%s tile=%s/%s/%s key=%s",
+    #     taxon_id, z, x, y, key,
+    # )
 
     cached = await get_cached_tile(conn, key)
 
@@ -130,7 +130,7 @@ async def warm_tile_cache(
             for x, y in tiles_covering_bbox(z):
                 work.put_nowait((taxon_id, z, x, y))
     total = work.qsize()
-    tasks_logger.info(
+    db_logger.info(
         f'Warming tile cache: {len(taxa)} taxa, {total} tiles, {concurrency} at a time')
 
     results = Counter()
@@ -149,18 +149,18 @@ async def warm_tile_cache(
                     results[await warm_one_tile(worker_conn, taxon_id, z, x, y, True)] += 1
                 except Exception:
                     results['error'] += 1
-                    tasks_logger.exception(
+                    db_logger.exception(
                         f'Warming failed: taxon {taxon_id} tile {z}/{x}/{y}')
                     await worker_conn.rollback()  # clear any failed transaction
                 done = sum(results.values())
                 if done % 200 == 0:
-                    tasks_logger.info(
+                    db_logger.info(
                         f'{done}/{total} tiles, {time.monotonic() - started:.0f}s, {dict(results)}')
         finally:
             await worker_conn.close()
 
     await asyncio.gather(*(worker() for _ in range(concurrency)))
-    tasks_logger.info(
+    db_logger.info(
         f'Warming finished in {time.monotonic() - started:.0f}s: {dict(results)}')
     return results
 
@@ -175,11 +175,11 @@ async def rebuild_tile_cache(conn: AsyncConnection) -> None:
     """
     await clear_tile_cache(conn)
     await conn.commit()
-    tasks_logger.info('Tile cache cleared')
+    db_logger.info('Tile cache cleared for rebuild')
     try:
         await warm_tile_cache(conn)
     except Exception:
-        tasks_logger.exception(
+        db_logger.exception(
             'Tile cache warm-up failed; tiles will be cached on demand')
 
 
@@ -194,7 +194,7 @@ async def cull_tile_cache(conn: AsyncConnection, target_bytes: int = TILE_CACHE_
     await conn.commit()
 
     MB = 1024 * 1024
-    tasks_logger.info(
+    db_logger.info(
         f'Tile cache culled to target {target_bytes // MB} MB: '
         f'{before / MB:.1f} MB -> {(before - removed) / MB:.1f} MB ({removed / MB:.1f} MB evicted)')
     return removed

@@ -9,6 +9,7 @@ from pandas import DataFrame
 import requests
 from backend.constants.paths import DATA_OUT_PATH
 from backend.data_util.execute_psql_query import execute_psql_query
+from backend.db.queries.meta_queries import store_doi
 from backend.db.schema.geometries import TEXAS_GEOMETRY_TABLE
 from backend.db.schema.observation_regions import OBSERVATION_REGIONS_TABLE
 from backend.config import get_settings
@@ -24,7 +25,6 @@ from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.jobs.tasks.table_tasks import initialize_table
-from backend.jobs.tasks.taxon_tasks import store_doi
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from psycopg import sql, AsyncConnection
 
@@ -341,14 +341,14 @@ async def update_observations(
         )
         await execute_psql_query(conn, insert_query)
 
-        # Store observations dataset DOI (if retrieved) and current timestamp
-        await store_doi(conn, 'observations', doi)
-
         # Refresh dependant materialized views
         db_logger.info("Refreshing materialized views...")
         await refresh_materialized_view(conn, TX_TAXA_TABLE.name)
         await refresh_materialized_view(conn, TAXON_PRESENCE_TABLE.name)
         await refresh_materialized_view(conn, TAXON_LINEAGE_TABLE.name)
+
+        # Store observations dataset DOI (if retrieved) and current timestamp
+        await store_doi(conn, 'observations', doi)
 
         await conn.commit()
 
@@ -365,96 +365,96 @@ async def update_observations(
         raise
 
 
-async def sync_observations_to_backbone(conn: AsyncConnection):
-    """
-        Resync observations table to current backbone
+# async def sync_observations_to_backbone(conn: AsyncConnection):
+#     """
+#         Resync observations table to current backbone
 
-        This will take the current gbif_inverts_backbone table and,
-        using the taxon_id -> accepted_name_usage_id relationship, alter taxon_key
-        values in gbif_observations to reflect the current relationships
-    """
+#         This will take the current gbif_inverts_backbone table and,
+#         using the taxon_id -> accepted_name_usage_id relationship, alter taxon_key
+#         values in gbif_observations to reflect the current relationships
+#     """
 
-    updated_count = 0
-    orphaned_keys: list[int] = []
+#     updated_count = 0
+#     orphaned_keys: list[int] = []
 
-    db_logger.info("Syncing observations to current backbone...")
-    try:
-        # Create temp table of accepted_taxon_keys that need changing
-        db_logger.info("Checking for affected observations...")
-        create_table_query = sql.SQL("""
-            CREATE TEMP TABLE tmp_update AS
-            SELECT o.gbif_id, b.accepted_name_usage_id
-            FROM {gbif_observations} o
-            JOIN {backbone} b
-                ON o.taxon_key = b.taxon_id
-            WHERE NOT (o.accepted_taxon_key = b.taxon_id
-                    OR o.accepted_taxon_key = b.accepted_name_usage_id)
-        """).format(
-            gbif_observations=sql.Identifier(
-                GBIF_OBSERVATIONS_TABLE.name),
-            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
-        )
-        await execute_psql_query(conn, create_table_query)
+#     db_logger.info("Syncing observations to current backbone...")
+#     try:
+#         # Create temp table of accepted_taxon_keys that need changing
+#         db_logger.info("Checking for affected observations...")
+#         create_table_query = sql.SQL("""
+#             CREATE TEMP TABLE tmp_update AS
+#             SELECT o.gbif_id, b.accepted_name_usage_id
+#             FROM {gbif_observations} o
+#             JOIN {backbone} b
+#                 ON o.taxon_key = b.taxon_id
+#             WHERE NOT (o.accepted_taxon_key = b.taxon_id
+#                     OR o.accepted_taxon_key = b.accepted_name_usage_id)
+#         """).format(
+#             gbif_observations=sql.Identifier(
+#                 GBIF_OBSERVATIONS_TABLE.name),
+#             backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
+#         )
+#         await execute_psql_query(conn, create_table_query)
 
-        # Get count of rows that need changing
-        row_count = await execute_psql_query(
-            conn,
-            query=sql.SQL("SELECT COUNT(*) AS n FROM tmp_update;"),
-            fetch='one',
-            dict_cursor=True
-        )
+#         # Get count of rows that need changing
+#         row_count = await execute_psql_query(
+#             conn,
+#             query=sql.SQL("SELECT COUNT(*) AS n FROM tmp_update;"),
+#             fetch='one',
+#             dict_cursor=True
+#         )
 
-        db_logger.info(
-            f"Rows that actually need updating: {row_count['n'] if row_count is not None else 0}")
+#         db_logger.info(
+#             f"Rows that actually need updating: {row_count['n'] if row_count is not None else 0}")
 
-        # Make a cheeky index to speed up next operation
-        await execute_psql_query(conn, sql.SQL("CREATE INDEX ON tmp_update (gbif_id);"))
+#         # Make a cheeky index to speed up next operation
+#         await execute_psql_query(conn, sql.SQL("CREATE INDEX ON tmp_update (gbif_id);"))
 
-        # Update affected observations rows in gbif_observations
-        db_logger.info("Updating affected observations...")
-        # Using raw cursor here to access rowcount
-        async with conn.cursor() as cur:
-            await cur.execute(sql.SQL("""
-                UPDATE {gbif_observations} o
-                SET accepted_taxon_key = t.accepted_name_usage_id
-                FROM tmp_update t
-                WHERE o.gbif_id = t.gbif_id;
-            """).format(gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)))
+#         # Update affected observations rows in gbif_observations
+#         db_logger.info("Updating affected observations...")
+#         # Using raw cursor here to access rowcount
+#         async with conn.cursor() as cur:
+#             await cur.execute(sql.SQL("""
+#                 UPDATE {gbif_observations} o
+#                 SET accepted_taxon_key = t.accepted_name_usage_id
+#                 FROM tmp_update t
+#                 WHERE o.gbif_id = t.gbif_id;
+#             """).format(gbif_observations=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)))
 
-            updated_count = cur.rowcount
-            db_logger.info(
-                f"Updated {updated_count} rows in gbif_observations")
+#             updated_count = cur.rowcount
+#             db_logger.info(
+#                 f"Updated {updated_count} rows in gbif_observations")
 
-        # Check for taxon_keys in gbif_observations with NO match in backbone
-        db_logger.info("Checking for orphaned taxa...")
-        orphans_query = sql.SQL("""
-            SELECT DISTINCT o.taxon_key as orphaned_keys
-            FROM {gbif_observations} o
-            LEFT JOIN {backbone} b
-                ON o.taxon_key = b.taxon_id
-            WHERE b.taxon_id is NULL
-        """).format(
-            gbif_observations=sql.Identifier(
-                GBIF_OBSERVATIONS_TABLE.name),
-            backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
-        )
-        rows = await execute_psql_query(conn, orphans_query, fetch='all', dict_cursor=True) or []
-        orphaned_keys = [row['orphaned_keys'] for row in rows]
+#         # Check for taxon_keys in gbif_observations with NO match in backbone
+#         db_logger.info("Checking for orphaned taxa...")
+#         orphans_query = sql.SQL("""
+#             SELECT DISTINCT o.taxon_key as orphaned_keys
+#             FROM {gbif_observations} o
+#             LEFT JOIN {backbone} b
+#                 ON o.taxon_key = b.taxon_id
+#             WHERE b.taxon_id is NULL
+#         """).format(
+#             gbif_observations=sql.Identifier(
+#                 GBIF_OBSERVATIONS_TABLE.name),
+#             backbone=sql.Identifier(GBIF_INVERTS_BACKBONE.name)
+#         )
+#         rows = await execute_psql_query(conn, orphans_query, fetch='all', dict_cursor=True) or []
+#         orphaned_keys = [row['orphaned_keys'] for row in rows]
 
-        if len(orphaned_keys) > 0:
-            db_logger.warning(
-                f"Orphaned taxa found in occurrences! Examples: {orphaned_keys[:10]}")
+#         if len(orphaned_keys) > 0:
+#             db_logger.warning(
+#                 f"Orphaned taxa found in occurrences! Examples: {orphaned_keys[:10]}")
 
-        await conn.commit()
+#         await conn.commit()
 
-    except Exception as e:
-        if conn is not None:
-            # Rollback on error
-            await conn.rollback()
-        db_logger.exception(f"Error during resync: {e}")
-        raise
+#     except Exception as e:
+#         if conn is not None:
+#             # Rollback on error
+#             await conn.rollback()
+#         db_logger.exception(f"Error during resync: {e}")
+#         raise
 
-    return {
-        'updated_rows': updated_count,
-        'orphaned_keys': orphaned_keys,
-    }
+#     return {
+#         'updated_rows': updated_count,
+#         'orphaned_keys': orphaned_keys,
+#     }

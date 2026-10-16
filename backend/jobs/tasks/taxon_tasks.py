@@ -9,7 +9,8 @@ from backend.data_util.helpers import strip_dwc_column_names
 from backend.data_util.invasives_data import get_invasives_dataset, prep_invasives_dataset
 from backend.data_util.taxa_data import create_canonical_names, inverts_mask
 import backend.data_util.ranking as ns
-from backend.db.schema.data_metadata import BACKBONE_DATASET, DATA_META_TABLE
+from backend.db.queries.meta_queries import BACKBONE_DATASET, retrieve_dataset_meta, store_doi
+from backend.db.schema.data_metadata import DATA_META_TABLE
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE
@@ -143,18 +144,9 @@ async def check_backbone_is_current(conn: AsyncConnection):
     data_logger.info("Comparing GBIF backbone DOI to database...")
     current_gbif_doi = get_gbif_backbone_doi()
 
-    db_doi_request = sql.SQL("""
-        SELECT doi FROM {meta_table}
-        WHERE dataset_name = {backbone_dataset}
-    """).format(
-        meta_table=sql.Identifier(DATA_META_TABLE.name),
-        backbone_dataset=sql.Literal(BACKBONE_DATASET)
-    )
+    meta = await retrieve_dataset_meta(conn, BACKBONE_DATASET)
 
-    db_value = await execute_psql_query(
-        conn, db_doi_request, fetch='one', dict_cursor=True)
-
-    return bool(db_value and db_value['doi'] == current_gbif_doi)
+    return bool(meta and meta['doi'] == current_gbif_doi)
 
 
 def get_gbif_backbone_doi():
@@ -206,31 +198,6 @@ def _fetch_backbone() -> tuple[str, str, str]:
     vernacular_fp = os.path.join(extract_dir, 'VernacularName.tsv')
 
     return taxon_fp, vernacular_fp, current_gbif_doi
-
-
-async def store_doi(conn: AsyncConnection, dataset_name: str, doi: str | None):
-    """
-    Store a provided DOI associated with a provided dataset_name and current timestamp to the DATA_META_TABLE
-    """
-
-    try:
-        doi_query = sql.SQL("""
-            INSERT INTO {meta_table} (dataset_name, last_updated_at, doi)
-            VALUES ({dataset_name}, CURRENT_TIMESTAMP, {doi})
-            ON CONFLICT (dataset_name) DO UPDATE 
-            SET
-                doi = EXCLUDED.doi,
-                last_updated_at = EXCLUDED.last_updated_at
-        """).format(
-            dataset_name=sql.Literal(dataset_name),
-            meta_table=sql.Identifier(DATA_META_TABLE.name),
-            doi=sql.Literal(doi)
-        )
-
-        await execute_psql_query(conn, doi_query)
-    except Exception:
-        db_logger.error("Failed to store DOI")
-        raise
 
 
 # Perform a full update of the gbif_backbone in local database

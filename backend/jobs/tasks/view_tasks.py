@@ -1,4 +1,5 @@
 from backend.data_util.execute_psql_query import execute_psql_query
+from backend.db.queries.meta_queries import stamp_dataset_updated
 from backend.db.schema.index_definitions import MATERIALIZED_VIEWS
 from backend.core.logging import db_logger
 from psycopg import sql, AsyncConnection
@@ -50,6 +51,8 @@ async def refresh_materialized_view(
 
         await execute_psql_query(conn, refresh_statement)
         db_logger.info(f"{view_name} refreshed.")
+
+    await stamp_dataset_updated(conn, view_name)
 
     await conn.commit()
 

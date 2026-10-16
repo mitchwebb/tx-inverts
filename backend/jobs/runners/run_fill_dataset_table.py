@@ -3,7 +3,7 @@ from backend.data_util.db import get_single_db_connection
 from backend.data_util.gbif.observations_request import APPROVED_DATASETS
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.jobs.runners.run_async import run_async
-from backend.jobs.tasks.dataset_tasks import fill_dataset_table
+from backend.jobs.tasks.gbif_dataset_tasks import fill_dataset_table
 from backend.jobs.tasks.table_tasks import initialize_table
 
 

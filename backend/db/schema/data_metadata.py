@@ -1,15 +1,22 @@
-from backend.db.schema.base_table import DBTable
+from enum import StrEnum
+from typing import Literal
 
-# Possible values for dataset_name
-OBSERVATIONS_DATASET = 'observations'
-BACKBONE_DATASET = 'backbone'
+from backend.db.schema.base_table import DBTable
+from backend.db.schema.index_definitions import MATERIALIZED_VIEWS
+from backend.db.schema.regions import REGIONS_VIEW
+from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
+from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
+from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 
 
 class DataMetadata(DBTable):
     """
-    Table of various database metadata values.
-    Stores Dataset Name ('backbone', 'observations', etc.) alongside
-    their associated DOI and last_updated_at timestamp.
+    Table of various dataset version values.
+    Stores dataset name alongside their associated DOI (if applicable) 
+    and their last_updated_at timestamp.
+
+    This is intended for use with materialized views, as well as the 
+    'backbone' and 'observations' datasets sourced from GBIF.
 
     DOI may be NULL. 
     """

@@ -5,7 +5,7 @@ from backend.data_util.execute_psql_query import execute_psql_query
 from backend.data_util.gbif.observations_request import APPROVED_DATASETS
 from backend.jobs.runners.run_async import run_async
 from backend.jobs.tasks.index_tasks import update_indexes
-from backend.jobs.tasks.dataset_tasks import fill_dataset_table
+from backend.jobs.tasks.gbif_dataset_tasks import fill_dataset_table
 from backend.jobs.tasks.table_tasks import initialize_all_tables
 from backend.jobs.tasks.region_tasks import fill_all_geometry_tables, update_observation_regions
 from backend.jobs.tasks.taxon_tasks import update_backbone, update_ns_ranks

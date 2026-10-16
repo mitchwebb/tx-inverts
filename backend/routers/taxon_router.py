@@ -1,16 +1,19 @@
 # Taxon related API endpoints
+from backend.db.queries.meta_queries import BACKBONE_DATASET, OBSERVATIONS_DATASET
 from backend.db.queries.occurrence import create_occurrence_filter_sql
+from backend.db.schema.data_metadata import DATA_META_TABLE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.vernacular_names import VERNACULAR_NAMES_TABLE
 from backend.models.occurrence import OccurrenceFilters
-from fastapi import Request, APIRouter, HTTPException
+from fastapi import Request, APIRouter, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.models.api import MultiTaxaObsRequestParams
-from psycopg import sql
+from psycopg import AsyncConnection, sql
 from backend.core.logging import api_logger
 from backend.models.taxa import TaxonInfo, TaxonSuggestion
+from backend.db.queries.meta_queries import retrieve_dataset_meta
 
 
 taxon_router = APIRouter()
@@ -217,9 +220,12 @@ async def get_taxon_info(taxon_id: str, request: Request) -> TaxonInfo:
 
 # Get flat backbone for frontend (excludes synonyms)
 @taxon_router.get('/get_backbone', response_model=list[TaxonInfo])
-async def get_backbone(request: Request) -> list[TaxonInfo]:
+async def get_backbone(request: Request, response: Response) -> list[TaxonInfo] | Response:
     """
     Get backbone from tx_taxa table (excluding synonyms)
+
+    Rebuilt only when data_metadata shows the relevant datasets have changed.
+    Clients revalidate with an ETag and receive a 304 when unchanged.
 
     Args:
         request (fastapi.Request): FastAPI request object
@@ -239,7 +245,7 @@ async def get_backbone(request: Request) -> list[TaxonInfo]:
                 accepted_name_usage_id,
                 canonical_name,
                 scientific_name,
-                NULL as vernacular_names,
+                NULL as vernacular_names, -- TODO: Might be good to send these in the future
                 taxon_rank,
                 us_invasive,
                 taxonomic_status,
@@ -260,7 +266,23 @@ async def get_backbone(request: Request) -> list[TaxonInfo]:
         """).format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name))
 
         async with request.app.state.db_pool.connection() as conn:
-            result = await execute_psql_query(conn, query, fetch='all', dict_cursor=True) or []
+            result = await retrieve_dataset_meta(conn, TX_TAXA_TABLE.name)
+            version = result['last_updated_at'].isoformat()
+            api_logger.info(version)
+
+            etag = f'W/"{version}"'
+
+            # Client already has this exact version: send no body
+            if request.headers.get("if-none-match") == etag:
+                return Response(status_code=304, headers={"ETag": etag})
+
+            result = await execute_psql_query(
+                conn, query, fetch='all', dict_cursor=True
+            ) or []
+
+        response.headers["ETag"] = etag
+        response.headers["Cache-Control"] = "no-cache"
+
         return [TaxonInfo(**row) for row in result]
 
     except HTTPException:

@@ -15,6 +15,7 @@ from psycopg import sql
 
 from backend.conftest import insert_rows
 from backend.data_util.execute_psql_query import execute_psql_query
+from backend.db.queries.meta_queries import OBSERVATIONS_DATASET
 from backend.db.queries.tile_cache import (
     clear_tile_cache,
     evict_lru_tiles,
@@ -22,7 +23,7 @@ from backend.db.queries.tile_cache import (
     get_cached_tile,
     store_tile,
 )
-from backend.db.schema.data_metadata import DATA_META_TABLE, OBSERVATIONS_DATASET
+from backend.db.schema.data_metadata import DATA_META_TABLE
 from backend.db.schema.tile_cache import TILE_CACHE
 
 

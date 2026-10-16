@@ -1,7 +1,8 @@
 from psycopg import AsyncConnection, sql
 
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.db.schema.data_metadata import DATA_META_TABLE, OBSERVATIONS_DATASET
+from backend.db.queries.meta_queries import OBSERVATIONS_DATASET
+from backend.db.schema.data_metadata import DATA_META_TABLE
 from backend.db.schema.tile_cache import TILE_CACHE
 
 

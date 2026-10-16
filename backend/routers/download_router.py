@@ -165,20 +165,3 @@ async def get_ranked_taxa_download(
     except Exception as e:
         api_logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# def validate_turnstile(token, secret):
-#     url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
-
-#     data = {
-#         'secret': secret,
-#         'response': token
-#     }
-
-#     try:
-#         response = requests.post(url, data=data, timeout=10)
-#         response.raise_for_status()
-#         return response.json()
-#     except requests.RequestException as e:
-#         console.error(f"Turnstile validation error: {e}")
-#         return {'success': False, 'error-codes': ['internal-error']}
