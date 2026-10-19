@@ -18,6 +18,7 @@ export const l4EcoregionsLayer = {
     id: 'l4-ecoregions',
     source: {
         type: 'vector',
+        // TODO: Ideally, these URL's should be stored and retrieved in the database
         url: 'mapbox://mihtmo.a1utqz7l',
         promoteId: 'L4_KEY',
     },
@@ -51,6 +52,7 @@ export const l3EcoregionsLayer = {
     id: 'l3-ecoregions',
     source: {
         type: 'vector',
+        // TODO: Ideally, these URL's should be stored and retrieved in the database
         url: 'mapbox://mihtmo.0f8lu7w6',
         promoteId: 'US_L3NAME',
     },
@@ -84,6 +86,7 @@ export const texasParksLayer = {
     id: 'parks',
     source: {
         type: 'vector',
+        // TODO: Ideally, these URL's should be stored and retrieved in the database
         url: 'mapbox://mihtmo.a8sblcwq',
         promoteId: 'ManagerPropName',
     },
@@ -117,6 +120,7 @@ export const countiesLayer = {
     id: 'tx-counties',
     source: {
         type: 'vector',
+        // TODO: Ideally, these URL's should be stored and retrieved in the database
         url: 'mapbox://mihtmo.4u7cu2jb',
         promoteId: 'COUNTY',
     },

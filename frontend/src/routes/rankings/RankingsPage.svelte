@@ -215,8 +215,6 @@
     // Sync parentTaxa filter to active taxa
     $effect(() => {
         const items = taxaContext.taxa.items;
-        const infos = items.map((t) => t.info);
-        console.log(items);
 
         const activeParentTaxa = items.filter(
             (

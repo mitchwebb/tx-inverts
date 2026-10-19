@@ -118,6 +118,11 @@
                 You can also apply multiple layers to the map—counties, parks,
                 and ecoregions—for additional insight.
             </p>
+            <p>
+                In general, the more observations you're looking at, the longer
+                the load times will be. Although we're working for speedier
+                results, this site was designed with the species level in mind.
+            </p>
         </div>
         <div class="about-page-section">
             <h3 class="about-page-subheader">

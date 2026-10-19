@@ -81,10 +81,9 @@
         pointer-events: none;
         z-index: 0;
         display: flex;
-        gap: .5rem;
+        gap: 0.5rem;
         height: max-content;
         align-items: center;
-        /* justify-content: space-between; */
     }
     #map-toolbar-wrapper > * {
         z-index: 50;
@@ -92,13 +91,7 @@
     }
     #map-loading-icon {
         z-index: 50;
-        color: var(--accent-color);
+        color: blue;
         stroke-width: 4px;
     }
-    /* #map-toolbar-left {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: .5rem;
-    } */
 </style>
