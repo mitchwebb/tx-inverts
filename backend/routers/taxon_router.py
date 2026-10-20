@@ -268,7 +268,6 @@ async def get_backbone(request: Request, response: Response) -> list[TaxonInfo] 
         async with request.app.state.db_pool.connection() as conn:
             result = await retrieve_dataset_meta(conn, TX_TAXA_TABLE.name)
             version = result['last_updated_at'].isoformat()
-            api_logger.info(version)
 
             etag = f'W/"{version}"'
 
