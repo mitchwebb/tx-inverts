@@ -1,9 +1,133 @@
+import hashlib
+import json
+
 from psycopg import AsyncConnection, sql
 
+from backend.constants.map import PIXELS_PER_GRID, get_meters_per_pixel
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.queries.meta_queries import OBSERVATIONS_DATASET
+from backend.db.queries.occurrence import create_occurrence_filter_sql
 from backend.db.schema.data_metadata import DATA_META_TABLE
+from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.tile_cache import TILE_CACHE
+from backend.models.occurrence import OccurrenceFilters
+
+
+def tile_key(filters: OccurrenceFilters, z: int, x: int, y: int) -> str:
+    """32 hex characters identifying one tile's bytes: path (z/x/y) + filters."""
+
+    fields = filters.model_dump(mode='json')   # dates become ISO strings
+
+    for name, value in fields.items():
+        # list fields are sets: [a, b] == [b, a]
+        if isinstance(value, list):
+            fields[name] = sorted(set(value))
+    identity = [z, x, y, fields]
+
+    return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:32]
+
+
+def build_tile_query(filters: OccurrenceFilters, z: int, x: int, y: int) -> sql.Composed:
+    occurrence_filter = create_occurrence_filter_sql(filters)
+
+    # Get grid size in meters at given zoom level
+    grid_size = get_meters_per_pixel(z) * PIXELS_PER_GRID
+    # Controls which rows affect cell counts (by expanding past tile edges)
+    expand_by = 2 * grid_size
+
+    if z < 11:
+        return sql.SQL("""
+                WITH
+                bbox AS (
+                    SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
+                ),
+                bins AS (
+                    SELECT
+                        ST_SnapToGrid(geometry_3857, {grid_size}) AS grid_geom,
+                        COUNT(*) AS observation_count
+                    FROM {occurrence_table}
+                    WHERE
+                        geometry_3857 && ST_Expand(
+                            ST_TileEnvelope({z}, {x}, {y}),
+                            {expand_by}
+                        )
+                        AND {occurrence_filter}
+                    GROUP BY ST_SnapToGrid(geometry_3857, {grid_size})
+                ),
+                bins_geom AS (
+                    SELECT
+                        ST_SetSRID(
+                        ST_MakeEnvelope(
+                            ST_X(bins.grid_geom) - ({grid_size} / 2),
+                            ST_Y(bins.grid_geom) - ({grid_size} / 2),
+                            ST_X(bins.grid_geom) + ({grid_size} / 2),
+                            ST_Y(bins.grid_geom) + ({grid_size} / 2)
+                        ),
+                        3857
+                        ) AS geom,
+                        bins.observation_count as observation_count
+                    FROM bins
+                ),
+                mvt_geom AS (
+                    SELECT
+                        ST_AsMVTGeom(bins_geom.geom, bbox.geom, 4096, 64, true) AS geom,
+                        bins_geom.observation_count
+                    FROM bins_geom, bbox
+                )
+                SELECT ST_AsMVT(mvt_geom, 'observations-heatmap', 4096, 'geom') FROM mvt_geom;
+            """).format(
+            include_inat=sql.Literal(filters.include_inat),
+            taxon_id=sql.Literal(filters.taxon_ids),
+            x=sql.Literal(x),
+            y=sql.Literal(y),
+            z=sql.Literal(z),
+            grid_size=sql.Literal(grid_size),
+            expand_by=sql.Literal(expand_by),
+            occurrence_table=sql.Identifier(
+                GBIF_OBSERVATIONS_TABLE.name),
+            occurrence_filter=occurrence_filter
+        )
+    # Return point observations if zoomed in
+    else:
+        return sql.SQL("""
+                WITH
+                bbox AS (
+                    SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
+                ),
+                obs AS (
+                    SELECT 
+                        publisher,
+                        "references",
+                        county,
+                        locality,
+                        decimal_latitude,
+                        decimal_longitude,
+                        accepted_scientific_name,
+                        gbif_id,
+                        collection_start_date,
+                        collection_end_date,
+                        geometry_3857
+                    FROM {occurrence_table}
+                    WHERE
+                    {occurrence_filter}
+                ),
+                mvt_geom AS (
+                    SELECT ST_AsMVTGeom(obs.geometry_3857, bbox.geom, 4096, 64, true) AS geom,
+                        obs.*
+                    FROM obs, bbox
+                    WHERE ST_Intersects(obs.geometry_3857, bbox.geom)
+                )
+                SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
+            """).format(
+            include_inat=sql.Literal(filters.include_inat),
+            taxon_id=sql.Literal(filters.taxon_ids),
+            x=sql.Literal(x),
+            y=sql.Literal(y),
+            z=sql.Literal(z),
+            occurrence_table=sql.Identifier(
+                GBIF_OBSERVATIONS_TABLE.name),
+            occurrence_filter=occurrence_filter
+        )
 
 
 async def get_cached_tile(conn: AsyncConnection, key):
@@ -129,4 +253,4 @@ async def evict_lru_tiles(
 
 async def clear_tile_cache(conn: AsyncConnection):
     await execute_psql_query(
-        conn, sql.SQL("TRUNCATE {t}").format(t=sql.Identifier(TILE_CACHE.name)))
+        conn, sql.SQL("TRUNCATE {tile_cache}").format(tile_cache=sql.Identifier(TILE_CACHE.name)))

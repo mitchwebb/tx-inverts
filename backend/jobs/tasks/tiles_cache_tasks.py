@@ -9,12 +9,11 @@ from backend.constants.map import TEXAS_BBOX
 from backend.constants.tiles import MIN_COMPUTE_S, TILE_CACHE_MAX_BYTES, TILE_CACHE_TARGET_BYTES
 from backend.data_util.db import get_single_db_connection
 from backend.data_util.execute_psql_query import execute_psql_query
-from backend.db.queries.tile_cache import clear_tile_cache, evict_lru_tiles, get_cache_size, get_cached_tile, store_tile
+from backend.db.queries.tile_cache import build_tile_query, clear_tile_cache, evict_lru_tiles, get_cache_size, get_cached_tile, store_tile, tile_key
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.models.occurrence import OccurrenceFilters
-from backend.routers.occurrence_router import build_tile_query, tile_key
 from backend.core.logging import db_logger
 
 
@@ -81,11 +80,6 @@ async def warm_one_tile(
     """
     filters = OccurrenceFilters(taxon_ids=[taxon_id])
     key = tile_key(filters, z, x, y)
-
-    # db_logger.info(
-    #     "WARM key: taxon=%s tile=%s/%s/%s key=%s",
-    #     taxon_id, z, x, y, key,
-    # )
 
     cached = await get_cached_tile(conn, key)
 
@@ -184,7 +178,10 @@ async def rebuild_tile_cache(conn: AsyncConnection) -> None:
 
 
 async def cull_tile_cache(conn: AsyncConnection, target_bytes: int = TILE_CACHE_TARGET_BYTES, max_bytes: int = TILE_CACHE_MAX_BYTES) -> int:
-    """Evict least recently used tiles if the cache exceeds max_bytes."""
+    """
+    Evict least recently used tiles if the cache exceeds max_bytes.
+    This is very approximate, as evict_lru_tiles operates in chunks of n rows, not in precise bytes.
+    """
     before = await get_cache_size(conn)
 
     if before <= max_bytes:
@@ -195,6 +192,6 @@ async def cull_tile_cache(conn: AsyncConnection, target_bytes: int = TILE_CACHE_
 
     MB = 1024 * 1024
     db_logger.info(
-        f'Tile cache culled to target {target_bytes // MB} MB: '
+        f'Tile cache culled:'
         f'{before / MB:.1f} MB -> {(before - removed) / MB:.1f} MB ({removed / MB:.1f} MB evicted)')
     return removed

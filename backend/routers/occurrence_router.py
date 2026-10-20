@@ -1,23 +1,20 @@
 # Occurrence related API endpoints
 import asyncio
 from datetime import date
-import hashlib
-import json
 import time
 from typing import Sequence
 
-from numpy import number
-import backend.constants.map as map
-from backend.constants.tiles import MIN_COMPUTE_S
+from backend.constants.tiles import MIN_COMPUTE_S, TILE_CACHE_MAX_BYTES, TILE_CACHE_TARGET_BYTES
 from backend.core.exception_handler import TaxonNotFoundError
 from backend.data_util.taxa_data import taxon_exists
-from backend.db.queries.tile_cache import get_cached_tile, store_tile
+from backend.db.queries.tile_cache import build_tile_query, get_cached_tile, store_tile, tile_key
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from fastapi import APIRouter, Query, Request, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
 from psycopg import sql, rows
 from backend.db.queries.occurrence import create_occurrence_filter_sql, create_occurrence_taxon_filter
+from backend.jobs.tasks.tiles_cache_tasks import cull_tile_cache
 from backend.models.api import SingleTaxonObsRequestParams
 from backend.core.logging import api_logger
 from backend.models.occurrence import OccurrenceFilters
@@ -271,123 +268,6 @@ async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def tile_key(filters: OccurrenceFilters, z: int, x: int, y: int) -> str:
-    """32 hex characters identifying one tile's bytes: path (z/x/y) + filters."""
-
-    fields = filters.model_dump(mode='json')   # dates become ISO strings
-
-    for name, value in fields.items():
-        # list fields are sets: [a, b] == [b, a]
-        if isinstance(value, list):
-            fields[name] = sorted(set(value))
-    identity = [z, x, y, fields]
-
-    return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:32]
-
-
-def build_tile_query(filters: OccurrenceFilters, z: int, x: int, y: int) -> sql.Composed:
-    occurrence_filter = create_occurrence_filter_sql(filters)
-
-    # Get grid size in meters at given zoom level
-    grid_size = map.get_meters_per_pixel(z) * map.PIXELS_PER_GRID
-    # Controls which rows affect cell counts (by expanding past tile edges)
-    expand_by = 2 * grid_size
-
-    if z < 11:
-        return sql.SQL("""
-                WITH
-                bbox AS (
-                    SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
-                ),
-                bins AS (
-                    SELECT
-                        ST_SnapToGrid(geometry_3857, {grid_size}) AS grid_geom,
-                        COUNT(*) AS observation_count
-                    FROM {occurrence_table}
-                    WHERE
-                        geometry_3857 && ST_Expand(
-                            ST_TileEnvelope({z}, {x}, {y}),
-                            {expand_by}
-                        )
-                        AND {occurrence_filter}
-                    GROUP BY ST_SnapToGrid(geometry_3857, {grid_size})
-                ),
-                bins_geom AS (
-                    SELECT
-                        ST_SetSRID(
-                        ST_MakeEnvelope(
-                            ST_X(bins.grid_geom) - ({grid_size} / 2),
-                            ST_Y(bins.grid_geom) - ({grid_size} / 2),
-                            ST_X(bins.grid_geom) + ({grid_size} / 2),
-                            ST_Y(bins.grid_geom) + ({grid_size} / 2)
-                        ),
-                        3857
-                        ) AS geom,
-                        bins.observation_count as observation_count
-                    FROM bins
-                ),
-                mvt_geom AS (
-                    SELECT
-                        ST_AsMVTGeom(bins_geom.geom, bbox.geom, 4096, 64, true) AS geom,
-                        bins_geom.observation_count
-                    FROM bins_geom, bbox
-                )
-                SELECT ST_AsMVT(mvt_geom, 'observations-heatmap', 4096, 'geom') FROM mvt_geom;
-            """).format(
-            include_inat=sql.Literal(filters.include_inat),
-            taxon_id=sql.Literal(filters.taxon_ids),
-            x=sql.Literal(x),
-            y=sql.Literal(y),
-            z=sql.Literal(z),
-            grid_size=sql.Literal(grid_size),
-            expand_by=sql.Literal(expand_by),
-            occurrence_table=sql.Identifier(
-                GBIF_OBSERVATIONS_TABLE.name),
-            occurrence_filter=occurrence_filter
-        )
-    # Return point observations if zoomed in
-    else:
-        return sql.SQL("""
-                WITH
-                bbox AS (
-                    SELECT ST_TileEnvelope({z}, {x}, {y}) AS geom
-                ),
-                obs AS (
-                    SELECT 
-                        publisher,
-                        "references",
-                        county,
-                        locality,
-                        decimal_latitude,
-                        decimal_longitude,
-                        accepted_scientific_name,
-                        gbif_id,
-                        collection_start_date,
-                        collection_end_date,
-                        geometry_3857
-                    FROM {occurrence_table}
-                    WHERE
-                    {occurrence_filter}
-                ),
-                mvt_geom AS (
-                    SELECT ST_AsMVTGeom(obs.geometry_3857, bbox.geom, 4096, 64, true) AS geom,
-                        obs.*
-                    FROM obs, bbox
-                    WHERE ST_Intersects(obs.geometry_3857, bbox.geom)
-                )
-                SELECT ST_AsMVT(mvt_geom, 'observations-circles', 4096, 'geom') FROM mvt_geom;
-            """).format(
-            include_inat=sql.Literal(filters.include_inat),
-            taxon_id=sql.Literal(filters.taxon_ids),
-            x=sql.Literal(x),
-            y=sql.Literal(y),
-            z=sql.Literal(z),
-            occurrence_table=sql.Identifier(
-                GBIF_OBSERVATIONS_TABLE.name),
-            occurrence_filter=occurrence_filter
-        )
-
-
 # TODO: This should live somewhere else
 render_slots = asyncio.Semaphore(4)
 
@@ -467,6 +347,8 @@ async def get_tile(
             try:
                 async with pool.connection() as conn:
                     await store_tile(conn, key, tile, cached['checked_at'])
+                    # Cull tile cache if it's above limit
+                    await cull_tile_cache(conn, target_bytes=8000000, max_bytes=8840000)
             except Exception:
                 api_logger.exception('Tile cache write failed')
 

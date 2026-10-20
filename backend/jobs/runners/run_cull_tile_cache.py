@@ -1,5 +1,6 @@
 import asyncio
 
+from backend.constants.tiles import TILE_CACHE_MAX_BYTES, TILE_CACHE_TARGET_BYTES
 from backend.data_util.db import get_single_db_connection
 from backend.jobs.runners.run_async import run_async
 from backend.jobs.tasks.tiles_cache_tasks import cull_tile_cache
@@ -18,7 +19,7 @@ async def main():
             "Starting cull_tile_cache job...")
 
         conn = await get_single_db_connection()
-        await cull_tile_cache(conn, target_bytes=1600000, max_bytes=6444558)
+        await cull_tile_cache(conn, target_bytes=TILE_CACHE_TARGET_BYTES, max_bytes=TILE_CACHE_MAX_BYTES)
 
         tasks_logger.info("Tile cache culling complete")
 

@@ -45,6 +45,11 @@
             <div id="taxon-error">Requested Taxon Not Found</div>
         {/if}
         <div id="main-header-name">
+            {#if isLoading}
+                <div class="loading-icon icon">
+                    <LoadingIcon />
+                </div>
+            {/if}
             <span class="name-and-link">
                 {#if activeTaxon.info?.uSInvasive}
                     <div class="invasive-icon">
@@ -75,11 +80,6 @@
                     </div>
                 {/if}
             </span>
-            {#if isLoading}
-                <div class="loading-icon icon">
-                    <LoadingIcon />
-                </div>
-            {/if}
         </div>
         <button class="icon close-taxon-button" onclick={handleTaxonClose}>
             <XIcon />
