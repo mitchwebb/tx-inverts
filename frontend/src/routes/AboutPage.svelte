@@ -150,8 +150,9 @@
                 Texas Inverts was built upon public observation data collected
                 by universities and institutions in the US, as well as data from
                 the citizen science app, iNaturalist. We source this data from
-                <a href="https://www.gbif.org" target="_blank">GBIF</a> (the Global
-                Biodiversity Information Facility) in DarwinCore format.
+                <a href="https://www.gbif.org" target="_blank">GBIF</a> (the
+                Global Biodiversity Information Facility) in
+                <a href="https://dwc.tdwg.org" target="_blank">DarwinCore</a> format.
             </p>
             <p>Our observation dataset begins with these requirements:</p>
             <ul id="data-parameter-list">
@@ -185,8 +186,15 @@
                 After this preliminary filter, records without valid collection
                 dates are examined, unambiguous dates are assigned when
                 available, and those that remain are filtered out. The records
-                are then filtered to a Texas boundary shapefile (sourced from
-                TxDOT) and entered into our database.
+                are then filtered to Texas' boundary (sourced from TxDOT) and
+                entered into our database.
+            </p>
+            <p>
+                Keep in mind―although Texas Inverts and GBIF each try to recover
+                missing data, the onus of providing accurate data is ultimately
+                on the original data hosts. As a result, when dates or
+                coordinates are provided to GBIF confidently but incorrectly,
+                there is no fully reliable way to correct these mistakes.
             </p>
         </div>
         <div id="about-backbone-section" class="about-page-section">

@@ -1,6 +1,8 @@
+import { get } from 'svelte/store';
 import { isValidURL } from '../../util/isValidURL';
 import { toLocaleRounded } from '../../util/textHelpers';
 import type { GeoJsonProperties } from 'geojson';
+import { datasets } from '../../contexts/Datasets';
 
 export type MapHoverField = {
     label: string; // Label for UI display
@@ -71,7 +73,13 @@ export const targetFeatureFieldsMap: Partial<Record<string, MapHoverSection>> =
                         return `<span>${date_string}</span>`;
                     },
                 },
-                { label: 'Publisher', property: 'publisher' },
+                {
+                    label: 'Dataset',
+                    property: 'dataset_key',
+                    transform: (v: string) => {
+                        return get(datasets)?.[v]?.datasetTitle ?? v;
+                    },
+                },
                 {
                     label: '',
                     property: 'gbif_id',
@@ -82,7 +90,7 @@ export const targetFeatureFieldsMap: Partial<Record<string, MapHoverSection>> =
                             return `
                             <a 
                                 aria-label='Link to original occurrence record' 
-                                target='none'
+                                target='_blank'
                                 href=https://www.gbif.org/occurrence/${v}>https://www.gbif.org/occurrence/${v}
                             </a>`;
                         } else {

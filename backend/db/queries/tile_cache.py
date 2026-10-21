@@ -97,8 +97,7 @@ def build_tile_query(filters: OccurrenceFilters, z: int, x: int, y: int) -> sql.
                 obs AS (
                     SELECT 
                         publisher,
-                        "references",
-                        county,
+                        dataset_key,
                         locality,
                         decimal_latitude,
                         decimal_longitude,

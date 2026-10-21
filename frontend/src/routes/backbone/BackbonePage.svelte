@@ -587,6 +587,7 @@
         align-items: flex-end;
         padding: 0.5rem;
         box-sizing: border-box;
+        cursor: pointer;
     }
     .taxon-rank-header:not(.last) {
         border-right: 1px solid var(--container-shadow);
