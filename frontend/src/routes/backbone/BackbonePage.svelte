@@ -21,7 +21,9 @@
     import InfoButton from '../../common/InfoButton.svelte';
     import NameAndAuthorship from '../../common/NameAndAuthorship.svelte';
     import { getTooltipContext } from '../../contexts/tooltipContext';
-    import CheckboxInput, { type CheckboxPayload } from '../../common/CheckboxInput.svelte';
+    import CheckboxInput, {
+        type CheckboxPayload,
+    } from '../../common/CheckboxInput.svelte';
     import { toggleArrayValue } from '../../util/toggleArrayValue';
     import { sortRankOrder } from '../../util/backbone_util';
 
@@ -61,15 +63,20 @@
 
     function handleHeaderClick(e: MouseEvent | KeyboardEvent) {
         if (!e.currentTarget) return;
-        const target = e.currentTarget as HTMLElement
-        tooltipContext.content = headerMenu,
-        tooltipContext.visible = true,
-        tooltipContext.target = target,
-        tooltipContext.backgroundColor = getComputedStyle(target).backgroundColor
+        const target = e.currentTarget as HTMLElement;
+        tooltipContext.content = headerMenu;
+        tooltipContext.visible = true;
+        tooltipContext.target = target;
+        tooltipContext.backgroundColor =
+            getComputedStyle(target).backgroundColor;
     }
 
     function handleRankToggle(payload: CheckboxPayload) {
-        const newArray: TaxonomicRank[] = toggleArrayValue(allowedRanks, payload.value as TaxonomicRank, payload.checked)
+        const newArray: TaxonomicRank[] = toggleArrayValue(
+            allowedRanks,
+            payload.value as TaxonomicRank,
+            payload.checked
+        );
         allowedRanks = sortRankOrder(newArray);
     }
 
@@ -141,7 +148,7 @@
             // If the asked-for node represents a rank that is hidden, show this rank
             const taxonRank = currentNode.taxonRank;
             if (taxonRank && !allowedRanks.includes(taxonRank)) {
-                allowedRanks = sortRankOrder([...allowedRanks, taxonRank])
+                allowedRanks = sortRankOrder([...allowedRanks, taxonRank]);
             }
             currentID = currentNode.parentNameUsageID;
         }
@@ -256,24 +263,21 @@
         }
     });
 
-    // Track previous ids to enable automatic opening when new taxon is selected from an outside source
-    // TODO: This feels sloppy, but it prevents issues with closing latest taxon
-    let prevTaxaIds: Set<string> = new Set();
-
+    // Iterate through taxonIDs in context, attempt to open each
+    // openTaxon will ignore those that are already open
     $effect(() => {
         const ids = taxaContext.taxa.ids;
         const tree = $taxaTree;
 
-        const lastAddedID = ids.slice(-1)[0];
+        if (!tree) return;
 
-        if (!lastAddedID || prevTaxaIds.has(lastAddedID) || !tree) return;
-
-        openTaxon(lastAddedID);
-        prevTaxaIds = new Set(ids);
+        for (let id of ids) {
+            console.log(id);
+            openTaxon(id);
+        }
     });
 
-
-    // Check for active taxon node and scroll to it
+    // Check for latest active taxon node and scroll to it
     $effect(() => {
         const lastAddedTaxonID = taxaContext.taxa.ids.slice(-1)[0];
         if (
@@ -296,13 +300,14 @@
 {#snippet headerMenu()}
     <div>
         {#each RANK_ORDER as rank}
-        <CheckboxInput 
-            name={rank} 
-            value={rank} 
-            handler={handleRankToggle} 
-            checked={allowedRanks.includes(rank)}>
-            {rank}
-        </CheckboxInput>
+            <CheckboxInput
+                name={rank}
+                value={rank}
+                handler={handleRankToggle}
+                checked={allowedRanks.includes(rank)}
+            >
+                {rank}
+            </CheckboxInput>
         {/each}
     </div>
 {/snippet}
