@@ -2,15 +2,20 @@ import asyncio
 from typing import List
 from backend.core.logging import api_logger
 from backend.data_util.execute_psql_query import execute_psql_query
+from backend.data_util.gbif.observations_request import APPROVED_DATASETS
 from backend.data_util.requests import fetch_data
 from backend.db.schema.gbif_dataset_metadata import GBIF_DATASET_META
 from psycopg import AsyncConnection, sql
 import aiohttp
 
 
-# TODO: Would it be wiser to grab these dynamically using the datasets present in gbif_observations?
-# Only if we think we'll ingest outside sources.
-async def fill_dataset_table(conn: AsyncConnection, dataset_ids: List[str]):
+async def fill_dataset_table(conn: AsyncConnection, dataset_ids: List[str] = APPROVED_DATASETS):
+    """
+    Fill dataset metadata table, grabbing keys and titles from GBIF's api.
+    This only needs to happen once, or if APPROVED_DATASETS key variable is changed.
+
+    By default, uses APPROVED_DATASETS list to populate table.
+    """
     async with aiohttp.ClientSession() as session:
         for dataset_key in dataset_ids:
             dataset_info = await fetch_data(
