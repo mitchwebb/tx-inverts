@@ -26,7 +26,6 @@
     }
 </script>
 
-<!-- TODO: fix this aria-label -->
 <button onclick={handleClick} aria-label="toggle">
     <svg
         viewBox="0 3 24 19"

@@ -13,13 +13,13 @@
 
     const { header = 'Regions' }: GeoFiltersProps = $props();
 
+    // TODO: Should these live somewhere else
     type RawCountySuggestion = {
         county: string;
         id: string;
     };
     type CountySuggestion = RegionInfo;
 
-    // TODO: Make raw type
     type RawParkSuggestion = {
         id: string;
         prop_name: string;

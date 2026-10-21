@@ -127,7 +127,8 @@ def _get_zero_range_rank(three_average_score: float) -> NSRank:
         return '5'
 
 
-# TODO: Minimum convex polygon vs a-hull (https://help.natureserve.org/biotics/Content/Record_Management/Element_Files/Element_Ranking/ERANK_Definitions_of_Extent_of_Occurrence_and_Area_of_Occupancy.htm)
+# NOTE: Minimum convex polygon vs a-hull (https://help.natureserve.org/biotics/Content/Record_Management/Element_Files/Element_Ranking/ERANK_Definitions_of_Extent_of_Occurrence_and_Area_of_Occupancy.htm)
+# In theory, there's a smarter way, but this is the way that's currently in-use (2026)
 # Separated from router to allow command line or other direct access
 async def calculate_ns_values(
     conn: AsyncConnection,

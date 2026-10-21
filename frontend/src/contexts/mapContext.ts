@@ -27,7 +27,6 @@ export type TaxonLayerState = {
     areaOfOccupancyGeom: GeoJSON.MultiPolygon | null;
 };
 
-// TODO: Anything in here with key values should be taken from somewhere more global
 export type MapState = {
     map: mapboxgl.Map | null;
     center: mapboxgl.LngLat | null;

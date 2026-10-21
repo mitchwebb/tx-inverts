@@ -268,8 +268,8 @@ async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# TODO: This should live somewhere else
-render_slots = asyncio.Semaphore(4)
+# Limit tile render slots to be kind to the server
+tile_render_slots = asyncio.Semaphore(4)
 
 
 @occurrence_router.get('/tiles/{z}/{x}/{y}.mvt', response_class=Response)
@@ -335,7 +335,7 @@ async def get_tile(
 
         # If no cache, render
         query = build_tile_query(filters, z, x, y)
-        async with render_slots:
+        async with tile_render_slots:
             started = time.monotonic()
             async with pool.connection() as conn:
                 result = await execute_psql_query(conn, query, fetch='one', dict_cursor=False)

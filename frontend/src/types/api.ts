@@ -128,5 +128,3 @@ export type EstimateMetrics = {
     rowCount: number;
     sizeEstimate: number;
 };
-
-// TODO: We really should combine the TaxonNodeType and TaxonInfo type

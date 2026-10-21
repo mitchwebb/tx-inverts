@@ -297,7 +297,7 @@ MATERIALIZED_VIEWS = {
         ).format(taxon_region_presence=sql.Identifier(TAXON_PRESENCE_TABLE.name)),
     },
     # View that collects all rank_key columns for all distinct taxa in gbif_observations
-    # TODO: Shouldn't this just be using tx_taxa? Or is that a bad cascade?
+    # While this could be done on tx_taxa, it's safest to perform from the full backbone
     'taxon_lineage': {
         'create_sql': sql.SQL("""
             CREATE MATERIALIZED VIEW {taxon_lineage} AS

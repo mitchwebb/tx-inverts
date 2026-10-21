@@ -14,7 +14,12 @@ from backend.data_util.taxa_data import inverts_mask
 
 
 # Simple flow to request and retrieve gbif invasive species dataset
-async def get_invasives_dataset():
+async def get_invasives_dataset() -> str:
+    """
+    Get US Global Register of Introduced and Invasive Species from GBIF,
+    returning filepath for occurrence.txt
+    """
+
     tasks_logger.info("Retrieving invasives dataset from GBIF...")
 
     # Global Register of Introduced and Invasive Species - United States
@@ -35,9 +40,7 @@ async def get_invasives_dataset():
         'predicate': {
             'type': 'equals',
             'key': 'DATASET_KEY',
-            'value': dataset_key,
-            # TODO: Set back to false. This was a quick workaround for forcing COL processing
-            'matchCase': True
+            'value': dataset_key
         },
         # This is now required to use COL processing and taxonKeys
         'checklistKey': '7ddf754f-d193-4cc9-b351-99906754a03b'
@@ -60,6 +63,12 @@ async def get_invasives_dataset():
 
 
 async def prep_invasives_dataset(data: str | Path | DataFrame) -> DataFrame:
+    """
+    Prepare invasives occurrence file for insertion.
+    Strips column names of dwc prefixes, masks to genus, species, and subspecies,
+    coerces shape to US_INVASIVES_TABLE shape.
+    """
+
     # If passed filepath string or Path
     if isinstance(data, (str, Path)):
         # Read in file at provided path

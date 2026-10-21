@@ -270,7 +270,6 @@ class TestCreateOccurrenceTaxonFilter:
         assert 10 not in result
         assert {1, 3, 4, 7, 9} == result
 
-    # TODO: Is this exactly what we want? Seems counterintuitive.
     async def test_invasive_species_included_when_directly_requested(
         self, setup_gbif_schema, simple_tx_taxa, conn
     ):

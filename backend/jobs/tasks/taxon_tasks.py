@@ -28,10 +28,12 @@ from typing import List, Optional
 from backend.models.occurrence import OccurrenceFilters
 
 
-# TODO: If the backbone is updated, we should assume that this needs to be
-# updated as well, considering these taxon_ids would also change.
-# In that case, this should be refactored to use the previous download.
 async def fill_invasives_table(conn: AsyncConnection, truncate: bool = False):
+    """
+    Grabs GBIF invasives dataset, preps, truncates old table if specified, and inserts
+    new data to US_INVASIVES_TABLE.
+    """
+
     try:
         db_logger.info("Updating invasives table...")
         fp = await get_invasives_dataset()

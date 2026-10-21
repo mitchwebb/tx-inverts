@@ -12,11 +12,6 @@
     import { loadBackbone } from './lib/taxa';
     import { loadDatasets } from './lib/occurrence';
 
-    // TODO: Logic for getting browser theme/determine a light color scheme
-    let isDarkTheme = $state(true);
-
-    let isMobile = $state(window.matchMedia('(pointer: coarse)').matches);
-
     // Load taxaTree and datasets structures on mount
     onMount(() => {
         if (!$taxaTree) {
@@ -31,7 +26,7 @@
     setTooltipContext(tooltipState);
 </script>
 
-<div id="theme-wrapper" data-theme={isDarkTheme ? 'dark' : 'light'}>
+<div id="theme-wrapper" data-theme={'dark'}>
     <Tooltip />
     <div id="portal-root"></div>
     <Layout />
