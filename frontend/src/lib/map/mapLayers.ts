@@ -244,6 +244,7 @@ export const staticPerformanceSensitiveLayers = new Set<
     StaticLayerGroupID | StaticMapLayerID
 >([]);
 
+// The switching between heatmap/observation points is controlled by the backend tile generation
 export function createObservationsBundle(taxonID: string, color: string) {
     const sourceID = `observations-tiles-${taxonID}`;
     return {
