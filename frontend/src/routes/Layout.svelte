@@ -392,7 +392,7 @@
     <HeaderBar />
     <div id="page-body">
         <Router />
-        <!-- TODO: This could be moved now that sidebar is unified -->
+        <!-- Render mobile sidebar here so that it sits on top (if narrow view and needed on current page) -->
         {#if $isNarrowView && !['/about/txinverts', '/about/walkthrough'].includes(routerState.url.pathname)}
             <MobileSidebar />
             <div id="mobile-sidebar-buffer"></div>
