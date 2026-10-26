@@ -164,9 +164,6 @@ export const countiesLayer = {
     ] as const,
 } as const satisfies LayerBundle;
 
-// TODO: This should be linked up with the API. Determine where to store value
-export const observationsZoomCutoff: number = 11;
-
 // Collect all static map layers in one place
 export const staticMapLayers = [
     l3EcoregionsLayer,
@@ -264,8 +261,6 @@ export function createObservationsBundle(taxonID: string, color: string) {
                 type: 'fill',
                 source: sourceID,
                 'source-layer': 'observations-heatmap',
-                minzoom: 0,
-                maxzoom: observationsZoomCutoff,
                 paint: {
                     'fill-color': color,
                     'fill-opacity': [
@@ -296,8 +291,6 @@ export function createObservationsBundle(taxonID: string, color: string) {
                 type: 'line',
                 source: sourceID,
                 'source-layer': 'observations-heatmap',
-                minzoom: 0,
-                maxzoom: observationsZoomCutoff,
                 paint: {
                     'line-color': 'white',
                     'line-width': 1,
@@ -308,7 +301,6 @@ export function createObservationsBundle(taxonID: string, color: string) {
                 type: 'circle',
                 source: sourceID,
                 'source-layer': 'observations-circles',
-                minzoom: observationsZoomCutoff,
                 paint: {
                     'circle-color': color,
                     'circle-opacity': [
