@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { type TaxonNodeType } from '../../types/api';
     import { taxaTree } from '../../contexts/TaxaTree';
     import {
         getActiveTaxaContext,
@@ -8,7 +7,7 @@
     import NSCircle from '../../common/NSCircle.svelte';
     import ChevronDown from '../../assets/ChevronDown.svelte';
     import ChevronRight from '../../assets/ChevronRight.svelte';
-    import { tick } from 'svelte';
+    import { tick, untrack } from 'svelte';
     import MagnifyIcon from '../../assets/MagnifyIcon.svelte';
     import { capitalizeWords } from '../../util/textHelpers';
     import { isItalicizedRank } from '../../util/taxa';
@@ -26,6 +25,7 @@
     } from '../../common/CheckboxInput.svelte';
     import { toggleArrayValue } from '../../util/toggleArrayValue';
     import { sortRankOrder } from '../../util/backbone_util';
+    import type { BackboneNode } from '../../types/api';
 
     const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
@@ -59,7 +59,7 @@
 
     let initialTaxonOpened: boolean = $state(false);
 
-    let visibleNodes: TaxonNodeType[] = $state.raw([]);
+    let visibleNodes: BackboneNode[] = $state.raw([]);
 
     function handleHeaderClick(e: MouseEvent | KeyboardEvent) {
         if (!e.currentTarget) return;
@@ -135,7 +135,7 @@
         }
     }
 
-    function openTaxon(taxonID: TaxonNodeType['taxonID']) {
+    function openTaxon(taxonID: BackboneNode['taxonID']) {
         if (openNodes.has(taxonID)) return; // already open, do nothing
 
         const set = new Set(openNodes);
@@ -158,7 +158,7 @@
     }
 
     // Function to slide taxonomic tree window to selected taxon
-    async function moveToTaxon(targetID: TaxonNodeType['taxonID'] | string) {
+    async function moveToTaxon(targetID: BackboneNode['taxonID'] | string) {
         await tick();
 
         const idString = targetID.toString();
@@ -263,6 +263,10 @@
         }
     });
 
+    // Track which active IDs have already been auto-opened
+    // This facilitates not auto-opening active taxa on repeat
+    let handledIDs = new Set<string>();
+
     // Iterate through taxonIDs in context, attempt to open each
     // openTaxon will ignore those that are already open
     $effect(() => {
@@ -271,10 +275,19 @@
 
         if (!tree) return;
 
-        for (let id of ids) {
-            console.log(id);
-            openTaxon(id);
-        }
+        // React to taxaContext, NOT handledIDs changes
+        untrack(() => {
+            for (const id of ids) {
+                // Skip taxa that have already been handled
+                if (handledIDs.has(id)) continue;
+                handledIDs.add(id);
+                openTaxon(id);
+            }
+            // Forget removed IDs so that re-activating reopens them
+            for (const id of handledIDs) {
+                if (!ids.includes(id)) handledIDs.delete(id);
+            }
+        });
     });
 
     // Check for latest active taxon node and scroll to it
@@ -393,6 +406,9 @@
                             'taxon-node-label',
                             `${hasChildren ? 'branch' : 'leaf'}`,
                         ]}
+                        class:invasive-taxon={node.uSInvasive}
+                        class:dubious-taxon={node.taxonomicStatus !==
+                            'accepted'}
                     >
                         {#if node.uSInvasive}
                             <div class="invasive-icon taxon-icon icon">
@@ -539,7 +555,7 @@
         position: relative;
         background-color: transparent;
         width: fit-content;
-        color: var(--text-default);
+        /* color: var(--text-default); */
         border: none;
         padding: 0 0.5rem 0 0;
         text-align: left;
@@ -548,9 +564,9 @@
         white-space: nowrap;
         padding-top: 4px;
     }
-    /* TODO: Think about this a little more. This works for spacing but isn't ideal. */
+    /* Compensates for leaf nodes not having chevron icon, which provides its own spacing */
     .taxon-node-label.leaf > .name-and-authorship {
-        margin: 0 0 0 0.5rem;
+        margin: 0 0 0 0.25rem;
     }
     .taxon-node-label.active {
         font-weight: bold;

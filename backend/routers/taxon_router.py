@@ -12,7 +12,7 @@ from backend.data_util.execute_psql_query import execute_psql_query
 from backend.models.api import MultiTaxaObsRequestParams
 from psycopg import AsyncConnection, sql
 from backend.core.logging import api_logger
-from backend.models.taxa import TaxonInfo, TaxonSuggestion
+from backend.models.taxa import BackboneNode, TaxonInfo, TaxonSuggestion
 from backend.db.queries.meta_queries import retrieve_dataset_meta
 
 
@@ -218,9 +218,9 @@ async def get_taxon_info(taxon_id: str, request: Request) -> TaxonInfo:
     return TaxonInfo(**taxon_result)
 
 
-# Get flat backbone for frontend (excludes synonyms)
-@taxon_router.get('/get_backbone', response_model=list[TaxonInfo])
-async def get_backbone(request: Request, response: Response) -> list[TaxonInfo] | Response:
+# Get flat backbone for frontend
+@taxon_router.get('/get_backbone', response_model=list[BackboneNode])
+async def get_backbone(request: Request, response: Response) -> list[BackboneNode] | Response:
     """
     Get backbone from tx_taxa table (excluding synonyms)
 
@@ -282,7 +282,7 @@ async def get_backbone(request: Request, response: Response) -> list[TaxonInfo] 
         response.headers["ETag"] = etag
         response.headers["Cache-Control"] = "no-cache"
 
-        return [TaxonInfo(**row) for row in result]
+        return [BackboneNode(**row) for row in result]
 
     except HTTPException:
         raise

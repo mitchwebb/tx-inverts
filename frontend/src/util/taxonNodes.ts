@@ -1,20 +1,20 @@
 // Helper functions for dealing with our big, flat, taxaTree
 
-import type { TaxonNodeType } from '../types/api';
+import type { BackboneNode } from '../types/api';
 import type { TaxonomicRank } from '../types/taxa';
 
 // Create nested visible notes for render (dependent on the list of ranks we're currently allowing to show)
 export function getVisibleNodes(
-    flatMap: Map<string, TaxonNodeType>,
+    flatMap: Map<string, BackboneNode>,
     openSet: Set<string>,
     allowedRanks: Set<TaxonomicRank>
-): TaxonNodeType[] {
-    const visible: TaxonNodeType[] = [];
+): BackboneNode[] {
+    const visible: BackboneNode[] = [];
     const childrenByParent = getNestedTree(flatMap);
 
     function addChildren(parentID: string, effectiveParentID: string | null) {
         // Collect every node that appear at this level
-        const promoted: TaxonNodeType[] = [];
+        const promoted: BackboneNode[] = [];
 
         for (const child of childrenByParent[parentID] || []) {
             if (child.taxonRank !== null && allowedRanks.has(child.taxonRank)) {
@@ -32,7 +32,7 @@ export function getVisibleNodes(
         }
 
         // Sort nodes alphabetically, putting nulls at the end
-        function sortNodes(nodes: TaxonNodeType[]): TaxonNodeType[] {
+        function sortNodes(nodes: BackboneNode[]): BackboneNode[] {
             return nodes.sort((a, b) => {
                 if (a.canonicalName == null) return 1;
                 if (b.canonicalName == null) return -1;
@@ -56,7 +56,7 @@ export function getVisibleNodes(
         function collectPromotedChildren(
             parentID: string,
             effectiveParentID: string | null,
-            result: TaxonNodeType[]
+            result: BackboneNode[]
         ) {
             for (const child of childrenByParent[parentID] || []) {
                 if (
@@ -83,11 +83,11 @@ export function getVisibleNodes(
     return visible;
 }
 
-// Take flatMap of TaxonNodeType[] and created a nested tree using parent_name_usage_id
+// Take flatMap of BackboneNode[] and created a nested tree using parent_name_usage_id
 export function getNestedTree(
-    flatMap: Map<string, TaxonNodeType>
-): Record<string, TaxonNodeType[]> {
-    const childrenByParent: Record<string, TaxonNodeType[]> = {};
+    flatMap: Map<string, BackboneNode>
+): Record<string, BackboneNode[]> {
+    const childrenByParent: Record<string, BackboneNode[]> = {};
 
     // Group nodes by parent_id
     for (const node of flatMap.values()) {
@@ -107,10 +107,10 @@ export function getNestedTree(
 }
 
 export function getAllChildrenNodes(
-    flatList: Map<string, TaxonNodeType>,
+    flatList: Map<string, BackboneNode>,
     parentID: string
-): TaxonNodeType[] {
-    const result: TaxonNodeType[] = [];
+): BackboneNode[] {
+    const result: BackboneNode[] = [];
     const childrenByParent = getNestedTree(flatList);
 
     function dfs(id: string) {

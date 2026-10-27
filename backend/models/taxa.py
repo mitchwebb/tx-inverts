@@ -49,3 +49,22 @@ class TaxonInfo(BaseModel):
     infrageneric_epithet: str | None
     specific_epithet: str | None
     infraspecific_epithet: str | None
+
+
+class BackboneNode(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=alias_generators.to_camel,
+        populate_by_name=True,
+    )
+    # Fit convention of acronym caps
+    taxon_id: str = Field(alias='taxonID')
+    canonical_name: str | None
+    scientific_name: str | None
+    scientific_name_authorship: str | None
+    # Fit convention of acronym caps
+    parent_name_usage_id: str | None = Field(None, alias='parentNameUsageID')
+    taxon_rank: TaxonomicRank | None
+    us_invasive: bool | None = Field(None, alias='uSInvasive')
+    taxonomic_status: str | None
+    ns_rank_state: str | None = Field(None, alias='nSRankState')
+    ns_rank_state_no_inat: str | None = Field(None, alias='nSRankStateNoINat')

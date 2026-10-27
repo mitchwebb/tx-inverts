@@ -73,7 +73,17 @@ export type TaxonInfo = {
     nSRankStateNoINat: NSRank | null; // NS Rank from Database without iNat
 };
 
-export type TaxonNodeType = TaxonInfo & {
+export type BackboneNode = {
+    taxonID: string;
+    parentNameUsageID: string;
+    canonicalName: string | null;
+    scientificName: string | null;
+    scientificNameAuthorship: string | null;
+    taxonRank: TaxonomicRank;
+    uSInvasive: boolean | null;
+    taxonomicStatus: TaxonomicStatus | null;
+    nSRankState: NSRank | null; // NS Rank from Database
+    nSRankStateNoINat: NSRank | null; // NS Rank from Database without iNat
     effectiveParentID?: string | null; // Used to point to the effective parent in a visual hierarchy
 };
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import type { TaxonInfo, TaxonNodeType } from '../types/api';
+import type { BackboneNode, TaxonInfo } from '../types/api';
 import {
     getAllChildrenNodes,
     getNestedTree,
@@ -18,14 +18,14 @@ const makeNode = (
     id: string,
     parent: string | null,
     taxonRank: TaxonomicRank
-): TaxonNodeType =>
+): BackboneNode =>
     ({
         taxonID: id,
         parentNameUsageID: parent,
         taxonRank: taxonRank,
-    }) as TaxonNodeType;
+    }) as BackboneNode;
 
-let flatMap: Map<string, TaxonNodeType>;
+let flatMap: Map<string, BackboneNode>;
 
 beforeEach(() => {
     flatMap = new Map([

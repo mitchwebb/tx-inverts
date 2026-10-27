@@ -1,7 +1,7 @@
 import { taxaTree } from '../contexts/TaxaTree';
 import type { ActiveTaxon } from '../contexts/activeTaxaContext';
 import type { FiltersState } from '../contexts/filtersContext';
-import type { RawNSValues, TaxonInfo } from '../types/api';
+import type { BackboneNode, RawNSValues, TaxonInfo } from '../types/api';
 import { serializeFilters } from '../util/requests';
 import { registerRequest, resolveRequest } from './requestRegistry';
 
@@ -68,7 +68,7 @@ export async function loadBackbone() {
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
-        const tree: TaxonInfo[] = await response.json();
+        const tree: BackboneNode[] = await response.json();
 
         if (tree) {
             const taxaMap = new Map(tree.map((node) => [node.taxonID, node]));
