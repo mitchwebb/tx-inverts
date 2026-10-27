@@ -18,7 +18,7 @@
     };
 
     const {
-        placeholder = 'Search for taxa...',
+        placeholder = 'Search for inverts...',
         handleBlur,
         autoFocus = false,
         replace = false,

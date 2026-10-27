@@ -43,9 +43,6 @@
 
     let focused: boolean = $derived(autoFocus || false);
 
-    // Suggestion alignment controller
-    let alignRight = $state(false);
-
     // Debounce search suggest to prevent tons of requests
     function debounceSearchSuggest() {
         if (!inputText) return;
@@ -149,9 +146,6 @@
         // Flip right if dropdown would overflow
         if (inputRect.left + dropdownWidth + 10 > viewportWidth) {
             left = inputRect.right + scrollX - dropdownWidth;
-            alignRight = true;
-        } else {
-            alignRight = false;
         }
 
         // Margin between suggestions and viewport limits

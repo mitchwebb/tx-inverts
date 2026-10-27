@@ -123,10 +123,7 @@
                     />
                 </div>
                 <div class="sidebar-search-wrapper">
-                    <TaxaSearch
-                        replace={true}
-                        placeholder={'Search by taxon...'}
-                    />
+                    <TaxaSearch replace={true} />
                 </div>
             </div>
             {#if activeTaxa.length && sidebarContext.open}
