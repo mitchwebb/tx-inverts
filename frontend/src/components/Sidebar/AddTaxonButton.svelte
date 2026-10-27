@@ -20,15 +20,23 @@
         />
     {:else}
         <button id="add-taxon-button" onclick={() => (active = !active)}>
-            <span>Add Taxon</span>
-            <span id="add-taxon-icon" class="icon">
-                <PlusIcon />
+            <span id="add-taxon-button-text">
+                <span>Add Taxon</span>
+                <span id="add-taxon-icon" class="icon">
+                    <PlusIcon />
+                </span>
             </span>
         </button>
     {/if}
 </div>
 
 <style>
+    #add-taxon-button-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
     #add-taxon-button-wrapper {
         display: flex;
         width: 100%;
@@ -42,7 +50,7 @@
         border: 1px solid var(--border);
         width: 100%;
         height: 100%;
-        padding: 0;
-        gap: 0.5rem;
+        padding: 0.5rem;
+        gap: 0 0.5rem;
     }
 </style>
