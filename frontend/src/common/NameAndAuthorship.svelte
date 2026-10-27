@@ -49,4 +49,8 @@
 </span>
 
 <style>
+    .taxon-name-and-authorship {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 </style>

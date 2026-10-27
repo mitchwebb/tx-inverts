@@ -124,6 +124,8 @@
         flex-direction: column;
         align-items: left;
         justify-content: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .suggestion-vernacular-name {
         font-size: .8rem;
@@ -147,6 +149,7 @@
         white-space: nowrap;
         flex-shrink: 1;
         overflow: hidden;
+        text-overflow: ellipsis;
         gap: 0.25rem;
     }
     .taxon-rank {
