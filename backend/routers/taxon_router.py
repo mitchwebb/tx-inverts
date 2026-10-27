@@ -231,7 +231,7 @@ async def get_backbone(request: Request, response: Response) -> list[BackboneNod
         request (fastapi.Request): FastAPI request object
 
     Returns:
-        list[TaxonInfo]:
+        list[BackboneNode]:
             A list of taxon information, used for creating/navigating/displaying
             taxaTree on frontend
     """
@@ -242,27 +242,16 @@ async def get_backbone(request: Request, response: Response) -> list[BackboneNod
                 taxon_id,
                 scientific_name_authorship,
                 parent_name_usage_id,
-                accepted_name_usage_id,
                 canonical_name,
                 scientific_name,
-                NULL as vernacular_names, -- TODO: Might be good to send these in the future
                 taxon_rank,
                 us_invasive,
                 taxonomic_status,
                 ns_rank_state,
-                ns_rank_state_no_inat,
-                kingdom,
-                phylum,
-                class,
-                "order",
-                family,
-                generic_name,
-                infrageneric_epithet,
-                specific_epithet,
-                infraspecific_epithet
+                ns_rank_state_no_inat
             FROM {tx_taxa}
             WHERE taxonomic_status IN ('accepted', 'provisionally accepted')
-                    ORDER BY taxon_rank, scientific_name
+                ORDER BY taxon_rank, scientific_name
         """).format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name))
 
         async with request.app.state.db_pool.connection() as conn:
