@@ -43,12 +43,12 @@
 >
     <g>
         <circle
-            r={11.5}
+            r={10.5}
             cx={12}
             cy={12}
             fill={active ? 'var(--fill-color)' : 'none'}
         />
-        <circle r={10.5} cx={12} cy={12} fill={active ? color : 'grey'}>
+        <circle r={9.5} cx={12} cy={12} fill={active ? color : 'grey'}>
             <title
                 >{description} {activeFilters ? ' (Filters Active)' : ''}</title
             >
