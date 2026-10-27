@@ -7,6 +7,7 @@
     import type { NavItem } from '../../types/nav';
     import NavbarItem from './NavbarItem.svelte';
     import './header.css';
+    import NavLogo from '../../assets/NavLogo.svelte';
 
     const NAV_ITEMS: NavItem[] = [
         { label: 'Map', href: '/map' },
@@ -44,11 +45,9 @@
 <div id="header-bar-wrapper">
     <header id="header-bar">
         <a id="navbar-logo-wrapper" class="logo" href="/">
-            <img
-                id="logo-text"
-                alt="Texas Inverts"
-                src="/static/nav_logo_just_text.png"
-            />
+            <div id="logo-text">
+                <NavLogo />
+            </div>
         </a>
         <div id="header-search-bar">
             <TaxaSearch replace={true} onSelect={handleTaxonSearch} />
@@ -83,6 +82,7 @@
         flex-direction: column;
         justify-content: center;
         height: 40px;
+        color: var(--text_default);
     }
     #navbar-logo-wrapper {
         display: flex;
