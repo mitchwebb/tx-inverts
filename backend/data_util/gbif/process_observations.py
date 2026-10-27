@@ -1,7 +1,7 @@
 # Logic for processing/filtering GBIF observations downloads in darwincore format
 import datetime
 import os
-from typing import Iterator, cast
+from typing import Iterator, Tuple, cast
 
 from backend.constants.map import TEXAS_BBOX
 from backend.constants.paths import DATA_OUT_PATH
@@ -204,9 +204,8 @@ def parse_iso_date_string(date_string: str) -> str | None:
     return date
 
 
-# Strict range parsing
-# TODO: Could be expanded to support other DWC range types
-def parse_iso_date_range_string(range_string: str):
+# Strict ISO date range parsing
+def parse_iso_date_range_string(range_string: str) -> Tuple[None, None] | Tuple[str, str]:
     """
     Expecting a string in yyyy-MM-dd/yyyy-MM-dd type format,
     parse into start_date and end_date. This is intentionally strict as
@@ -216,13 +215,13 @@ def parse_iso_date_range_string(range_string: str):
         range_string (str): Date string to parse
 
     Returns:
-        [start_date, end_date], [None, None] if invalid
+        (start_date, end_date), (None, None) if invalid
     """
 
     # Attempt to split on '/', return [None, None] if unable
     parts = range_string.split('/')
     if len(parts) != 2:
-        return [None, None]
+        return (None, None)
 
     start_date = parse_iso_date_string(parts[0])
     end_date = parse_iso_date_string(parts[1])
@@ -231,18 +230,23 @@ def parse_iso_date_range_string(range_string: str):
         # Make sure they're of the same precision
         if start_date.count('-') != end_date.count('-'):
             # Else return Nones
-            return [None, None]
-        return [start_date, end_date]
+            return (None, None)
+        return (start_date, end_date)
 
     else:
-        return [None, None]
+        return (None, None)
 
 
-def parse_date_to_date_range_string(range_string: str):
+def parse_date_to_date_range_string(range_string: str) -> Tuple[None, None] | Tuple[str, str]:
+    """
+    Parse date range strings in the "<date> to <date>" format.
+    Splits on the word "to", only accepting start/end of the same precision.
+    """
+
     parts = range_string.split('to')
 
     if len(parts) != 2:
-        return [None, None]
+        return (None, None)
 
     start_date = extract_date(parts[0])
     end_date = extract_date(parts[1])
@@ -251,23 +255,25 @@ def parse_date_to_date_range_string(range_string: str):
         # Make sure they're of the same precision
         if start_date.count('-') != end_date.count('-'):
             # Else return Nones
-            return [None, None]
-        return [start_date, end_date]
+            return (None, None)
+        return (start_date, end_date)
 
     else:
-        return [None, None]
+        return (None, None)
 
 
-def parse_yyyy_yyyy_range_string(range_string: str):
-    """Another intentionally specific case for a date range string."""
+def parse_yyyy_yyyy_range_string(range_string: str) -> Tuple[None, None] | Tuple[str, str]:
+    """
+    Parse date range strings in the "yyyy-yyyy" format.
+    Does not allow spaces, requires four digits on both sides.
+    """
 
     match = re.match(r'^(\d{4})\s*-\s*(\d{4})$', range_string.strip())
     if not match:
-        return [None, None]
-    return [match.group(1), match.group(2)]
+        return (None, None)
+    return (match.group(1), match.group(2))
 
 
-# TODO: Handling of 'to' ranges needs to be added. This is common enough. Although... GBIF doesn't parse these, and I'd argue that it's for a reason. At the very least, they should be ignored. Currently, they're treated unpredictably.
 # Some basic date parsing for DarwinCore eventDates
 def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
     """
@@ -312,7 +318,7 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Add new columns for start/end dates
-    # TODO: This could be done in a more DarwinCore way, using startDayOfYear and endDayOfYear, but it will require more changes
+    # NOTE: Using these new columns to avoid the dated startDayOfYear and endDayOfYear
     df['collectionStartDate'] = pd.NA
     df['collectionEndDate'] = pd.NA
 
@@ -333,7 +339,7 @@ def parse_dwc_dates(df: DataFrame) -> DataFrame | GeoDataFrame:
         # First check for yyyy-MM-dd/yyyy-MM-dd format in eventDate
         # This is common across several institutions, and seems safe
         if row.eventDate:
-            [start_date, end_date] = parse_iso_date_range_string(row.eventDate)
+            start_date, end_date = parse_iso_date_range_string(row.eventDate)
             if start_date and end_date:
                 df.at[idx, 'collectionStartDate'] = start_date
                 df.at[idx, 'collectionEndDate'] = end_date

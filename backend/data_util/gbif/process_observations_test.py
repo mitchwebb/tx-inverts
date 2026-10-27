@@ -277,37 +277,37 @@ class TestParseIsoDateRangeString:
     # Good ranges
     def test_full_ymd_range(self):
         assert parse_iso_date_range_string(
-            '2001-06-25/2001-06-27') == ['2001-06-25', '2001-06-27']
+            '2001-06-25/2001-06-27') == ('2001-06-25', '2001-06-27')
 
     def test_year_month_only(self):
         assert parse_iso_date_range_string(
-            '2001-06/2001-07') == ['2001-06', '2001-07']
+            '2001-06/2001-07') == ('2001-06', '2001-07')
 
     def test_year_only(self):
-        assert parse_iso_date_range_string('2001/2002') == ['2001', '2002']
+        assert parse_iso_date_range_string('2001/2002') == ('2001', '2002')
 
     def test_zero_pads_single_digit_month_and_day(self):
         assert parse_iso_date_range_string(
-            '2001-6-5/2001-7-3') == ['2001-06-05', '2001-07-03']
+            '2001-6-5/2001-7-3') == ('2001-06-05', '2001-07-03')
 
     # Failure cases — should return [None, None]
     def test_missing_slash(self):
-        assert parse_iso_date_range_string('2001-06-25') == [None, None]
+        assert parse_iso_date_range_string('2001-06-25') == (None, None)
 
     def test_too_many_slashes(self):
-        assert parse_iso_date_range_string('2001/06/25') == [None, None]
+        assert parse_iso_date_range_string('2001/06/25') == (None, None)
 
     def test_empty_string(self):
-        assert parse_iso_date_range_string('') == [None, None]
+        assert parse_iso_date_range_string('') == (None, None)
 
     def test_invalid_dates(self):
         assert parse_iso_date_range_string(
-            'not-a-date/also-not') == [None, None]
+            'not-a-date/also-not') == (None, None)
 
     # Asymmetric cases should return [None, None]
     def test_mismatched_precision(self):
         result = parse_iso_date_range_string('2001-06-25/2001')
-        assert result == [None, None]
+        assert result == (None, None)
 
 
 # Test that bounding box filter removes outliers and returns filtered db
