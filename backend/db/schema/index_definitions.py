@@ -262,7 +262,7 @@ MATERIALIZED_VIEWS = {
             "CREATE UNIQUE INDEX ON {tx_taxa} (taxon_id)"
         ).format(tx_taxa=sql.Identifier(TX_TAXA_TABLE.name)),
     },
-    # TODO: Ecoregions are currently hosted only on mapbox
+    # NOTE: Ecoregions are currently hosted only on mapbox
     # If we want them to be searchable, we'll need to add them to local tables
     'regions': {
         'create_sql': sql.SQL("""

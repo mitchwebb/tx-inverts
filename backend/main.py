@@ -70,7 +70,6 @@ app = FastAPI(lifespan=lifespan)
 # Compress responses larger than 500 bytes
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
-# TODO: Limit origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.cors.domain],

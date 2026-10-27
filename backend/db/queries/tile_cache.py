@@ -35,6 +35,7 @@ def build_tile_query(filters: OccurrenceFilters, z: int, x: int, y: int) -> sql.
     # Controls which rows affect cell counts (by expanding past tile edges)
     expand_by = 2 * grid_size
 
+    # Zoom level less than 11 renders gridded aggregations ('observations-heatmap' layer)
     if z < 11:
         return sql.SQL("""
                 WITH
@@ -87,7 +88,7 @@ def build_tile_query(filters: OccurrenceFilters, z: int, x: int, y: int) -> sql.
                 GBIF_OBSERVATIONS_TABLE.name),
             occurrence_filter=occurrence_filter
         )
-    # Return point observations if zoomed in
+    # Grid level 11 or above renders individual observations ('observations-circles' layer)
     else:
         return sql.SQL("""
                 WITH
