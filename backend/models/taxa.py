@@ -10,7 +10,9 @@ class TaxonSuggestion(BaseModel):
         alias_generator=alias_generators.to_camel,
         populate_by_name=True,
     )
+    scientific_name: str | None
     canonical_name: str | None
+    vernacular_names: str | None
     scientific_name_authorship: str | None
     taxon_id: str = Field(alias='taxonID')
     taxon_rank: str | None

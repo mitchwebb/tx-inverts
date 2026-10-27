@@ -1,20 +1,12 @@
 // Types pertaining to API responses
 import type { TaxonomicRank, TaxonomicStatus } from './taxa';
 
-export type RawTaxonSearchSuggestion = {
-    scientific_name: string;
-    scientific_name_authorship: string | null;
-    canonical_name: string;
-    taxon_id: string;
-    taxon_rank: TaxonomicRank;
-    us_invasive: boolean;
-    taxonomic_status: TaxonomicStatus;
-};
-
 export type TaxonSearchSuggestion = {
     scientificName: string | null;
     scientificNameAuthorship: string | null;
     canonicalName: string | null;
+    // Single vernacular name from backend (based on search match)
+    vernacularNames: string | null;
     taxonID: string;
     taxonRank: TaxonomicRank | null;
     uSInvasive: boolean | null;

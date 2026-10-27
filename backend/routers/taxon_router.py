@@ -52,17 +52,19 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
         WITH matches AS (
             SELECT
                 COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
+                COALESCE(a.scientific_name, t.scientific_name) AS scientific_name,
                 COALESCE(a.scientific_name_authorship, t.scientific_name_authorship) AS scientific_name_authorship,
                 COALESCE(a.taxon_id, t.taxon_id) AS taxon_id,
                 COALESCE(a.taxon_rank, t.taxon_rank) AS taxon_rank,
                 COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
                 COALESCE(a.taxonomic_status, t.taxonomic_status) AS taxonomic_status,
+                NULL::text AS vernacular_names,
                 0 AS match_priority
             FROM {tx_taxa} t
             LEFT JOIN {tx_taxa} a
                 ON t.accepted_name_usage_id = a.taxon_id
             WHERE
-                t.canonical_name ~* {search_term}
+                t.scientific_name ~* {search_term}
                 AND COALESCE(a.taxonomic_status, t.taxonomic_status) IN ('accepted', 'provisionally accepted')
                 {exclude_species_section}
 
@@ -70,11 +72,13 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
 
             SELECT
                 COALESCE(a.canonical_name, t.canonical_name) AS canonical_name,
+                COALESCE(a.scientific_name, t.scientific_name) AS scientific_name,
                 COALESCE(a.scientific_name_authorship, t.scientific_name_authorship) AS scientific_name_authorship,
                 COALESCE(a.taxon_id, t.taxon_id) AS taxon_id,
                 COALESCE(a.taxon_rank, t.taxon_rank) AS taxon_rank,
                 COALESCE(a.us_invasive, t.us_invasive) AS us_invasive,
                 COALESCE(a.taxonomic_status, t.taxonomic_status) AS taxonomic_status,
+                v.vernacular_name,
                 1 AS match_priority
             FROM {vernacular_names} v
             JOIN {tx_taxa} t
@@ -87,26 +91,28 @@ async def search_taxon(request: Request, search_term: str, exclude_species: bool
                 {exclude_species_section}
         ),
         deduped AS (
-            SELECT DISTINCT ON (taxon_id)
-                canonical_name,
-                scientific_name_authorship,
+            SELECT
                 taxon_id,
-                taxon_rank,
-                us_invasive,
-                taxonomic_status,
-                match_priority
+                MIN(canonical_name) AS canonical_name,
+                MIN(scientific_name) AS scientific_name,
+                MIN(scientific_name_authorship) AS scientific_name_authorship,
+                MIN(taxon_rank) AS taxon_rank,
+                BOOL_OR(us_invasive) AS us_invasive,
+                MIN(taxonomic_status) AS taxonomic_status,
+                MIN(match_priority) AS match_priority,
+                MIN(vernacular_names) AS vernacular_names   
             FROM matches
-            ORDER BY
-                taxon_id,
-                match_priority
+            GROUP BY taxon_id
         )
         SELECT
             canonical_name,
+            scientific_name,
             scientific_name_authorship,
             taxon_id,
             taxon_rank,
             us_invasive,
-            taxonomic_status
+            taxonomic_status,
+            vernacular_names
         FROM deduped
         ORDER BY
             match_priority,

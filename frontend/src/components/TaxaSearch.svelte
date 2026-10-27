@@ -7,6 +7,7 @@
         initialTaxonState,
     } from '../contexts/activeTaxaContext';
     import type { TaxonSearchSuggestion } from '../types/api';
+    import { capitalizeWords } from '../util/textHelpers';
 
     type TaxaSearchProps = {
         placeholder?: string | null;
@@ -86,7 +87,14 @@
         class:invasive-taxon={suggestion.uSInvasive}
     >
         <div title={suggestion.canonicalName} class="scientific-name-wrapper">
-            <NameAndAuthorship info={suggestion} />
+            <div class="taxon-suggestion-name">
+                <NameAndAuthorship info={suggestion} />
+                {#if !!suggestion.vernacularNames}
+                    <span class="suggestion-vernacular-name thin">
+                        {capitalizeWords(suggestion.vernacularNames)}
+                    </span>
+                {/if}
+            </div>
             {#if suggestion.uSInvasive}
                 <div class="invasive-icon icon">
                     <InvasiveIcon />
@@ -111,6 +119,15 @@
 />
 
 <style>
+    .taxon-suggestion-name {
+        display: flex;
+        flex-direction: column;
+        align-items: left;
+        justify-content: left;
+    }
+    .suggestion-vernacular-name {
+        font-size: .8rem;
+    }
     .taxon-suggestion-wrapper {
         display: flex;
         justify-content: space-between;
