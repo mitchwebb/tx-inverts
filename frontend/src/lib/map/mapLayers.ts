@@ -14,11 +14,13 @@ export type LayerBundle = {
     deferred?: boolean; // If true, layer initialization is left out of initial load
 };
 
+// Sourced from: https://dmap-prod-oms-edc.s3.us-east-1.amazonaws.com/ORD/Ecoregions/tx/tx_eco_l4.zip
 export const l4EcoregionsLayer = {
     id: 'l4-ecoregions',
     source: {
         type: 'vector',
-        // TODO: Ideally, these URL's should be stored and retrieved in the database
+        // Note: Should this source ever go offline, setup requires downloading the above file ^, making a MapBox account, and creating a public tileset using the tx_eco_l4 shapefile.
+        // MapBox will then give you a new URL by which you can reference this tileset.
         url: 'mapbox://mihtmo.a1utqz7l',
         promoteId: 'L4_KEY',
     },
@@ -48,11 +50,13 @@ export const l4EcoregionsLayer = {
     ] as const,
 } as const satisfies LayerBundle;
 
+// Sourced from: https://dmap-prod-oms-edc.s3.us-east-1.amazonaws.com/ORD/Ecoregions/tx/tx_eco_l3.zip
 export const l3EcoregionsLayer = {
     id: 'l3-ecoregions',
     source: {
         type: 'vector',
-        // TODO: Ideally, these URL's should be stored and retrieved in the database
+        // Note: Should this source ever go offline, setup requires downloading the above file ^, making a MapBox account, and creating a public tileset using the tx_eco_l3 shapefile.
+        // MapBox will then give you a new URL by which you can reference this tileset.
         url: 'mapbox://mihtmo.0f8lu7w6',
         promoteId: 'US_L3NAME',
     },
@@ -82,11 +86,13 @@ export const l3EcoregionsLayer = {
     ] as const,
 } as const satisfies LayerBundle;
 
+// Sourced from https://gis-tpwd.opendata.arcgis.com/datasets/ec4e6d378ba14779b5d569c27f1236de
 export const texasParksLayer = {
     id: 'parks',
     source: {
         type: 'vector',
-        // TODO: Ideally, these URL's should be stored and retrieved in the database
+        // Note: Should this source ever go offline, setup requires downloading the above file ^, making a MapBox account, and creating a public tileset using the LWRCRP.gdb file.
+        // MapBox will then give you a new URL by which you can reference this tileset.
         url: 'mapbox://mihtmo.a8sblcwq',
         promoteId: 'ManagerPropName',
     },
@@ -116,11 +122,13 @@ export const texasParksLayer = {
     ] as const,
 } as const satisfies LayerBundle;
 
+// Sourced from https://gis-txdot.opendata.arcgis.com/datasets/9b2eb7d232584572ad53bad41c76b04d_0
 export const countiesLayer = {
     id: 'tx-counties',
     source: {
         type: 'vector',
-        // TODO: Ideally, these URL's should be stored and retrieved in the database
+        // Note: Should this source ever go offline, setup requires downloading the above file ^, making a MapBox account, and creating a public tileset using the downloaded shapefile.
+        // MapBox will then give you a new URL by which you can reference this tileset.
         url: 'mapbox://mihtmo.4u7cu2jb',
         promoteId: 'COUNTY',
     },
