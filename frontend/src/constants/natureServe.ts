@@ -1,5 +1,4 @@
 // Key for NatureServe values and colors
-// TODO: We may want to separate these and move it to the db
 
 export const nSRankKey = [
     { rank: 'x', color: '#000000', description: 'Presumed Extinct' },

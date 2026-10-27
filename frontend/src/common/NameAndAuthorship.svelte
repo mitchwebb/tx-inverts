@@ -1,5 +1,6 @@
 <!-- Simple stylized combination of common name, authorship, and provisional taxon info -->
 <!-- Determines color based on invasives/dubious taxon conditions -->
+<!-- Fallback to scientificName value if no common name provided (doesn't preserve formatting)-->
 
 <script lang="ts">
     import type { TaxonInfo } from '../types/api';
@@ -14,6 +15,7 @@
         | 'uSInvasive'
         | 'scientificNameAuthorship'
         | 'taxonRank'
+        | 'scientificName'
     >;
 
     type NameAndAuthorshipType = {
@@ -29,12 +31,18 @@
     class:dubious-taxon={info?.taxonomicStatus !== 'accepted'}
     class:invasive-taxon={info?.uSInvasive}
 >
-    <span class={[{ italicized }]}>
-        {info.canonicalName}
-    </span>
-    <span class="taxon-authorship"
-        >{info.scientificNameAuthorship ?? null}
-    </span>
+    {#if info.canonicalName}
+        <span class={[{ italicized }]}>
+            {info.canonicalName}
+        </span>
+        <span class="taxon-authorship"
+            >{info.scientificNameAuthorship ?? null}
+        </span>
+    {:else}
+        <span>
+            {info.scientificName}
+        </span>
+    {/if}
     {#if info.taxonomicStatus == 'provisionally accepted'}
         <ProvisionallyAcceptedTip />
     {/if}
