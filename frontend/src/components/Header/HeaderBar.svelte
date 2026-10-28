@@ -8,6 +8,7 @@
     import NavbarItem from './NavbarItem.svelte';
     import './header.css';
     import NavLogo from '../../assets/NavLogo.svelte';
+    import { HEADER_HEIGHT } from '../../constants/header';
 
     const NAV_ITEMS: NavItem[] = [
         { label: 'Map', href: '/map' },
@@ -43,7 +44,7 @@
 </script>
 
 <div id="header-bar-wrapper">
-    <header id="header-bar">
+    <header id="header-bar" style:height={`${HEADER_HEIGHT}px`}>
         <a id="navbar-logo-wrapper" class="logo" href="/">
             <div id="logo-text">
                 <NavLogo />
@@ -109,7 +110,6 @@
         margin: 0;
     }
     #header-bar {
-        height: 65px;
         flex-shrink: 0;
         background-color: var(--container-fore);
         display: flex;

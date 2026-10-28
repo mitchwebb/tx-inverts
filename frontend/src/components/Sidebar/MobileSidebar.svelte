@@ -3,6 +3,7 @@
     import GrabLine from '../../assets/GrabLine.svelte';
     import Sidebar from './Sidebar.svelte';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
+    import { HEADER_HEIGHT } from '../../constants/header';
 
     const taxaContext = getActiveTaxaContext();
 
@@ -18,9 +19,9 @@
     const POSITION_THRESHOLD = 0.4; // 40% of screen
     const MIN_PEEK = 60;
 
-    // TODO: Fix this hard-code
-    // Leave some room for the header
-    const MAX_TOP = 70;
+    // Keep expanded sidebar (and tab) below the header bar
+    const TAB_HEIGHT = 12;
+    const MAX_TOP = HEADER_HEIGHT + TAB_HEIGHT + 2;
 
     onMount(() => {
         screenHeight = window.innerHeight;
@@ -66,10 +67,9 @@
             // - moving downward while open (closing gesture), OR
             // - moving upward while closed (opening gesture)
             // - and the scrollable content is at the top
-            const scrollEl = wrapper.querySelector(
-                '.sidebar-scroll'
-            ) as HTMLElement;
-            const atTop = !scrollEl || scrollEl.scrollTop === 0;
+            // const scrollEl = wrapper.querySelector(
+            //     '.sidebar-scroll'
+            // ) as HTMLElement;
 
             const tryingToClose = isOpen && rawDelta > 8;
             const tryingToOpen = !isOpen && rawDelta < -8;
@@ -172,6 +172,7 @@
         aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
         aria-expanded={isOpen}
         onclick={() => (isOpen ? closeSheet() : openSheet())}
+        style:height={`${TAB_HEIGHT}px`}
     >
         <div id="mobile-sidebar-button">
             <GrabLine />
@@ -204,7 +205,6 @@
 
     #mobile-sidebar-tab {
         color: var(--text-default);
-        height: 0.75rem;
         width: 3rem;
         background-color: var(--container-fore);
         border: none;

@@ -15,10 +15,8 @@ import {
     dateURLCodec,
     collectionObjectURLCodec,
     stringArrayURLCodec,
-    stringURLCodec,
     numberURLCodec,
 } from '../util/router';
-import type { TaxonomicRank } from '../types/taxa';
 import type { makeIDCollection } from '../util/collection.svelte';
 
 export function makeSyncedKeys<
