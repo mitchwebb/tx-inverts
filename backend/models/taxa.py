@@ -70,3 +70,8 @@ class BackboneNode(BaseModel):
     taxonomic_status: str | None
     ns_rank_state: str | None = Field(None, alias='nSRankState')
     ns_rank_state_no_inat: str | None = Field(None, alias='nSRankStateNoINat')
+    # Aliased for reserved word 'class'
+    taxon_class: str | None = Field(None, alias='class')
+    order: str | None
+    family: str | None
+    generic_name: str | None

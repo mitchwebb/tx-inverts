@@ -78,7 +78,7 @@
                     borderColor: taxon.color,
                     backgroundColor: taxon.color,
                     data: taxon.dateCounts ?? [],
-                    label: taxon.info?.canonicalName || 'Missing Name',
+                    label: (taxon.info?.canonicalName ?? taxon.info?.scientificName) || 'Missing Name',
                     pointRadius: (ctx: ScriptableContext<'line'>) => {
                         const value = ctx.parsed?.y;
                         return value === 0 ? 0 : 3; // 0 = no visible marker, 3 = default-ish size

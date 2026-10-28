@@ -4,7 +4,7 @@
         initialTaxonState,
     } from '../../contexts/activeTaxaContext';
     import { taxaTree } from '../../contexts/TaxaTree';
-    import { type TaxonInfo } from '../../types/api';
+    import { type BackboneNode, type TaxonInfo } from '../../types/api';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import NSCircle from '../../common/NSCircle.svelte';
     import MagnifyIcon from '../../assets/MagnifyIcon.svelte';
@@ -27,7 +27,7 @@
     const rankingsContext = getRankingsContext();
 
     // All taxa return from current filters, to be shown in list
-    let filteredTaxaNodes: TaxonInfo[] = $state([]);
+    let filteredTaxaNodes: BackboneNode[] = $state([]);
 
     const ranksLoading: boolean = $derived(
         rankingsContext.ranksLoading || !$taxaTree
@@ -36,10 +36,11 @@
     type TableHeaderType = {
         label: string | Snippet;
         info?: string;
-        sortKey: keyof TaxonInfo;
+        sortKey: keyof BackboneNode;
     };
 
     // Define headers/sort-keys for virtualized rankings table
+    // These must be defined in the order in which they appear in the row snippet
     const tableHeaders: TableHeaderType[] = $derived([
         {
             label: iNatLabel,
@@ -153,10 +154,10 @@
         let activeRanks = filtersContext.nSRanks;
 
         // Determine which rank we need (for filtering)
-        const relevantRank: Partial<keyof TaxonInfo> =
+        const relevantRank: Partial<keyof BackboneNode> =
             filtersContext.includeINat ? 'nSRankState' : 'nSRankStateNoINat';
 
-        const filteredMap = new Map<string, TaxonInfo>();
+        const filteredMap = new Map<string, BackboneNode>();
 
         for (const taxonID of filterTaxaIDs.map(String)) {
             const parentNode = $taxaTree.get(taxonID);
@@ -223,18 +224,19 @@
                 info: {
                     taxonID: string;
                     canonicalName: string;
+                    scientificName: string;
                     taxonRank: string;
                 };
             } =>
                 !!t.info?.taxonID &&
-                !!t.info?.canonicalName &&
+                !!(t.info?.canonicalName ?? t.info?.scientificName) &&
                 !!t.info?.taxonRank &&
                 !['species', 'subspecies', 'form'].includes(t.info.taxonRank)
         );
 
         filtersContext.parentTaxa = activeParentTaxa.map((t) => ({
             id: t.info.taxonID,
-            canonicalName: t.info.canonicalName,
+            name: t.info.canonicalName ?? t.info.scientificName,
         }));
     });
 </script>

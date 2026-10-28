@@ -76,6 +76,10 @@ export type BackboneNode = {
     taxonomicStatus: TaxonomicStatus | null;
     nSRankState: NSRank | null; // NS Rank from Database
     nSRankStateNoINat: NSRank | null; // NS Rank from Database without iNat
+    class: string | null;
+    order: string | null;
+    family: string | null;
+    genericName: string | null;
     effectiveParentID?: string | null; // Used to point to the effective parent in a visual hierarchy
 };
 
@@ -129,4 +133,27 @@ export type RawEstimateMetrics = {
 export type EstimateMetrics = {
     rowCount: number;
     sizeEstimate: number;
+};
+
+// GeoSearch raw suggestion types and their corresponding parsed types for GeoSearch component
+
+export type RawCountySuggestion = {
+    county: string;
+    id: string;
+};
+
+export type CountySuggestion = RegionInfo;
+
+export type RawParkSuggestion = {
+    id: string;
+    prop_name: string;
+    alt_prop_name: string;
+    prop_class: string;
+    owner: string;
+};
+
+export type ParkSuggestion = RegionInfo & {
+    altPropName: string;
+    propClass: string;
+    owner: string;
 };

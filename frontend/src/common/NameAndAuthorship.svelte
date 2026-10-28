@@ -35,9 +35,10 @@
         <span class={[{ italicized }]}>
             {info.canonicalName}
         </span>
-        <span class="taxon-authorship"
+        <span class="taxon-authorship thin"
             >{info.scientificNameAuthorship ?? null}
         </span>
+    <!-- If no canonicalName, fall back to dirty scientificName -->
     {:else}
         <span>
             {info.scientificName}

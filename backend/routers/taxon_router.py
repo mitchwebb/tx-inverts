@@ -254,7 +254,11 @@ async def get_backbone(request: Request, response: Response) -> list[BackboneNod
                 us_invasive,
                 taxonomic_status,
                 ns_rank_state,
-                ns_rank_state_no_inat
+                ns_rank_state_no_inat,
+                class,
+                "order",
+                family,
+                generic_name
             FROM {tx_taxa}
             WHERE taxonomic_status IN ('accepted', 'provisionally accepted')
                 ORDER BY taxon_rank, scientific_name

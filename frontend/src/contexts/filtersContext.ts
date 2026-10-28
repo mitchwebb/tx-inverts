@@ -5,7 +5,7 @@ import { makeIDCollection } from '../util/collection.svelte';
 export const filtersStateKey = 'filters';
 
 export type FiltersState = {
-    parentTaxa: { id: string; canonicalName: string }[];
+    parentTaxa: { id: string; name: string }[];
     includeINat: boolean;
     datasets: string[];
     nSRanks: NSRank[];

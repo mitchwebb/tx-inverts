@@ -1,10 +1,10 @@
 <script lang="ts">
     import LoadingIcon from '../../assets/LoadingIcon.svelte';
+    import NameAndAuthorship from '../../common/NameAndAuthorship.svelte';
     import SearchbarCard from '../../common/SearchbarCard.svelte';
     import type { FiltersDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
-    import { isItalicizedRank } from '../../util/taxa';
     import TaxaSearch from '../TaxaSearch.svelte';
 
     type TaxonFilterProps = {
@@ -41,11 +41,8 @@
         {#if !!taxaContext.taxa.ids.length}
             <div id="taxon-cards-wrapper">
                 {#each taxaContext.taxa.items as taxon}
-                    {@const taxonInfo = taxon.info}
+                    {@const taxonInfo = taxon?.info}
                     {@const taxonRank = taxonInfo?.taxonRank}
-                    {@const isItalicized = isItalicizedRank(
-                        taxonInfo?.taxonRank || null
-                    )}
                     <!-- If excluding species, leave out species and subspecies cards -->
                     {#if !excludeSpecies || (taxonRank && !['species', 'subspecies', 'form'].includes(taxonRank))}
                         {#snippet label()}
@@ -55,16 +52,11 @@
                                         <LoadingIcon />
                                     </div>
                                 {/if}
-                                <div class="filtered-taxon-name">
-                                    <span class:italicized={isItalicized}
-                                        >{taxonInfo?.canonicalName}</span
-                                    >
-                                    <span
-                                        class="filtered-taxon-authorship thin"
-                                    >
-                                        {taxonInfo?.scientificNameAuthorship}
-                                    </span>
-                                </div>
+                                {#if taxonInfo}
+                                    <div class="filtered-taxon-name">
+                                        <NameAndAuthorship info={taxonInfo}/>
+                                    </div>
+                                {/if}
                             </div>
                         {/snippet}
                         <SearchbarCard

@@ -86,7 +86,7 @@
         class="taxon-suggestion-wrapper"
         class:invasive-taxon={suggestion.uSInvasive}
     >
-        <div title={suggestion.canonicalName} class="scientific-name-wrapper">
+        <div class="scientific-name-wrapper">
             <div class="taxon-suggestion-name">
                 <NameAndAuthorship info={suggestion} />
                 {#if !!suggestion.vernacularNames}

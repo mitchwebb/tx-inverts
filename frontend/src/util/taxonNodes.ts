@@ -34,14 +34,14 @@ export function getVisibleNodes(
         // Sort nodes alphabetically, putting nulls at the end
         function sortNodes(nodes: BackboneNode[]): BackboneNode[] {
             return nodes.sort((a, b) => {
-                if (a.canonicalName == null) return 1;
-                if (b.canonicalName == null) return -1;
+                const aName = a.canonicalName ?? a.scientificName;
+                const bName = b.canonicalName ?? b.scientificName;
+                if (aName == null) return 1;
+                if (bName == null) return -1;
 
-                return a.canonicalName.localeCompare(
-                    b.canonicalName,
-                    undefined,
-                    { sensitivity: 'base' }
-                );
+                return aName.localeCompare(bName, undefined, {
+                    sensitivity: 'base',
+                });
             });
         }
 

@@ -4,6 +4,7 @@
     import InfoButton from '../../common/InfoButton.svelte';
     import InvasiveIcon from '../../common/InvasiveIcon.svelte';
     import LinkButton from '../../common/LinkButton.svelte';
+    import NameAndAuthorship from '../../common/NameAndAuthorship.svelte';
     import {
         getActiveTaxaContext,
         type ActiveTaxon,
@@ -56,22 +57,8 @@
                         <InvasiveIcon />
                     </div>
                 {/if}
-                {#if activeTaxon.info?.canonicalName}
-                    <span
-                        class="scientific-name"
-                        class:italicized={isItalicizedRank(
-                            activeTaxon.info?.taxonRank
-                        )}
-                    >
-                        {activeTaxon.info?.canonicalName}
-                    </span>
-                {/if}
-                {#if activeTaxon.info?.scientificNameAuthorship}
-                    <span class="scientific-authorship thin">
-                        {activeTaxon.info?.scientificNameAuthorship}
-                    </span>
-                {/if}
-                {#if activeTaxon.info?.canonicalName}
+                {#if activeTaxon.info}
+                    <NameAndAuthorship info={activeTaxon.info}/>
                     <div class="gbif-link-button">
                         <LinkButton
                             href={`https://www.gbif.org/taxon/${activeTaxon.taxonID}`}

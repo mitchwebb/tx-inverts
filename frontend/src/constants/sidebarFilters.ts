@@ -56,10 +56,10 @@ export const SIDEBAR_FILTER_META: Record<
         count: true,
         affectsRankMetrics: false,
         format: (taxa: (typeof initialFiltersState)['parentTaxa']) => {
-            const canonicalNames = taxa.map((taxon) => taxon.canonicalName);
+            const names = taxa.map((taxon) => taxon.name);
             return taxa.length > 3
                 ? `${taxa.length} parent taxa`
-                : `Parent Taxa: ${canonicalNames.join(', ')}`;
+                : `Parent Taxa: ${names.join(', ')}`;
         },
     },
     nSRanks: {
