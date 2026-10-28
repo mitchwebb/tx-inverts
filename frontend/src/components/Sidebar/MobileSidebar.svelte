@@ -14,10 +14,14 @@
     let currentY = $state(0);
     let screenHeight = $state(0);
     let samples: { y: number; t: number }[] = $state([]);
+    // True if the current gesture begins on content scrolled away from its top
+    // Used to prevent closing sidebar when scrolling on content
+    let startedOnScrolledContent = false;
 
     const FLICK_VELOCITY = 0.5; // px/ms
     const POSITION_THRESHOLD = 0.4; // 40% of screen
     const MIN_PEEK = 60;
+    const RUBBER_BAND = 0.15;
 
     // Keep expanded sidebar (and tab) below the header bar
     const TAB_HEIGHT = 12;
@@ -42,11 +46,25 @@
         wrapper.style.transform = `translateY(calc(100% - ${MIN_PEEK}px))`;
     }
 
+    // Walks from the pressed element up to the sheet. True if any element on
+    // the way is scrolled away from its top, i.e. the gesture belongs to that
+    // scroller and not to the sheet.
+    function isOnScrolledContent(target: EventTarget | null): boolean {
+        let el = target instanceof Element ? target : null;
+        while (el && el !== wrapper) {
+            if (el.scrollTop > 0) return true;
+            el = el.parentElement;
+        }
+        return false;
+    }
+
     function onPointerDown(e: PointerEvent) {
         startY = e.clientY;
         currentY = e.clientY;
         samples = [{ y: e.clientY, t: Date.now() }];
-        // Don't commit to dragging yet — wait to see if it's a scroll or a drag
+        // Sampled once, at press time. A gesture that begins mid-scroll stays
+        // a scroll for its whole duration, even if it reaches the top.
+        startedOnScrolledContent = isOnScrolledContent(e.target);
     }
 
     function onPointerMove(e: PointerEvent) {
@@ -64,14 +82,11 @@
 
         if (!isDragging) {
             // Only hijack the gesture if:
-            // - moving downward while open (closing gesture), OR
+            // - moving downward while open (closing gesture), and the gesture
+            //   did not begin on scrolled content, OR
             // - moving upward while closed (opening gesture)
-            // - and the scrollable content is at the top
-            // const scrollEl = wrapper.querySelector(
-            //     '.sidebar-scroll'
-            // ) as HTMLElement;
 
-            const tryingToClose = isOpen && rawDelta > 8;
+            const tryingToClose = isOpen && !startedOnScrolledContent && rawDelta > 8;
             const tryingToOpen = !isOpen && rawDelta < -8;
 
             if (
@@ -85,30 +100,17 @@
                 return; // Scroll
             }
         }
-        const baseY = isOpen ? MAX_TOP : screenHeight - MIN_PEEK;
-
-        let delta: number;
-        if (isOpen) {
-            // Dragging down: allow freely
-            // Dragging past top: rubber-band
-            delta = rawDelta < MAX_TOP ? rawDelta * 0.15 : rawDelta;
-        } else {
-            // Dragging up: allow freely
-            // Dragging past bottom: rubber-band
-            const maxUp = screenHeight - MIN_PEEK;
-            delta =
-                rawDelta < -maxUp
-                    ? -maxUp + (rawDelta + maxUp) * 0.15
-                    : rawDelta > MAX_TOP
-                      ? rawDelta * 0.15
-                      : rawDelta;
-        }
-
-        // Clamp so it never goes below MIN_PEEK
-        const newY = Math.max(
-            0,
-            Math.min(screenHeight - MIN_PEEK, baseY + delta)
-        );
+        const closedY = wrapper.offsetHeight - MIN_PEEK;
+        const baseY = isOpen ? 0 : closedY;
+        const rawY = baseY + rawDelta;
+ 
+        // Free movement between the open and closed positions. Past the open
+        // position (just below the header) the sheet rubber-bands. It never
+        // goes below the closed position.
+        const newY =
+            rawY < 0
+                ? Math.max(-MAX_TOP, rawY * RUBBER_BAND)
+                : Math.min(closedY, rawY);
         wrapper.style.transform = `translateY(${newY}px)`;
     }
 
