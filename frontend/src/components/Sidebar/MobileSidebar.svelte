@@ -49,6 +49,11 @@
     }
 
     function onPointerMove(e: PointerEvent) {
+        // Failsafe to end dragging if not holding button/touch
+        if (e.buttons === 0) {
+            if (isDragging) onPointerUp();
+            return;
+        }
         currentY = e.clientY;
         const now = Date.now();
         samples.push({ y: currentY, t: now });
@@ -71,8 +76,7 @@
 
             if (
                 tryingToClose ||
-                tryingToOpen ||
-                (isOpen && atTop && rawDelta > 0)
+                tryingToOpen
             ) {
                 isDragging = true;
                 wrapper.style.transition = 'none';
