@@ -1,9 +1,10 @@
 <script lang="ts">
-    import { getFiltersContext } from '../../contexts/filtersContext';
-    import GeoSearch from '../GeoSearch.svelte';
-    import SearchbarCard from '../../common/SearchbarCard.svelte';
-    import type { RegionInfo } from '../../types/api';
-    import InfoButton from '../../common/InfoButton.svelte';
+    import { getFiltersContext } from '../../../contexts/filtersContext';
+    import GeoSearch from '../../GeoSearch.svelte';
+    import SearchbarCard from '../../../common/SearchbarCard.svelte';
+    import type { CountySuggestion, ParkSuggestion, RegionInfo } from '../../../types/api';
+    import InfoButton from '../../../common/InfoButton.svelte';
+    import { parseCounties, parseParks } from '../../../lib/geoSearch';
 
     const filtersContext = getFiltersContext();
 
@@ -12,50 +13,6 @@
     };
 
     const { header = 'Regions' }: GeoFiltersProps = $props();
-
-    // TODO: Should these live somewhere else
-    type RawCountySuggestion = {
-        county: string;
-        id: string;
-    };
-    type CountySuggestion = RegionInfo;
-
-    type RawParkSuggestion = {
-        id: string;
-        prop_name: string;
-        alt_prop_name: string;
-        prop_class: string;
-        owner: string;
-    };
-
-    type ParkSuggestion = RegionInfo & {
-        altPropName: string;
-        propClass: string;
-        owner: string;
-    };
-
-    function parseCounties(json: RawCountySuggestion[]): CountySuggestion[] {
-        return json.map((suggestion) => {
-            return {
-                id: suggestion.id,
-                name: suggestion.county,
-                regionType: 'county',
-            };
-        });
-    }
-
-    function parseParks(json: RawParkSuggestion[]): ParkSuggestion[] {
-        return json.map((result: RawParkSuggestion) => {
-            return {
-                id: result.id,
-                name: result.prop_name,
-                altPropName: result.alt_prop_name,
-                propClass: result.prop_class,
-                owner: result.owner,
-                regionType: 'park',
-            };
-        });
-    }
 
     function handleRegionSelect(suggestion: RegionInfo) {
         if (!suggestion.id) return;
@@ -68,6 +25,7 @@
     }
 </script>
 
+<!-- Snippets for rendering various search suggest results -->
 {#snippet countyRow(suggestion: CountySuggestion)}
     <div>
         {suggestion.name}
@@ -86,6 +44,7 @@
     </div>
 {/snippet}
 
+<!-- Actual GeoFilters section -->
 <div class="geo-filter-section filters-section">
     <div class="filters-section-header">
         {header}

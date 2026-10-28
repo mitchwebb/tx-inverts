@@ -8,7 +8,7 @@
     import DatasetFilterSection from './DatasetFilterSection.svelte';
     import DateFilterSection from './DateFilterSection.svelte';
     import FiltersWrapper from './FiltersWrapper.svelte';
-    import GeoFilterSection from './GeoFilterSection.svelte';
+    import GeoFilterSection from './GeoFilters/GeoFilterSection.svelte';
     import RankFilterSection from './RankFilterSection.svelte';
     import TaxonFilterSection from './TaxonFilterSection.svelte';
     import UncertaintyFilterSection from './UncertaintyFilterSection.svelte';
