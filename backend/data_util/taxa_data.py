@@ -108,20 +108,20 @@ def derive_canonical_name(row: pd.Series):
         'scientificNameAuthorship'
     """
 
+    parts = None
     taxon_rank = row['taxonRank']
 
     match taxon_rank:
-        case 'species':
-            parts = [row['genericName'], row['specificEpithet']]
-
         # Subgenus with (Genus (Subgenus)) format
         case 'subgenus':
-            if pd.isna(row['infragenericEpithet']):
-                return pd.NA
-            parts = [
-                row['genericName'],
-                f'({row['infragenericEpithet']})'
-            ]
+            if pd.notna(row['infragenericEpithet']):
+                parts = [
+                    row['genericName'],
+                    f'({row['infragenericEpithet']})'
+                ]
+
+        case 'species':
+            parts = [row['genericName'], row['specificEpithet']]
 
         case 'subspecies':
             parts = [
@@ -138,34 +138,39 @@ def derive_canonical_name(row: pd.Series):
                 'f.',
                 row['infraspecificEpithet']
             ]
-        # Last ditch effort to strip authorship (after all polynomial cases have been addressed)
-        case _:
-            sci_name = row['scientificName']
-            if pd.isna(sci_name):
-                return pd.NA
 
-            authorship = row['scientificNameAuthorship']
+    # Last ditch effort to simply strip authorship from scientific_name if parts is still None
+    if parts is None or all(pd.isna(p) for p in parts):
+        sci_name = row['scientificName']
+        if pd.isna(sci_name):
+            return pd.NA
 
-            # If authorship found within scientific name (as a whole, not a
-            # substring of another word), strip it and use that output
-            stripped_sci_name = None
-            if pd.notna(authorship):
-                pattern = rf'\s*\b{re.escape(authorship)}\b\s*'
-                match_found = re.search(pattern, sci_name)
-                if match_found:
-                    stripped_sci_name = re.sub(pattern, ' ', sci_name).strip()
+        authorship = row['scientificNameAuthorship']
 
-            # If we got a stripped name, use it
-            if stripped_sci_name is not None:
-                parts = [stripped_sci_name]
-            # Else check if scientific name is quoted (use quoted section)
-            elif sci_name.startswith('"'):
-                end = sci_name.find('"', 1)
-                parts = [sci_name[:end + 1]] if end != -1 else [sci_name]
-            # Else, imperfect selection of first part of scientific name
-            else:
-                # This helps for cases where scientific name contains authorship, but authorship column is None
-                parts = [row['scientificName'].split(' ', 1)[0]]
+        # Trash those rows where scientific_name is fully equal to scientific_name_authorship
+        if sci_name == authorship:
+            return pd.NA
+
+        # If authorship found within scientific name (as a whole, not a
+        # substring of another word), strip it and use that output
+        stripped_sci_name = None
+        if pd.notna(authorship):
+            pattern = rf'\s*\b{re.escape(authorship)}\b\s*'
+            match_found = re.search(pattern, sci_name)
+            if match_found:
+                stripped_sci_name = re.sub(pattern, ' ', sci_name).strip()
+
+        # If we got a stripped name, use it
+        if stripped_sci_name:
+            parts = [stripped_sci_name]
+        # Else check if scientific name is quoted (use quoted section)
+        elif sci_name.startswith('"'):
+            end = sci_name.find('"', 1)
+            parts = [sci_name[:end + 1]] if end != -1 else [sci_name]
+        # Else, imperfect selection of first part of scientific name
+        else:
+            # This helps for cases where scientific name contains authorship, but authorship column is None
+            parts = [row['scientificName'].split(' ', 1)[0]]
 
     # If the names we've made contain NaN parts, it has failed and we need to return NaN
     if any(pd.isna(p) for p in parts):

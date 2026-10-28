@@ -140,6 +140,17 @@ taxa = [
         'taxonRank': 'subgenus',
         'expected_canonical': 'Culex (Melanoconion)'
     },
+    # Subgenus case with no infragenericEpithet, but with verbatim authorship in scientific_name
+    {
+        'scientificName': 'Prodaticus Sharp, 1882',
+        'genericName': None,
+        'infragenericEpithet': None,
+        'specificEpithet': None,
+        'infraspecificEpithet': None,
+        'scientificNameAuthorship': 'Sharp, 1882',
+        'taxonRank': 'subgenus',
+        'expected_canonical': 'Prodaticus'
+    },
     # Normal species case with authorship
     {
         'scientificName': 'Atta texana (Buckley, 1860)',
@@ -151,7 +162,7 @@ taxa = [
         'scientificNameAuthorship': '(Buckley, 1860)',
         'expected_canonical': 'Atta texana'
     },
-    # Species case where authorship appears WITHIN scientific name
+    # Species case where authorship appears as substring WITHIN scientific name
     {
         'scientificName': 'Ambulyx moorei',
         'genericName': 'Ambulyx',
@@ -184,6 +195,41 @@ taxa = [
         'taxonRank': 'form',
         'expected_canonical': 'Polistes apachus f. apachus'
     },
+    # Monomial scientificName can be taken as-is
+    {
+        'scientificName': 'Polycanthella',
+        'genericName': 'Polycanthella',
+        'infragenericEpithet': None,
+        'specificEpithet': None,
+        'infraspecificEpithet': None,
+        'scientificNameAuthorship': None,
+        'taxonRank': 'genus',
+        'expected_canonical': 'Polycanthella'
+    },
+    # Documented failure cases (frontend falls back to scientificName for cases with null canonicalNames)
+    # nan in scientificName, too many parts, thrown out
+    {
+        'scientificName': 'Ultragryllacris nan Ingrisch, 2018',
+        'genericName': 'Ultragryllacris',
+        'infragenericEpithet': None,
+        'specificEpithet': None,
+        'infraspecificEpithet': None,
+        'scientificNameAuthorship': 'Ingrisch, 2018',
+        'taxonRank': 'species',
+        'expected_canonical': pd.NA
+    },
+    # scientificName perfectly matching scientificNameAuthorship should probably be trashed
+    # So far, cases have been safe, but it's a bad assumption to make
+    {
+        'scientificName': 'Polycanthella',
+        'genericName': 'Polycanthella',
+        'infragenericEpithet': None,
+        'specificEpithet': None,
+        'infraspecificEpithet': None,
+        'scientificNameAuthorship': 'Polycanthella',
+        'taxonRank': 'genus',
+        'expected_canonical': pd.NA
+    },
 ]
 
 
@@ -191,5 +237,8 @@ taxa = [
 class TestDeriveCanonicalName:
     def test_taxon(self, taxon):
         canonical_name = derive_canonical_name(taxon)
-        print(canonical_name)
-        assert canonical_name == taxon['expected_canonical']
+
+        if pd.isna(taxon['expected_canonical']):
+            assert pd.isna(canonical_name)
+        else:
+            assert canonical_name == taxon['expected_canonical']
