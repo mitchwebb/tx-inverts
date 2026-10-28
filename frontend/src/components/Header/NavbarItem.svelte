@@ -50,7 +50,7 @@
         >
             {item.label}
         </a>
-        <!-- Dropdown item -->
+    <!-- Dropdown item -->
     {:else if item.children}
         {#if variant === 'desktop'}
             <NavbarDropdown {item} />
