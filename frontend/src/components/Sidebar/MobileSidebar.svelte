@@ -32,7 +32,7 @@
         isOpen = true;
         wrapper.style.transition =
             'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-        wrapper.style.transform = `translateY(${MAX_TOP}px)`;
+        wrapper.style.transform = `translateY(0)`;
     }
 
     function closeSheet() {
@@ -166,6 +166,7 @@
     onpointermove={onPointerMove}
     onpointerup={onPointerUp}
     onpointercancel={onPointerUp}
+    style:height={`calc(100dvh - ${MAX_TOP}px)`}
 >
     <button
         id="mobile-sidebar-tab"
@@ -187,7 +188,6 @@
         left: 0;
         bottom: 0;
         width: 100%;
-        height: 100dvh;
         box-sizing: border-box;
         padding: 0.5rem;
         background-color: var(--container-fore);
