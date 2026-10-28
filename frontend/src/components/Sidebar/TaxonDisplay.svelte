@@ -190,14 +190,6 @@
         border: none;
         flex-shrink: 0;
     }
-    .scientific-name {
-        font-weight: 400;
-        /* flex-shrink: 0; */
-        word-break: normal;
-    }
-    .scientific-authorship {
-        flex-shrink: 1;
-    }
     #taxon-rank {
         opacity: 0.7;
         line-height: 1;

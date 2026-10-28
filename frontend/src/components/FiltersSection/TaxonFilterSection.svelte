@@ -73,10 +73,6 @@
 </div>
 
 <style>
-    .filtered-taxon-authorship {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
     .taxon-card-label {
         display: flex;
         width: 100%;
@@ -89,9 +85,6 @@
     }
     .taxa-search-wrapper {
         height: 2.5rem;
-    }
-    .italicized {
-        font-style: italic;
     }
     #taxon-cards-wrapper {
         display: flex;
