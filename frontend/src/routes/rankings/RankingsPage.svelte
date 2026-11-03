@@ -19,7 +19,7 @@
     import { getRankingsContext } from '../../contexts/rankingsContext';
     import { openModal } from '../../lib/modal.svelte';
     import NameAndAuthorship from '../../common/NameAndAuthorship.svelte';
-    import type { Snippet } from 'svelte';
+    import { untrack, type Snippet } from 'svelte';
 
     const taxaContext = getActiveTaxaContext();
     const filtersContext = getFiltersContext();
@@ -217,27 +217,37 @@
     $effect(() => {
         const items = taxaContext.taxa.items;
 
-        const activeParentTaxa = items.filter(
-            (
-                t
-            ): t is typeof t & {
-                info: {
-                    taxonID: string;
-                    canonicalName: string;
-                    scientificName: string;
-                    taxonRank: string;
-                };
-            } =>
-                !!t.info?.taxonID &&
-                !!(t.info?.canonicalName ?? t.info?.scientificName) &&
-                !!t.info?.taxonRank &&
-                !['species', 'subspecies', 'form'].includes(t.info.taxonRank)
-        );
+        const activeParentTaxa = items
+            .filter(
+                (
+                    t
+                ): t is typeof t & {
+                    info: {
+                        taxonID: string;
+                        canonicalName: string;
+                        scientificName: string;
+                        taxonRank: string;
+                    };
+                } =>
+                    !!t.info?.taxonID &&
+                    !!(t.info?.canonicalName ?? t.info?.scientificName) &&
+                    !!t.info?.taxonRank &&
+                    !['species', 'subspecies', 'form'].includes(
+                        t.info.taxonRank
+                    )
+            )
+            // Map parent taxa to just id and name
+            .map((t) => ({
+                id: t.info.taxonID,
+                name: t.info.canonicalName ?? t.info.scientificName,
+            }));
 
-        filtersContext.parentTaxa = activeParentTaxa.map((t) => ({
-            id: t.info.taxonID,
-            name: t.info.canonicalName ?? t.info.scientificName,
-        }));
+        // Compare new and old parentTaxa (don't change state if they're the same)
+        const prev = untrack(() => filtersContext.parentTaxa);
+        const same =
+            prev.length === activeParentTaxa.length &&
+            prev.every((p, i) => p.id === activeParentTaxa[i].id);
+        if (!same) filtersContext.parentTaxa = activeParentTaxa;
     });
 </script>
 
@@ -279,7 +289,7 @@
                         'canonicalName'}
                     defaultAscending={rankingsContext.sortAscending}
                 >
-                    {#snippet row(taxon: TaxonInfo)}
+                    {#snippet row(taxon: BackboneNode)}
                         {@const nSRank =
                             filtersContext.includeINat !== false
                                 ? taxon.nSRankState
