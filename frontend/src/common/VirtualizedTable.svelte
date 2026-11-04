@@ -70,30 +70,29 @@
         // Multiplier based on sort direction
         const direction = sortDirection == 'asc' ? 1 : -1;
 
+        const collator = new Intl.Collator(undefined, {
+            numeric: true,
+            sensitivity: 'base',
+        });
+
         const sorted = [...array].sort((a, b) => {
             const A = a[sortKey];
             const B = b[sortKey];
 
-            let result = 0;
+            // Both null: maintain order
+            if (A == null && B == null) return 0;
 
-            // Put nulls at end
-            if (A == null && B == null) result = 0;
-            else if (B == null) result = 1;
-            else if (A == null) result = -1;
-            // Numeric sort
-            else if (typeof A === 'number' && typeof B === 'number') {
-                result = A - B;
+            // Nulls always at bottom
+            if (A == null) return 1;
+            if (B == null) return -1;
+
+            // Both actual numbers: numeric comparison
+            if (typeof A === 'number' && typeof B === 'number') {
+                return (A - B) * direction;
             }
 
-            // String sort
-            else if (typeof A === 'string' && typeof B === 'string') {
-                result = A.localeCompare(B);
-            }
-
-            // Fallback: compare as strings
-            else result = String(A).localeCompare(String(B));
-
-            return result * direction;
+            // Everything else: alphanumeric comparison
+            return collator.compare(String(A), String(B)) * direction;
         });
 
         return sorted;
