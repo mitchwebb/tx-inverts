@@ -36,15 +36,13 @@
                 : 'Selected Taxa'}
             excludeSpecies={domain == 'taxon'}
         />
-        <UncertaintyFilterSection />
-        {#if domain == 'taxon'}
-            <RankFilterSection />
-        {/if}
+        <GeoFilterSection />
     </div>
     <div class="vertical-filter-group">
         <DateFilterSection {domain} header="Dates Present" />
+        <UncertaintyFilterSection />
         {#if domain == 'taxon'}
-            <GeoFilterSection />
+            <RankFilterSection />
         {/if}
     </div>
     <div class="horizontal-filter-group">

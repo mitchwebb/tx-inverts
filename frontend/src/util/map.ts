@@ -22,6 +22,11 @@ export function buildTileURL(taxonID: string, filters: FiltersState): string {
             query.append('datasets', d);
         }
     }
+    if (filters.regions.ids) {
+        for (const r of filters.regions.ids.filter((r) => r != null)) {
+            query.append('regions', r);
+        }
+    }
 
     return `${window.location.origin}/server/occurrence/tiles/{z}/{x}/{y}.mvt?${query.toString()}`;
 }

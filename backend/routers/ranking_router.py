@@ -44,7 +44,8 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
             date_start=params.date_start,
             date_end=params.date_end,
             datasets=params.datasets,
-            coord_uncertainty=params.coord_uncertainty
+            coord_uncertainty=params.coord_uncertainty,
+            regions=params.regions
         )
 
         async with pool.connection() as conn:

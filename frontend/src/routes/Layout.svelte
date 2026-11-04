@@ -1,3 +1,4 @@
+<!-- General layout component for tx-inverts, handling various contexts and reactivity -->
 <script lang="ts">
     import {
         initialMapState,
@@ -66,13 +67,16 @@
     import {
         getFilterValues,
         RANK_AFFECTING_FILTER_KEYS,
+        TAXA_FILTER_KEYS,
     } from '../constants/sidebarFilters';
     import { abortAllIDRequests } from '../lib/requestRegistry';
     import { countActiveFilters } from '../lib/filters.svelte';
 
-    // Intialize contexts
+    // INITIALIZE CONTEXTS //
 
-    // Make taxa collection (easier way of managing our lists of objects reactively)
+
+    // TAXA //
+    // Make taxa collection (easier way of managing taxa info reactively)
     const taxaCollection = makeIDCollection<ActiveTaxon, string>(
         (t) => t.taxonID,
         // Load taxonInfo on add
@@ -81,14 +85,16 @@
     );
     const taxaState: ActiveTaxaState = $state(initialActiveTaxaState);
 
-    // Logic for setting next color of active taxon (if all colors are used, will use least used color)
+    // Set logic for setting next color of active taxon (if all colors are used, will use least used color)
     function getNextTaxonColor(): string {
-        const colorCounts = Object.fromEntries(TAXON_COLORS.map((c) => [c, 0]));
+        // Tally up colors and how often they're already represented
+        const colorCounts = Object.fromEntries(TAXON_COLORS.map((color) => [color, 0]));
         taxaState.taxa.items.forEach((t) => {
             if (t.color in colorCounts) colorCounts[t.color]++;
         });
-        return TAXON_COLORS.reduce((least, c) =>
-            colorCounts[c] < colorCounts[least] ? c : least
+        // Return least-used color
+        return TAXON_COLORS.reduce((acc, curr) =>
+            colorCounts[curr] < colorCounts[acc] ? curr : acc
         );
     }
 
@@ -97,40 +103,41 @@
     setActiveTaxaContext(taxaState);
     const taxaContext = getActiveTaxaContext();
 
+    // FILTERS //
     const filtersState: FiltersState = $state(initialFiltersState);
     filtersState.regions = makeIDCollection<RegionInfo, string>((c) => c.id);
     setFiltersContext(filtersState);
     const filtersContext = getFiltersContext();
 
+    // MAP //
     const mapState: MapState = $state(initialMapState);
     setMapContext(mapState);
 
+    // ROUTER
     const routerState: RouterState = $state(initialRouterState);
     setRouterContext(routerState);
 
+    // MODALS
     const modalState: ModalState = $state(initialModalState);
     setModalContext(modalState);
 
+    // SIDEBAR
     const sidebarState: SidebarState = $state(initialSidebarState);
     setSidebarContext(sidebarState);
 
+    // METRICS
     const metricsParamsState: MetricsParams = $state(initialMetricsState);
     setMetricsContext(metricsParamsState);
 
+    // RANKINGS PAGE
     const rankingsState: RankingsState = $state(initialRankingsState);
     setRankingsContext(rankingsState);
 
-    let qualifiedTaxaController: AbortController;
-
     // Get list of qualified taxonIDs given various filters (for rankings page)
+    let qualifiedTaxaController: AbortController;
     $effect(() => {
-        // Call filters to trigger reactivity
-        const regions = filtersContext.regions;
-        const dateStart = filtersContext.dateStart;
-        const dateEnd = filtersContext.dateEnd;
-        const datasets = filtersContext.datasets;
-        const coordUncertainty = filtersContext.coordUncertainty;
-        const includeINat = filtersContext.includeINat;
+        // Kick off reactivity to all TAXA_FILTER_KEYS
+        const _ = getFilterValues(TAXA_FILTER_KEYS, filtersState)
 
         qualifiedTaxaController?.abort();
         qualifiedTaxaController = new AbortController();
@@ -144,14 +151,7 @@
             try {
                 rankingsState.ranksLoading = true;
                 const result = await getQualifiedTaxa(
-                    {
-                        regions,
-                        dateStart,
-                        dateEnd,
-                        datasets,
-                        coordUncertainty,
-                        includeINat,
-                    },
+                    filtersContext,
                     qualifiedTaxaController.signal
                 );
 
@@ -194,7 +194,8 @@
 
     // Get NSValues for all taxa on filters change
     $effect(() => {
-        const trackedValues = getFilterValues(
+        // Kick off reactivity to all RANK_AFFECTING_FILTER_KEYS
+        const _ = getFilterValues(
             RANK_AFFECTING_FILTER_KEYS,
             filtersContext
         );
@@ -203,15 +204,15 @@
             for (const taxonID of taxaContext.taxa.ids) {
                 const taxon = taxaContext.taxa.get(taxonID);
                 if (!taxon) continue;
-                loadNSValues(taxonID, { ...filtersContext, ...trackedValues });
+                loadNSValues(taxonID, filtersContext);
             }
         });
     });
 
     // Get NSValues for currently empty taxa on taxonIDs change
     $effect(() => {
+        // Kick off reactivity to all taxonIDs
         const taxonIDs = taxaContext.taxa.ids;
-        const filters = filtersContext;
 
         untrack(() => {
             for (const taxonID of taxonIDs) {
@@ -222,11 +223,18 @@
                 if (!taxon || taxon.nSValues.observationCount !== null)
                     continue;
 
-                loadNSValues(taxonID, filters);
+                loadNSValues(taxonID, filtersContext);
             }
         });
     });
 
+    /**
+     * Call getNSMetrics for a specific taxonID and set of filters.
+     * Sets nSValues for given taxon in context.
+     * 
+     * @param taxonID
+     * @param filters
+     */
     async function loadNSValues(
         taxonID: ActiveTaxaState['taxa']['items'][0]['taxonID'],
         filters: FiltersState
@@ -297,13 +305,9 @@
         );
     }
 
-    // Make empty regions collection to prevent counting regions filtering
-    // We're not using this filter our occurrences
-    // Note: If we ever do want to filter OCCURRENCE data by region, this will need to be changed.
-    const emptyRegions = makeIDCollection<RegionInfo, string>((c) => c.id);
-
     // Get aggregated datasetCounts for each taxon
     $effect(() => {
+        // Kick off reactivity using rank_affecting_filter_keys and taxonIDs
         const filters = getFilterValues(
             RANK_AFFECTING_FILTER_KEYS,
             filtersContext,
@@ -317,10 +321,7 @@
                 taxaContext.taxa.ids,
                 'datasetCountsLoading',
                 (taxonID) =>
-                    getDatasetCounts(taxonID, {
-                        ...filters,
-                        regions: emptyRegions,
-                    }),
+                    getDatasetCounts(taxonID, filtersContext),
                 (taxonID, counts) => {
                     const taxon = taxaContext.taxa.get(taxonID);
                     if (taxon) taxon.datasetCounts = counts;
@@ -331,6 +332,7 @@
 
     // Get min/max observationDates for each taxon
     $effect(() => {
+        // Kick off reactivity using rank_affecting_filter_keys and taxonIDs
         const filters = getFilterValues(
             RANK_AFFECTING_FILTER_KEYS,
             filtersContext,
@@ -344,10 +346,7 @@
                 taxaContext.taxa.ids,
                 'dateRangeLoading',
                 (taxonID) =>
-                    getObservationDates(taxonID, {
-                        ...filters,
-                        regions: emptyRegions,
-                    }),
+                    getObservationDates(taxonID, filtersContext),
                 (taxonID, range) => {
                     const taxon = taxaContext.taxa.get(taxonID);
                     if (!taxon || !range) return;
@@ -361,23 +360,19 @@
 
     // Get aggregated monthly counts for each taxon
     $effect(() => {
+        // Kick off reactivity using rank_affecting_filter_keys and taxonIDs
         const filters = getFilterValues(
             RANK_AFFECTING_FILTER_KEYS,
             filtersContext,
             ['dateStart', 'dateEnd']
         );
-
         const _ = taxaContext.taxa.ids;
 
         untrack(() =>
             fetchActiveTaxaMetric(
                 taxaContext.taxa.ids,
                 'dateCountsLoading',
-                (taxonID) =>
-                    getDateCounts(taxonID, {
-                        ...filters,
-                        regions: emptyRegions,
-                    }),
+                (taxonID) => getDateCounts(taxonID, filtersContext),
                 (taxonID, counts) => {
                     const taxon = taxaContext.taxa.get(taxonID);
                     if (taxon) taxon.dateCounts = counts;

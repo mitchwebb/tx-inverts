@@ -281,7 +281,8 @@ async def get_tile(
     datasets: list[str] = Query(default=[]),
     date_start: str | None = Query(default=None),
     date_end: str | None = Query(default=None),
-    coord_uncertainty: int | None = Query(default=None)
+    coord_uncertainty: int | None = Query(default=None),
+    regions: list[str] = Query(default=[])
 ):
     """
     Get map tiles for observations data as Mapbox Vector Tiles
@@ -295,6 +296,7 @@ async def get_tile(
         date_start (str): Minimum desired date
         date_end (str): Maximum desired date
         coord_uncertainty (int): Maximum desired coordinate uncertainty in meters
+        regions (str): List of desired region IDs
         x (int): X value of tile
         y (int): Y value of tile
         z (int): Z value of tile (zoom)
@@ -315,6 +317,7 @@ async def get_tile(
             date_end=date_end,
             datasets=datasets,
             coord_uncertainty=coord_uncertainty,
+            regions=regions
         )
 
         pool = request.app.state.db_pool
