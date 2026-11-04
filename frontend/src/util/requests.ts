@@ -9,7 +9,6 @@ export function serializeFilters(filters: Partial<FiltersState>) {
         coord_uncertainty: filters.coordUncertainty,
         datasets: filters.datasets ? [...filters.datasets] : undefined,
         regions: filters?.regions?.ids,
-        taxon_rank: filters.taxonRank,
         ns_ranks: filters.nSRanks,
     };
 }
