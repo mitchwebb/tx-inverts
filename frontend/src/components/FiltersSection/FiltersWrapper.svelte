@@ -16,6 +16,7 @@
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { capitalizeWords } from '../../util/textHelpers';
     import { countActiveFilters } from '../../lib/filters.svelte';
+    import { rankIsSpeciesOrBelow } from '../../util/taxa';
 
     type FiltersWrapperProps = {
         header: string;
@@ -46,7 +47,17 @@
             filtersContext[filterKey] =
                 meta.default as FiltersState[typeof filterKey];
         }
-        taxaContext.taxa.clear();
+        if (domain === 'taxon') {
+            // Remove all taxa above species rank (effectively clears parent taxa filter)
+            taxaContext.taxa.items.forEach((t) => {
+                if (
+                    t.info?.taxonRank &&
+                    !rankIsSpeciesOrBelow(t.info?.taxonRank)
+                ) {
+                    taxaContext.taxa.remove(t.taxonID);
+                }
+            });
+        }
     }
 
     const activeFilterCount: number = $derived(

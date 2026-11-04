@@ -5,6 +5,7 @@
     import type { FiltersDomain } from '../../constants/sidebarFilters';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
     import { getFiltersContext } from '../../contexts/filtersContext';
+    import { rankIsSpeciesOrBelow } from '../../util/taxa';
     import TaxaSearch from '../TaxaSearch.svelte';
 
     type TaxonFilterProps = {
@@ -44,7 +45,7 @@
                     {@const taxonInfo = taxon?.info}
                     {@const taxonRank = taxonInfo?.taxonRank}
                     <!-- If excluding species, leave out species and subspecies cards -->
-                    {#if !excludeSpecies || (taxonRank && !['species', 'subspecies', 'form'].includes(taxonRank))}
+                    {#if !excludeSpecies || (taxonRank && !rankIsSpeciesOrBelow(taxonRank))}
                         {#snippet label()}
                             <div class="taxon-card-label">
                                 {#if taxon.taxonLoading}
