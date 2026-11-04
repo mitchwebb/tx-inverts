@@ -2,7 +2,8 @@ import {
     initialFiltersState,
     type FiltersState,
 } from '../contexts/filtersContext';
-import type { NSRank } from '../types/api';
+import type { NSRank, RegionInfo } from '../types/api';
+import { makeIDCollection } from '../util/collection.svelte';
 
 // The scope of a given filter--whether it targets taxa or observation data
 // This is used to trigger certain warnings
@@ -108,9 +109,9 @@ export const SIDEBAR_FILTER_META: Record<
         format: (value) => (value ? null : 'Excluding iNat'),
     },
     regions: {
-        default: FILTER_DEFAULTS.regions,
-        domain: ['taxon'],
-        affectsRankMetrics: false,
+        default: makeIDCollection<RegionInfo, string>((r) => r.id),
+        domain: ['observation', 'taxon'],
+        affectsRankMetrics: true,
         count: true,
         read: (value) => value.ids,
         format: (value) => {
