@@ -96,14 +96,14 @@
         }
 
         // List of taxonIDs to filter list to
-        let filterTaxaIDs;
+        let filterTaxaIDs: string[] | null;
         scrollToTaxonID = null;
 
         // Behavior for
         switch (taxaContext.taxa.ids.length) {
-            // If no active taxonIDs, filter to Animalia
+            // If no active taxonIDs, do not filter
             case 0:
-                filterTaxaIDs = ['N'];
+                filterTaxaIDs = null;
                 break;
             // If only one active taxonID
             case 1: {
@@ -113,7 +113,7 @@
                     !taxon ||
                     ['species', 'subspecies'].includes(taxon.taxonRank || '')
                 ) {
-                    filterTaxaIDs = ['N'];
+                    filterTaxaIDs = null;
                     scrollToTaxonID = taxon?.taxonID;
                     break;
                 }
@@ -132,7 +132,7 @@
                         );
                     })
                 ) {
-                    filterTaxaIDs = ['N'];
+                    filterTaxaIDs = null;
                     scrollToTaxonID = taxaContext.taxa.ids.slice(-1)[0];
                     break;
                 }
@@ -157,25 +157,33 @@
         const relevantRank: Partial<keyof BackboneNode> =
             filtersContext.includeINat ? 'nSRankState' : 'nSRankStateNoINat';
 
-        const filteredMap = new Map<string, BackboneNode>();
+        let newTaxa: BackboneNode[];
 
-        for (const taxonID of filterTaxaIDs.map(String)) {
-            const parentNode = $taxaTree.get(taxonID);
+        if (filterTaxaIDs === null) {
+            // No taxon filter: every species in the tree
+            newTaxa = Array.from($taxaTree.values()).filter(
+                (taxonNode) => taxonNode.taxonRank === 'species'
+            );
+        } else {
+            const filteredMap = new Map<string, BackboneNode>();
 
-            if (!parentNode) continue;
+            for (const taxonID of filterTaxaIDs.map(String)) {
+                const parentNode = $taxaTree.get(taxonID);
 
-            filteredMap.set(parentNode.taxonID, parentNode);
+                if (!parentNode) continue;
 
-            const children = getAllChildrenNodes($taxaTree, taxonID);
-            for (const child of children) {
-                filteredMap.set(child.taxonID, child);
+                filteredMap.set(parentNode.taxonID, parentNode);
+
+                const children = getAllChildrenNodes($taxaTree, taxonID);
+                for (const child of children) {
+                    filteredMap.set(child.taxonID, child);
+                }
             }
+            // Get new taxa nodes from filteredMap (only species)
+            newTaxa = Array.from(filteredMap.values()).filter(
+                (taxonNode) => taxonNode.taxonRank === 'species'
+            );
         }
-
-        // Get new taxa nodes from filteredMap (only species)
-        let newTaxa = Array.from(filteredMap.values()).filter(
-            (taxonNode) => taxonNode.taxonRank === 'species'
-        );
 
         // Filter to activeRanks
         if (activeRanks?.length) {
@@ -257,10 +265,10 @@
 
 {#snippet iNatLabel()}
     {#if filtersContext.includeINat}
-        <span>Raw Rank</span>
+        <span>Scratch Rank</span>
     {:else}
         <div id="rank-header-no-inat">
-            <span>Raw Rank</span>
+            <span>Scratch Rank</span>
             <span id="no-inat-tag"> Excl. iNat </span>
         </div>
     {/if}
