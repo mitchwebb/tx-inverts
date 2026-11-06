@@ -31,6 +31,10 @@
     const filtersContext = getFiltersContext();
     const tooltipContext = getTooltipContext();
 
+    // Default to Animalia being open
+    const defaultOpenIDs = ['N']
+
+
     // List of ranks shown in tree (adjustable)
     let allowedRanks: TaxonomicRank[] = $state([
         'kingdom',
@@ -50,8 +54,8 @@
         `repeat(${allowedRanks.length}, minmax(max-content, 1fr)`
     );
 
-    // Start openNodes as just ['N'] (Animalia)
-    let openNodes: Set<string> = $state.raw(new Set(['N']));
+    // Start openNodes using defaultOpenIDs
+    let openNodes: Set<string> = $derived(new Set(defaultOpenIDs));
 
     // Minimum pixel movement to count as dragging
     const minMoveThreshold = 5;

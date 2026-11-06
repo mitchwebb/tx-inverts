@@ -66,7 +66,7 @@
 
     function buildURLFromContext(baseURL: URL) {
         const currentRoute = getCurrentRoute(baseURL);
-        if (!currentRoute) return baseURL;
+        if (!currentRoute || !currentRoute.showParams) return baseURL;
 
         const params = new URLSearchParams();
 
@@ -145,7 +145,6 @@
     });
 
     // When any routerSyncedKey changes in their respective context, update URL
-    // Also, when changing pages, set irrelevant params to null
     $effect(() => {
         const newURL = buildURLFromContext(routerContext.url);
 
