@@ -94,7 +94,7 @@ export async function getQualifiedTaxa(
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                taxon_ids: ['N'],
+                taxon_ids: null,
                 ...serializeFilters(filters),
             }),
         });

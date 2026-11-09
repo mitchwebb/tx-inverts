@@ -1,26 +1,30 @@
-from typing import Annotated, List
-from pydantic import BeforeValidator, ConfigDict, field_validator, BaseModel, model_validator
+from typing import Annotated
+from pydantic import BeforeValidator, ConfigDict, field_validator, BaseModel
 from datetime import date, datetime
 
 
-def _normalize_taxon_ids(v: str | List[str] | None): return (['N'] if v is None else [
-    str(v)] if isinstance(v, (str)) else v)
+def _normalize_taxon_ids(v: str | list[str] | None) -> list[str] | None:
+    if not v:
+        return None
+    if isinstance(v, str):
+        return [v]
+    return v
 
 
 # Model for OccurrenceFilters
 # Includes validation and normalization of various params
 class OccurrenceFilters(BaseModel):
-    # Normalize taxon_ids to list, default to ['N'] (Animalia) if None provided
+    # Normalize taxon_ids to list, default to None
     taxon_ids: Annotated[
-        List[str],
+        list[str],
         BeforeValidator(_normalize_taxon_ids)
-    ] = ['N']
+    ] | None = None
     include_inat: bool | None = True
-    datasets: List[str] | None = None
+    datasets: list[str] | None = None
     include_invasives: bool | None = False
     date_start: date | str | None = None
     date_end: date | str | None = None
-    regions: List[str] | None = None
+    regions: list[str] | None = None
     coord_uncertainty: int | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

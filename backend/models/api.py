@@ -7,14 +7,14 @@ NSRank = Literal['x', 'h', '1', '2', '3', '4', '5', 'u']
 
 # Params used to make queries for multiple taxon information only
 class TaxaRequestParams(BaseModel):
-    taxon_ids: List[str]
+    taxon_ids: List[str] | None
     taxon_rank: str | None = None
     ns_ranks: List[NSRank] | None = None
 
 
 # Params used to make queries for a single taxon
 class TaxonRequestParams(BaseModel):
-    taxon_id: str
+    taxon_id: str | None
     taxon_rank: str | None = None
     ns_ranks: List[NSRank] | None = None
 

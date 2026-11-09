@@ -106,7 +106,7 @@ def create_occurrence_filter_sql(filter: OccurrenceFilters, skip_taxa: bool = Fa
 
 # This is mostly just used in the occurrence clause, but is used in specific cases to
 # create specialized requests
-def create_occurrence_taxon_filter(taxon_ids: str | List[str] = 'N', include_invasives: Optional[bool] = False) -> sql.Composed | sql.SQL:
+def create_occurrence_taxon_filter(taxon_ids: str | List[str] | None = None, include_invasives: Optional[bool] = False) -> sql.Composed | sql.SQL:
     """
     Takes taxon_ids and generates sql formatted clause to find occurrences with
     matching ids in occurrences table. This matches to taxa in any rank as long
@@ -115,18 +115,15 @@ def create_occurrence_taxon_filter(taxon_ids: str | List[str] = 'N', include_inv
     is, itself, an invasive taxon, or include_invasives is true.
 
     Args:
-        taxon_ids (int | List[int]): Taxon ID of desired taxon. Defaults to 'N' (Animalia)
+        taxon_ids (int | List[int]): Taxon ID of desired taxon. Defaults to None (all)
         include_invasives (bool): If True, invasive taxa are included in results. Defaults to False.
 
     Returns:
         full_taxon_clause (sql.Composed | sql.SQL): A sql clause for use in a WHERE body
     """
 
-    # Normalize taxon_ids value to a list (in case an int was provided)
-    taxon_ids = normalize_to_list(taxon_ids)
-
-    # If no taxon_ids provided (Animalia), skip
-    if taxon_ids == ['N']:
+    # If no taxon_ids provided, skip
+    if not taxon_ids:
         # If include_invasives, skip with 'TRUE' no-op
         if include_invasives:
             return sql.SQL('TRUE')
@@ -142,41 +139,44 @@ def create_occurrence_taxon_filter(taxon_ids: str | List[str] = 'N', include_inv
                 taxa_table=sql.Identifier(TX_TAXA_TABLE.name),
                 observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
             )
+    else:
+        # Normalize taxon_ids value to a list (in case an int was provided)
+        taxon_ids = normalize_to_list(taxon_ids)
 
-    lineage_clause = sql.SQL("""
-        EXISTS (
-            SELECT 1
-            FROM {lineage_table} tl
-            WHERE tl.accepted_taxon_key = {observations_table}.accepted_taxon_key
-              AND tl.ancestor_id = ANY({taxon_ids})
+        lineage_clause = sql.SQL("""
+            EXISTS (
+                SELECT 1
+                FROM {lineage_table} tl
+                WHERE tl.accepted_taxon_key = {observations_table}.accepted_taxon_key
+                AND tl.ancestor_id = ANY({taxon_ids})
+            )
+        """).format(
+            lineage_table=sql.Identifier(TAXON_LINEAGE_TABLE.name),
+            observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
+            taxon_ids=sql.Literal(taxon_ids)
         )
-    """).format(
-        lineage_table=sql.Identifier(TAXON_LINEAGE_TABLE.name),
-        observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name),
-        taxon_ids=sql.Literal(taxon_ids)
-    )
 
-    # If we're including invasives, just return lineage_clause
-    if include_invasives:
-        return lineage_clause
+        # If we're including invasives, just return lineage_clause
+        if include_invasives:
+            return lineage_clause
 
-    # Only accept taxa not labeled as invasive UNLESS the taxon_id requested is, itself, invasive
-    invasive_clause = sql.SQL("""(
-        NOT EXISTS (
-            SELECT 1 from {taxa_table}
-            WHERE {taxa_table}.taxon_id = {observations_table}.accepted_taxon_key
-                AND {taxa_table}.us_invasive = true
+        # Only accept taxa not labeled as invasive UNLESS the taxon_id requested is, itself, invasive
+        invasive_clause = sql.SQL("""(
+            NOT EXISTS (
+                SELECT 1 from {taxa_table}
+                WHERE {taxa_table}.taxon_id = {observations_table}.accepted_taxon_key
+                    AND {taxa_table}.us_invasive = true
+            )
+            OR {observations_table}.accepted_taxon_key = ANY({taxon_ids})
+        )""").format(
+            taxa_table=sql.Identifier(TX_TAXA_TABLE.name),
+            taxon_ids=sql.Literal(taxon_ids),
+            observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
         )
-        OR {observations_table}.accepted_taxon_key = ANY({taxon_ids})
-    )""").format(
-        taxa_table=sql.Identifier(TX_TAXA_TABLE.name),
-        taxon_ids=sql.Literal(taxon_ids),
-        observations_table=sql.Identifier(GBIF_OBSERVATIONS_TABLE.name)
-    )
 
-    full_taxon_clause = sql.SQL("{lineage_clause} AND {invasive_clause}").format(
-        lineage_clause=lineage_clause,
-        invasive_clause=invasive_clause
-    )
+        full_taxon_clause = sql.SQL("{lineage_clause} AND {invasive_clause}").format(
+            lineage_clause=lineage_clause,
+            invasive_clause=invasive_clause
+        )
 
-    return full_taxon_clause
+        return full_taxon_clause
