@@ -3,7 +3,7 @@
     import GrabLine from '../../assets/GrabLine.svelte';
     import Sidebar from './Sidebar.svelte';
     import { getActiveTaxaContext } from '../../contexts/activeTaxaContext';
-    import { HEADER_HEIGHT } from '../../constants/header';
+    import { HEADER_HEIGHT } from '../../constants/headerConstants';
 
     const taxaContext = getActiveTaxaContext();
 

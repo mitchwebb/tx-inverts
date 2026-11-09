@@ -8,7 +8,7 @@
     import NavbarItem from './NavbarItem.svelte';
     import './header.css';
     import NavLogo from '../../assets/NavLogo.svelte';
-    import { HEADER_HEIGHT } from '../../constants/header';
+    import { HEADER_HEIGHT } from '../../constants/headerConstants';
 
     const NAV_ITEMS: NavItem[] = [
         { label: 'Map', href: '/map' },
