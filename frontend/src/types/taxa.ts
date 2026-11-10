@@ -17,7 +17,6 @@ export type TaxonomicRank =
     | 'subsection zoology'
     | 'superfamily'
     | 'epifamily'
-    | 'series zoology'
     | 'family'
     | 'subfamily'
     | 'supertribe'
@@ -26,6 +25,7 @@ export type TaxonomicRank =
     | 'infratribe'
     | 'genus'
     | 'subgenus'
+    | 'series zoology'
     | 'species'
     | 'subspecies'
     | 'variety'
@@ -50,7 +50,6 @@ export const RANK_ORDER: TaxonomicRank[] = [
     'subsection zoology',
     'superfamily',
     'epifamily',
-    'series zoology',
     'family',
     'subfamily',
     'supertribe',
@@ -59,6 +58,7 @@ export const RANK_ORDER: TaxonomicRank[] = [
     'infratribe',
     'genus',
     'subgenus',
+    'series zoology',
     'species',
     'subspecies',
     'variety',
