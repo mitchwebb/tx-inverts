@@ -13,6 +13,7 @@ export type TaxonomicRank =
     | 'infraorder'
     | 'parvorder'
     | 'nanorder'
+    | 'series zoology'
     | 'section zoology'
     | 'subsection zoology'
     | 'superfamily'
@@ -25,7 +26,6 @@ export type TaxonomicRank =
     | 'infratribe'
     | 'genus'
     | 'subgenus'
-    | 'series zoology'
     | 'species'
     | 'subspecies'
     | 'variety'
@@ -46,6 +46,7 @@ export const RANK_ORDER: TaxonomicRank[] = [
     'infraorder',
     'parvorder',
     'nanorder',
+    'series zoology',
     'section zoology',
     'subsection zoology',
     'superfamily',
@@ -58,7 +59,6 @@ export const RANK_ORDER: TaxonomicRank[] = [
     'infratribe',
     'genus',
     'subgenus',
-    'series zoology',
     'species',
     'subspecies',
     'variety',
