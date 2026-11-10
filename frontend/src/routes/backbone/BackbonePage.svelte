@@ -204,8 +204,6 @@
             y: e.clientY,
         };
 
-        e.preventDefault();
-
         const originalScroll = {
             top: container?.scrollTop,
             left: container?.scrollLeft,
@@ -620,6 +618,7 @@
         cursor: grab;
         box-sizing: border-box;
         overflow: auto;
+        user-select: none;
     }
 
     .taxon-name > * {
