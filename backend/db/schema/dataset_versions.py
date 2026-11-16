@@ -1,15 +1,7 @@
-from enum import StrEnum
-from typing import Literal
-
 from backend.db.schema.base_table import DBTable
-from backend.db.schema.index_definitions import MATERIALIZED_VIEWS
-from backend.db.schema.regions import REGIONS_VIEW
-from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
-from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
-from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 
 
-class DataMetadata(DBTable):
+class DatasetVersions(DBTable):
     """
     Table of various dataset version values.
     Stores dataset name alongside their associated DOI (if applicable) 
@@ -21,7 +13,7 @@ class DataMetadata(DBTable):
     DOI may be NULL. 
     """
 
-    name = 'data_metadata'
+    name = 'dataset_versions'
     primary_key = 'dataset_name'
     columns = {
         'dataset_name': 'TEXT PRIMARY KEY',
@@ -30,4 +22,4 @@ class DataMetadata(DBTable):
     }
 
 
-DATA_META_TABLE = DataMetadata()
+DATA_VERSIONS_TABLE = DatasetVersions()

@@ -7,7 +7,7 @@ from backend.constants.map import PIXELS_PER_GRID, get_meters_per_pixel
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.db.queries.meta_queries import OBSERVATIONS_DATASET
 from backend.db.queries.occurrence import create_occurrence_filter_sql
-from backend.db.schema.data_metadata import DATA_META_TABLE
+from backend.db.schema.dataset_versions import DATA_VERSIONS_TABLE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.tile_cache import TILE_CACHE
 from backend.models.occurrence import OccurrenceFilters
@@ -179,7 +179,7 @@ async def store_tile(conn: AsyncConnection, key, data: bytes, rendered_at, pinne
             last_used_at = NOW()
     """).format(
         tile_cache=sql.Identifier(TILE_CACHE.name),
-        meta_table=sql.Identifier(DATA_META_TABLE.name),
+        meta_table=sql.Identifier(DATA_VERSIONS_TABLE.name),
         key=sql.Literal(key),
         data=sql.Literal(data),
         observations_dataset=sql.Literal(OBSERVATIONS_DATASET),

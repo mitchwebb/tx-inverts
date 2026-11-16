@@ -10,7 +10,6 @@ from backend.data_util.invasives_data import get_invasives_dataset, prep_invasiv
 from backend.data_util.taxa_data import create_canonical_names, inverts_mask
 import backend.data_util.ranking as ns
 from backend.db.queries.meta_queries import BACKBONE_DATASET, retrieve_dataset_meta, store_doi
-from backend.db.schema.data_metadata import DATA_META_TABLE
 from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 from backend.db.schema.us_invasives_checklist import US_INVASIVES_TABLE

@@ -3,10 +3,10 @@ Integration tests for backend.db.queries.tile_cache
 (get_cached_tile, store_tile, get_cache_size, evict_lru_tiles, clear_tile_cache)
 
 These run against the real test schema. The behavior under test lives in the
-SQL (CTE touch, freshness guard against data_metadata, LRU delete with
+SQL (CTE touch, freshness guard against dataset_versions, LRU delete with
 SKIP LOCKED), so mocking psycopg would verify nothing.
 
-Assumes setup_gbif_schema creates tile_cache and data_metadata.
+Assumes setup_gbif_schema creates tile_cache and dataset_versions.
 """
 from datetime import datetime, timedelta, timezone
 
@@ -23,7 +23,7 @@ from backend.db.queries.tile_cache import (
     get_cached_tile,
     store_tile,
 )
-from backend.db.schema.data_metadata import DATA_META_TABLE
+from backend.db.schema.dataset_versions import DATA_VERSIONS_TABLE
 from backend.db.schema.tile_cache import TILE_CACHE
 
 
@@ -83,7 +83,7 @@ async def _all_keys(conn) -> set[str]:
 async def _set_observations_updated(conn, ts: datetime, dataset: str = OBSERVATIONS_DATASET):
     await insert_rows(
         [{'dataset_name': dataset, 'last_updated_at': ts}],
-        DATA_META_TABLE.name,
+        DATA_VERSIONS_TABLE.name,
         conn,
     )
 

@@ -1,7 +1,6 @@
 # Taxon related API endpoints
-from backend.db.queries.meta_queries import BACKBONE_DATASET, OBSERVATIONS_DATASET
 from backend.db.queries.occurrence import create_occurrence_filter_sql
-from backend.db.schema.data_metadata import DATA_META_TABLE
+from backend.db.schema.dataset_versions import DATA_VERSIONS_TABLE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
@@ -10,7 +9,7 @@ from backend.models.occurrence import OccurrenceFilters
 from fastapi import Request, APIRouter, HTTPException, Response
 from backend.data_util.execute_psql_query import execute_psql_query
 from backend.models.api import MultiTaxaObsRequestParams
-from psycopg import AsyncConnection, sql
+from psycopg import sql
 from backend.core.logging import api_logger
 from backend.models.taxa import BackboneNode, TaxonInfo, TaxonSuggestion
 from backend.db.queries.meta_queries import retrieve_dataset_meta
@@ -230,7 +229,7 @@ async def get_backbone(request: Request, response: Response) -> list[BackboneNod
     """
     Get backbone from tx_taxa table (excluding synonyms)
 
-    Rebuilt only when data_metadata shows the relevant datasets have changed.
+    Rebuilt only when dataset_versions shows the relevant datasets have changed.
     Clients revalidate with an ETag and receive a 304 when unchanged.
 
     Args:
@@ -266,7 +265,7 @@ async def get_backbone(request: Request, response: Response) -> list[BackboneNod
 
         async with request.app.state.db_pool.connection() as conn:
             result = await retrieve_dataset_meta(conn, TX_TAXA_TABLE.name)
-            version = result['last_updated_at'].isoformat()
+            version = result['last_updated_at'].isoformat() if result else None
 
             etag = f'W/"{version}"'
 
