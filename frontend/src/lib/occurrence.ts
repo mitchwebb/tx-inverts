@@ -40,7 +40,7 @@ export async function getDatasetCounts(
 
 // Logic for loading data datasets structure into browser
 export async function loadDatasets() {
-    const url = `server/occurrence/get_datasets`;
+    const url = 'server/occurrence/get_datasets';
     try {
         const response = await fetch(url, {
             method: 'GET',
