@@ -21,7 +21,7 @@ def make_chunk():
 
 
 class TestUpdateObservations:
-    # Test that, when not provided with an fp, update_observations calls get_gbif_inverts_file
+    # Test that, when not provided with an fp, update_observations calls get_gbif_dwca_files
     @pytest.mark.asyncio
     async def test_update_observations_calls_get_file(
         self,
@@ -31,12 +31,12 @@ class TestUpdateObservations:
     ):
 
         mock_get_file = mocker.patch(
-            'backend.jobs.tasks.occurrence_tasks.get_gbif_inverts_file',
+            'backend.jobs.tasks.occurrence_tasks.get_gbif_dwca_files',
             return_value=''
 
         )
 
         with pytest.raises(Exception):
-            await update_observations(conn, fp=None)
+            await update_observations(conn, dwca_fp=None)
 
         mock_get_file.assert_called_once()

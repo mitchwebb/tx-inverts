@@ -9,12 +9,9 @@ from psycopg import AsyncConnection, sql
 import aiohttp
 
 
-async def fill_dataset_table(conn: AsyncConnection, dataset_ids: List[str] = APPROVED_DATASETS):
+async def fill_dataset_table(conn: AsyncConnection, dataset_ids: List[str]):
     """
     Fill dataset metadata table, grabbing keys and titles from GBIF's api.
-    This only needs to happen once, or if APPROVED_DATASETS key variable is changed.
-
-    By default, uses APPROVED_DATASETS list to populate table.
     """
     async with aiohttp.ClientSession() as session:
         for dataset_key in dataset_ids:

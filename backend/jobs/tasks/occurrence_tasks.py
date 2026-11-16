@@ -1,8 +1,7 @@
-from datetime import date
 import io
 import json
 import os
-import pandas as pd
+import shutil
 import time
 
 from pandas import DataFrame
@@ -19,11 +18,11 @@ from backend.data_util.gbif import (
     observations_request,
     process_observations,
 )
-from backend.db.schema.gbif_inverts_backbone import GBIF_INVERTS_BACKBONE
 from backend.db.schema.gbif_observations import GBIF_OBSERVATIONS_TABLE
 from backend.db.schema.taxon_lineage import TAXON_LINEAGE_TABLE
 from backend.db.schema.taxon_region_presence import TAXON_PRESENCE_TABLE
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
+from backend.jobs.tasks.gbif_dataset_tasks import fill_dataset_table
 from backend.jobs.tasks.table_tasks import initialize_table
 from backend.jobs.tasks.view_tasks import refresh_materialized_view
 from psycopg import sql, AsyncConnection
@@ -31,12 +30,12 @@ from psycopg import sql, AsyncConnection
 
 # Helper function to build gbif download request, perform request,
 # download the resulting data, unzip, and return fp for occurrences.txt
-async def get_gbif_inverts_file(
+async def get_gbif_dwca_files(
     gbif_request_key: str | None = None,
     test: bool = False
 ) -> tuple[str, str]:
     """
-        Build GBIF inverts request, retrieve, and unzip, returning fp for resulting occurrences.txt.
+        Build GBIF inverts request, retrieve, and unzip, returning fp for resulting DarwinCore archive.
         If gbif_request_key provided, function will skip the request step.
 
         Args:
@@ -44,8 +43,8 @@ async def get_gbif_inverts_file(
             test (bool = False): If True, request builder will use a subset of data
 
         Returns:
-            A tuple of (observations_fp, gbif_key):
-                observations_fp (str): filepath string to extracted observations file
+            A tuple of (output_fp, gbif_key):
+                output_fp (str): filepath string to extracted DarwinCore archive contents
                 gbif_key(str): gbif download request key (if retrieved)
     """
     settings = get_settings()
@@ -79,14 +78,14 @@ async def get_gbif_inverts_file(
             raise RuntimeError("Failed to get GBIF download key")
 
         # Download and extract data
-        output_dir = await gbif_downloads.get_gbif_download(
+        output_fp = await gbif_downloads.get_gbif_download(
             key,
             output_fp=DATA_OUT_PATH,
-            target_files=['occurrence.txt'],
+            target_files=['occurrence.txt', 'multimedia.txt',
+                          'citations.txt', 'dataset/'],
         )
-        observations_fp = os.path.join(output_dir, 'occurrence.txt')
 
-        return (observations_fp, key)
+        return (output_fp, key)
 
     except RuntimeError:
         raise
@@ -191,7 +190,7 @@ def _get_observations_doi(gbif_request_key: str):
 
 async def update_observations(
     conn: AsyncConnection,
-    fp: str | None = None,
+    dwca_fp: str | None = None,
     gbif_request_key: str | None = None,
     chunk_size: int = 100000,
     delete_file=False
@@ -199,38 +198,50 @@ async def update_observations(
     """
         Orchestration function to fully update gbif_observations table.
 
-        Uses either local file or gbif download to fully replace observations.
-        Requires EITHER local fp of gbif observations file or a request key from a 
+        Uses either local DarwinCore archive or gbif download to fully replace observations.
+        Can provide EITHER local fp of unzipped gbif DarwinCore archive, GBIF download request key.
+        If neither is provided, GBIF request will be initiated, awaited, and downloaded. 
 
         Args:
             conn(psycopg.AsyncConnection): Active psycopg async database connection
-            fp(str | None=None): Filepath to observations csv (if provided, function will NOT make a new GBIF request)
+            dwca_fp(str | None=None): Filepath to GBIF DarwinCore Archive (if provided, function will NOT make a new GBIF request)
             gbif_request_key(str | None=None): Key returned by gbif download request. Can be used if a request was already made.
             chunk_size(int=100000): Chunk size to be used when reading in CSV for data cleaning
             delete_file(bool=False): If True, observations file will not be kept
     """
 
     try:
-        if fp is not None and gbif_request_key is not None:
+        if dwca_fp is not None and gbif_request_key is not None:
             raise ValueError(
                 "Both filepath and gbif_request_key provided: Please provide only one.")
 
         doi: str | None = None
 
-        # If no fp to observations file is provided, create GBIF request and download new data
-        if fp is None:
+        # If no fp to DarwinCore archive is provided, create GBIF request and download new data
+        if dwca_fp is None:
             # If no request key provided either, retrieve from fresh download
             if gbif_request_key is None:
-                fp, gbif_request_key = await get_gbif_inverts_file()
+                dwca_fp, gbif_request_key = await get_gbif_dwca_files()
             # Else, use provided request key
             else:
-                fp, gbif_request_key = await get_gbif_inverts_file(gbif_request_key)
+                dwca_fp, gbif_request_key = await get_gbif_dwca_files(gbif_request_key)
 
             # Get request DOI from GBIF API
             doi = _get_observations_doi(gbif_request_key)
 
         # Make sure gbif_observations_table exists
         await initialize_table(conn, GBIF_OBSERVATIONS_TABLE, verbose=True)
+
+        # Get list of all dataset ids from downloaded dataset folder
+        dataset_ids = [os.path.splitext(f)[0] for f in os.listdir(
+            os.path.join(dwca_fp, 'dataset')) if f.endswith(".xml")]
+
+        # If dataset_ids are found, fill the dataset table with info from GBIF's API
+        if dataset_ids:
+            await fill_dataset_table(conn, dataset_ids)
+        else:
+            db_logger.warning(
+                f"No dataset ids found in DWCA. Skipping dataset table update.")
 
         # Create temp table to perform data update/merge
         temp_table_name = 'temp_' + GBIF_OBSERVATIONS_TABLE.name
@@ -268,7 +279,7 @@ async def update_observations(
 
         # Process and transform data in chunks
         for chunk in process_observations.process_dwc_observations(
-            fp,
+            os.path.join(dwca_fp, 'occurrence.txt'),
             chunk_size,
         ):
             # Create batch_id for this chunk
@@ -352,13 +363,9 @@ async def update_observations(
 
         await conn.commit()
 
-        # If delete_file is True, delete the file
+        # If delete_file is True, delete the archive
         if delete_file:
-            os.remove(fp)
-            # If parent is empty, remove parent directory as well
-            parent_directory = os.path.dirname(os.path.abspath(fp))
-            if not os.listdir(parent_directory):
-                os.rmdir(parent_directory)
+            shutil.rmtree(dwca_fp)
 
     except Exception as e:
         data_logger.exception(f"Issue with observations update: {e}")
