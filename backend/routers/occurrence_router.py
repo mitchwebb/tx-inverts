@@ -4,7 +4,7 @@ from datetime import date
 import time
 from typing import Sequence
 
-from backend.constants.tiles import MIN_COMPUTE_S, TILE_CACHE_MAX_BYTES, TILE_CACHE_TARGET_BYTES
+from backend.constants.tiles import MIN_COMPUTE_S
 from backend.core.exception_handler import TaxonNotFoundError
 from backend.data_util.taxa_data import taxon_exists
 from backend.db.queries.tile_cache import build_tile_query, get_cached_tile, store_tile, tile_key
@@ -26,7 +26,7 @@ occurrence_router = APIRouter()
 @occurrence_router.get('/get_datasets')
 async def get_datasets(request: Request) -> dict[str, Sequence[rows.DictRow]]:
     """
-    Get list of ALL datasets found in dataset_meta table (all datasets in our APPROVED_DATASETS)
+    Get list of ALL datasets found in gbif_dataset_meta table
     """
 
     try:
@@ -77,12 +77,12 @@ async def get_dataset_counts(params: SingleTaxonObsRequestParams, request: Reque
 
         async with pool.connection() as conn:
 
-            if not await taxon_exists(conn, params.taxon_id):
+            if params.taxon_id and not await taxon_exists(conn, params.taxon_id):
                 raise TaxonNotFoundError(
                     f'Requested taxon {params.taxon_id} is not found in the backbone')
 
             filter_payload = OccurrenceFilters(
-                taxon_ids=[params.taxon_id],
+                taxon_ids=params.taxon_id,
                 include_inat=params.include_inat,
                 date_start=params.date_start,
                 date_end=params.date_end,
@@ -159,12 +159,12 @@ async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Re
 
         async with pool.connection() as conn:
 
-            if not await taxon_exists(conn, params.taxon_id):
+            if params.taxon_id and not await taxon_exists(conn, params.taxon_id):
                 raise TaxonNotFoundError(
                     f'Requested taxon {params.taxon_id} is not found in the backbone')
 
             filter_payload = OccurrenceFilters(
-                taxon_ids=[params.taxon_id],
+                taxon_ids=params.taxon_id,
                 include_inat=params.include_inat,
                 date_start=params.date_start,
                 date_end=params.date_end,
@@ -206,12 +206,12 @@ async def get_observation_dates(params: SingleTaxonObsRequestParams, request: Re
 async def get_date_counts(params: SingleTaxonObsRequestParams, request: Request) -> dict[str, int] | None:
     try:
         async with request.app.state.db_pool.connection() as conn:
-            if not await taxon_exists(conn, params.taxon_id):
+            if params.taxon_id and not await taxon_exists(conn, params.taxon_id):
                 raise TaxonNotFoundError(
                     f'Requested taxon {params.taxon_id} is not found in the backbone')
 
             filter_payload = OccurrenceFilters(
-                taxon_ids=[params.taxon_id],
+                taxon_ids=params.taxon_id,
                 include_inat=params.include_inat,
                 date_start=params.date_start,
                 date_end=params.date_end,

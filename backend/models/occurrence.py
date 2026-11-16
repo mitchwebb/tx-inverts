@@ -16,7 +16,7 @@ def _normalize_taxon_ids(v: str | list[str] | None) -> list[str] | None:
 class OccurrenceFilters(BaseModel):
     # Normalize taxon_ids to list, default to None
     taxon_ids: Annotated[
-        list[str],
+        list[str] | str | None,
         BeforeValidator(_normalize_taxon_ids)
     ] | None = None
     include_inat: bool | None = True

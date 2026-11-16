@@ -7,10 +7,13 @@ from psycopg import AsyncConnection, sql
 from backend.db.schema.tx_taxa import TX_TAXA_TABLE
 
 
-async def get_taxon_rank(conn: AsyncConnection, taxon_id: str) -> str:
+async def get_taxon_rank(conn: AsyncConnection, taxon_id: str | None) -> str | None:
     """
     Given a taxon id, determine the taxonomic rank using the tx_taxa table
     """
+
+    if taxon_id is None:
+        return None
 
     query = sql.SQL("""
         SELECT taxon_rank

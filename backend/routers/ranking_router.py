@@ -39,7 +39,7 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
     try:
         # Make SingleTaxonOccurrenceFilter Object
         filters = OccurrenceFilters(
-            taxon_ids=[params.taxon_id],
+            taxon_ids=params.taxon_id,
             include_inat=params.include_inat,
             date_start=params.date_start,
             date_end=params.date_end,
@@ -49,14 +49,14 @@ async def get_ns_metrics(params: SingleTaxonObsRequestParams, request: Request) 
         )
 
         async with pool.connection() as conn:
-
-            if not await taxon_exists(conn, params.taxon_id):
+            if params.taxon_id and not await taxon_exists(conn, params.taxon_id):
                 raise TaxonNotFoundError(
                     f'Requested taxon {params.taxon_id} is not found in the backbone')
 
             # Occurrences is only a useful metric for species and subspecies
             # We'll include genus as well, because why not
             taxon_rank = await get_taxon_rank(conn, params.taxon_id)
+
             compute_occurrences = taxon_rank in {
                 'genus', 'subgenus', 'species', 'subspecies'} or taxon_rank is None
 
@@ -97,7 +97,7 @@ async def get_texas_range_extent_geom(params: SingleTaxonObsRequestParams, reque
 
         # Make OccurrenceFilters Object
         filters = OccurrenceFilters(
-            taxon_ids=[params.taxon_id],
+            taxon_ids=params.taxon_id,
             include_inat=params.include_inat,
             date_end=params.date_end,
             date_start=params.date_start,
@@ -107,7 +107,7 @@ async def get_texas_range_extent_geom(params: SingleTaxonObsRequestParams, reque
         )
 
         async with pool.connection() as conn:
-            if not await taxon_exists(conn, params.taxon_id):
+            if params.taxon_id and not await taxon_exists(conn, params.taxon_id):
                 raise TaxonNotFoundError(
                     f'Requested taxon {params.taxon_id} is not found in the backbone')
 
