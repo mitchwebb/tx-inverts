@@ -14,7 +14,7 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
     Args:
         fp (str): Filepath to .zip
         output_fp (str): Desired output path
-        target_files (List[str]): Optional list of desired file names
+        target_files (List[str]): Optional list of desired file names (including extension) or directory names (with or without '/')
         delete_zip (bool): Optional boolean for deleted original .zip
 
     Return:
@@ -37,23 +37,31 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
                 # Cross referencing a list of available files, attempt to axtract target filtes
                 available_files = zip_ref.namelist()
                 for target_file in target_files:
-                    if target_file in available_files:
-                        data_logger.info(
-                            f"Extracting {target_file} from .zip...")
-                        zip_ref.extract(target_file, output_fp)
-                    else:
+                    # Exact match = file, prefix match = directory
+                    prefix = target_file.rstrip('/') + '/'
+                    matches = [
+                        name for name in available_files
+                        if name == target_file or name.startswith(prefix)
+                    ]
+                    if not matches:
                         data_logger.error(
                             f"{target_file} not found in .zip. Exiting process...")
                         raise FileNotFoundError(
-                            f"{target_file} not found in .zip archive.")
+                            f"{target_file} not found in .zip archive")
+
+                    data_logger.info(
+                        f"Extracting {target_file} ({len(matches)} entries) from .zip...")
+                    for member in matches:
+                        zip_ref.extract(member, output_fp)
+
             # If no target files provided, extract all
             else:
-                data_logger.info("Extracting files from zip...")
+                data_logger.info("Extracting all files from .zip...")
                 zip_ref.extractall(output_fp)
 
         # Delete .zip if requested
         if delete_zip:
-            data_logger.info("Deleting original zip...")
+            data_logger.info("Deleting original .zip...")
             try:
                 os.remove(fp)
             except PermissionError as e:
@@ -63,7 +71,7 @@ def extract_zip_files(fp: str, output_fp: str, target_files: List[str] | None = 
                 try:
                     os.remove(fp)
                 except Exception as e2:
-                    data_logger.exception(f"Still couldn't delete zip: {e2}")
+                    data_logger.exception(f"Still couldn't delete .zip: {e2}")
 
         data_logger.info(f"File(s) downloaded successfully to {output_fp}")
 
